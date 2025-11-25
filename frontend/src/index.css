@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+/* index.css extra */
+.input {
+  @apply w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm text-blue-950 outline-none placeholder:text-blue-900/50 focus:border-blue-400 focus:ring-2 focus:ring-blue-100;
+}
+
+/* smooth scroll for in-page anchors */
+html { scroll-behavior: smooth; }
+
+/* simple marquee animation used in Topbar */
+@keyframes scroll-x {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes eec-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* moves one full copy width */
+}
+
+/* Optional: utility to hide webkit scrollbar in other places, if needed */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* hide scrollbars just for the snap container */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Hide scrollbar for Chrome, Safari, and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge, and Firefox */
+body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
