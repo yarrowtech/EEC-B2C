@@ -43,9 +43,9 @@ export default function ExamsIndex() {
       <h1 className="text-xl font-semibold text-slate-800">Stage 1 — Start Exam</h1>
       <p className="text-slate-600 text-sm">Pick your Subject, Topic and the question type.</p>
 
-      <SubjectTopicPicker />
+      {/* <SubjectTopicPicker /> */}
 
-      <form onSubmit={onStart} className="grid sm:grid-cols-3 gap-4">
+      {/* <form onSubmit={onStart} className="grid sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm text-slate-600 mb-1">Type</label>
           <select className="w-full rounded-lg border px-3 py-2 bg-white" value={type} onChange={e=>setType(e.target.value)}>
@@ -64,7 +64,10 @@ export default function ExamsIndex() {
             {busy ? "Starting..." : "Start Exam"}
           </button>
         </div>
-      </form>
+      </form> */}
+    <div className="flex flex-wrap justify-center items-center h-[60vh]">
+      <p className="text-3xl text-center font-bold animate-bounce">Sorry we are currently not available at your location</p>
+    </div>
     </div>
   );
 }

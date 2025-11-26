@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import {
   Book,
   Pencil,
@@ -77,7 +77,7 @@ export default function FeaturesSettings() {
 
   return (
     <div className="space-y-8">
-
+<ToastContainer />
       {/* ===== HEADER ===== */}
       <div className="flex items-center gap-3">
         <div className="size-10 flex items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md">
@@ -128,83 +128,82 @@ export default function FeaturesSettings() {
 
       {/* ===== ROW 2 (Features Section) ===== */}
       {/* ===== ROW 2 — FEATURES GRID ===== */}
-<div className="rounded-2xl border border-white/40 bg-white/70 backdrop-blur-xl p-6 shadow-xl space-y-6">
+      <div className="rounded-2xl border border-white/40 bg-white/70 backdrop-blur-xl p-6 shadow-xl space-y-6">
 
-  <h2 className="text-lg font-semibold text-slate-700">Feature Items</h2>
+        <h2 className="text-lg font-semibold text-slate-700">Feature Items</h2>
 
-  {/* FEATURES GRID */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* FEATURES GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    {features.map((f) => (
-      <div
-        key={f.id}
-        className="p-5 rounded-xl border bg-white shadow-md space-y-6 hover:shadow-xl transition"
-      >
-        {/* ALWAYS VISIBLE ICON PICKER */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Choose Icon</label>
+          {features.map((f) => (
+            <div
+              key={f.id}
+              className="p-5 rounded-xl border bg-white shadow-md space-y-6 hover:shadow-xl transition"
+            >
+              {/* ALWAYS VISIBLE ICON PICKER */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Choose Icon</label>
 
-          {/* Search Bar */}
-          <input
-            type="text"
-            placeholder="Search icons..."
-            className="w-full px-3 py-2 rounded-lg border shadow-sm"
-            value={iconSearch}
-            onChange={(e) => setIconSearch(e.target.value)}
-          />
+                {/* Search Bar */}
+                <input
+                  type="text"
+                  placeholder="Search icons..."
+                  className="w-full px-3 py-2 rounded-lg border shadow-sm"
+                  value={iconSearch}
+                  onChange={(e) => setIconSearch(e.target.value)}
+                />
 
-          {/* ICON GRID */}
-          <div className="grid grid-cols-5 gap-3 mt-2 max-h-[200px] overflow-y-auto pr-1">
+                {/* ICON GRID */}
+                <div className="grid grid-cols-5 gap-3 mt-2 max-h-[200px] overflow-y-auto pr-1">
 
-            {ICON_OPTIONS
-              .filter((icon) =>
-                icon.label.toLowerCase().includes(iconSearch.toLowerCase())
-              )
-              .map((icon) => (
-                <button
-                  key={icon.value}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition 
-                    ${
-                      f.icon === icon.value
-                        ? "border-indigo-600 bg-indigo-100"
-                        : "border-gray-300 hover:bg-gray-100"
-                    }
+                  {ICON_OPTIONS
+                    .filter((icon) =>
+                      icon.label.toLowerCase().includes(iconSearch.toLowerCase())
+                    )
+                    .map((icon) => (
+                      <button
+                        key={icon.value}
+                        className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition 
+                    ${f.icon === icon.value
+                            ? "border-indigo-600 bg-indigo-100"
+                            : "border-gray-300 hover:bg-gray-100"
+                          }
                   `}
-                  onClick={() => updateFeature(f.id, "icon", icon.value)}
-                >
-                  {icon.icon}
-                  <span className="text-[11px] text-slate-600">{icon.label}</span>
-                </button>
-              ))}
+                        onClick={() => updateFeature(f.id, "icon", icon.value)}
+                      >
+                        {icon.icon}
+                        <span className="text-[11px] text-slate-600">{icon.label}</span>
+                      </button>
+                    ))}
 
-          </div>
+                </div>
+              </div>
+
+              {/* TITLE */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Title</label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg border shadow-sm bg-white"
+                  value={f.title}
+                  onChange={(e) => updateFeature(f.id, "title", e.target.value)}
+                />
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Description</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border shadow-sm bg-white"
+                  value={f.description}
+                  onChange={(e) => updateFeature(f.id, "description", e.target.value)}
+                />
+              </div>
+
+            </div>
+          ))}
         </div>
-
-        {/* TITLE */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Title</label>
-          <input
-            className="w-full px-3 py-2 rounded-lg border shadow-sm bg-white"
-            value={f.title}
-            onChange={(e) => updateFeature(f.id, "title", e.target.value)}
-          />
-        </div>
-
-        {/* DESCRIPTION */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Description</label>
-          <textarea
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg border shadow-sm bg-white"
-            value={f.description}
-            onChange={(e) => updateFeature(f.id, "description", e.target.value)}
-          />
-        </div>
-
       </div>
-    ))}
-  </div>
-</div>
 
 
       {/* SAVE BUTTON */}

@@ -174,7 +174,7 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   // return (
-    return shouldHide ? null : ( 
+  return shouldHide ? null : (
     <nav className="sticky top-0 z-40 bg-white/70 shadow-sm backdrop-blur-lg">
       {/* Subtle top glow line */}
       <div className="h-[2px] w-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-300 opacity-60" />
@@ -277,7 +277,57 @@ export default function Navbar() {
               Login
             </button>
           )}
+          <Link
+            to="/eec-b2c"
+            className="
+    ml-3 relative inline-flex items-center justify-center
+    px-4 py-2 text-sm font-extrabold text-white tracking-wide
+    rounded-2xl 
+    bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
+    shadow-[0_0_25px_rgba(168,85,247,0.9)]
+    hover:shadow-[0_0_45px_rgba(168,85,247,1)]
+    transition-all duration-300 ease-out
+    hover:scale-[1.12] active:scale-[0.96]
+    overflow-hidden
+    border border-white/20
+  "
+          >
+            {/* Outer Neon Border Animation */}
+            <span
+              className="
+      absolute inset-0 rounded-2xl
+      border-2 border-fuchsia-400
+      animate-[borderGlow_3s_linear_infinite]
+      opacity-70
+    "
+            ></span>
 
+            {/* Moving Gradient Background */}
+            <span
+              className="
+      absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
+      bg-[length:200%_200%]
+      animate-[gradientMove_6s_ease_infinite]
+      rounded-2xl opacity-90
+    "
+            ></span>
+
+            {/* Shine Swipe */}
+            <span
+              className="
+      absolute inset-0 translate-x-[-120%]
+      bg-white/20 w-full h-full skew-x-12
+      animate-[shine_3s_infinite]
+    "
+            />
+
+            {/* Floating Glow Balls */}
+            <span className="absolute top-0 left-0 w-3 h-3 bg-white/60 rounded-full blur-md animate-ping"></span>
+            <span className="absolute bottom-0 right-0 w-4 h-4 bg-fuchsia-300/70 rounded-full blur-xl animate-pulse"></span>
+
+            {/* Button Text */}
+            <span className="relative z-10 drop-shadow-xl text-lg">For Institutions</span>
+          </Link>
 
         </div>
 
@@ -434,10 +484,63 @@ export default function Navbar() {
               Login
             </button>
           )}
+          {/* MOBILE B2B BUTTON (same effect as desktop) */}
+          <Link
+            to="/eec-b2c"
+            onClick={closeMobile}
+            className="
+    mt-4 relative inline-flex w-full items-center justify-center
+    px-6 py-2.5 text-sm font-extrabold text-white tracking-wide
+    rounded-2xl
+    bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
+    shadow-[0_0_25px_rgba(168,85,247,0.9)]
+    hover:shadow-[0_0_45px_rgba(168,85,247,1)]
+    transition-all duration-300 ease-out
+    hover:scale-[1.08] active:scale-[0.96]
+    overflow-hidden
+    border border-white/20
+  "
+          >
+            {/* Outer Neon Border */}
+            <span
+              className="
+      absolute inset-0 rounded-2xl
+      border-2 border-fuchsia-400
+      animate-[borderGlow_3s_linear_infinite]
+      opacity-70
+    "
+            ></span>
+
+            {/* Moving Gradient */}
+            <span
+              className="
+      absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
+      bg-[length:200%_200%]
+      animate-[gradientMove_6s_ease_infinite]
+      rounded-2xl opacity-90
+    "
+            ></span>
+
+            {/* Shine Swipe */}
+            <span
+              className="
+      absolute inset-0 translate-x-[-120%]
+      bg-white/40 w-full h-full skew-x-12
+      animate-[shine_3s_infinite]
+    "
+            />
+
+            {/* Glow Balls */}
+            <span className="absolute top-0 left-0 w-3 h-3 bg-white/60 rounded-full blur-md animate-ping"></span>
+            <span className="absolute bottom-0 right-0 w-4 h-4 bg-fuchsia-300/70 rounded-full blur-xl animate-pulse"></span>
+
+            {/* Text */}
+            <span className="relative z-10 drop-shadow-xl text-lg">For Institution</span>
+          </Link>
 
         </div>
       </aside>
     </nav>
-    )
+  )
   // );
 }

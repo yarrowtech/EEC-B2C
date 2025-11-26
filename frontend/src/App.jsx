@@ -52,6 +52,7 @@ import FeaturesSettings from "./components/settings/FeaturesSettings";
 import AboutUsSettings from "./components/settings/AboutUsSettings";
 import CareerSettings from "./components/settings/CareerSettings";
 import OfficeSettings from "./components/settings/OfficeSettings";
+import B2B from "./pages/B2B/pages/B2B";
 
 
 function getToken() {
@@ -186,6 +187,7 @@ export default function App() {
           <Route path="/boards" element={<EECLearningBoards />} />
           <Route path="/support" element={<SupportCenter />} />
           <Route path="/marketing" element={<EECMarketing />} />
+          <Route path="/eec-b2c" element={ <B2B /> } />
           <Route path="/dashboard" element={<QuestionScopeProvider>
             <DashboardLayout />
           </QuestionScopeProvider>}>

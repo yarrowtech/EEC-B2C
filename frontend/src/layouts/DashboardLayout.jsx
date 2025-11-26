@@ -39,7 +39,7 @@ export default function DashboardLayout() {
         localStorage.removeItem("jwt");
         localStorage.removeItem("user");
         window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
-        return <Navigate to="/" replace />;``
+        return <Navigate to="/" replace />; ``
     }
 
     const role = String(user.role || "").toLowerCase();
@@ -48,9 +48,10 @@ export default function DashboardLayout() {
     const NAV = useMemo(() => {
         const base = [
             { to: "/dashboard", label: "Home", icon: <Home size={18} />, end: true },
-            { to: "/dashboard/students", label: "Students", icon: <Users size={18} /> },
+            // { to: "/dashboard/students", label: "Students", icon: <Users size={18} /> },
         ];
         if (role === "admin") {
+            base.splice(1, 0, { to: "/dashboard/students", label: "Students", icon: <Users size={18} /> });
             // base.splice(1, 0, { to: "/dashboard/approvals", label: "Approvals", icon: <CheckCircle2 size={18} /> });
             base.splice(2, 0, { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> });
         }
@@ -78,15 +79,19 @@ export default function DashboardLayout() {
                     <div className="flex items-center gap-3">
                         <div className="size-8 rounded-xl bg-gradient-to-br from-yellow-600 to-orange-600 shadow-sm" />
                         <div className="leading-tight">
-                            <div className="text-[11px] text-slate-500/90">Welcome</div>
+                            {/* <div className="text-[11px] text-slate-500/90">Welcome</div> */}
                             <div className="text-sm font-semibold text-slate-800 tracking-tight">
-                                {user?.name || "User"} — <span className="capitalize">{role}</span>
+                                {/* {user?.name || "User"} — <span className="capitalize">{role}</span> */}
+                                Electronic Educare
                             </div>
                         </div>
                     </div>
 
                     {/* Header actions (role-aware) */}
-                    <div className="hidden sm:flex items-center gap-2">
+                    {/* Header actions + Profile */}
+                    <div className="hidden sm:flex items-center gap-4">
+
+                        {/* Role-based action button */}
                         {role === "admin" && (
                             <button className="px-3 py-2 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                                 New Notice
@@ -98,11 +103,50 @@ export default function DashboardLayout() {
                             </button>
                         )}
                         {role === "student" && (
-                            <button className="px-3 py-2 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
-                                Join Class
-                            </button>
+                            // <button className="px-3 py-2 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                            //     Join Class
+                            // </button>
+                            <></>
                         )}
+
+                        {/* PROFILE BLOCK */}
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/70 backdrop-blur hover:bg-white transition">
+                                {/* Profile Avatar */}
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-600 to-orange-600 flex items-center justify-center text-white font-semibold">
+                                    {user?.name?.[0] || "U"}
+                                </div>
+
+                                {/* User Name */}
+                                <span className="text-sm font-medium text-slate-800">
+                                    {user?.name || "User"}
+                                </span>
+                            </button>
+
+                            {/* Dropdown */}
+                            <div className="absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                                <button
+                                    onClick={() => navigate("/dashboard/settings/profile")}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100"
+                                >
+                                    Profile
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        localStorage.removeItem("jwt");
+                                        localStorage.removeItem("user");
+                                        window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+                                        navigate("/", { replace: true });
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
 
                     {/* Mobile hamburger */}
                     <button

@@ -414,7 +414,7 @@ const Hero = () => {
             >
               Login
             </button>
-            <a
+            {/* <a
               href="#signup"
               className="rounded-2xl border border-white/40 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
               onClick={(e) => {
@@ -425,7 +425,7 @@ const Hero = () => {
               }}
             >
               Create free account
-            </a>
+            </a> */}
           </div>
 
           {/* Quick chips */}
