@@ -182,12 +182,17 @@ export default function Navbar() {
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
           <div className="relative">
+            <div className="flex flex-wrap flex-col h-full justify-center items-center gap-1">
             <img
               src="/logo_new.png"
               alt="EEC"
               className="h-10 w-auto drop-shadow-sm transition hover:scale-[1.01]"
             />
-            <span className="pointer-events-none absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-yellow-400/60 blur-[4px]" />
+            <span className="text-amber-600 font-bold">
+              Electronic Educare
+            </span>
+            </div>
+            {/* <span className="pointer-events-none absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-yellow-400/60 blur-[4px]" /> */}
           </div>
           <span className="sr-only">EEC</span>
         </Link>
