@@ -21,12 +21,15 @@ const app = express();
 /* ---------- Security & Core ---------- */
 app.use(helmet());
 app.use(express.json({ limit: "1mb" }));
-app.use(
-  cors({
-    origin: process.env.CLIENT_ORIGIN?.split(",") || "*",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: [
+    "https://eec-b2-c.vercel.app",   // your frontend domain on vercel
+    "http://localhost:5173",         // local dev
+    "http://localhost:5000"
+  ],
+  methods: "GET,POST,PUT,DELETE,PATCH",
+  credentials: true,
+}));
 
 // basic rate limiting on auth endpoints
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
