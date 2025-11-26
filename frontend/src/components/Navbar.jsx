@@ -178,7 +178,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-40 bg-white/70 shadow-sm backdrop-blur-lg">
       {/* Subtle top glow line */}
       <div className="h-[2px] w-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-300 opacity-60" />
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-0.5">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
           <div className="relative">
