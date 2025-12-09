@@ -34,7 +34,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5000",
     ],
-    methods: "GET,POST,PUT,DELETE,PATCH",
+    methods: ["GET", "POST", "DELETE", "PUT"],
     credentials: true,
   })
 );
@@ -75,6 +75,7 @@ connectDB(process.env.MONGO_URI).then(() => {
     cors: {
       origin: ["http://localhost:5173", "https://eec-b2-c.vercel.app"],
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
