@@ -23,11 +23,13 @@ function shapeByType(type, body, userId) {
     subject: String(body.subject || "").trim(),
     topic: String(body.topic || "").trim(),
     difficulty: body.difficulty || "easy",
-    tags: (String(body.tags || "")
+    tags: String(body.tags || "")
       .split(",")
       .map((s) => s.trim())
-      .filter(Boolean)),
+      .filter(Boolean),
     explanation: body.explanation || "",
+    stage: Number(body.stage || 1),
+    level: String(body.level || "basic"),
     createdBy: userId,
   };
 
@@ -68,13 +70,21 @@ function shapeByType(type, body, userId) {
           return { ok: false, message: "correct must be among A/B/C/D" };
         }
       }
-      return { ok: true, doc: { ...common, question: q, options: norm, correct } };
+      return {
+        ok: true,
+        doc: { ...common, question: q, options: norm, correct },
+      };
     }
     case "true-false": {
       const statement = String(body.question || body.statement || "").trim();
-      const ans = String(body.answer || body.correct || "").trim().toLowerCase();
+      const ans = String(body.answer || body.correct || "")
+        .trim()
+        .toLowerCase();
       if (!statement || !["true", "false"].includes(ans)) {
-        return { ok: false, message: "statement and answer (true/false) required" };
+        return {
+          ok: false,
+          message: "statement and answer (true/false) required",
+        };
       }
       return {
         ok: true,
@@ -82,9 +92,17 @@ function shapeByType(type, body, userId) {
       };
     }
     case "choice-matrix": {
-      const { prompt, rows = [], cols = [], correctCells = [] } = body.choiceMatrix || {};
+      const {
+        prompt,
+        rows = [],
+        cols = [],
+        correctCells = [],
+      } = body.choiceMatrix || {};
       if (!prompt || !Array.isArray(rows) || !Array.isArray(cols)) {
-        return { ok: false, message: "choiceMatrix: prompt, rows[], cols[] required" };
+        return {
+          ok: false,
+          message: "choiceMatrix: prompt, rows[], cols[] required",
+        };
       }
       return {
         ok: true,
@@ -96,7 +114,10 @@ function shapeByType(type, body, userId) {
       if (!text || !Array.isArray(tokens)) {
         return { ok: false, message: "clozeDrag: text and tokens[] required" };
       }
-      return { ok: true, doc: { ...common, clozeDrag: { text, tokens, correctMap } } };
+      return {
+        ok: true,
+        doc: { ...common, clozeDrag: { text, tokens, correctMap } },
+      };
     }
     case "cloze-select": {
       const { text, blanks = {} } = body.clozeSelect || {};
@@ -109,11 +130,22 @@ function shapeByType(type, body, userId) {
       return { ok: true, doc: { ...common, clozeText: { text, answers } } };
     }
     case "match-list": {
-      const { prompt, left = [], right = [], pairs = {} } = body.matchList || {};
+      const {
+        prompt,
+        left = [],
+        right = [],
+        pairs = {},
+      } = body.matchList || {};
       if (!prompt || !Array.isArray(left) || !Array.isArray(right)) {
-        return { ok: false, message: "matchList: prompt, left[], right[] required" };
+        return {
+          ok: false,
+          message: "matchList: prompt, left[], right[] required",
+        };
       }
-      return { ok: true, doc: { ...common, matchList: { prompt, left, right, pairs } } };
+      return {
+        ok: true,
+        doc: { ...common, matchList: { prompt, left, right, pairs } },
+      };
     }
     case "essay-rich": {
       const prompt = String(body.prompt || "").trim();
@@ -124,7 +156,8 @@ function shapeByType(type, body, userId) {
     case "essay-plain": {
       const prompt = String(body.prompt || "").trim();
       const plainText = String(body.plainText || body.answer || "").trim();
-      if (!prompt) return { ok: false, message: "essay-plain: prompt required" };
+      if (!prompt)
+        return { ok: false, message: "essay-plain: prompt required" };
       return { ok: true, doc: { ...common, prompt, plainText } };
     }
     default:
@@ -140,6 +173,8 @@ export const create = async (req, res) => {
     const type = String(req.params.type || "").trim();
     const { ok, doc, message } = shapeByType(type, req.body, req.user.id);
     if (!ok) return res.status(400).json({ message });
+
+    doc.class = req.body.class;
     const saved = await Question.create(doc);
     res.status(201).json({ message: "Created", id: saved._id });
   } catch (e) {
@@ -179,22 +214,49 @@ export const create = async (req, res) => {
 // --- READ: list with filters + pagination ---
 export const list = async (req, res) => {
   try {
-    const { type, subject, topic, q, page = 1, limit = 20 } = req.query;
+    const {
+      type,
+      subject,
+      topic,
+      stage,
+      level,
+      q,
+      page = 1,
+      limit = 20,
+    } = req.query;
     const filter = {};
+    // student class filter
+    // const userClass = req.user?.class;
+    // if (userClass) filter.class = userClass;
+    // ⭐ Student class restriction
+    if (req.user?.role === "student" && req.user.class) {
+      filter.class = req.user.class;
+    }
+
+    // ⭐ Admin class filter (from UI class tabs)
+    if (req.query.class) {
+      filter.class = req.query.class;
+    }
+
     if (type) filter.type = type;
     if (subject) filter.subject = subject;
     if (topic) filter.topic = topic;
+    if (stage) filter.stage = Number(stage);
+    if (level) filter.level = level;
     if (q) {
       filter.$or = [
         { question: { $regex: q, $options: "i" } },
-        { prompt:   { $regex: q, $options: "i" } },
-        { subject:  { $regex: q, $options: "i" } },
-        { topic:    { $regex: q, $options: "i" } },
+        { prompt: { $regex: q, $options: "i" } },
+        { subject: { $regex: q, $options: "i" } },
+        { topic: { $regex: q, $options: "i" } },
       ];
     }
     const skip = (Number(page) - 1) * Number(limit);
     const [items, total] = await Promise.all([
-      Question.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      Question.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
       Question.countDocuments(filter),
     ]);
     res.json({ items, total, page: Number(page), limit: Number(limit) });
@@ -203,7 +265,6 @@ export const list = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // export const getOne = async (req, res) => {
 //   try {
@@ -319,6 +380,22 @@ export const metaTopics = async (req, res) => {
       { $sort: { _id: 1 } },
     ]);
     res.json({ topics: rows.map((r) => r._id).filter(Boolean) });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const metaStages = async (_req, res) => {
+  try {
+    const rows = await Question.aggregate([
+      { $group: { _id: "$stage", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const stages = rows.map((r) => Number(r._id));
+
+    res.json({ stages });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });

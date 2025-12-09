@@ -53,6 +53,13 @@ import AboutUsSettings from "./components/settings/AboutUsSettings";
 import CareerSettings from "./components/settings/CareerSettings";
 import OfficeSettings from "./components/settings/OfficeSettings";
 import B2B from "./pages/B2B/pages/B2B";
+import TeachersList from "./pages/TeachersList";
+import ProfilePage from "./pages/ProfilePage";
+import AddSubject from "./pages/questions/AddSubject";
+import AddTopic from "./pages/questions/AddTopic";
+import SubjectsList from "./pages/questions/SubjectsList";
+import TopicsList from "./pages/questions/TopicsList";
+import ChatBox from "./pages/ChatBox";
 
 
 function getToken() {
@@ -191,10 +198,17 @@ export default function App() {
           <Route path="/dashboard" element={<QuestionScopeProvider>
             <DashboardLayout />
           </QuestionScopeProvider>}>
+          <Route path="profile" element={<ProfilePage />} />
             {/* index route = your current Dashboard.jsx content */}
             <Route index element={<Dashboard />} />
             {/* more outlet pages */}
+            <Route path="add-subject" element={<AddSubject />} />
+            <Route path="add-topic" element={<AddTopic />} />
             <Route path="students" element={<StudentsList />} />
+            <Route path="subjects" element={<SubjectsList />} />
+            <Route path="topics" element={<TopicsList />} />
+            <Route path="chat/:userId" element={<ChatBox />} />
+            <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

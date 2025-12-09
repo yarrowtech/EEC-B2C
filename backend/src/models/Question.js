@@ -106,6 +106,10 @@ const QuestionSchema = new mongoose.Schema(
       default: "easy",
     },
     tags: [{ type: String, trim: true }],
+    class: {
+      type: String,
+      required: true,
+    },
 
     // Shared fields
     question: { type: String, trim: true }, // MCQ / TrueFalse / essays
@@ -130,9 +134,24 @@ const QuestionSchema = new mongoose.Schema(
     prompt: { type: String, trim: true }, // essay prompt
     richHtml: { type: String, trim: true }, // essay-rich
     plainText: { type: String, trim: true }, // essay-plain
+    stage: {
+      type: Number,
+      enum: [1, 2, 3],
+      required: true,
+      default: 1,
+    },
+    level: {
+      type: String,
+      enum: ["basic", "intermediate", "advanced"],
+      default: "basic",
+    },
 
     // Audit
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );

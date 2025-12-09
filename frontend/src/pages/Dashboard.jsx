@@ -109,17 +109,40 @@ const Section = ({ title, subtitle, icon, children, className = "" }) => (
 /* ===== role-specific fragments (UI only) ===== */
 
 // ---- ADMIN ----
+// ---- ADMIN ----
 function AdminContent() {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalTeachers, setTotalTeachers] = useState(0);
+
+  // Fetch attempts + counts
   useEffect(() => {
     (async () => {
-      setBusy(true); setErr("");
+      setBusy(true);
+      setErr("");
+
       try {
+        // load exam attempts
         const { items } = await adminAttempts();
         setRows(items || []);
+
+        // load students count
+        const sRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/students-count`, {
+          headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const sData = await sRes.json();
+        setTotalStudents(sData.students?.length || 0);
+
+        // load teachers count
+        const tRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/teachers`, {
+          headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const tData = await tRes.json();
+        setTotalTeachers(tData.teachers?.length || 0);
+
       } catch (e) {
         setErr(e.message || "Failed to load attempts");
       } finally {
@@ -135,33 +158,41 @@ function AdminContent() {
 
   return (
     <>
-      <Section title="Admin — Exams Overview" icon={<TableIcon size={18} />}>
+      <Section title="Admin — Dashboard Overview" icon={<TableIcon size={18} />}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+          {/* ➤ Total Students */}
           <StatCard
+            title="Total Students"
+            value={totalStudents}
+            icon={<Users size={18} />}
+            gradient={["from-blue-600", "to-indigo-600"]}
+          />
+
+          {/* ➤ Total Teachers */}
+          <StatCard
+            title="Total Teachers"
+            value={totalTeachers}
+            icon={<GraduationCap size={18} />}
+            gradient={["from-purple-600", "to-fuchsia-600"]}
+          />
+
+          {/* Existing Attempts Card */}
+          {/* <StatCard
             title="Total Attempts (recent)"
             value={totalAttempts}
             icon={<ClipboardList size={18} />}
-            gradient={["from-blue-600", "to-indigo-600"]}
-          />
-          <StatCard
+            gradient={["from-emerald-600", "to-teal-600"]}
+          /> */}
+
+          {/* Existing Average Score Card */}
+          {/* <StatCard
             title="Average Score"
             value={`${avgPercent}%`}
             icon={<Target size={18} />}
-            gradient={["from-emerald-600", "to-teal-600"]}
-          />
-          {/* keep your two other sample StatCards or replace as you like */}
-          <StatCard
-            title="Reports"
-            value="—"
-            icon={<FileText size={18} />}
-            gradient={["from-indigo-600", "to-violet-600"]}
-          />
-          <StatCard
-            title="Notices"
-            value="—"
-            icon={<Bell size={18} />}
-            gradient={["from-amber-500", "to-orange-600"]}
-          />
+            gradient={["from-rose-600", "to-pink-600"]}
+          /> */}
+
         </div>
       </Section>
 
@@ -185,23 +216,29 @@ function AdminContent() {
                     <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
                   </td>
                   <td className="p-3">
-                    <div className="text-slate-800">{r.subject || "—"} • {r.topic || "—"} • <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">{r.type}</span></div>
+                    {r.subject || "—"} • {r.topic || "—"} •{" "}
+                    <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">
+                      {r.type}
+                    </span>
                   </td>
                   <td className="p-3">
-                    <span className="font-semibold">{r.score}</span> / {r.total} <span className="ml-2 text-xs text-slate-500">({r.percent}%)</span>
+                    <span className="font-semibold">{r.score}</span> / {r.total}
+                    <span className="ml-2 text-xs text-slate-500">({r.percent}%)</span>
                   </td>
                   <td className="p-3">
                     <span className="inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs">
                       {r.attemptsForUser} attempts
                     </span>
                   </td>
-                  <td className="p-3 text-slate-600">
-                    {new Date(r.createdAt).toLocaleString()}
-                  </td>
+                  <td className="p-3 text-slate-600">{new Date(r.createdAt).toLocaleString()}</td>
                 </tr>
               ))}
               {!rows.length && !busy && (
-                <tr><td colSpan={5} className="p-6 text-center text-slate-500">No attempts yet.</td></tr>
+                <tr>
+                  <td colSpan={5} className="p-6 text-center text-slate-500">
+                    No attempts yet.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -212,24 +249,69 @@ function AdminContent() {
 }
 
 
+
 function TeacherContent() {
+const [rows, setRows] = useState([]);
+  const [busy, setBusy] = useState(false);
+    const [err, setErr] = useState("");
+
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalTeachers, setTotalTeachers] = useState(0);
+
+    // Fetch attempts + counts
+  useEffect(() => {
+    (async () => {
+      setBusy(true);
+      setErr("");
+
+      try {
+        // load exam attempts
+        // const { items } = await adminAttempts();
+        // setRows(items || []);
+
+        // load students count
+        const sRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/students-count`, {
+          headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const sData = await sRes.json();
+        setTotalStudents(sData.students?.length || 0);
+
+        // load teachers count
+        const tRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/teachers`, {
+          headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const tData = await tRes.json();
+        setTotalTeachers(tData.teachers?.length || 0);
+
+      } catch (e) {
+        setErr(e.message || "Failed to load attempts");
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, []);
+
+  // const totalAttempts = rows.length;
+  // const avgPercent = rows.length
+  //   ? Math.round(rows.reduce((acc, r) => acc + (r.percent || 0), 0) / rows.length)
+  //   : 0;
   return (
     <>
       <Section title="Teacher Overview" icon={<GraduationCap size={18} />}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="My Classes"
-            value="6"
+            title="Total Students"
+            value={totalStudents}
             icon={<GraduationCap size={18} />}
             gradient={["from-indigo-600", "to-violet-600"]}
           />
-          <StatCard
+          {/* <StatCard
             title="Assignments To Review"
             value="34"
             icon={<ClipboardList size={18} />}
             gradient={["from-rose-600", "to-pink-600"]}
-          />
-          <StatCard
+          /> */}
+          {/* <StatCard
             title="Students"
             value="182"
             icon={<Users size={18} />}
@@ -240,11 +322,11 @@ function TeacherContent() {
             value="5"
             icon={<MessageSquare size={18} />}
             gradient={["from-amber-500", "to-orange-600"]}
-          />
+          /> */}
         </div>
       </Section>
 
-      <Section title="Today’s Queue" subtitle="Auto-updated">
+      {/* <Section title="Today’s Queue" subtitle="Auto-updated">
         <div className="grid gap-4 lg:grid-cols-2">
           <Card title="Upcoming Sessions" icon={<Clock size={18} />} bubble={["from-blue-600", "to-indigo-600"]}>
             Maths (2:00 PM), Science (4:00 PM)
@@ -253,7 +335,7 @@ function TeacherContent() {
             2 students flagged for support
           </Card>
         </div>
-      </Section>
+      </Section> */}
     </>
   );
 }

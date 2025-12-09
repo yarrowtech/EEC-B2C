@@ -17,6 +17,7 @@ function getUser() {
         return null;
     }
 }
+
 function isTokenValid(token) {
     if (!token) return false;
     try {
@@ -53,10 +54,15 @@ export default function DashboardLayout() {
         if (role === "admin") {
             base.splice(1, 0, { to: "/dashboard/students", label: "Students", icon: <Users size={18} /> });
             // base.splice(1, 0, { to: "/dashboard/approvals", label: "Approvals", icon: <CheckCircle2 size={18} /> });
-            base.splice(2, 0, { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> });
+            base.splice(2, 0, { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} /> });
+            base.splice(3, 0, { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> });
+            base.splice(4, 0, { to: `/dashboard/chat/${user.id}`, label: "Chat", icon: <LayoutGrid size={18} /> });
         }
         if (role === "teacher") {
-            base.splice(1, 0, { to: "/dashboard/classes", label: "Classes", icon: <Library size={18} /> });
+            // base.splice(1, 0, { to: "/dashboard/classes", label: "Classes", icon: <Library size={18} /> });
+            //  base.splice(1, 0, { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} /> });
+            base.splice(2, 0, { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> });
+            base.splice(3, 0, { to: `/dashboard/chat/${user.id}`, label: "Chat", icon: <LayoutGrid size={18} /> });
         }
         return base;
     }, [role]);
@@ -92,7 +98,7 @@ export default function DashboardLayout() {
                     <div className="hidden sm:flex items-center gap-4">
 
                         {/* Role-based action button */}
-                        {role === "admin" && (
+                        {/* {role === "admin" && (
                             <button className="px-3 py-2 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                                 New Notice
                             </button>
@@ -101,7 +107,7 @@ export default function DashboardLayout() {
                             <button className="px-3 py-2 text-xs rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
                                 Create Assignment
                             </button>
-                        )}
+                        )} */}
                         {role === "student" && (
                             // <button className="px-3 py-2 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                             //     Join Class
@@ -111,7 +117,7 @@ export default function DashboardLayout() {
 
                         {/* PROFILE BLOCK */}
                         <div className="relative group">
-                            <button className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/70 backdrop-blur hover:bg-white transition">
+                            <button className="flex items-center gap-2 px-2 py-0.5 rounded-full border bg-white/70 backdrop-blur hover:bg-white transition">
                                 {/* Profile Avatar */}
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-600 to-orange-600 flex items-center justify-center text-white font-semibold">
                                     {user?.name?.[0] || "U"}
@@ -126,7 +132,7 @@ export default function DashboardLayout() {
                             {/* Dropdown */}
                             <div className="absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                                 <button
-                                    onClick={() => navigate("/dashboard/settings/profile")}
+                                    onClick={() => navigate("/dashboard/profile")}
                                     className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100"
                                 >
                                     Profile

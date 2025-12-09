@@ -30,6 +30,7 @@ export default function StudentsList() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
+  
 
   // Esc to close modal
   useEffect(() => {
@@ -125,6 +126,11 @@ export default function StudentsList() {
     setTimeout(() => setSelected(null), 150);
   };
 
+  function getAvatarLetter(name = "") {
+    return name.trim().charAt(0).toUpperCase();
+  }
+
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -159,7 +165,7 @@ export default function StudentsList() {
               onChange={(e) => setQuery(e.target.value)}
               type="text"
               placeholder="Search by name, class, email, phone…"
-              className="w-full rounded-lg border pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="w-full rounded-lg border border-blue-500/30 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white"
             />
           </div>
 
@@ -205,7 +211,7 @@ export default function StudentsList() {
                 <tr>
                   <td colSpan={role !== "student" ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
                     <Loader2 className="inline-block animate-spin mr-2" size={16} />
-                    Fetching students…
+                    Fetching students data...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
@@ -224,7 +230,7 @@ export default function StudentsList() {
                     <td className="px-4 py-3 font-medium text-slate-900">{r.name}</td>
                     <td className="px-4 py-3 text-slate-700">{r.grade}</td>
                     <td className="px-4 py-3">
-                        {r.state || "-"}
+                      {r.state || "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-700">{r.email}</td>
                     <td className="px-4 py-3 text-slate-700">{r.phone}</td>
@@ -239,12 +245,12 @@ export default function StudentsList() {
                             <Eye size={14} />
                             View
                           </button>
-                          {role === "admin" && (
+                          {/* {role === "admin" && (
                             <button className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2.5 py-1 text-xs font-medium shadow-sm hover:opacity-90 transition-all">
                               <Pencil size={14} />
                               Edit
                             </button>
-                          )}
+                          )} */}
                         </div>
                       </td>
                     )}
@@ -274,18 +280,44 @@ export default function StudentsList() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
+            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-blue-600/10 to-indigo-600/10">
+
               <div className="flex items-center gap-3">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
-                  <Users size={18} />
-                </span>
+
+                {/* Avatar */}
+                <div className="relative">
+                  {selected.profilePic ? (
+                    <img
+                      src={selected.profilePic}
+                      alt={selected.name}
+                      className="h-12 w-12 rounded-xl object-cover shadow-lg ring-2 ring-white/40"
+                    />
+                  ) : (
+                    <div
+                      className="h-12 w-12 rounded-xl flex items-center justify-center text-white text-lg font-semibold shadow-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+                      }}
+                    >
+                      {getAvatarLetter(selected.name)}
+                    </div>
+                  )}
+
+                  {/* IG Story Ring */}
+                  <div className="absolute inset-0 rounded-xl pointer-events-none ring-[3px] ring-gradient-ig" />
+                </div>
+
+                {/* Title */}
                 <div>
                   <div className="text-xs text-slate-500">Student</div>
                   <div className="text-base font-semibold text-slate-900 leading-tight">
                     {selected.name} <span className="text-slate-500">• {selected.rollNo}</span>
                   </div>
                 </div>
+
               </div>
+
               <button
                 onClick={closeModal}
                 className="inline-flex items-center justify-center rounded-lg border px-2 py-2 hover:bg-white transition-colors"
@@ -294,7 +326,9 @@ export default function StudentsList() {
               >
                 <X size={16} />
               </button>
+
             </div>
+
 
             {/* Body */}
             <div className="px-4 py-4 space-y-4">
@@ -309,18 +343,18 @@ export default function StudentsList() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t bg-gradient-to-r from-slate-50 to-slate-100">
+            <div className="rounded-br-xl rounded-bl-xl flex items-center justify-end gap-2 px-4 py-3 border-t bg-gradient-to-r from-slate-50 to-slate-100">
               <button
                 onClick={closeModal}
-                className="rounded-lg border px-3 py-2 text-sm hover:bg-white transition-colors"
+                className="rounded-lg border px-3 py-2 text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
               >
                 Close
               </button>
-              {role === "admin" && (
+              {/* {role === "admin" && (
                 <button className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-2 text-sm text-white hover:opacity-90 transition-all">
                   Edit Details
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -332,6 +366,25 @@ export default function StudentsList() {
         @keyframes scale-in { from { opacity: 0; transform: translateY(12px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
         .animate-fade-in { animation: fade-in .18s ease-out }
         .animate-scale-in { animation: scale-in .22s cubic-bezier(.2,.8,.2,1) }
+        .ring-gradient-ig {
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      #feda75,
+      #fa7e1e,
+      #d62976,
+      #962fbf,
+      #4f5bd5,
+      #feda75
+    );
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 3px;
       `}</style>
     </div>
   );

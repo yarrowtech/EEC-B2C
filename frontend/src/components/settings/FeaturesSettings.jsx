@@ -77,7 +77,7 @@ export default function FeaturesSettings() {
 
   return (
     <div className="space-y-8">
-<ToastContainer />
+      <ToastContainer />
       {/* ===== HEADER ===== */}
       <div className="flex items-center gap-3">
         <div className="size-10 flex items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md">

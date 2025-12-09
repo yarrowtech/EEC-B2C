@@ -3,12 +3,20 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { startExam } from "../../lib/api";
 import { useNavigate } from "react-router-dom";
+import { FiPlayCircle, FiList, FiHash } from "react-icons/fi";
+import { toast, ToastContainer } from "react-toastify";
 
 const TYPES = [
   { value: "mcq-single", label: "MCQ — Single Correct" },
-  { value: "mcq-multi",  label: "MCQ — Multiple Correct" },
-  { value: "true-false", label: "True / False" },
-  // extend later for other types
+  { value: "mcq-multi", label: "MCQ — Multiple Correct" },
+  { value: "choice-matrix", label: "Choice Matrix" },
+  // { value: "true-false", label: "True / False" },
+  { value: "essay-plain", label: "Essay — Plain Text" },
+  { value: "cloze-drag", label: "Cloze — Drag & Drop" },
+  { value: "cloze-select", label: "Cloze — Drop-Down" },
+  // { value: "cloze-select", label: "Cloze — Select" },
+  // { value: "cloze-text", label: "Cloze — Text Input" },
+  // { value: "match-list", label: "Match List" },
 ];
 
 export default function ExamsIndex() {
@@ -20,7 +28,9 @@ export default function ExamsIndex() {
 
   async function onStart(e) {
     e.preventDefault();
-    if (!scope.subject || !scope.topic) return alert("Pick Subject & Topic first");
+    if (!scope.subject || !scope.topic)
+      // return alert("Pick Subject & Topic first");
+      return toast.warn("Pick Subject & Topic first");
     setBusy(true);
     try {
       const data = await startExam({
@@ -30,44 +40,113 @@ export default function ExamsIndex() {
         type,
         limit,
       });
-      navigate(`/dashboard/exams/take/${data.attemptId}`, { state: data }); // pass questions via state for fast load
+
+      navigate(`/dashboard/exams/take/${data.attemptId}`, {
+        state: data,
+      });
     } catch (err) {
-      alert(err.message);
+      toast.info(err.message);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-slate-800">Stage 1 — Start Exam</h1>
-      <p className="text-slate-600 text-sm">Pick your Subject, Topic and the question type.</p>
+    <div
+      className="
+        space-y-8 p-6
+        rounded-3xl
+        border border-white/40 backdrop-blur-xl
+      "
+    >
+      <ToastContainer />
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-700 shadow">
+          <FiPlayCircle size={22} />
+        </div>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          Level — Basic
+        </h1>
+      </div>
 
-      {/* <SubjectTopicPicker /> */}
+      <p className="text-slate-600 text-sm">
+        Choose the <b className="text-slate-800">Subject</b> & {" "}
+        <b className="text-slate-800">Topic</b> of exam
+      </p>
 
-      {/* <form onSubmit={onStart} className="grid sm:grid-cols-3 gap-4">
+      {/* Subject & Topic */}
+      <SubjectTopicPicker />
+
+      {/* Exam Settings Panel */}
+      <form
+        onSubmit={onStart}
+        className="
+          rounded-3xl p-6 bg-white/70 backdrop-blur-lg shadow-xl 
+          grid sm:grid-cols-3 gap-6
+        "
+      >
+        {/* Type */}
         <div>
-          <label className="block text-sm text-slate-600 mb-1">Type</label>
-          <select className="w-full rounded-lg border px-3 py-2 bg-white" value={type} onChange={e=>setType(e.target.value)}>
-            {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <FiList className="text-indigo-600" />
+            Choose Question Type
+          </label>
+
+          <select
+            className="
+              w-full rounded-xl px-4 py-2.5 bg-white shadow-sm
+              focus:ring-2 focus:ring-indigo-500 transition-all
+            "
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            {TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">Number of Questions</label>
-          <input type="number" min={1} max={50}
-                 className="w-full rounded-lg border px-3 py-2 bg-white"
-                 value={limit} onChange={e=>setLimit(Number(e.target.value || 10))}/>
-        </div>
+
+        {/* Number of Questions */}
+        {/* <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+            <FiHash className="text-purple-600" />
+            Number of Questions
+          </label>
+
+          <input
+            type="number"
+            min={1}
+            max={50}
+            className="
+              w-full rounded-xl px-4 py-2.5 bg-white shadow-sm
+              focus:ring-2 focus:ring-purple-500 transition-all
+            "
+            value={limit}
+            onChange={(e) => setLimit(Number(e.target.value || 10))}
+          />
+        </div> */}
+
+        {/* Button */}
         <div className="flex items-end">
-          <button disabled={busy}
-            className="rounded-lg bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700 disabled:opacity-50">
+          <button
+            disabled={busy}
+            className="
+              flex items-center gap-2 w-full justify-center
+              rounded-xl px-6 py-3 font-semibold text-white
+              bg-gradient-to-r from-emerald-600 to-green-600
+              hover:from-emerald-700 hover:to-green-700
+              shadow-md hover:shadow-xl hover:scale-[1.02]
+              active:scale-95 transition-all disabled:opacity-50
+            "
+          >
+            <FiPlayCircle />
             {busy ? "Starting..." : "Start Exam"}
           </button>
         </div>
-      </form> */}
-    <div className="flex flex-wrap justify-center items-center h-[60vh]">
-      <p className="text-3xl text-center font-bold animate-bounce">Sorry we are currently not available at your location</p>
-    </div>
+      </form>
     </div>
   );
 }

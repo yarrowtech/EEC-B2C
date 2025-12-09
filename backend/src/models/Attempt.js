@@ -23,6 +23,13 @@ const AttemptSchema = new mongoose.Schema(
         "mcq-single",
         "mcq-multi",
         "true-false",
+        "essay-plain",
+        "choice-matrix",
+        "cloze-drag",
+        "cloze-select",
+        "cloze-text",
+        "match-list",
+        "essay-rich",
         // (extend later: "choice-matrix","cloze-*","match-list","essay-*")
       ],
     },

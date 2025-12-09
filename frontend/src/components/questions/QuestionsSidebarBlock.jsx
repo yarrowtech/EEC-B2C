@@ -12,7 +12,7 @@ const linkActive =
 
 export default function QuestionsSidebarBlock({ role = "student" }) {
   // show only for admin (you can later allow teacher as well)
-  if (role !== "admin") return null;
+  if (role !== "admin" && role !== "teacher") return null;
 
   const [open, setOpen] = useState(false);
 
@@ -40,6 +40,45 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
           }`}
       >
         <div className="ml-2 mt-1 pl-2 border-l border-slate-200 space-y-1">
+          <div className="space-y-1">
+
+  <NavLink
+    to="/dashboard/add-subject"
+    className={({ isActive }) =>
+      `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
+    }
+  >
+    <span className="truncate">➤ Subjects</span>
+  </NavLink>
+
+  <NavLink
+    to="/dashboard/add-topic"
+    className={({ isActive }) =>
+      `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
+    }
+  >
+    <span className="truncate">➤ Topics</span>
+  </NavLink>
+
+</div>
+{/* <NavLink
+  to="/dashboard/subjects"
+  className={({ isActive }) =>
+    `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
+  }
+>
+  <span className="truncate">➤ View Subjects</span>
+</NavLink>
+
+<NavLink
+  to="/dashboard/topics"
+  className={({ isActive }) =>
+    `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
+  }
+>
+  <span className="truncate">➤ View Topics</span>
+</NavLink> */}
+
           <NavLink
             to="/dashboard/questions"
             end

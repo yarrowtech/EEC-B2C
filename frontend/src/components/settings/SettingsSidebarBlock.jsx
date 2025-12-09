@@ -136,26 +136,26 @@ export default function SettingsSidebarBlock({ role }) {
                       Career
                     </NavLink>
 
-                    <NavLink
+                    {/* <NavLink
                       to="/dashboard/settings/contact-office"
                       className={({ isActive }) =>
                         `${linkBase} ${isActive ? linkActive : ""}`
                       }
                     >
                       Office
-                    </NavLink>
+                    </NavLink> */}
                   </div>
                 )}
               </div>
 
-              <NavLink
+              {/* <NavLink
                 to="/dashboard/settings/privacy"
                 className={({ isActive }) =>
                   `${linkBase} ${isActive ? linkActive : ""}`
                 }
               >
                 Privacy Policy
-              </NavLink>
+              </NavLink> */}
             </div>
           )}
         </div>

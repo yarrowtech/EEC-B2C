@@ -162,9 +162,7 @@ export default function HeroSettings() {
 
 
                 {/* RIGHT SIDE — FORM BUILDER */}
-                <div className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-xl shadow-2xl p-6 space-y-6 transition-all duration-200">
-
-                    {/* FORM HEADER */}
+                {/* <div className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-xl shadow-2xl p-6 space-y-6 transition-all duration-200">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold text-slate-800 tracking-wide">
                             Right Section (Form Builder)
@@ -174,8 +172,6 @@ export default function HeroSettings() {
                             Coming Soon
                         </div>
                     </div>
-
-                    {/* COMING SOON BOX */}
                     <div className="w-full h-[220px] flex flex-col justify-center items-center rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 text-gray-600 shadow-inner border border-gray-300 animate-pulse">
 
                         <div className="w-12 h-12 mb-3 flex items-center justify-center rounded-full bg-white shadow-lg">
@@ -190,7 +186,7 @@ export default function HeroSettings() {
                             (Dynamic fields, dropdown manager, visibility controls)
                         </p>
                     </div>
-                </div>
+                </div> */}
 
             </div>
 

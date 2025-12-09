@@ -11,7 +11,7 @@ export async function requireAuth(req, res, next) {
     const user = await User.findById(payload.sub).lean();
     if (!user) return res.status(401).json({ message: "Unauthorized" });
 
-    req.user = { id: user._id, name: user.name, email: user.email, role: user.role };
+    req.user = { id: user._id, name: user.name, email: user.email, class: user.class, role: user.role };
     next();
   } catch (err) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -27,4 +27,11 @@ export function requireRole(role) {
     }
     next();
   };
+}
+
+export function requireAdmin(req, res, next) {
+    if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Only admin can perform this action" });
+    }
+    next();
 }

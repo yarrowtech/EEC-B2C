@@ -2,8 +2,11 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import http from "http";
+import { Server } from "socket.io";
 import rateLimit from "express-rate-limit";
 import { connectDB } from "./config/db.js";
+
 import authRoutes from "./routes/auth.js";
 import userRouter from "./routes/users.js";
 import questionsRouter from "./routes/questions.js";
@@ -15,29 +18,34 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import aboutUsRoutes from "./routes/aboutUsRoutes.js";
 import careerPageRoutes from "./routes/careerPageRoutes.js";
 import officePageRoutes from "./routes/officePageRoutes.js";
+import newsletterRoutes from "./routes/newsletterRoutes.js";
+import subjectTopicRoutes from "./routes/subjectTopicRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 
 const app = express();
 
 /* ---------- Security & Core ---------- */
 app.use(helmet());
 app.use(express.json({ limit: "1mb" }));
-app.use(cors({
-  origin: [
-    "https://eec-b2-c.vercel.app",   // your frontend domain on vercel
-    "http://localhost:5173",         // local dev
-    "http://localhost:5000"
-  ],
-  methods: "GET,POST,PUT,DELETE,PATCH",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      "https://eec-b2-c.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:5000",
+    ],
+    methods: "GET,POST,PUT,DELETE,PATCH",
+    credentials: true,
+  })
+);
 
-// basic rate limiting on auth endpoints
+// basic rate limiting
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use("/api/auth", limiter);
 
 app.get("/", (req, res) => {
   res.send("EEC Platform Backend is running...");
-})
+});
 
 /* ---------- Routes ---------- */
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
@@ -52,10 +60,46 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/about-us", aboutUsRoutes);
 app.use("/api/settings", careerPageRoutes);
 app.use("/api/office", officePageRoutes);
-
+app.use("/api/newsletter", newsletterRoutes);
+app.use("/api", subjectTopicRoutes);
+app.use("/api/chat", chatRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;
+
 connectDB(process.env.MONGO_URI).then(() => {
-  app.listen(PORT, () => console.log(`🚀 Server listening on :${PORT}`));
+  const httpServer = http.createServer(app);
+
+  /* ---------- Socket.io Server ---------- */
+  const io = new Server(httpServer, {
+    cors: {
+      origin: ["http://localhost:5173", "https://eec-b2-c.vercel.app"],
+      methods: ["GET", "POST"],
+    },
+  });
+
+  io.on("connection", (socket) => {
+    console.log("🟢 Connected:", socket.id);
+
+    // Everyone joins one global room
+    socket.join("global-room");
+    console.log("User joined global room");
+
+    socket.on("send_message", (data) => {
+      // Broadcast to all except sender
+      io.to("global-room").emit("receive_message", data);
+    });
+
+    socket.on("message_read", (userId) => {
+      io.to("global-room").emit("update_read", { userId });
+    });
+
+    socket.on("disconnect", () => {
+      console.log("🔴 Disconnected:", socket.id);
+    });
+  });
+
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 Server + Socket.io running on port: ${PORT}`);
+  });
 });

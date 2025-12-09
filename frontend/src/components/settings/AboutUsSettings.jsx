@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { Image, Plus, Trash2, Upload, Settings } from "lucide-react";
 
 const TABS = ["hero", "vision", "brand", "values", "mission", "custom"];
@@ -153,7 +153,7 @@ export default function AboutUsSettings() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
-
+      <ToastContainer />
       {/* ---------- HEADER ---------- */}
       <div className="flex items-center gap-4">
         <div className="size-11 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center shadow-md">

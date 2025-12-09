@@ -188,7 +188,7 @@ export default function Navbar() {
               alt="EEC"
               className="h-10 w-auto drop-shadow-sm transition hover:scale-[1.01]"
             />
-            <span className="text-amber-600 font-bold">
+            <span className="text-amber-600 font-bold text-sm">
               Electronic Educare
             </span>
             </div>

@@ -85,7 +85,7 @@ export default function ResultsList() {
               </tr>
             ))}
             {!filtered.length && !busy && (
-              <tr><td colSpan={6} className="p-6 text-center text-slate-500">No results.</td></tr>
+              <tr><td colSpan={6} className="p-6 text-center text-slate-500">No results found</td></tr>
             )}
           </tbody>
         </table>

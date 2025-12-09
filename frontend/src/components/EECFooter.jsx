@@ -1,10 +1,40 @@
 // src/components/EECFooter.jsx
 // Final version with Bluish Background & Modern Glass Design
-
+import React from "react";
 import { Link } from "react-router-dom";
 import { Mail, Send } from "lucide-react";
+import { useState } from "react";
+import axios from "axios"; // <-- ADD THIS
 
 export default function EECFooter() {
+
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      setMessage("Please enter a valid email");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/newsletter/subscribe`,
+        { email }
+      );
+
+      setMessage("Subscribed successfully! Please check your email ❤️");
+      setEmail("");
+    } catch (err) {
+      setMessage(
+        err.response?.data?.message || "Something went wrong. Try again."
+      );
+    }
+  };
+
+
   return (
     <footer className="relative isolate overflow-hidden bg-gradient-to-b from-[#0B1E3C] via-[#0E2A54] to-[#103565] text-white">
       {/* Wave Divider */}
@@ -33,14 +63,20 @@ export default function EECFooter() {
           </div>
 
           {/* Newsletter */}
-          <form className="grid content-center gap-3 rounded-2xl border border-blue-300/20 bg-blue-900/30 p-4">
+          <form
+            onSubmit={handleSubscribe}
+            className="grid content-center gap-3 rounded-2xl border border-blue-300/20 bg-blue-900/30 p-4"
+          >
             <label className="flex items-center gap-2 text-sm font-semibold text-blue-100">
               <Mail className="h-4 w-4 text-yellow-400" />
               Subscribe for updates
             </label>
+
             <div className="flex overflow-hidden rounded-2xl border border-blue-400/30 bg-white/10">
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder:text-blue-200 focus:outline-none"
                 placeholder="Your email address"
               />
@@ -52,6 +88,11 @@ export default function EECFooter() {
                 Subscribe
               </button>
             </div>
+
+            {message && (
+              <p className="text-xs text-green-300">{message}</p>
+            )}
+
             <p className="text-xs text-blue-200">We respect your privacy. Unsubscribe anytime.</p>
           </form>
         </div>
