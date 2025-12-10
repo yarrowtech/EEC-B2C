@@ -103,12 +103,4 @@ connectDB(process.env.MONGO_URI).then(() => {
   httpServer.listen(PORT, () => {
     console.log(`🚀 Server + Socket.io running on port: ${PORT}`);
   });
-
-  const BACKEND_URL = "https://eec-b2c.onrender.com/";
-
-  setInterval(() => {
-    fetch(`${BACKEND_URL}/api/health`)
-      .then(() => console.log("🔄 Render keep-alive ping sent"))
-      .catch((err) => console.log("⚠️ Keep-alive error:", err));
-  }, 30000);
 });
