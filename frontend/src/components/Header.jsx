@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Bell, Search, Menu, CalendarDays } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
     const [notifications] = useState(3);
@@ -41,6 +42,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
     //     name: "Koushik Bala",
     //     avatar: "src/koushik-bala-pp.jpg"
     //   };
+    const navigate = useNavigate();
 
     return (
         <header className="sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/80 border-b border-gray-200">
@@ -149,7 +151,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                                         <button
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                             onClick={() => {
-                                                if (onOpenProfile) onOpenProfile();
+                                                navigate("/dashboard/profile");
                                                 setProfileOpen(false);
                                             }}
                                         >
@@ -157,7 +159,12 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                                         </button>
                                         <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Settings</button>
                                     </div>
-                                    <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 border-t">Logout</button>
+                                    <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 border-t" onClick={() => {
+                                        localStorage.removeItem("jwt");
+                                        localStorage.removeItem("user");
+                                        window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+                                        navigate("/", { replace: true });
+                                    }}>Logout</button>
                                 </div>
                             )}
                         </div>
