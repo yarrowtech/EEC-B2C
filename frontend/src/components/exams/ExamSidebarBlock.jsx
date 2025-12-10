@@ -236,6 +236,35 @@ export default function ExamSidebarBlock({ role = "student" }) {
 
         </div>
       </div>
+      {/* Results Menu */}
+      <NavLink
+        to="/dashboard/results"
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors 
+    ${isActive ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
+            : "text-slate-700 hover:bg-yellow-50"}`
+        }
+      >
+        <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M3 4h18M3 10h18M3 16h18M3 20h18"></path>
+        </svg>
+        <span>Results</span>
+      </NavLink>
+
+      <NavLink
+        to="/dashboard/achievements"
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors 
+    ${isActive ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
+            : "text-slate-700 hover:bg-yellow-50"}`
+        }
+      >
+        <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M3 4h18M3 10h18M3 16h18M3 20h18"></path>
+        </svg>
+        <span>Achievements</span>
+      </NavLink>
+
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Home, Users, CheckCircle2, Library, LogOut, Menu, LayoutGrid } from "lu
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
 import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
+import Header from "../components/Header";
 
 /* ---- keep same local guard helpers ---- */
 function getToken() {
@@ -80,56 +81,26 @@ export default function DashboardLayout() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100 selection:bg-blue-600/15">
             {/* FIXED HEADER (front) */}
-            <header className="fixed inset-x-0 top-0 z-50 border-b border-white/60 bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55 shadow-sm">
+            {/* <header className="fixed inset-x-0 top-0 z-50 border-b border-white/60 bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55 shadow-sm">
                 <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="size-8 rounded-xl bg-gradient-to-br from-yellow-600 to-orange-600 shadow-sm" />
                         <div className="leading-tight">
-                            {/* <div className="text-[11px] text-slate-500/90">Welcome</div> */}
                             <div className="text-sm font-semibold text-slate-800 tracking-tight">
-                                {/* {user?.name || "User"} — <span className="capitalize">{role}</span> */}
                                 Electronic Educare
                             </div>
                         </div>
                     </div>
-
-                    {/* Header actions (role-aware) */}
-                    {/* Header actions + Profile */}
                     <div className="hidden sm:flex items-center gap-4">
-
-                        {/* Role-based action button */}
-                        {/* {role === "admin" && (
-                            <button className="px-3 py-2 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                                New Notice
-                            </button>
-                        )}
-                        {role === "teacher" && (
-                            <button className="px-3 py-2 text-xs rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
-                                Create Assignment
-                            </button>
-                        )} */}
-                        {role === "student" && (
-                            // <button className="px-3 py-2 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
-                            //     Join Class
-                            // </button>
-                            <></>
-                        )}
-
-                        {/* PROFILE BLOCK */}
                         <div className="relative group">
                             <button className="flex items-center gap-2 px-2 py-0.5 rounded-full border bg-white/70 backdrop-blur hover:bg-white transition">
-                                {/* Profile Avatar */}
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-600 to-orange-600 flex items-center justify-center text-white font-semibold">
                                     {user?.name?.[0] || "U"}
                                 </div>
-
-                                {/* User Name */}
                                 <span className="text-sm font-medium text-slate-800">
                                     {user?.name || "User"}
                                 </span>
                             </button>
-
-                            {/* Dropdown */}
                             <div className="absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                                 <button
                                     onClick={() => navigate("/dashboard/profile")}
@@ -152,9 +123,6 @@ export default function DashboardLayout() {
                             </div>
                         </div>
                     </div>
-
-
-                    {/* Mobile hamburger */}
                     <button
                         onClick={() => setOpen((s) => !s)}
                         className="sm:hidden inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm bg-white/70 backdrop-blur hover:bg-white transition-colors"
@@ -165,10 +133,10 @@ export default function DashboardLayout() {
                         <Menu size={18} />
                     </button>
                 </div>
-            </header>
-
+            </header> */}
+            <Header sidebarOpen={open} setSidebarOpen={setOpen} />
             {/* SHELL */}
-            <div className="pt-14 flex">
+            <div className="pt-0 flex">
                 {/* Mobile backdrop */}
                 {open && (
                     <div className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-[2px] sm:hidden" onClick={() => setOpen(false)} />

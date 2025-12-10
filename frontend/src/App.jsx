@@ -60,6 +60,8 @@ import AddTopic from "./pages/questions/AddTopic";
 import SubjectsList from "./pages/questions/SubjectsList";
 import TopicsList from "./pages/questions/TopicsList";
 import ChatBox from "./pages/ChatBox";
+import ResultsView from "./pages/ResultsView";
+import AchievementsView from "./pages/AchievementsView";
 
 
 function getToken() {
@@ -208,6 +210,8 @@ export default function App() {
             <Route path="subjects" element={<SubjectsList />} />
             <Route path="topics" element={<TopicsList />} />
             <Route path="chat/:userId" element={<ChatBox />} />
+            <Route path="results" element={<ResultsView />} />
+            <Route path="achievements" element={<AchievementsView />} />
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>

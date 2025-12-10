@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { myAttempts, adminAttempts } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
+import WelcomeCard from "./WelcomeCard";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -369,6 +370,7 @@ function StudentContent() {
 
   return (
     <>
+    <WelcomeCard />
       <Section title="My Exam Stats" icon={<Trophy size={18} />}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
@@ -523,11 +525,8 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100">
-      {/* shared top strip */}
-      {/* shared top strip */}
-      <div className="border-b border-white/60 bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55">
+      {/* <div className="border-b border-white/60 bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55">
         <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-          {/* left side: welcome */}
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-xl bg-gradient-to-br from-yellow-600 to-orange-600 shadow-sm" />
             <div>
@@ -537,14 +536,10 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* right side: score + time */}
           <RightHeaderStats user={user} />
         </div>
-      </div>
+      </div> */}
 
-
-      {/* content */}
       <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
         {roleContent}
 
