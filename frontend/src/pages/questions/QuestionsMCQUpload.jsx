@@ -47,7 +47,7 @@ export default function QuestionsMCQUpload() {
         stage: form.stage,
         level: form.level,
         class: form.className,
-        createdBy: req.user.id, 
+        // createdBy: req.user.id, 
       };
 
       const out = await postQuestion("mcq-single", payload);
