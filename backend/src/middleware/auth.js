@@ -30,8 +30,15 @@ export function requireRole(role) {
 }
 
 export function requireAdmin(req, res, next) {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "teacher") {
         return res.status(403).json({ message: "Only admin can perform this action" });
     }
     next();
+}
+
+export function requireAdminOrTeacher(req, res, next) {
+  if (req.user.role !== "admin" && req.user.role !== "teacher") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  next();
 }

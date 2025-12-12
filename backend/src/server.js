@@ -21,6 +21,9 @@ import officePageRoutes from "./routes/officePageRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
 import subjectTopicRoutes from "./routes/subjectTopicRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import attemptRoutes from "./routes/attemptRoutes.js";
+import subjectsRoutes from "./routes/subjectsRoutes.js";
+import topicsRoutes from "./routes/topicsRoutes.js";
 
 const app = express();
 
@@ -63,6 +66,10 @@ app.use("/api/office", officePageRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api", subjectTopicRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/users", userRouter);
+app.use("/api/attempt", attemptRoutes);
+app.use("/api/subjects", subjectsRoutes);
+app.use("/api/topics", topicsRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;
@@ -100,7 +107,7 @@ connectDB(process.env.MONGO_URI).then(() => {
     });
   });
 
-  httpServer.listen(PORT, () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server + Socket.io running on port: ${PORT}`);
   });
 });

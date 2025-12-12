@@ -148,6 +148,17 @@ const WelcomeCard = () => {
         avatar: "src/koushik-bala-pp.jpg"
     };
 
+
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
     return (
         <div className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 rounded-2xl p-6 text-white relative overflow-hidden">
             {/* Background Pattern */}
@@ -188,19 +199,30 @@ const WelcomeCard = () => {
                                 <span className="text-lg font-medium opacity-90">{greeting.text},</span>
                             </div>
                             <h1 className="text-2xl font-bold mb-1">{user.name}!</h1>
-                            <p className="text-yellow-100 text-sm">
+                            {/* <p className="text-yellow-100 text-sm">
                                 Student ID: {user.id} • {user.semester}
-                            </p>
+                            </p> */}
                         </div>
                     </div>
 
                     <div className="text-right">
-                        <p className="text-yellow-100 text-sm mb-2">Today's Date</p>
+                        <p className="text-yellow-100 text-sm mb-2">Today's Date & Time</p>
+
                         <p className="text-xl font-semibold">
-                            {new Date().toLocaleDateString('en-US', {
+                            {currentTime.toLocaleDateString('en-US', {
                                 weekday: 'short',
                                 month: 'short',
-                                day: 'numeric'
+                                day: 'numeric',
+                                year: 'numeric'
+                            })}
+                        </p>
+
+                        <p className="text-lg font-medium text-yellow-200 mt-1">
+                            {currentTime.toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: 'numeric',
+                                second: 'numeric',
+                                hour12: true
                             })}
                         </p>
                     </div>

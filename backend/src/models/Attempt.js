@@ -14,8 +14,10 @@ const AttemptSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     stage: { type: String, trim: true, default: "stage-1" },
-    subject: { type: String, trim: true, required: true },
-    topic: { type: String, trim: true, required: true },
+    // subject: { type: String, trim: true, required: true },
+    // topic: { type: String, trim: true, required: true },
+    subject: { type: mongoose.Schema.Types.ObjectId, ref: "Subject", required: true },
+    topic: { type: mongoose.Schema.Types.ObjectId, ref: "Topic", required: true },
     type: {
       type: String,
       required: true,

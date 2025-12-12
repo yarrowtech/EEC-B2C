@@ -66,19 +66,32 @@ const IconBubble = ({ children, from, to }) => (
   </span>
 );
 
-const StatCard = ({ title, value, icon, gradient = ["from-blue-600", "to-indigo-600"] }) => (
-  <div className="group rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-all">
-    <div className="flex items-center justify-between">
-      <div className="space-y-1">
-        <div className="text-[12px] font-semibold text-slate-500 tracking-wide">{title}</div>
-        <div className="text-2xl font-bold tracking-tight text-slate-900">{value}</div>
+const StatCard = ({ title, value, icon, gradient }) => {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl p-5 shadow-md text-white bg-gradient-to-br ${gradient[0]} ${gradient[1]} transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}
+    >
+      {/* Soft background pattern */}
+      <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+        <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
+        <div className="absolute bottom-3 left-4 w-14 h-14 bg-white rounded-full"></div>
       </div>
-      <IconBubble from={gradient[0]} to={gradient[1]}>
-        {icon}
-      </IconBubble>
+
+      {/* Foreground content */}
+      <div className="relative z-10 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-white/80">{title}</p>
+          <h3 className="text-2xl font-bold mt-1">{value}</h3>
+        </div>
+
+        <div className="p-3 bg-white/20 rounded-xl shadow-md">
+          {icon}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 const Card = ({ title, icon, bubble = ["from-slate-700", "to-slate-900"], children }) => (
   <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
@@ -118,6 +131,34 @@ function AdminContent() {
 
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalTeachers, setTotalTeachers] = useState(0);
+  const [subjectMap, setSubjectMap] = useState({});
+  const [topicMap, setTopicMap] = useState({});
+
+  async function loadSubjectTopicNames() {
+    try {
+      const subjectRes = await fetch(`${import.meta.env.VITE_API_URL}/api/subjects`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
+      });
+      const subjects = await subjectRes.json();
+
+      const topicRes = await fetch(`${import.meta.env.VITE_API_URL}/api/topics`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
+      });
+      const topics = await topicRes.json();
+
+      const sMap = {};
+      const tMap = {};
+
+      subjects.items?.forEach(s => sMap[s._id] = s.name);
+      topics.items?.forEach(t => tMap[t._id] = t.name);
+
+      setSubjectMap(sMap);
+      setTopicMap(tMap);
+    } catch (err) {
+      console.error("Failed to load names", err);
+    }
+  }
+
 
   // Fetch attempts + counts
   useEffect(() => {
@@ -126,6 +167,7 @@ function AdminContent() {
       setErr("");
 
       try {
+        loadSubjectTopicNames();
         // load exam attempts
         const { items } = await adminAttempts();
         setRows(items || []);
@@ -156,6 +198,15 @@ function AdminContent() {
   const avgPercent = rows.length
     ? Math.round(rows.reduce((acc, r) => acc + (r.percent || 0), 0) / rows.length)
     : 0;
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 6;
+
+  const indexOfLast = currentPage * rowsPerPage;
+  const indexOfFirst = indexOfLast - rowsPerPage;
+  const paginatedRows = rows.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(rows.length / rowsPerPage);
+
 
   return (
     <>
@@ -198,9 +249,9 @@ function AdminContent() {
       </Section>
 
       <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`} icon={<Sparkles size={18} />}>
-        <div className="overflow-auto rounded-2xl border bg-white/70 backdrop-blur">
+        <div className="overflow-auto bg-white/70 backdrop-blur">
           <table className="min-w-[900px] w-full text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-gray-200">
               <tr>
                 <th className="text-left p-3">Student</th>
                 <th className="text-left p-3">Exam (Subject • Topic • Type)</th>
@@ -210,17 +261,15 @@ function AdminContent() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(r => (
+              {paginatedRows.map(r => (
                 <tr key={r._id} className="border-t">
                   <td className="p-3">
                     <div className="font-medium">{r.user?.name || "—"}</div>
                     <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
                   </td>
                   <td className="p-3">
-                    {r.subject || "—"} • {r.topic || "—"} •{" "}
-                    <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">
-                      {r.type}
-                    </span>
+                    {subjectMap[r.subject] || r.subjectName || "—"} • {topicMap[r.topic] || r.topicName || "—"} •
+                    <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">{r.type}</span>
                   </td>
                   <td className="p-3">
                     <span className="font-semibold">{r.score}</span> / {r.total}
@@ -243,6 +292,27 @@ function AdminContent() {
               )}
             </tbody>
           </table>
+          <div className="flex justify-center items-center gap-3 py-4 bg-gray-200 cursor-not-allowed border-t">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-white rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            <span className="text-sm text-slate-700">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-white rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </Section>
     </>
@@ -252,14 +322,14 @@ function AdminContent() {
 
 
 function TeacherContent() {
-const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
-    const [err, setErr] = useState("");
+  const [err, setErr] = useState("");
 
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalTeachers, setTotalTeachers] = useState(0);
 
-    // Fetch attempts + counts
+  // Fetch attempts + counts
   useEffect(() => {
     (async () => {
       setBusy(true);
@@ -370,7 +440,7 @@ function StudentContent() {
 
   return (
     <>
-    <WelcomeCard />
+      <WelcomeCard />
       <Section title="My Exam Stats" icon={<Trophy size={18} />}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
@@ -411,36 +481,100 @@ function StudentContent() {
       </Section>
 
       <Section title="Recent Exams" subtitle={busy ? "Loading…" : `${attempts.length} attempts`}>
-        <div className="overflow-auto rounded-2xl border bg-white/70 backdrop-blur">
-          <table className="min-w-[720px] w-full text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="text-left p-3">Exam</th>
-                <th className="text-left p-3">Score</th>
-                <th className="text-left p-3">When</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attempts.map(a => (
-                <tr key={a._id} className="border-t">
-                  <td className="p-3">
-                    {a.subject || "—"} • {a.topic || "—"} • <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">{a.type}</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-semibold">{a.score}</span> / {a.total} <span className="ml-2 text-xs text-slate-500">({a.percent}%)</span>
-                  </td>
-                  <td className="p-3 text-slate-600">
-                    {a.submittedAt ? new Date(a.submittedAt).toLocaleString() : "-"}
-                  </td>
+        <div className="rounded-2xl border bg-white/70 backdrop-blur shadow-md overflow-hidden">
+
+          {/* Table Header */}
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-b">
+            <table className="min-w-[720px] w-full text-sm">
+              <thead>
+                <tr className="text-slate-700">
+                  <th className="p-4 text-left font-semibold">Exam</th>
+                  <th className="p-4 text-left font-semibold">Score</th>
+                  <th className="p-4 text-left font-semibold">When</th>
                 </tr>
-              ))}
-              {!attempts.length && !busy && (
-                <tr><td colSpan={3} className="p-6 text-center text-slate-500">No attempts yet.</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+            </table>
+          </div>
+
+          {/* Table Body */}
+          <div className="overflow-x-auto">
+            <table className="min-w-[720px] w-full text-sm">
+              <tbody className="divide-y divide-slate-200">
+
+                {attempts.map(a => (
+                  <tr
+                    key={a._id}
+                    className="hover:bg-yellow-50/60 transition-all duration-200"
+                  >
+                    {/* EXAM NAME */}
+                    <td className="p-4">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-slate-800">
+                          {a.subject?.name || a.subjectName || "—"}
+                        </span>
+
+                        <span className="text-xs text-slate-500">
+                          {a.topic?.name || a.topicName || "—"}
+                        </span>
+
+                        <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                          {a.type}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* SCORE */}
+                    <td className="p-4">
+                      <div className="font-semibold text-slate-800">
+                        {a.score}/{a.total}
+                      </div>
+
+                      <div className="text-xs mt-1">
+                        <span
+                          className={`
+                      px-2 py-0.5 rounded-full 
+                      ${a.percent >= 90 ? "bg-green-100 text-green-700" :
+                              a.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                                a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                                  "bg-red-100 text-red-700"}
+                    `}
+                        >
+                          {a.percent}%
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* DATE */}
+                    <td className="p-4 text-slate-600">
+                      {a.submittedAt
+                        ? new Date(a.submittedAt).toLocaleString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "numeric",
+                          hour12: true
+                        })
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+
+                {/* NO DATA */}
+                {!attempts.length && !busy && (
+                  <tr>
+                    <td colSpan={3} className="p-6 text-center text-slate-500">
+                      No attempts yet.
+                    </td>
+                  </tr>
+                )}
+
+              </tbody>
+            </table>
+          </div>
         </div>
       </Section>
+
     </>
   );
 }

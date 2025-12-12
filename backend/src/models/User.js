@@ -1,19 +1,40 @@
-// src/models/User.js
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true, minlength: 2 },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    phone: { type: String, trim: true },
-    password: { type: String, required: true, minlength: 6, select: false },
-    class: { type: String, trim: true },
-    state: { type: String, trim: true },
-    referral: { type: String, trim: true },
-    role: { type: String, enum: ["admin", "teacher", "student"], default: "student" }, // ✅ NEW
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, default: "" },
+    password: { type: String, required: true },
+    role: { type: String, default: "student" },
+
+    // Old DB field
+    class: { type: String, default: "" },
+
+    // New fields used by frontend
+    className: { type: String, default: "" },
+    gender: { type: String, default: "" },
+    dob: { type: String, default: "" },
+    address: { type: String, default: "" },
+    department: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    avatar: { type: String, default: "" },
+
+    username: { type: String, default: "" },
+    language: { type: String, default: "en" },
+
+    emailNotifications: { type: Boolean, default: true },
+    smsNotifications: { type: Boolean, default: false },
+    pushNotifications: { type: Boolean, default: true },
+    fatherName: { type: String, default: "" },
+    fatherOccupation: { type: String, default: "" },
+    motherName: { type: String, default: "" },
+    motherOccupation: { type: String, default: "" },
+    points: { type: Number, default: 0 },
+    fatherContact: { type: String, default: "" },
+    motherContact: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
-userSchema.index({ email: 1 }, { unique: true });
-export default mongoose.model("User", userSchema);
+export default mongoose.model("User", UserSchema);

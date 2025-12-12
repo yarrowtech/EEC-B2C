@@ -210,7 +210,7 @@ export default function App() {
             <Route path="subjects" element={<SubjectsList />} />
             <Route path="topics" element={<TopicsList />} />
             <Route path="chat/:userId" element={<ChatBox />} />
-            <Route path="results" element={<ResultsView />} />
+            <Route path="result" element={<ResultsView />} />
             <Route path="achievements" element={<AchievementsView />} />
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="questions" element={

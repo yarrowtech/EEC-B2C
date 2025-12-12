@@ -358,8 +358,10 @@ import {
   CreditCard,
   Coins,
   CameraOff,
+  Briefcase,
 } from "lucide-react";
 import { getPoints } from "../lib/points"; // optional helper from your new design
+import { ToastContainer, toast } from "react-toastify";
 
 /* ------------------------- local helpers / API ------------------------- */
 function getToken() {
@@ -393,12 +395,33 @@ export default function ProfilePage() {
     avatar: user?.avatar || "",
     createdAt: user?.createdAt || "",
     updatedAt: user?.updatedAt || "",
+    fatherName: user?.fatherName || "",
+    fatherOccupation: user?.fatherOccupation || "",
+    motherName: user?.motherName || "",
+    motherOccupation: user?.motherOccupation || "",
+    fatherContact: user?.fatherContact || "",
+    motherContact: user?.motherContact || "",
     _id: user?._id || "",
   });
 
   /* preview for uploaded image (dataURL) */
   const [imagePreview, setImagePreview] = useState(user?.avatar || "");
   const fileInputRef = useRef(null);
+  const occupationOptions = [
+    "Government Employee",
+    "Private Job",
+    "Business",
+    "Teacher",
+    "Farmer",
+    "Driver",
+    "Engineer",
+    "Doctor",
+    "Shopkeeper",
+    "Retired",
+    "Homemaker",
+    "Others",
+  ];
+
 
   /* UI state */
   const [saving, setSaving] = useState(false);
@@ -411,6 +434,7 @@ export default function ProfilePage() {
   useEffect(() => {
     try {
       setPointsState(getPoints());
+      // setPointsState(data.user.points || 0);
     } catch {
       setPointsState(0);
     }
@@ -519,6 +543,7 @@ export default function ProfilePage() {
         if (res.ok && data.user && mounted) {
           setForm((prev) => ({ ...prev, ...data.user }));
           if (data.user.avatar) setImagePreview(data.user.avatar);
+          setPointsState(data.user.points || 0);
           localStorage.setItem("user", JSON.stringify(data.user));
         }
       } catch (err) {
@@ -535,37 +560,41 @@ export default function ProfilePage() {
     try {
       setSaving(true);
 
+      // Remove password fields before sending to backend
+      const profileData = { ...form };
+      delete profileData.password;
+      delete profileData.oldPassword;
+      delete profileData.newPassword;
+      delete profileData.confirmPassword;
+
       const res = await fetch(`${API}/users/update-profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(profileData),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Update failed");
+        toast.error(data.message || "Update failed");
         return;
       }
 
-      // update local form + preview and localStorage
       setForm((prev) => ({ ...prev, ...data.user }));
       if (data.user.avatar) setImagePreview(data.user.avatar);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // visual success feedback
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Profile updated successfully!");
     } catch (err) {
-      alert("Something went wrong!");
-      console.error(err);
+      toast.error("Something went wrong!");
     } finally {
       setSaving(false);
     }
   }
+
 
   /* ------------------- submit wrapper (client-side validation then save) ------------------- */
   const handleSubmit = async (e) => {
@@ -591,11 +620,55 @@ export default function ProfilePage() {
     return (n.split(" ")[0]?.charAt(0) || "U").toUpperCase();
   };
 
+
+  async function changePassword() {
+    try {
+      if (!form.oldPassword || !form.newPassword || !form.confirmPassword) {
+        return toast.error("Please fill all password fields");
+      }
+
+      if (form.newPassword !== form.confirmPassword) {
+        return toast.error("New password and confirm password do not match");
+      }
+
+      const res = await fetch(`${API}/users/change-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          oldPassword: form.oldPassword,
+          newPassword: form.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return toast.error(data.message || "Password change failed");
+      }
+
+      // Clear fields
+      setForm(prev => ({
+        ...prev,
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+
+      toast.success("Password updated successfully!");
+    } catch (err) {
+      toast.error("Something went wrong");
+    }
+  }
+
   /* ------------------- End of Part 1 ------------------- */
   // Next: JSX UI layout (tabs, forms, preview) — I will send Part 2 now if you want.
-// Part 2 of 3 — JSX layout (header, sidebar, avatar preview, Personal tab UI)
+  // Part 2 of 3 — JSX layout (header, sidebar, avatar preview, Personal tab UI)
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50">
+      <ToastContainer />
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -653,7 +726,7 @@ export default function ProfilePage() {
                   {/* change image button */}
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    // onClick={() => fileInputRef.current?.click()}
                     className="absolute -bottom-2 -right-2 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
                     title="Change profile picture"
                   >
@@ -670,42 +743,50 @@ export default function ProfilePage() {
                 </div>
 
                 <h3 className="text-xl font-semibold text-gray-800">{form.name || "—"}</h3>
-                <p className="text-gray-500 text-sm">Student Account</p>
+                <p className="text-gray-500 text-sm">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)} Account</p>
+                <div className="w-full max-w-md bg-white bg-opacity-70 backdrop-blur-md p-4 rounded-xl shadow-md border border-yellow-100 hover:shadow-lg transition-all duration-300">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <span className="px-2 py-1 bg-yellow-100 rounded-lg text-yellow-700 text-sm font-bold">Bio</span>
+                  </h4>
+
+                  {user?.bio ? (
+                    <p className="text-gray-700 leading-relaxed">{user.bio}</p>
+                  ) : (
+                    <p className="text-gray-400 italic">No bio added yet.</p>
+                  )}
+                </div>
               </div>
 
               <nav className="space-y-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab('personal')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'personal' 
-                      ? 'bg-yellow-100 text-yellow-700 font-medium' 
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'personal'
+                    ? 'bg-yellow-100 text-yellow-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                 >
                   Personal Information
                 </button>
 
-                <button
+                {/* <button
                   type="button"
                   onClick={() => setActiveTab('account')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'account' 
-                      ? 'bg-yellow-100 text-yellow-700 font-medium' 
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'account'
+                    ? 'bg-yellow-100 text-yellow-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                 >
                   Account Settings
-                </button>
+                </button> */}
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('security')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'security' 
-                      ? 'bg-yellow-100 text-yellow-700 font-medium' 
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'security'
+                    ? 'bg-yellow-100 text-yellow-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                 >
                   Security
                 </button>
@@ -718,7 +799,7 @@ export default function ProfilePage() {
               {activeTab === 'personal' && (
                 <div className="space-y-6">
                   <h3 className="text-2xl font-semibold text-gray-800 border-b pb-3">Personal Information</h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Name Field */}
                     <div>
@@ -801,15 +882,25 @@ export default function ProfilePage() {
                       </label>
                       <div className="relative">
                         <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="text"
+
+                        <select
                           name="className"
                           value={form.className}
                           onChange={handleChange}
-                          placeholder="e.g. 10-A or Spring 2025"
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.className ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                        />
+                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.className
+                            ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                            : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
+                            } focus:ring-4 bg-white`}
+                        >
+                          <option value="">Select Class</option>
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <option key={i + 1} value={`Class ${i + 1}`}>
+                              Class {i + 1}
+                            </option>
+                          ))}
+                        </select>
                       </div>
+
                       {errors.className && (
                         <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                           <AlertCircle className="w-4 h-4" />
@@ -817,6 +908,7 @@ export default function ProfilePage() {
                         </p>
                       )}
                     </div>
+
 
                     {/* Address Field */}
                     <div className="md:col-span-2">
@@ -874,7 +966,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Department (for teachers) */}
-                    <div>
+                    {/* <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Department
                       </label>
@@ -889,7 +981,224 @@ export default function ProfilePage() {
                           className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.department ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                         />
                       </div>
+                    </div> */}
+                    {/* ---------------- Parent Details Section ---------------- */}
+                    <div className="md:col-span-2 mt-4">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
+                        Parent Details
+                      </h3>
                     </div>
+
+                    {/* ---------------------- FATHER SECTION ---------------------- */}
+                    <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+                      <h4 className="text-md font-semibold text-gray-800 mb-3">Father Information</h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        {/* Father Name */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Father Name
+                          </label>
+                          <div className="relative">
+                            <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          text-gray-400 w-5 h-5" />
+                            <input
+                              type="text"
+                              name="fatherName"
+                              value={form.fatherName}
+                              onChange={handleChange}
+                              placeholder="Enter father's name"
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Father Occupation */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Father Occupation
+                          </label>
+                          <div className="relative">
+                            <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                              text-gray-400 w-5 h-5" />
+                            <select
+                              name="fatherOccupation"
+                              value={
+                                occupationOptions.includes(form.fatherOccupation)
+                                  ? form.fatherOccupation
+                                  : "Others"
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "Others") {
+                                  setForm((prev) => ({ ...prev, fatherOccupation: "" }));
+                                } else {
+                                  setForm((prev) => ({ ...prev, fatherOccupation: value }));
+                                }
+                              }}
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                            >
+                              <option value="">Select Occupation</option>
+                              {occupationOptions.map((job) => (
+                                <option key={job} value={job}>
+                                  {job}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Custom Father Occupation */}
+                          {(!occupationOptions.includes(form.fatherOccupation) ||
+                            form.fatherOccupation === "") && (
+                              <input
+                                type="text"
+                                name="fatherOccupation"
+                                value={form.fatherOccupation}
+                                onChange={handleChange}
+                                placeholder="Enter custom occupation"
+                                className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                              />
+                            )}
+                        </div>
+
+                        {/* Father Contact Number */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Father Contact Number
+                          </label>
+                          <div className="relative">
+                            <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          text-gray-400 w-5 h-5" />
+                            <input
+                              type="tel"
+                              name="fatherContact"
+                              value={form.fatherContact}
+                              onChange={handleChange}
+                              placeholder="Enter father's mobile number"
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* ---------------------- MOTHER SECTION ---------------------- */}
+                    <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <h4 className="text-md font-semibold text-gray-800 mb-3">Mother Information</h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        {/* Mother Name */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Mother Name
+                          </label>
+                          <div className="relative">
+                            <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                        text-gray-400 w-5 h-5" />
+                            <input
+                              type="text"
+                              name="motherName"
+                              value={form.motherName}
+                              onChange={handleChange}
+                              placeholder="Enter mother's name"
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Mother Occupation */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Mother Occupation
+                          </label>
+                          <div className="relative">
+                            <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                              text-gray-400 w-5 h-5" />
+
+                            <select
+                              name="motherOccupation"
+                              value={
+                                occupationOptions.includes(form.motherOccupation)
+                                  ? form.motherOccupation
+                                  : "Others"
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "Others") {
+                                  setForm((prev) => ({ ...prev, motherOccupation: "" }));
+                                } else {
+                                  setForm((prev) => ({ ...prev, motherOccupation: value }));
+                                }
+                              }}
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                            >
+                              <option value="">Select Occupation</option>
+                              {occupationOptions.map((job) => (
+                                <option key={job} value={job}>
+                                  {job}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Custom Mother Occupation */}
+                          {(!occupationOptions.includes(form.motherOccupation) ||
+                            form.motherOccupation === "") && (
+                              <input
+                                type="text"
+                                name="motherOccupation"
+                                value={form.motherOccupation}
+                                onChange={handleChange}
+                                placeholder="Enter custom occupation"
+                                className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                              />
+                            )}
+                        </div>
+
+                        {/* Mother Contact Number */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Mother Contact Number
+                          </label>
+                          <div className="relative">
+                            <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          text-gray-400 w-5 h-5" />
+                            <input
+                              type="tel"
+                              name="motherContact"
+                              value={form.motherContact}
+                              onChange={handleChange}
+                              placeholder="Enter mother's mobile number"
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+
+
+
 
                     {/* About / Bio */}
                     <div className="md:col-span-2">
@@ -1002,27 +1311,37 @@ export default function ProfilePage() {
                   <h3 className="text-2xl font-semibold text-gray-800 border-b pb-3">Security Settings</h3>
 
                   <div className="grid grid-cols-1 gap-6">
-                    {/* Change Password */}
+
+                    {/* Old Password */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Change Password</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Old Password</label>
                       <div className="relative">
                         <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                           type="password"
-                          name="password"
-                          value={form.password || ""}
-                          onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder="Enter new password"
-                          autoComplete="new-password"
-                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
+                          name="oldPassword"
+                          value={form.oldPassword || ""}
+                          onChange={(e) => setForm(prev => ({ ...prev, oldPassword: e.target.value }))}
+                          placeholder="Enter old password"
+                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
                         />
                       </div>
-                      {errors.password && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-4 h-4" />
-                          {errors.password}
-                        </p>
-                      )}
+                    </div>
+
+                    {/* New Password */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          type="password"
+                          name="newPassword"
+                          value={form.newPassword || ""}
+                          onChange={(e) => setForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                          placeholder="Enter new password"
+                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
+                        />
+                      </div>
                     </div>
 
                     {/* Confirm Password */}
@@ -1035,33 +1354,25 @@ export default function ProfilePage() {
                           name="confirmPassword"
                           value={form.confirmPassword || ""}
                           onChange={(e) => setForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                          placeholder="Confirm password"
-                          autoComplete="new-password"
-                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
+                          placeholder="Confirm new password"
+                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
                         />
                       </div>
                     </div>
 
-                    {/* Two-Factor UI */}
-                    <div className="pt-4 border-t border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-3">Two-Factor Authentication</h4>
-                      <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-800">SMS Authentication</p>
-                          <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
-                        </div>
-                        <button
-                          type="button"
-                          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
-                          onClick={() => alert("Enable 2FA action - integrate backend")}
-                        >
-                          Enable
-                        </button>
-                      </div>
-                    </div>
+                    {/* Change Password Button */}
+                    {/* <button
+                      type="button"
+                      onClick={changePassword}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:opacity-90"
+                    >
+                      Update Password
+                    </button> */}
+
                   </div>
                 </div>
               )}
+
               {/* SUBMIT BUTTON (all tabs share same button) */}
               <div className="pt-6 mt-6 border-t border-gray-200">
                 <button
@@ -1108,12 +1419,12 @@ export default function ProfilePage() {
               <p className="text-gray-600">© 2025 Student Portal. All rights reserved to EEC.</p>
             </div>
 
-            <div className="flex space-x-6 mt-4 md:mt-0">
+            {/* <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-600 hover:text-yellow-600 transition-colors">Terms</a>
               <a href="#" className="text-gray-600 hover:text-yellow-600 transition-colors">Privacy</a>
               <a href="#" className="text-gray-600 hover:text-yellow-600 transition-colors">Help Center</a>
               <a href="#" className="text-gray-600 hover:text-yellow-600 transition-colors">Contact</a>
-            </div>
+            </div> */}
           </div>
         </div>
       </footer>

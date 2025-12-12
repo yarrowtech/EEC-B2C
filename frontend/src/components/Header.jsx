@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Bell, Search, Menu, CalendarDays } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Bell, Search, Menu, CalendarDays, Coins } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 
 const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
@@ -43,6 +43,19 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
     //     avatar: "src/koushik-bala-pp.jpg"
     //   };
     const navigate = useNavigate();
+    const [points, setPoints] = useState(user?.points || 0);
+    useEffect(() => {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        setPoints(stored.points || 0);
+
+        const handler = (e) => {
+            setPoints(e.detail.points);
+        };
+
+        window.addEventListener("points:updated", handler);
+        return () => window.removeEventListener("points:updated", handler);
+    }, []);
+
 
     return (
         <header className="sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/80 border-b border-gray-200">
@@ -67,7 +80,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                     </div>
 
                     {/* Center: Search */}
-                    <div className="flex-1 max-w-xl">
+                    {/* <div className="flex-1 max-w-xl">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input
@@ -76,11 +89,11 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                                 className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none shadow-sm"
                             />
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Right: Notifications + Profile */}
                     <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="relative">
+                        {/* <div className="relative">
                             <button
                                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
                                 onClick={() => setShowNotifications((prev) => !prev)}
@@ -112,6 +125,10 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                                     )}
                                 </div>
                             )}
+                        </div> */}
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
+                            <Coins className="w-5 h-5 text-amber-700" />
+                            <span>{points} Points</span>
                         </div>
 
                         <div className="relative">
@@ -138,14 +155,16 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
 
                                 <div className="hidden sm:block text-left">
                                     <div className="text-sm font-semibold text-gray-900 leading-tight">{user.name}</div>
-                                    <div className="text-[11px] text-gray-500 -mt-0.5">Student</div>
+                                    <div className="text-[11px] text-gray-500 -mt-0.5">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
+                                    </div>
                                 </div>
                             </button>
                             {profileOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
                                     <div className="px-4 py-3 border-b">
                                         <div className="text-sm font-semibold text-gray-900">{user.name}</div>
-                                        <div className="text-xs text-gray-500">Student</div>
+                                        <div className="text-xs text-gray-500">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
+                                        </div>
                                     </div>
                                     <div className="py-1">
                                         <button

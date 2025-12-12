@@ -1,6 +1,9 @@
 import Attempt from "../models/Attempt.js";
 import Question from "../models/Question.js";
 import User from "../models/User.js";
+import Topic from "../models/Topic.js";
+import Subject from "../models/Subject.js";
+import mongoose from "mongoose";
 
 // utility: scoring for the types we support now
 function scoreForQuestion(q, ans) {
@@ -251,8 +254,10 @@ export const startExam = async (req, res) => {
     const attempt = await Attempt.create({
       userId,
       stage,
-      subject,
-      topic,
+      // subject,
+      // topic,
+      subject: new mongoose.Types.ObjectId(subject),
+      topic: new mongoose.Types.ObjectId(topic),
       type,
       questions: finalQuestions.map((q) => q._id),
       total: finalQuestions.length,
@@ -789,6 +794,13 @@ export const submitExam = async (req, res) => {
     attempt.percent = percent;
     attempt.submittedAt = new Date();
     await attempt.save();
+    // after attempt saved:
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      user.points = (user.points || 0) + attempt.score; // accumulate points
+      await user.save();
+    }
 
     res.json({
       message: "Submitted",
@@ -808,7 +820,12 @@ export const myAttempts = async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    // const items = await Attempt.find({ userId })
+    //   .sort({ createdAt: -1 })
+    //   .limit(50);
     const items = await Attempt.find({ userId })
+      .populate("subject", "name")
+      .populate("topic", "name")
       .sort({ createdAt: -1 })
       .limit(50);
     res.json({ items });
@@ -867,10 +884,157 @@ export const adminAttempts = async (req, res) => {
   }
 };
 
+// export const adminAttemptDetail = async (req, res) => {
+
+//   try {
+//     // const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+//     // if (!isAdmin) return res.status(403).json({ message: "Forbidden" });
+//     const role = String(req.user?.role || "").toLowerCase();
+//     if (role !== "admin" && role !== "teacher") {
+//       return res.status(403).json({ message: "Forbidden" });
+//     }
+
+//     const { id } = req.params;
+//     const attempt = await Attempt.findById(id).lean();
+//     if (!attempt) return res.status(404).json({ message: "Not found" });
+
+//     const user = await User.findById(attempt.userId)
+//       .select("_id name email")
+//       .lean();
+
+//     // fetch questions
+//     const questions = await Question.find({ _id: { $in: attempt.questions } })
+//       .select("_id type question options correct")
+//       .lean();
+//     const qMap = new Map(questions.map((q) => [String(q._id), q]));
+
+//     // map answers
+//     const items = (attempt.answers || [])
+//       .map((ans) => {
+//         const q = qMap.get(String(ans.qid));
+//         if (!q) return null;
+
+//         const type = q.type;
+//         let studentAnswer = "";
+//         let correctAnswer = "";
+//         let isCorrect = false;
+
+//         if (type === "mcq-single") {
+//           const key = (ans.mcq || [])[0] || "";
+//           const opt = (q.options || []).find((o) => o.key === key);
+//           const correctKey = (q.correct || [])[0] || "";
+//           const correctOpt = (q.options || []).find(
+//             (o) => o.key === correctKey
+//           );
+//           studentAnswer = key ? `${key}) ${opt?.text || ""}` : "—";
+//           correctAnswer = correctKey
+//             ? `${correctKey}) ${correctOpt?.text || ""}`
+//             : "—";
+//           isCorrect = !!key && key === correctKey;
+//         } else if (type === "mcq-multi") {
+//           const keys = new Set(ans.mcq || []);
+//           const ck = new Set(q.correct || []);
+//           const fmt = (set) =>
+//             (q.options || [])
+//               .filter((o) => set.has(o.key))
+//               .map((o) => `${o.key}) ${o.text || ""}`)
+//               .join(", ") || "—";
+//           studentAnswer = fmt(keys);
+//           correctAnswer = fmt(ck);
+//           isCorrect =
+//             keys.size === ck.size && [...keys].every((k) => ck.has(k));
+//         } else if (type === "true-false") {
+//           const key = (ans.trueFalse || "").toLowerCase();
+//           const ck = (q.correct?.[0] || "").toLowerCase();
+//           studentAnswer = key || "—";
+//           correctAnswer = ck || "—";
+//           isCorrect = !!key && key === ck;
+//         } else {
+//           studentAnswer = "—";
+//           correctAnswer = "—";
+//           isCorrect = false;
+//         }
+
+//         return {
+//           qid: String(q._id),
+//           question: q.question || "(no text)",
+//           studentAnswer,
+//           correctAnswer,
+//           isCorrect,
+//         };
+//       })
+//       .filter(Boolean);
+
+//     res.json({
+//       _id: attempt._id,
+//       user,
+//       subject: attempt.subject,
+//       topic: attempt.topic,
+//       type: attempt.type,
+//       score: attempt.score,
+//       total: attempt.total,
+//       percent: attempt.percent,
+//       submittedAt: attempt.submittedAt,
+//       items,
+//     });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// export const getUserResults = async (req, res) => {
+//   try {
+//     const attempts = await Attempt.find({ userId: req.params.userId })
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     const results = await Promise.all(
+//       attempts.map(async (att) => {
+
+//         // populate subject + topic
+//         const subjectDoc = await Subject.findById(att.subject).lean();
+//         const topicDoc = await Topic.findById(att.topic).lean();
+
+//         // populate QUESTIONS FULL DATA
+//         const fullQuestions = await Question.find({
+//           _id: { $in: att.questions }
+//         })
+//           .select("question options correct type")
+//           .lean();
+
+//         // attach correct question + user answer
+//         const populatedQuestions = fullQuestions.map(q => ({
+//           ...q,
+//           userAnswer: att.answers.find(a =>
+//             String(a.qid) === String(q._id)
+//           ) || null
+//         }));
+
+//         return {
+//           ...att,
+//           subjectName: subjectDoc?.name || "Unknown Subject",
+//           topicName: topicDoc?.name || "Unknown Topic",
+
+//           questions: populatedQuestions
+//         };
+//       })
+//     );
+
+//     res.json({ success: true, results });
+
+//   } catch (error) {
+//     console.error("RESULTS ERROR:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch results",
+//     });
+//   }
+// };
+
 export const adminAttemptDetail = async (req, res) => {
   try {
-    const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-    if (!isAdmin) return res.status(403).json({ message: "Forbidden" });
+    // ❌ Removed admin-only block — route already checks role
 
     const { id } = req.params;
     const attempt = await Attempt.findById(id).lean();
@@ -880,13 +1044,12 @@ export const adminAttemptDetail = async (req, res) => {
       .select("_id name email")
       .lean();
 
-    // fetch questions
     const questions = await Question.find({ _id: { $in: attempt.questions } })
       .select("_id type question options correct")
       .lean();
+
     const qMap = new Map(questions.map((q) => [String(q._id), q]));
 
-    // map answers
     const items = (attempt.answers || [])
       .map((ans) => {
         const q = qMap.get(String(ans.qid));
@@ -901,9 +1064,7 @@ export const adminAttemptDetail = async (req, res) => {
           const key = (ans.mcq || [])[0] || "";
           const opt = (q.options || []).find((o) => o.key === key);
           const correctKey = (q.correct || [])[0] || "";
-          const correctOpt = (q.options || []).find(
-            (o) => o.key === correctKey
-          );
+          const correctOpt = (q.options || []).find((o) => o.key === correctKey);
           studentAnswer = key ? `${key}) ${opt?.text || ""}` : "—";
           correctAnswer = correctKey
             ? `${correctKey}) ${correctOpt?.text || ""}`
@@ -958,5 +1119,58 @@ export const adminAttemptDetail = async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getUserResults = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Prevent CastError
+    if (!userId || userId === "undefined") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing userId",
+      });
+    }
+
+    const attempts = await Attempt.find({ userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const results = await Promise.all(
+      attempts.map(async (att) => {
+        const subjectDoc = await Subject.findById(att.subject).lean();
+        const topicDoc = await Topic.findById(att.topic).lean();
+
+        const fullQuestions = await Question.find({
+          _id: { $in: att.questions },
+        })
+          .select("question options correct type")
+          .lean();
+
+        const populatedQuestions = fullQuestions.map((q) => ({
+          ...q,
+          userAnswer:
+            att.answers.find((a) => String(a.qid) === String(q._id)) || null,
+        }));
+
+        return {
+          ...att,
+          subjectName: subjectDoc?.name || "Unknown Subject",
+          topicName: topicDoc?.name || "Unknown Topic",
+          questions: populatedQuestions,
+        };
+      })
+    );
+
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error("RESULTS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch results",
+    });
   }
 };

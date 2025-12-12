@@ -2,11 +2,13 @@
 import Question from "../models/Question.js";
 
 // Helpers
-function isAdmin(req) {
-  return String(req.user?.role || "").toLowerCase() === "admin";
+function isAdminOrTeacher(req) {
+  const role = String(req.user?.role || "").toLowerCase();
+  return role === "admin" || role === "teacher";
 }
-function requireAdmin(req, res) {
-  if (!isAdmin(req)) {
+
+function requireAdminOrTeacher(req, res) {
+  if (!isAdminOrTeacher(req)) {
     res.status(403).json({ message: "Forbidden" });
     return false;
   }
@@ -167,14 +169,32 @@ function shapeByType(type, body, userId) {
 
 // ---------- Controllers ----------
 
+// export const create = async (req, res) => {
+//   try {
+//     if (!requireAdmin(req, res)) return;
+//     const type = String(req.params.type || "").trim();
+//     const { ok, doc, message } = shapeByType(type, req.body, req.user.id);
+//     if (!ok) return res.status(400).json({ message });
+
+//     doc.class = req.body.class;
+//     const saved = await Question.create(doc);
+//     res.status(201).json({ message: "Created", id: saved._id });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 export const create = async (req, res) => {
   try {
-    if (!requireAdmin(req, res)) return;
+    if (!requireAdminOrTeacher(req, res)) return;
+
     const type = String(req.params.type || "").trim();
     const { ok, doc, message } = shapeByType(type, req.body, req.user.id);
     if (!ok) return res.status(400).json({ message });
 
     doc.class = req.body.class;
+
     const saved = await Question.create(doc);
     res.status(201).json({ message: "Created", id: saved._id });
   } catch (e) {
@@ -182,6 +202,7 @@ export const create = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // export const list = async (req, res) => {
 //   try {
@@ -309,21 +330,39 @@ export const getOne = async (req, res) => {
 // };
 
 // --- EDIT: update by id (admin only) ---
+// export const update = async (req, res) => {
+//   try {
+//     if (!requireAdmin(req, res)) return;
+//     const existing = await Question.findById(req.params.id);
+//     if (!existing) return res.status(404).json({ message: "Not found" });
+
+//     // Merge incoming fields; keep existing type (or allow changing if you want)
+//     const merged = { ...existing.toObject(), ...req.body };
+//     await Question.findByIdAndUpdate(req.params.id, merged, { new: true });
+//     res.json({ message: "Updated" });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 export const update = async (req, res) => {
   try {
-    if (!requireAdmin(req, res)) return;
+    if (!requireAdminOrTeacher(req, res)) return;
+
     const existing = await Question.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: "Not found" });
 
-    // Merge incoming fields; keep existing type (or allow changing if you want)
     const merged = { ...existing.toObject(), ...req.body };
     await Question.findByIdAndUpdate(req.params.id, merged, { new: true });
+
     res.json({ message: "Updated" });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // export const remove = async (req, res) => {
 //   try {
@@ -339,11 +378,26 @@ export const update = async (req, res) => {
 // };
 
 // --- DELETE: remove by id (admin only) ---
+// export const remove = async (req, res) => {
+//   try {
+//     if (!requireAdmin(req, res)) return;
+//     const existing = await Question.findById(req.params.id);
+//     if (!existing) return res.status(404).json({ message: "Not found" });
+//     await existing.deleteOne();
+//     res.json({ message: "Deleted" });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 export const remove = async (req, res) => {
   try {
-    if (!requireAdmin(req, res)) return;
+    if (!requireAdminOrTeacher(req, res)) return;
+
     const existing = await Question.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: "Not found" });
+
     await existing.deleteOne();
     res.json({ message: "Deleted" });
   } catch (e) {
@@ -351,6 +405,7 @@ export const remove = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 /**
  * For populating dropdowns quickly from DB:
