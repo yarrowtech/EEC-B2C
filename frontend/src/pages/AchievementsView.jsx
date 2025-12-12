@@ -2,26 +2,60 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Award, Medal, Target, Lock } from 'lucide-react';
 
 const AchievementsView = () => {
-  const [activeTab, setActiveTab] = useState('earned');
+  const [activeTab, setActiveTab] = useState('history');
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userPoints = user.points;
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [attempts, setAttempts] = useState([]);
 
+  // useEffect(() => {
+  //   async function fetchAttempts() {
+  //     if (!user?._id) return;
+
+  //     const res = await fetch(`${API}/api/attempt/user/${user._id}`);
+  //     const data = await res.json();
+
+  //     if (res.ok) {
+  //       setAttempts(data.attempts || []);
+  //     }
+  //   }
+
+  //   fetchAttempts();
+  // }, []);
+
   useEffect(() => {
     async function fetchAttempts() {
       if (!user?._id) return;
 
-      const res = await fetch(`${API}/api/attempt/user/${user._id}`);
-      const data = await res.json();
+      try {
+        const res = await fetch(
+          `${API}/api/exams/user-results/${user._id}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
 
-      if (res.ok) {
-        setAttempts(data.attempts || []);
+        const data = await res.json();
+
+        if (res.ok) {
+          // setAttempts(data.attempts || []);
+          setAttempts(data.results || []);
+        } else {
+          console.error("ATTEMPT FETCH ERROR:", data);
+          setAttempts([]);
+        }
+      } catch (err) {
+        console.error("ATTEMPT FETCH ERROR:", err);
+        setAttempts([]);
       }
     }
 
     fetchAttempts();
   }, []);
+
 
   const pointsHistory = attempts.map(attempt => ({
     exam: attempt.stage,
@@ -67,6 +101,18 @@ const AchievementsView = () => {
       day: 'numeric'
     });
   };
+
+  // Pagination for points history cards
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPerPage = 6;
+
+  const totalHistoryPages = Math.ceil(pointsHistory.length / historyPerPage);
+
+  const paginatedHistory = pointsHistory.slice(
+    (historyPage - 1) * historyPerPage,
+    historyPage * historyPerPage
+  );
+
 
   return (
     <div className="space-y-6">
@@ -114,7 +160,7 @@ const AchievementsView = () => {
           <p className="text-2xl font-bold text-green-600">{earnedCount}</p>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        {/* <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <p className="text-sm font-medium text-gray-600">In Progress</p>
           <p className="text-2xl font-bold text-blue-600">{inProgressCount}</p>
         </div>
@@ -122,7 +168,7 @@ const AchievementsView = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <p className="text-sm font-medium text-gray-600">Available</p>
           <p className="text-2xl font-bold text-purple-600">{availableCount}</p>
-        </div>
+        </div> */}
       </div>
 
       {/* TABS */}
@@ -130,8 +176,8 @@ const AchievementsView = () => {
         {[
           { id: 'history', label: 'Points History', count: pointsHistory.length },
           { id: 'earned', label: 'Earned', count: earnedAchievements.length },
-          { id: 'progress', label: 'In Progress', count: inProgressAchievements.length },
-          { id: 'available', label: 'Available', count: availableAchievements.length },
+          // { id: 'progress', label: 'In Progress', count: inProgressAchievements.length },
+          // { id: 'available', label: 'Available', count: availableAchievements.length },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -149,7 +195,7 @@ const AchievementsView = () => {
 
         {/* HISTORY TAB */}
         {activeTab === "history" &&
-          pointsHistory.map((item, index) => (
+          paginatedHistory.map((item, index) => (
             <div key={index} className="bg-white rounded-xl shadow-sm border-gray-200 border p-6 relative">
               <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-400"></div>
 
@@ -185,7 +231,44 @@ const AchievementsView = () => {
         }
 
       </div>
+      {/* Pagination for Points History */}
+      {activeTab === "history" && totalHistoryPages > 1 && (
+        <div className="flex justify-center items-center gap-3 mt-6">
 
+          {/* Previous */}
+          <button
+            className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+            disabled={historyPage === 1}
+            onClick={() => setHistoryPage(historyPage - 1)}
+          >
+            Previous
+          </button>
+
+          {/* Page Numbers */}
+          {[...Array(totalHistoryPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setHistoryPage(i + 1)}
+              className={`px-3 py-1 rounded-lg border text-sm ${historyPage === i + 1
+                  ? "bg-yellow-500 text-white"
+                  : "bg-white text-gray-700"
+                }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          {/* Next */}
+          <button
+            className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+            disabled={historyPage === totalHistoryPages}
+            onClick={() => setHistoryPage(historyPage + 1)}
+          >
+            Next
+          </button>
+
+        </div>
+      )}
     </div>
   );
 };

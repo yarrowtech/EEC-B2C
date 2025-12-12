@@ -501,64 +501,68 @@ function StudentContent() {
             <table className="min-w-[720px] w-full text-sm">
               <tbody className="divide-y divide-slate-200">
 
-                {attempts.map(a => (
-                  <tr
-                    key={a._id}
-                    className="hover:bg-yellow-50/60 transition-all duration-200"
-                  >
-                    {/* EXAM NAME */}
-                    <td className="p-4">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-slate-800">
-                          {a.subject?.name || a.subjectName || "—"}
-                        </span>
+                {attempts
+                  .slice()
+                  .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+                  .slice(0, 5)
+                  .map(a => (
+                    <tr
+                      key={a._id}
+                      className="hover:bg-yellow-50/60 transition-all duration-200"
+                    >
+                      {/* EXAM NAME */}
+                      <td className="p-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800">
+                            {a.subject?.name || a.subjectName || "—"}
+                          </span>
 
-                        <span className="text-xs text-slate-500">
-                          {a.topic?.name || a.topicName || "—"}
-                        </span>
+                          <span className="text-xs text-slate-500">
+                            {a.topic?.name || a.topicName || "—"}
+                          </span>
 
-                        <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
-                          {a.type}
-                        </span>
-                      </div>
-                    </td>
+                          <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                            {a.type}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* SCORE */}
-                    <td className="p-4">
-                      <div className="font-semibold text-slate-800">
-                        {a.score}/{a.total}
-                      </div>
+                      {/* SCORE */}
+                      <td className="p-4">
+                        <div className="font-semibold text-slate-800">
+                          {a.score}/{a.total}
+                        </div>
 
-                      <div className="text-xs mt-1">
-                        <span
-                          className={`
+                        <div className="text-xs mt-1">
+                          <span
+                            className={`
                       px-2 py-0.5 rounded-full 
                       ${a.percent >= 90 ? "bg-green-100 text-green-700" :
-                              a.percent >= 75 ? "bg-blue-100 text-blue-700" :
-                                a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
-                                  "bg-red-100 text-red-700"}
+                                a.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                                  a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                                    "bg-red-100 text-red-700"}
                     `}
-                        >
-                          {a.percent}%
-                        </span>
-                      </div>
-                    </td>
+                          >
+                            {a.percent}%
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* DATE */}
-                    <td className="p-4 text-slate-600">
-                      {a.submittedAt
-                        ? new Date(a.submittedAt).toLocaleString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "numeric",
-                          hour12: true
-                        })
-                        : "-"}
-                    </td>
-                  </tr>
-                ))}
+                      {/* DATE */}
+                      <td className="p-4 text-slate-600">
+                        {a.submittedAt
+                          ? new Date(a.submittedAt).toLocaleString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "numeric",
+                            hour12: true
+                          })
+                          : "-"}
+                      </td>
+                    </tr>
+                  ))}
 
                 {/* NO DATA */}
                 {!attempts.length && !busy && (

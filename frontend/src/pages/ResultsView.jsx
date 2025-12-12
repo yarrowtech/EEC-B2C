@@ -277,6 +277,17 @@ const ResultsView = () => {
       : 0;
   const [showModal, setShowModal] = useState(false);
   const [activeExam, setActiveExam] = useState(null);
+  // Pagination for exam tables
+  const [examPage, setExamPage] = useState(1);
+  const examsPerPage = 3;
+
+  // Calculate pagination slices
+  const totalExamPages = Math.ceil(filteredResults.length / examsPerPage);
+  const paginatedExams = filteredResults.slice(
+    (examPage - 1) * examsPerPage,
+    examPage * examsPerPage
+  );
+
 
   return (
     <div className="space-y-6 p-4">
@@ -479,7 +490,7 @@ const ResultsView = () => {
 
       {/* Exam Results */}
       <div className="space-y-6">
-        {filteredResults.map((exam) => (
+        {paginatedExams.map((exam) => (
           <div key={exam.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -593,6 +604,38 @@ const ResultsView = () => {
           </div>
         ))}
       </div>
+      {/* Pagination Controls for Exam Tables */}
+      <div className="flex justify-center items-center gap-3 mt-6">
+        <button
+          className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+          disabled={examPage === 1}
+          onClick={() => setExamPage(examPage - 1)}
+        >
+          Previous
+        </button>
+
+        {[...Array(totalExamPages)].map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setExamPage(i + 1)}
+            className={`px-3 py-1 rounded-lg border text-sm ${examPage === i + 1
+                ? "bg-yellow-500 text-white"
+                : "bg-white text-gray-700"
+              }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+
+        <button
+          className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+          disabled={examPage === totalExamPages}
+          onClick={() => setExamPage(examPage + 1)}
+        >
+          Next
+        </button>
+      </div>
+
       {/* ---------------- MODAL VIEW ---------------- */}
       {showModal && activeExam && (
         <div

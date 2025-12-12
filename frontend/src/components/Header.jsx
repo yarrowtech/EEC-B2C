@@ -39,6 +39,30 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
        ---------------------------------------------------- */
     const [points, setPoints] = useState(user?.points || 0);
 
+    // useEffect(() => {
+    //     // 1) Initial load
+    //     const stored = JSON.parse(localStorage.getItem("user") || "{}");
+    //     setPoints(stored.points || 0);
+
+    //     // 2) Listen for manual point updates (event dispatch)
+    //     const handler = (e) => {
+    //         setPoints(e.detail.points);
+    //     };
+    //     window.addEventListener("points:updated", handler);
+
+    //     // 3) Listen for user object updates (localStorage change)
+    //     const syncHandler = () => {
+    //         const refreshed = JSON.parse(localStorage.getItem("user") || "{}");
+    //         setPoints(refreshed.points || 0);
+    //     };
+    //     window.addEventListener("storage", syncHandler);
+
+    //     return () => {
+    //         window.removeEventListener("points:updated", handler);
+    //         window.removeEventListener("storage", syncHandler);
+    //     };
+    // }, []);
+    /* ---------------------------------------------------- */
     useEffect(() => {
         // 1) Initial load
         const stored = JSON.parse(localStorage.getItem("user") || "{}");
@@ -50,19 +74,28 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
         };
         window.addEventListener("points:updated", handler);
 
-        // 3) Listen for user object updates (localStorage change)
+        // 3) Listen for user object updates (localStorage change across tabs)
         const syncHandler = () => {
             const refreshed = JSON.parse(localStorage.getItem("user") || "{}");
             setPoints(refreshed.points || 0);
         };
         window.addEventListener("storage", syncHandler);
 
+        // 4) Auto-sync every 1 second for same-tab updates
+        const interval = setInterval(() => {
+            const refreshed = JSON.parse(localStorage.getItem("user") || "{}");
+            setPoints((prev) => {
+                const newPoints = refreshed.points || 0;
+                return prev !== newPoints ? newPoints : prev;
+            });
+        }, 1000);
+
         return () => {
             window.removeEventListener("points:updated", handler);
             window.removeEventListener("storage", syncHandler);
+            clearInterval(interval);
         };
     }, []);
-    /* ---------------------------------------------------- */
 
 
     return (
