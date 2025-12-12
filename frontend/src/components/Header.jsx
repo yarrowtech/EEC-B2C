@@ -187,7 +187,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
                                     <div className="px-4 py-3 border-b">
                                         <div className="text-sm font-semibold text-gray-900">{user?.name}</div>
-                                        <div className="text-xs text-gray-500">{user?.role}</div>
+                                        <div className="text-xs text-gray-500">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}</div>
                                     </div>
 
                                     <div className="py-1">
