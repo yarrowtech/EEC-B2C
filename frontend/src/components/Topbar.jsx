@@ -64,7 +64,7 @@ export default function Topbar() {
             href="https://www.instagram.com/its_eec_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
             target="_blank"
             aria-label="Instagram"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 hover:ring-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-300/70"
+            className="hidden md:inline-flex lg:inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 hover:ring-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-300/70"
           >
             <Instagram className="h-4 w-4" />
           </a>
@@ -72,7 +72,7 @@ export default function Topbar() {
             href="https://www.linkedin.com/company/electronic-educare-eec/"
             target="_blank"
             aria-label="LinkedIn"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 hover:ring-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-300/70"
+            className="hidden md:inline-flex lg:inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 hover:ring-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-300/70"
           >
             <Linkedin className="h-4 w-4" />
           </a>

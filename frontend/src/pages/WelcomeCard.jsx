@@ -199,9 +199,13 @@ const WelcomeCard = () => {
                                 <span className="text-lg font-medium opacity-90">{greeting.text},</span>
                             </div>
                             <h1 className="text-2xl font-bold mb-1">{user.name}!</h1>
-                            {/* <p className="text-yellow-100 text-sm">
-                                Student ID: {user.id} • {user.semester}
-                            </p> */}
+                            <p className="text-yellow-100 text-sm">
+                                {user.email} • {
+                                    user.role === "student"
+                                        ? (user.className || "No Class Assigned")
+                                        : (user.role?.charAt(0).toUpperCase() + user.role?.slice(1))
+                                }
+                            </p>
                         </div>
                     </div>
 
@@ -227,100 +231,101 @@ const WelcomeCard = () => {
                         </p>
                     </div>
                 </div>
+                {user.role === 'student' && (
+                    <div className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 relative overflow-hidden group hover:bg-white/15 transition-all duration-300">
+                        {/* Animated Background Glow */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 transform translate-x-full animate-pulse"></div>
 
-                <div className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 relative overflow-hidden group hover:bg-white/15 transition-all duration-300">
-                    {/* Animated Background Glow */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 transform translate-x-full animate-pulse"></div>
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <TipIcon size={16} className={`${tipToShow.color} transition-colors duration-300`} />
+                                    <p className="text-sm text-yellow-100 font-semibold">Quick Tip</p>
+                                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full text-white/80">
+                                        {currentTip + 1}/{quickTips.length}
+                                    </span>
+                                </div>
 
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <TipIcon size={16} className={`${tipToShow.color} transition-colors duration-300`} />
-                                <p className="text-sm text-yellow-100 font-semibold">Quick Tip</p>
-                                <span className="text-xs bg-white/20 px-2 py-1 rounded-full text-white/80">
-                                    {currentTip + 1}/{quickTips.length}
-                                </span>
+                                {/* Control Buttons */}
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <button
+                                        onClick={previousTip}
+                                        className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                                        title="Previous tip"
+                                    >
+                                        <ChevronLeft size={14} className="text-white/80" />
+                                    </button>
+
+                                    <button
+                                        onClick={togglePause}
+                                        className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                                        title={isPaused ? "Resume auto-change" : "Pause auto-change"}
+                                    >
+                                        {isPaused ? (
+                                            <Play size={14} className="text-white/80" />
+                                        ) : (
+                                            <Pause size={14} className="text-white/80" />
+                                        )}
+                                    </button>
+
+                                    <button
+                                        onClick={nextTip}
+                                        className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                                        title="Next tip"
+                                    >
+                                        <ChevronRight size={14} className="text-white/80" />
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* Control Buttons */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <button
-                                    onClick={previousTip}
-                                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                                    title="Previous tip"
-                                >
-                                    <ChevronLeft size={14} className="text-white/80" />
-                                </button>
-
-                                <button
-                                    onClick={togglePause}
-                                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                                    title={isPaused ? "Resume auto-change" : "Pause auto-change"}
-                                >
-                                    {isPaused ? (
-                                        <Play size={14} className="text-white/80" />
-                                    ) : (
-                                        <Pause size={14} className="text-white/80" />
-                                    )}
-                                </button>
-
-                                <button
-                                    onClick={nextTip}
-                                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                                    title="Next tip"
-                                >
-                                    <ChevronRight size={14} className="text-white/80" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                            <div
-                                key={currentTip} // Key for animation reset
-                                className={`flex-1 transition-all duration-500 ${isAnimating ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
-                                    }`}
-                            >
-                                <p className="text-white font-medium leading-relaxed">
-                                    "{tipToShow.text}" {tipToShow.emoji}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="mt-3">
-                            <div className="w-full bg-white/20 rounded-full h-1.5">
+                            <div className="flex items-start gap-3">
                                 <div
-                                    className={`bg-gradient-to-r from-white/60 to-white/80 h-1.5 rounded-full transition-all duration-500 ${isPaused ? '' : 'animate-pulse'
+                                    key={currentTip} // Key for animation reset
+                                    className={`flex-1 transition-all duration-500 ${isAnimating ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
                                         }`}
-                                    style={{
-                                        width: `${((currentTip + 1) / quickTips.length) * 100}%`
-                                    }}
-                                ></div>
+                                >
+                                    <p className="text-white font-medium leading-relaxed">
+                                        "{tipToShow.text}" {tipToShow.emoji}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center mt-1">
-                                <p className="text-xs text-white/60">
-                                    {isPaused ? 'Auto-change paused' : 'Changes every 10 seconds'}
-                                </p>
-                                <div className="flex gap-1">
-                                    {quickTips.map((_, index) => (
-                                        <div
-                                            key={index}
-                                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${index === currentTip ? 'bg-white/80 scale-125' : 'bg-white/30'
-                                                }`}
-                                        ></div>
-                                    ))}
+
+                            {/* Progress Bar */}
+                            <div className="mt-3">
+                                <div className="w-full bg-white/20 rounded-full h-1.5">
+                                    <div
+                                        className={`bg-gradient-to-r from-white/60 to-white/80 h-1.5 rounded-full transition-all duration-500 ${isPaused ? '' : 'animate-pulse'
+                                            }`}
+                                        style={{
+                                            width: `${((currentTip + 1) / quickTips.length) * 100}%`
+                                        }}
+                                    ></div>
+                                </div>
+                                <div className="flex justify-between items-center mt-1">
+                                    <p className="text-xs text-white/60">
+                                        {isPaused ? 'Auto-change paused' : 'Changes every 10 seconds'}
+                                    </p>
+                                    <div className="flex gap-1">
+                                        {quickTips.map((_, index) => (
+                                            <div
+                                                key={index}
+                                                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${index === currentTip ? 'bg-white/80 scale-125' : 'bg-white/30'
+                                                    }`}
+                                            ></div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Hover Instructions */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="text-xs text-white/60 bg-black/20 px-2 py-1 rounded">
-                            Hover to control
+                        {/* Hover Instructions */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="text-xs text-white/60 bg-black/20 px-2 py-1 rounded">
+                                Hover to control
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

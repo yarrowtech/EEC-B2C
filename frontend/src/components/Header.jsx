@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Bell, Search, Menu, CalendarDays, Coins } from 'lucide-react';
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
     const [notifications] = useState(3);
@@ -105,14 +105,26 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
 
                     {/* Left Section */}
                     <div className="flex items-center gap-3 min-w-0">
+
+
+
+                        {/* Sidebar Toggle Button */}
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors md:hidden lg:hidden"
                             aria-label="Toggle sidebar"
                         >
                             <Menu size={22} className="text-gray-700" />
                         </button>
+                        {/* EEC LOGO */}
+                        <img
+                            src="/logo_new.png"
+                            alt="EEC Logo"
+                            className="h-12 w-auto sm:h-9 md:h-12 md:ml-16 object-contain cursor-pointer"
+                            onClick={() => navigate("/")}
+                        />
 
+                        {/* Greeting Text */}
                         <div className="hidden xs:block">
                             <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                                 {greeting}, {user?.name?.split(' ')[0]}
@@ -125,14 +137,19 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                         </div>
                     </div>
 
+
                     {/* Right Section */}
                     <div className="flex items-center gap-2 sm:gap-3">
 
                         {/* POINTS DISPLAY */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
-                            <Coins className="w-5 h-5 text-amber-700" />
-                            <span>{points} Points</span>
-                        </div>
+                        {user && user.role === 'student' && (
+                        <Link to="/dashboard/achievements" className="hidden sm:inline-flex">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
+                                <Coins className="w-5 h-5 text-amber-700" />
+                                <span>{points} Points</span>
+                            </div>
+                        </Link>
+                        )}
 
                         {/* Profile */}
                         <div className="relative">
@@ -183,11 +200,11 @@ const Header = ({ sidebarOpen, setSidebarOpen, onOpenProfile }) => {
                                         >
                                             Profile
                                         </button>
-                                        <button
+                                        {/* <button
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             Settings
-                                        </button>
+                                        </button> */}
                                     </div>
 
                                     <button

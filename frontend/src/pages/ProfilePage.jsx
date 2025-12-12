@@ -676,7 +676,9 @@ export default function ProfilePage() {
             <div className="h-10 w-10 rounded-full bg-yellow-500 flex items-center justify-center">
               <User className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">Student Portal</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {(user.role?.charAt(0).toUpperCase() + user.role?.slice(1))} Portal
+            </h1>
           </div>
 
           {/* <nav className="flex space-x-6">
@@ -696,10 +698,12 @@ export default function ProfilePage() {
               <h2 className="text-3xl font-bold text-white">Profile Settings</h2>
               <p className="text-yellow-100">Manage your personal and account information</p>
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
-              <Coins className="w-5 h-5 text-amber-700" />
-              <span>{points} Points</span>
-            </div>
+            {user?.role === "student" && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
+                <Coins className="w-5 h-5 text-amber-700" />
+                <span>{points} Points</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col md:flex-row w-full overflow-x-hidden">
@@ -876,6 +880,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Semester / Class Field */}
+                    {user.role === "student" && (
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Class / Semester
@@ -908,7 +913,7 @@ export default function ProfilePage() {
                         </p>
                       )}
                     </div>
-
+                    )}
 
                     {/* Address Field */}
                     <div className="md:col-span-2">
@@ -983,13 +988,16 @@ export default function ProfilePage() {
                       </div>
                     </div> */}
                     {/* ---------------- Parent Details Section ---------------- */}
+                    {user.role === "student" && (
                     <div className="md:col-span-2 mt-4">
                       <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
                         Parent Details
                       </h3>
                     </div>
+                    )}
 
                     {/* ---------------------- FATHER SECTION ---------------------- */}
+                    {user.role === "student" && (
                     <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
                       <h4 className="text-md font-semibold text-gray-800 mb-3">Father Information</h4>
 
@@ -1091,8 +1099,9 @@ export default function ProfilePage() {
 
                       </div>
                     </div>
-
+                    )}
                     {/* ---------------------- MOTHER SECTION ---------------------- */}
+                    {user.role === "student" && (
                     <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4">
                       <h4 className="text-md font-semibold text-gray-800 mb-3">Mother Information</h4>
 
@@ -1195,7 +1204,7 @@ export default function ProfilePage() {
 
                       </div>
                     </div>
-
+                    )}
 
 
 

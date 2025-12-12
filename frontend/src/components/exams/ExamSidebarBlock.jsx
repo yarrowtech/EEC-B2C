@@ -26,7 +26,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
       <div className="mt-1">
 
         {/* RESULTS MENU */}
-        <NavLink
+        {/* <NavLink
           to="/dashboard/results"
           className={({ isActive }) =>
             `${linkBase} ${
@@ -46,7 +46,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
             <path d="M3 4h18M3 10h18M3 16h18M3 20h18" />
           </svg>
           <span>Results</span>
-        </NavLink>
+        </NavLink> */}
 
         {/* ACHIEVEMENTS MENU */}
         {/* <NavLink

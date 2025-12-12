@@ -645,7 +645,7 @@ const ResultsView = () => {
           }}
         >
           <div
-            className="relative bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl w-full max-w-3xl p-8 animate-scaleIn border border-white/40"
+            className="relative bg-white/80 rounded-3xl shadow-xl w-full max-w-3xl p-8 animate-scaleIn border border-white/40"
             style={{ maxHeight: "90vh" }}
           >
             {/* INNER SCROLL AREA */}
@@ -666,7 +666,7 @@ const ResultsView = () => {
               </h2>
 
               {/* STUDENT INFO */}
-              <div className="mb-6 p-5 rounded-2xl border shadow-sm bg-gradient-to-r from-amber-50 to-yellow-100/70">
+              <div className="mb-6 p-5 rounded-2xl shadow-sm bg-white">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-3">
                   <User className="w-5 h-5 text-amber-600" />
                   Student Information

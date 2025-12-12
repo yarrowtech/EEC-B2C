@@ -210,7 +210,9 @@ function AdminContent() {
 
   return (
     <>
-      <Section title="Admin — Dashboard Overview" icon={<TableIcon size={18} />}>
+      <WelcomeCard />
+      {/* <Section title="Dashboard Overview" icon={<TableIcon size={18} />}> */}
+      <Section title="Dashboard Overview" >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* ➤ Total Students */}
@@ -248,7 +250,8 @@ function AdminContent() {
         </div>
       </Section>
 
-      <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`} icon={<Sparkles size={18} />}>
+      {/* <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`} icon={<Sparkles size={18} />}> */}
+      <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`}>
         <div className="overflow-auto bg-white/70 backdrop-blur">
           <table className="min-w-[900px] w-full text-sm">
             <thead className="bg-gray-200">
@@ -362,12 +365,26 @@ function TeacherContent() {
     })();
   }, []);
 
+  const totalAttempts = rows.length;
+  const avgPercent = rows.length
+    ? Math.round(rows.reduce((acc, r) => acc + (r.percent || 0), 0) / rows.length)
+    : 0;
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 6;
+
+  const indexOfLast = currentPage * rowsPerPage;
+  const indexOfFirst = indexOfLast - rowsPerPage;
+  const paginatedRows = rows.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(rows.length / rowsPerPage);
+
   // const totalAttempts = rows.length;
   // const avgPercent = rows.length
   //   ? Math.round(rows.reduce((acc, r) => acc + (r.percent || 0), 0) / rows.length)
   //   : 0;
   return (
     <>
+      <WelcomeCard />
       <Section title="Teacher Overview" icon={<GraduationCap size={18} />}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -394,6 +411,73 @@ function TeacherContent() {
             icon={<MessageSquare size={18} />}
             gradient={["from-amber-500", "to-orange-600"]}
           /> */}
+        </div>
+      </Section>
+      <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`}>
+        <div className="overflow-auto bg-white/70 backdrop-blur">
+          <table className="min-w-[900px] w-full text-sm">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="text-left p-3">Student</th>
+                <th className="text-left p-3">Exam (Subject • Topic • Type)</th>
+                <th className="text-left p-3">Score</th>
+                <th className="text-left p-3">Attempts by Student</th>
+                <th className="text-left p-3">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedRows.map(r => (
+                <tr key={r._id} className="border-t">
+                  <td className="p-3">
+                    <div className="font-medium">{r.user?.name || "—"}</div>
+                    <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
+                  </td>
+                  <td className="p-3">
+                    {subjectMap[r.subject] || r.subjectName || "—"} • {topicMap[r.topic] || r.topicName || "—"} •
+                    <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">{r.type}</span>
+                  </td>
+                  <td className="p-3">
+                    <span className="font-semibold">{r.score}</span> / {r.total}
+                    <span className="ml-2 text-xs text-slate-500">({r.percent}%)</span>
+                  </td>
+                  <td className="p-3">
+                    <span className="inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs">
+                      {r.attemptsForUser} attempts
+                    </span>
+                  </td>
+                  <td className="p-3 text-slate-600">{new Date(r.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+              {!rows.length && !busy && (
+                <tr>
+                  <td colSpan={5} className="p-6 text-center text-slate-500">
+                    No attempts yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <div className="flex justify-center items-center gap-3 py-4 bg-gray-200 cursor-not-allowed border-t">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-white rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            <span className="text-sm text-slate-700">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-white rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </Section>
 
