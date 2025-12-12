@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Eye, Pencil, X, Search, Users, GraduationCap, BadgeCheck, Loader2, AlertTriangle } from "lucide-react";
+import * as XLSX from "xlsx";
 
 /* pull role the same way the layout does (read-only) */
 function getUser() {
@@ -30,7 +31,11 @@ export default function StudentsList() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
-  
+  // pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 10; // show 10 rows per page
+
+
 
   // Esc to close modal
   useEffect(() => {
@@ -76,14 +81,20 @@ export default function StudentsList() {
         const data = await res.json();
         if (!stop) {
           // normalize for table (your schema uses: name,email,phone,class,state,role)
+          // const mapped = (data.students || []).map((s, i) => ({
+          //   id: s._id || i + 1,
+          //   name: s.name || "-",
+          //   grade: s.class || "-", // your schema uses `class` for class/grade
+          //   state: s.state || "-",
+          //   email: s.email || "-",
+          //   phone: s.phone || "-",
+          //   rollNo: s.class ? `${s.class}-${String(i + 1).padStart(3, "0")}` : `STD-${String(i + 1).padStart(3, "0")}`,
+          // }));
           const mapped = (data.students || []).map((s, i) => ({
+            ...s, // ⭐ keeps EVERYTHING from DB
             id: s._id || i + 1,
-            name: s.name || "-",
-            grade: s.class || "-", // your schema uses `class` for class/grade
-            state: s.state || "-",
-            email: s.email || "-",
-            phone: s.phone || "-",
-            rollNo: s.class ? `${s.class}-${String(i + 1).padStart(3, "0")}` : `STD-${String(i + 1).padStart(3, "0")}`,
+            grade: s.className || s.class || "-",
+            rollNo: s.class,
           }));
           setRows(mapped);
         }
@@ -130,6 +141,19 @@ export default function StudentsList() {
     return name.trim().charAt(0).toUpperCase();
   }
 
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [page, filtered]);
+
+  // Export all students to Excel
+  function exportToExcel() {
+    const worksheet = XLSX.utils.json_to_sheet(rows);   // rows = ALL students
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+    XLSX.writeFile(workbook, "students.xlsx");
+  }
 
   return (
     <div className="space-y-6">
@@ -180,6 +204,15 @@ export default function StudentsList() {
                 {filtered.length} results
               </span>
             )}
+            {/* Export Button */}
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={exportToExcel}
+                className="rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm shadow-md transition-all"
+              >
+                Export to Excel
+              </button>
+            </div>
           </div>
         </div>
 
@@ -214,19 +247,19 @@ export default function StudentsList() {
                     Fetching students data...
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={role !== "student" ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
                     No students found.
                   </td>
                 </tr>
               ) : (
-                filtered.map((r, i) => (
+                paginatedRows.map((r, i) => (
                   <tr
                     key={r.id}
                     className={`transition-all ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"} hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50`}
                   >
-                    <td className="px-4 py-3 text-slate-700">{i + 1}</td>
+                    <td className="px-4 py-3 text-slate-700">{(page - 1) * pageSize + i + 1}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{r.name}</td>
                     <td className="px-4 py-3 text-slate-700">{r.grade}</td>
                     <td className="px-4 py-3">
@@ -259,6 +292,35 @@ export default function StudentsList() {
               )}
             </tbody>
           </table>
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-white/70 backdrop-blur">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className={`px-3 py-1 rounded-lg border text-sm ${page === 1 ? "opacity-50 cursor-not-allowed" : "bg-white hover:bg-slate-100"
+                }`}
+            >
+              Prev
+            </button>
+
+            <div className="text-sm text-slate-600">
+              Page <span className="font-semibold">{page}</span> of{" "}
+              <span className="font-semibold">
+                {Math.ceil(filtered.length / pageSize)}
+              </span>
+            </div>
+
+            <button
+              disabled={page >= Math.ceil(filtered.length / pageSize)}
+              onClick={() => setPage((p) => p + 1)}
+              className={`px-3 py-1 rounded-lg border text-sm ${page >= Math.ceil(filtered.length / pageSize)
+                ? "opacity-50 cursor-not-allowed"
+                : "bg-white hover:bg-slate-100"
+                }`}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -276,7 +338,7 @@ export default function StudentsList() {
           />
           {/* Panel */}
           <div
-            className="relative z-10 w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl border border-white/60 bg-white/90 backdrop-blur-md shadow-[0_24px_48px_-16px_rgba(2,6,23,0.35)] animate-scale-in"
+            className="relative z-10 w-full sm:max-w-5xl rounded-t-2xl sm:rounded-2xl border border-white/60 bg-white/95 backdrop-blur-md shadow-[0_24px_48px_-16px_rgba(2,6,23,0.35)] animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -331,16 +393,42 @@ export default function StudentsList() {
 
 
             {/* Body */}
-            <div className="px-4 py-4 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+            <div className="px-4 py-4">
+
+              {/* LANDSCAPE TWO-COLUMN GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
                 <InfoRow label="Name" value={selected.name} />
                 <InfoRow label="Email" value={selected.email} />
+
                 <InfoRow label="Phone" value={selected.phone} />
                 <InfoRow label="Class" value={selected.grade} />
+
                 <InfoRow label="Roll No" value={selected.rollNo} />
                 <InfoRow label="State" value={selected.state || "-"} />
+
+                <InfoRow label="Date of Birth" value={selected.dob || "-"} />
+                <InfoRow label="Gender" value={selected.gender || "-"} />
+
+                <InfoRow label="Address" value={selected.address || "-"} />
+                <InfoRow label="Points" value={selected.points ?? 0} />
+
+                <InfoRow label="Father Name" value={selected.fatherName || "-"} />
+                <InfoRow label="Father Occupation" value={selected.fatherOccupation || "-"} />
+
+                <InfoRow label="Father Contact" value={selected.fatherContact || "-"} />
+                <InfoRow label="Mother Name" value={selected.motherName || "-"} />
+
+                <InfoRow label="Mother Occupation" value={selected.motherOccupation || "-"} />
+                <InfoRow label="Mother Contact" value={selected.motherContact || "-"} />
+
+                <InfoRow label="Created At" value={new Date(selected.createdAt).toLocaleString()} />
+                <InfoRow label="Updated At" value={new Date(selected.updatedAt).toLocaleString()} />
+
               </div>
+
             </div>
+
 
             {/* Footer */}
             <div className="rounded-br-xl rounded-bl-xl flex items-center justify-end gap-2 px-4 py-3 border-t bg-gradient-to-r from-slate-50 to-slate-100">
@@ -391,11 +479,31 @@ export default function StudentsList() {
 }
 
 /* ------- small component for key/value row ------- */
-function InfoRow({ label, value, className = "" }) {
+function InfoRow({ label, value, horizontal = false }) {
+  if (!horizontal) {
+    return (
+      <div className="rounded-xl border border-white/60 bg-white/70 backdrop-blur p-3">
+        <div className="text-[11px] font-semibold text-slate-500 mb-1">{label}</div>
+        <div className="text-sm text-slate-800">{value}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`rounded-xl border border-white/60 bg-white/70 backdrop-blur p-3 ${className}`}>
-      <div className="text-[11px] font-semibold tracking-wide text-slate-500 mb-1">{label}</div>
-      <div className="text-sm text-slate-800">{value}</div>
+    <div className="flex justify-between items-center rounded-xl border border-white/60 bg-white/70 backdrop-blur p-3">
+      <div className="text-[11px] font-semibold text-slate-500">{label}</div>
+      <div className="text-sm font-medium text-slate-800 text-right max-w-[60%]">
+        {value}
+      </div>
     </div>
+  );
+}
+
+function TableRow({ label, value }) {
+  return (
+    <tr className="border-b last:border-none">
+      <td className="py-2 pr-4 font-semibold text-slate-600 w-1/3">{label}</td>
+      <td className="py-2 text-slate-800 w-2/3">{value}</td>
+    </tr>
   );
 }

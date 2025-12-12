@@ -33,6 +33,18 @@ router.get("/teachers-count", async (req, res) => {
   }
 });
 
+// router.get(
+//   "/students",
+//   requireAuth,
+//   (req, res, next) => {
+//     if (!["admin", "teacher"].includes(req.user?.role)) {
+//       return res.status(403).json({ message: "Forbidden" });
+//     }
+//     next();
+//   },
+//   listStudents
+// );
+
 router.get(
   "/students",
   requireAuth,
@@ -42,7 +54,29 @@ router.get(
     }
     next();
   },
-  listStudents
+  async (req, res) => {
+    try {
+      const q = req.query.q?.trim() || "";
+
+      let filter = { role: "student" };
+
+      if (q) {
+        filter.$or = [
+          { name: { $regex: q, $options: "i" } },
+          { email: { $regex: q, $options: "i" } },
+          { phone: { $regex: q, $options: "i" } },
+          { class: { $regex: q, $options: "i" } },
+        ];
+      }
+
+      // ⭐ RETURN ALL FIELDS
+      const students = await User.find(filter).select("-password");
+
+      res.json({ students });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
 );
 
 router.get("/teachers", async (req, res) => {
@@ -123,7 +157,6 @@ router.delete("/teachers/:id", async (req, res) => {
   }
 });
 
-
 // =============
 // Old Profile Routes
 // =============== //
@@ -135,7 +168,6 @@ router.delete("/teachers/:id", async (req, res) => {
 //     res.status(500).json({ message: err.message });
 //   }
 // });
-
 
 // =============
 // Old Profile Routes 2.0
@@ -255,7 +287,6 @@ router.get("/profile", requireAuth, async (req, res) => {
 //     res.status(500).json({ message: err.message });
 //   }
 // });
-
 
 router.put("/update-profile", requireAuth, async (req, res) => {
   try {

@@ -136,53 +136,6 @@ const ResultsView = () => {
   //   }));
   // }
 
-  // function formatResults(attempts) {
-  //   return attempts.map(att => ({
-  //     id: att._id,
-
-  //     subjectName: att.subjectName || "Unknown Subject",
-  //     topicName: att.topicName || "Unknown Topic",
-
-  //     examName: `Stage Test - ${att.stage}`,
-  //     date: att.createdAt,
-  //     type: "test",
-  //     totalMarks: att.total,
-  //     obtainedMarks: att.score,
-  //     percentage: att.percent ?? Math.round((att.score / att.total) * 100),  // FIXED
-  //     questions: att.questions || [],
-  //     answers: att.answers || [],
-
-  //     subjects: [
-  //       {
-  //         name: att.subjectName || "Unknown Subject",
-  //         marks: att.score,
-  //         maxMarks: att.total,
-
-  //         // FIXED: always compute percentage correctly
-  //         percentage: att.percent ?? Math.round((att.score / att.total) * 100),
-
-  //         grade:
-  //           (att.percent ?? (att.score / att.total) * 100) >= 90 ? "A+" :
-  //             (att.percent ?? (att.score / att.total) * 100) >= 80 ? "A" : "B",
-
-  //         remarks:
-  //           (att.percent ?? (att.score / att.total) * 100) >= 90 ? "Excellent" :
-  //             (att.percent ?? (att.score / att.total) * 100) >= 80 ? "Very Good" :
-  //               "Good"
-  //       }
-  //     ],
-
-  //     topics: [
-  //       {
-  //         subject: att.subjectName || "Unknown Subject",
-  //         topic: att.topicName || "Unknown Topic",
-  //         correct: att.score,
-  //         wrong: att.total - att.score
-  //       }
-  //     ]
-  //   }));
-  // }
-
   function formatResults(attempts) {
     return attempts.map(att => ({
       id: att._id,
@@ -195,22 +148,18 @@ const ResultsView = () => {
       type: "test",
       totalMarks: att.total,
       obtainedMarks: att.score,
-      percentage: att.percent ?? Math.round((att.score / att.total) * 100),
-
-      // ⭐ FIX: pass FULL QUESTION + ANSWER DETAILS to modal
-      questions: att.questions || [],          // <-- full question list
-      answers: att.answers || [],              // <-- student's answers
+      percentage: att.percent ?? Math.round((att.score / att.total) * 100),  // FIXED
+      questions: att.questions || [],
+      answers: att.answers || [],
 
       subjects: [
         {
           name: att.subjectName || "Unknown Subject",
-          topicName: att.topicName || "Unknown Topic",
-
           marks: att.score,
           maxMarks: att.total,
 
-          percentage: att.percent ??
-            Math.round((att.score / att.total) * 100),
+          // FIXED: always compute percentage correctly
+          percentage: att.percent ?? Math.round((att.score / att.total) * 100),
 
           grade:
             (att.percent ?? (att.score / att.total) * 100) >= 90 ? "A+" :
@@ -233,6 +182,7 @@ const ResultsView = () => {
       ]
     }));
   }
+
 
 
 
