@@ -3,7 +3,7 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { listStudents } from "../controllers/users.js";
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 const router = Router();
 
