@@ -74,3 +74,6 @@ body {
 .shakeWrong {
   animation: wrong-shake 0.4s ease;
 }
+.no-select {
+  user-select: none;
+}

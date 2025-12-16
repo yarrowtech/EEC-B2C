@@ -699,7 +699,7 @@ export default function ProfilePage() {
               <p className="text-yellow-100">Manage your personal and account information</p>
             </div>
             {user?.role === "student" && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
+              <div className="flex justify-center items-center gap-2 px-2 md:px-3 md:py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
                 <Coins className="w-5 h-5 text-amber-700" />
                 <span>{points} Points</span>
               </div>

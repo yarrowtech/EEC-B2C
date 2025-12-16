@@ -33,6 +33,13 @@ const UserSchema = new mongoose.Schema(
     points: { type: Number, default: 0 },
     fatherContact: { type: String, default: "" },
     motherContact: { type: String, default: "" },
+    // models/User.js
+    purchasedMaterials: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "StudyMaterial",
+      },
+    ],
   },
   { timestamps: true }
 );

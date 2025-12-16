@@ -57,6 +57,7 @@ export default function DashboardLayout() {
             // base.splice(1, 0, { to: "/dashboard/approvals", label: "Approvals", icon: <CheckCircle2 size={18} /> });
             base.splice(2, 0, { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} /> });
             base.splice(3, 0, { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> });
+            base.splice(4, 0, { to: "/dashboard/study-materials/upload", label: "Upload Study Material", icon: <Library size={18} /> });
             // base.splice(4, 0, { to: `/dashboard/chat/${user.id}`, label: "Chat", icon: <LayoutGrid size={18} /> });
         }
         if (role === "teacher") {

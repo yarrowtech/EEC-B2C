@@ -208,7 +208,7 @@ const AchievementsView = () => {
 
               <div className="flex justify-between items-center border-t pt-3 mt-3">
                 <span className="text-sm text-gray-600">Points Earned</span>
-                <span className="text-yellow-600 font-bold text-lg bg-yellow-100 px-1.5 rounded-full">+{item.pointsEarned} pts</span>
+                <span className="text-yellow-600 font-bold text-sm md:text-lg lg:text-lg bg-yellow-100 px-2 md:px-1.5 lg:px-1.5 rounded-full">+{item.pointsEarned} pts</span>
               </div>
             </div>
           ))

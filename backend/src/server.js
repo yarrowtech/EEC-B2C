@@ -24,6 +24,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import attemptRoutes from "./routes/attemptRoutes.js";
 import subjectsRoutes from "./routes/subjectsRoutes.js";
 import topicsRoutes from "./routes/topicsRoutes.js";
+import studyMaterialRoutes from "./routes/studyMaterialRoutes.js";
 
 const app = express();
 
@@ -70,6 +71,9 @@ app.use("/users", userRouter);
 app.use("/api/attempt", attemptRoutes);
 app.use("/api/subjects", subjectsRoutes);
 app.use("/api/topics", topicsRoutes);
+app.use("/api/study-materials", studyMaterialRoutes);
+// server.js
+app.use("/api/webhooks/razorpay", express.raw({ type: "application/json" }));
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { GraduationCap, ChevronDown, ListChecks, Lock } from "lucide-react";
+import { GraduationCap, ChevronDown, ListChecks, Lock, GraduationCapIcon } from "lucide-react";
 import { getJSON } from "../../lib/api";
 
 const linkBase =
@@ -112,9 +112,8 @@ export default function ExamSidebarBlock({ role = "student" }) {
 
       <div
         id="emenu"
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
-          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="ml-2 mt-1 pl-2 border-l border-slate-200 space-y-1">
 
@@ -133,10 +132,9 @@ export default function ExamSidebarBlock({ role = "student" }) {
                 key={stage}
                 to={url}
                 className={({ isActive }) =>
-                  `${linkBase} ${
-                    isActive
-                      ? linkActive
-                      : "text-slate-700 hover:bg-slate-100"
+                  `${linkBase} ${isActive
+                    ? linkActive
+                    : "text-slate-700 hover:bg-slate-100"
                   }`
                 }
               >
@@ -152,10 +150,9 @@ export default function ExamSidebarBlock({ role = "student" }) {
       <NavLink
         to="/dashboard/result"
         className={({ isActive }) =>
-          `${linkBase} ${
-            isActive
-              ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-              : "text-slate-700 hover:bg-yellow-50"
+          `${linkBase} ${isActive
+            ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
+            : "text-slate-700 hover:bg-yellow-50"
           }`
         }
       >
@@ -175,10 +172,9 @@ export default function ExamSidebarBlock({ role = "student" }) {
       <NavLink
         to="/dashboard/achievements"
         className={({ isActive }) =>
-          `${linkBase} ${
-            isActive
-              ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-              : "text-slate-700 hover:bg-yellow-50"
+          `${linkBase} ${isActive
+            ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
+            : "text-slate-700 hover:bg-yellow-50"
           }`
         }
       >
@@ -192,6 +188,20 @@ export default function ExamSidebarBlock({ role = "student" }) {
           <path d="M3 4h18M3 10h18M3 16h18M3 20h18" />
         </svg>
         <span>Achievements</span>
+      </NavLink>
+
+      {/* STUDENT → STUDY MATERIALS */}
+      <NavLink
+        to="/dashboard/study-materials"
+        className={({ isActive }) =>
+          `${linkBase} ${isActive
+            ? "bg-gradient-to-br from-indigo-200 to-indigo-100 text-indigo-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
+            : "text-slate-700 hover:bg-indigo-50"
+          }`
+        }
+      >
+        <GraduationCapIcon className="w-5 h-5 text-indigo-600" />
+        <span>Study Materials</span>
       </NavLink>
 
     </div>

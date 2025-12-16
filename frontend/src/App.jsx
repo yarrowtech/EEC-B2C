@@ -62,6 +62,8 @@ import TopicsList from "./pages/questions/TopicsList";
 import ChatBox from "./pages/ChatBox";
 import ResultsView from "./pages/ResultsView";
 import AchievementsView from "./pages/AchievementsView";
+import StudyMaterialsPage from "./pages/StudyMaterialsPage";
+import UploadStudyMaterial from "./pages/UploadStudyMaterial";
 
 
 function getToken() {
@@ -196,11 +198,11 @@ export default function App() {
           <Route path="/boards" element={<EECLearningBoards />} />
           <Route path="/support" element={<SupportCenter />} />
           <Route path="/marketing" element={<EECMarketing />} />
-          <Route path="/eec-b2c" element={ <B2B /> } />
+          <Route path="/eec-b2c" element={<B2B />} />
           <Route path="/dashboard" element={<QuestionScopeProvider>
             <DashboardLayout />
           </QuestionScopeProvider>}>
-          <Route path="profile" element={<ProfilePage />} />
+            <Route path="profile" element={<ProfilePage />} />
             {/* index route = your current Dashboard.jsx content */}
             <Route index element={<Dashboard />} />
             {/* more outlet pages */}
@@ -212,6 +214,8 @@ export default function App() {
             <Route path="chat/:userId" element={<ChatBox />} />
             <Route path="result" element={<ResultsView />} />
             <Route path="achievements" element={<AchievementsView />} />
+            <Route path="study-materials" element={<StudyMaterialsPage />} />
+            <Route path="study-materials/upload" element={<RequireAdmin><UploadStudyMaterial /> </RequireAdmin>} />
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>

@@ -12,8 +12,12 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
+    "crypto": "^1.0.1",
     "framer-motion": "^12.23.21",
     "lucide-react": "^0.544.0",
+    "multer-storage-cloudinary": "^4.0.0",
+    "pdfjs-dist": "^5.4.449",
+    "razorpay": "^2.9.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-helmet": "^6.1.0",
