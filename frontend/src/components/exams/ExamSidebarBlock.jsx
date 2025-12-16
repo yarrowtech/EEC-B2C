@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { GraduationCap, ChevronDown, ListChecks, Lock, GraduationCapIcon } from "lucide-react";
+import {
+  GraduationCap,
+  ChevronDown,
+  ListChecks,
+  GraduationCapIcon
+} from "lucide-react";
 import { getJSON } from "../../lib/api";
 
+/* 🔥 SAME STYLES AS DashboardLayout */
 const linkBase =
-  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-orange-800 transition-all";
 const linkActive =
-  "bg-gradient-to-br from-slate-200 to-slate-100 text-slate-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]";
+  "bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md";
 
 const stageNames = {
   1: "Basic Level",
@@ -19,63 +25,14 @@ export default function ExamSidebarBlock({ role = "student" }) {
   const [stages, setStages] = useState([]);
 
   // ----------------------------------------------------------------
-  // 🔥 ADMIN SIDEBAR (Results + Achievements)
+  // 🔥 ADMIN SIDEBAR (UNCHANGED)
   // ----------------------------------------------------------------
   if (role === "admin") {
-    return (
-      <div className="mt-1">
-
-        {/* RESULTS MENU */}
-        {/* <NavLink
-          to="/dashboard/results"
-          className={({ isActive }) =>
-            `${linkBase} ${
-              isActive
-                ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-                : "text-slate-700 hover:bg-yellow-50"
-            }`
-          }
-        >
-          <svg
-            className="w-5 h-5 text-yellow-600"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M3 4h18M3 10h18M3 16h18M3 20h18" />
-          </svg>
-          <span>Results</span>
-        </NavLink> */}
-
-        {/* ACHIEVEMENTS MENU */}
-        {/* <NavLink
-          to="/dashboard/achievements"
-          className={({ isActive }) =>
-            `${linkBase} ${
-              isActive
-                ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-                : "text-slate-700 hover:bg-yellow-50"
-            }`
-          }
-        >
-          <svg
-            className="w-5 h-5 text-yellow-600"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M3 4h18M3 10h18M3 16h18M3 20h18" />
-          </svg>
-          <span>Achievements</span>
-        </NavLink> */}
-      </div>
-    );
+    return <div className="mt-1" />;
   }
 
   // ----------------------------------------------------------------
-  // 🔥 STUDENT SIDEBAR (Exams + Achievements)
+  // 🔥 STUDENT SIDEBAR
   // ----------------------------------------------------------------
   if (role !== "student") return null;
 
@@ -94,15 +51,14 @@ export default function ExamSidebarBlock({ role = "student" }) {
 
   return (
     <div className="mt-1">
-
       {/* EXAMS DROPDOWN */}
       <button
         onClick={() => setOpen((s) => !s)}
-        className={`${linkBase} w-full text-left text-slate-700`}
+        className={`${linkBase} w-full text-left hover:bg-yellow-100`}
         aria-expanded={open}
         aria-controls="emenu"
       >
-        <GraduationCap size={18} className="text-slate-700" />
+        <GraduationCap size={18} />
         <span className="flex-1 truncate">Exams</span>
         <ChevronDown
           size={16}
@@ -112,16 +68,18 @@ export default function ExamSidebarBlock({ role = "student" }) {
 
       <div
         id="emenu"
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-          }`}
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
+          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
       >
-        <div className="ml-2 mt-1 pl-2 border-l border-slate-200 space-y-1">
-
+        <div className="ml-2 mt-1 pl-2 border-l border-yellow-200 space-y-1">
           {stages.length === 0 && (
-            <div className={`${linkBase} text-slate-400`}>No exam stages available</div>
+            <div className={`${linkBase} text-slate-400`}>
+              No exam stages available
+            </div>
           )}
 
-          {/* Render dynamic stages */}
+          {/* STAGES */}
           {stages.map((stage) => {
             const label = stageNames[stage] || `Stage ${stage}`;
             const url =
@@ -132,13 +90,12 @@ export default function ExamSidebarBlock({ role = "student" }) {
                 key={stage}
                 to={url}
                 className={({ isActive }) =>
-                  `${linkBase} ${isActive
-                    ? linkActive
-                    : "text-slate-700 hover:bg-slate-100"
+                  `${linkBase} ${
+                    isActive ? linkActive : "hover:bg-yellow-100"
                   }`
                 }
               >
-                <ListChecks size={18} className="text-slate-700" />
+                <ListChecks size={18} />
                 <span>{label}</span>
               </NavLink>
             );
@@ -146,64 +103,44 @@ export default function ExamSidebarBlock({ role = "student" }) {
         </div>
       </div>
 
-      {/* STUDENT → RESULTS */}
+      {/* MY RESULTS */}
       <NavLink
         to="/dashboard/result"
         className={({ isActive }) =>
-          `${linkBase} ${isActive
-            ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-            : "text-slate-700 hover:bg-yellow-50"
+          `${linkBase} ${
+            isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
-        <svg
-          className="w-5 h-5 text-yellow-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path d="M3 4h18M3 10h18M3 16h18M3 20h18" />
-        </svg>
+        <ListChecks size={18} />
         <span>My Results</span>
       </NavLink>
 
-      {/* STUDENT → ACHIEVEMENTS */}
+      {/* ACHIEVEMENTS */}
       <NavLink
         to="/dashboard/achievements"
         className={({ isActive }) =>
-          `${linkBase} ${isActive
-            ? "bg-gradient-to-br from-yellow-200 to-yellow-100 text-yellow-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-            : "text-slate-700 hover:bg-yellow-50"
+          `${linkBase} ${
+            isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
-        <svg
-          className="w-5 h-5 text-yellow-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path d="M3 4h18M3 10h18M3 16h18M3 20h18" />
-        </svg>
+        <ListChecks size={18} />
         <span>Achievements</span>
       </NavLink>
 
-      {/* STUDENT → STUDY MATERIALS */}
+      {/* STUDY MATERIALS */}
       <NavLink
         to="/dashboard/study-materials"
         className={({ isActive }) =>
-          `${linkBase} ${isActive
-            ? "bg-gradient-to-br from-indigo-200 to-indigo-100 text-indigo-900 shadow-[inset_0_0_0_1px_rgba(2,6,23,0.06)]"
-            : "text-slate-700 hover:bg-indigo-50"
+          `${linkBase} ${
+            isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
-        <GraduationCapIcon className="w-5 h-5 text-indigo-600" />
+        <GraduationCapIcon size={18} />
         <span>Study Materials</span>
       </NavLink>
-
     </div>
   );
 }

@@ -1,8 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import crypto from "crypto";
 import { isEmail, normalizeLoginId } from "../utils/validators.js";
-import { sendWelcomeEmail } from "../utils/sendMail.js";
+import {
+  sendWelcomeEmail,
+  sendResetPasswordEmail,
+  sendPasswordResetSuccessEmail,
+} from "../utils/sendMail.js";
 
 const SALT_ROUNDS = 10;
 
@@ -127,4 +132,79 @@ export async function login(req, res) {
 export async function me(req, res) {
   // req.user is set by auth middleware
   res.json({ user: req.user });
+}
+
+export async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email: email?.toLowerCase() });
+    if (!user) {
+      return res.status(200).json({
+        message: "If the email exists, a reset link has been sent",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+
+    user.resetPasswordToken = hash;
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
+    await user.save();
+
+    const resetLink = `${process.env.CLIENT_ORIGIN}/reset-password/${token}`;
+
+    // await sendResetPasswordEmail({
+    //   to: user.email,
+    //   name: user.name,
+    //   resetLink,
+    // });
+
+    // res.json({ message: "Reset link sent to your email" });
+    await sendResetPasswordEmail({
+      to: user.email,
+      name: user.name,
+      resetLink,
+    });
+
+    res.json({ message: "Reset link sent to your email" });
+  } catch (err) {
+    console.error("forgot password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hash,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired link" });
+    }
+
+    user.password = await bcrypt.hash(password, SALT_ROUNDS);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+    sendPasswordResetSuccessEmail({
+      to: user.email,
+      name: user.name,
+    }).catch((err) =>
+      console.error("Password reset success email failed:", err?.message)
+    );
+
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("reset password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 }

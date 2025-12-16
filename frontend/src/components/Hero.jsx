@@ -353,6 +353,36 @@ const Hero = () => {
   }, []);
 
 
+  async function handleForgotPassword(e) {
+    e.preventDefault();
+
+    const form = e.currentTarget;
+    const email = form.querySelector("input")?.value?.trim().toLowerCase();
+
+    if (!email) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to send reset link");
+      }
+
+      toast.success("Password reset link sent to your email 📧");
+      setShowForgot(false);
+    } catch (err) {
+      toast.error(err.message || "Something went wrong");
+    }
+  }
 
 
   return (
@@ -492,7 +522,7 @@ const Hero = () => {
                 placeholder="Confirm Password"
                 name="confirm"
               />
-              <input className="input" name="referral" placeholder="Referral code (optional)" />
+              {/* <input className="input" name="referral" placeholder="Referral code (optional)" /> */}
 
               {signError ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -617,7 +647,7 @@ const Hero = () => {
       {showForgot && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center"
-          onMouseDown={onBackdropClick}
+          onClick={onBackdropClick}
           aria-modal="true"
           role="dialog"
         >
@@ -642,12 +672,19 @@ const Hero = () => {
 
               <form
                 className="grid gap-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setShowForgot(false);
-                }}
+                // onSubmit={(e) => {
+                //   e.preventDefault();
+                //   setShowForgot(false);
+                // }}
+                onSubmit={handleForgotPassword}
               >
-                <input className="input" placeholder="Email Address" />
+                <input
+                  className="input"
+                  name="email"
+                  type="email"
+                  placeholder="Email Address"
+                  required
+                />
                 <button
                   type="submit"
                   className="mt-1 rounded-2xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow hover:bg-yellow-300"

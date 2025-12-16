@@ -40,6 +40,8 @@ const UserSchema = new mongoose.Schema(
         ref: "StudyMaterial",
       },
     ],
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   { timestamps: true }
 );

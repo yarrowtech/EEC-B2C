@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 
 import Topbar from "./components/Topbar";
 import Navbar from "./components/Navbar";
@@ -64,6 +64,7 @@ import ResultsView from "./pages/ResultsView";
 import AchievementsView from "./pages/AchievementsView";
 import StudyMaterialsPage from "./pages/StudyMaterialsPage";
 import UploadStudyMaterial from "./pages/UploadStudyMaterial";
+import ResetPassword from "./pages/ResetPassword";
 
 
 function getToken() {
@@ -128,6 +129,10 @@ function RoleRedirect() {
 
 
 function ShellLayout() {
+  
+  const location = useLocation();
+  const hideFooter = location.pathname.startsWith("/dashboard");
+
   return (
     <div className="min-h-screen bg-white text-blue-950">
       <ToastContainer position="bottom-right" />
@@ -145,7 +150,8 @@ function ShellLayout() {
 
       {/* Fixed Footer */}
       {/* <div className="fixed inset-x-0 bottom-0 z-40"> */}
-      <EECFooter />
+      {/* <EECFooter /> */}
+      {!hideFooter && <EECFooter />}
       <ScrollToTopButton />
       {/* </div> */}
     </div>
@@ -290,6 +296,7 @@ export default function App() {
           <Route path="/admin-dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="/teacher-dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="/student-dashboard" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
