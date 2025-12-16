@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { isEmail, normalizeLoginId } from "../utils/validators.js";
-import { sendWelcomeEmail } from "../services/mailer.js";
+import { sendWelcomeEmail } from "../utils/sendMail.js";
 
 const SALT_ROUNDS = 10;
 
