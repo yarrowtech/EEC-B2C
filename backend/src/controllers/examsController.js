@@ -85,6 +85,200 @@ function scoreChoiceMatrix(q, ans) {
 }
 
 // POST /api/exams/start
+// export const startExam = async (req, res) => {
+//   try {
+//     const userId = req.user?.id;
+//     const { stage = "stage-1", subject, topic, type, limit = 10 } = req.body;
+
+//     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+//     if (!subject || !topic || !type) {
+//       return res
+//         .status(400)
+//         .json({ message: "subject, topic, type are required" });
+//     }
+
+//     // ⭐ Map frontend → backend type
+//     let qType = type;
+//     if (type === "cloze-dnd") qType = "cloze-drag";
+
+//     // ⭐ User class normalization
+//     // const userClassRaw = req.user?.class || "";
+//     // const normalizedClass = userClassRaw.trim();
+
+//     const userClassRaw = req.user?.class || "";
+
+//     // Accept both formats: "3" or "Class 3"
+//     const normalizedClass = userClassRaw.startsWith("Class")
+//       ? userClassRaw.trim() // "Class 3"
+//       : `Class ${userClassRaw.trim()}`; // convert "3" → "Class 3"
+
+//     // ⭐ Match class EXACTLY like stored in DB (e.g., "Class 3")
+//     // Your DB stores: "Class 3"
+//     // So we match EXACTLY that.
+
+//     // const match = {
+//     //   type: qType,
+//     //   class: normalizedClass, // <-- FIXED
+//     //   // subject: { $regex: new RegExp("^" + subject + "$", "i") },
+//     //   // topic: { $regex: new RegExp("^" + topic + "$", "i") },
+//     //   topic: { $regex: topic, $options: "i" },
+//     //   subject: { $regex: subject, $options: "i" },
+//     // };
+//     // Build match object
+//     const match = {
+//       type: qType,
+//       subject: { $regex: subject, $options: "i" },
+//       topic: { $regex: topic, $options: "i" },
+//     };
+
+//     // Apply class filter ONLY if valid
+//     if (
+//       normalizedClass &&
+//       normalizedClass !== "Class" &&
+//       normalizedClass !== "Class "
+//     ) {
+//       match.class = normalizedClass;
+//     } else {
+//       console.log("⚠ User has no valid class → class filter skipped");
+//     }
+
+//     console.log("MATCH USED:", match);
+
+//     const pipeline = [
+//       { $match: match },
+//       { $sample: { size: Number(limit) } },
+//       {
+//         $project: {
+//           type: 1,
+//           subject: 1,
+//           topic: 1,
+//           question: 1,
+//           options: 1,
+//           choiceMatrix: 1,
+//           matrix: {
+//             prompt: "$choiceMatrix.prompt",
+//             rows: {
+//               $map: {
+//                 input: "$choiceMatrix.rows",
+//                 as: "row",
+//                 in: { title: "$$row" },
+//               },
+//             },
+//             cols: "$choiceMatrix.cols",
+//             correctCells: "$choiceMatrix.correctCells",
+//             options: {
+//               $map: {
+//                 input: "$choiceMatrix.cols",
+//                 as: "col",
+//                 in: { key: "$$col", label: "$$col" },
+//               },
+//             },
+//           },
+//           prompt: 1,
+//           explanation: 1,
+//           clozeDrag: 1,
+//           clozeSelect: 1,
+//         },
+//       },
+//     ];
+
+//     const questions = await Question.aggregate(pipeline);
+
+//     if (!questions.length)
+//       return res.status(404).json({ message: "No questions found" });
+
+//     // ⭐ CLOZE PARSER (unchanged)
+//     function parseCloze(q) {
+//       const text = q.clozeDrag?.text || "";
+//       const tokens = q.clozeDrag?.tokens || [];
+//       const correct = q.clozeDrag?.correctMap || {};
+
+//       const parts = [];
+//       const regex = /\[\[(blank\d+)\]\]/g;
+//       let last = 0,
+//         m;
+
+//       while ((m = regex.exec(text)) !== null) {
+//         const before = text.slice(last, m.index);
+//         if (before) parts.push({ type: "text", value: before });
+//         parts.push({ type: "blank", id: m[1] });
+//         last = regex.lastIndex;
+//       }
+
+//       const after = text.slice(last);
+//       if (after) parts.push({ type: "text", value: after });
+
+//       return { clozeText: parts, options: tokens, correct };
+//     }
+
+//     // ⭐ FORMAT QUESTIONS (unchanged)
+//     const finalQuestions = questions.map((q) => {
+//       if (q.type === "cloze-drag") {
+//         const parsed = parseCloze(q);
+//         return {
+//           _id: q._id,
+//           type: q.type,
+//           clozeText: parsed.clozeText,
+//           options: parsed.options,
+//           correct: parsed.correct,
+//           explanation: q.explanation,
+//         };
+//       }
+
+//       // ⭐ FIX: Cloze-Select was not being returned to frontend
+//       if (q.type === "cloze-select") {
+//         return {
+//           _id: q._id,
+//           type: q.type,
+//           clozeSelect: q.clozeSelect, // includes text + blanks
+//           explanation: q.explanation,
+//         };
+//       }
+
+//       return {
+//         _id: q._id,
+//         type: q.type,
+//         question: q.question,
+//         prompt: q.prompt,
+//         explanation: q.explanation,
+//         choiceMatrix: q.choiceMatrix || {},
+//         matrix: q.matrix || {},
+//         rows: q.choiceMatrix?.rows || [],
+//         cols: q.choiceMatrix?.cols || [],
+//         correctCells: q.choiceMatrix?.correctCells || [],
+//         options: q.options?.map((o) => ({ key: o.key, text: o.text })) || [],
+//       };
+//     });
+
+//     // ⭐ create attempt (unchanged)
+//     const attempt = await Attempt.create({
+//       userId,
+//       stage,
+//       // subject,
+//       // topic,
+//       subject: new mongoose.Types.ObjectId(subject),
+//       topic: new mongoose.Types.ObjectId(topic),
+//       type,
+//       questions: finalQuestions.map((q) => q._id),
+//       total: finalQuestions.length,
+//     });
+
+//     // ⭐ Response (unchanged)
+//     res.status(201).json({
+//       attemptId: attempt._id,
+//       stage,
+//       subject,
+//       topic,
+//       type,
+//       total: attempt.total,
+//       questions: finalQuestions,
+//     });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 export const startExam = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -97,41 +291,31 @@ export const startExam = async (req, res) => {
         .json({ message: "subject, topic, type are required" });
     }
 
+    // console.log("REQ.USER FINAL:", req.user);
     // ⭐ Map frontend → backend type
     let qType = type;
     if (type === "cloze-dnd") qType = "cloze-drag";
 
     // ⭐ User class normalization
-    // const userClassRaw = req.user?.class || "";
-    // const normalizedClass = userClassRaw.trim();
-
     const userClassRaw = req.user?.class || "";
 
     // Accept both formats: "3" or "Class 3"
     const normalizedClass = userClassRaw.startsWith("Class")
-      ? userClassRaw.trim() // "Class 3"
-      : `Class ${userClassRaw.trim()}`; // convert "3" → "Class 3"
+      ? userClassRaw.trim()
+      : `Class ${userClassRaw.trim()}`;
 
-    // ⭐ Match class EXACTLY like stored in DB (e.g., "Class 3")
-    // Your DB stores: "Class 3"
-    // So we match EXACTLY that.
+    // ⭐ User board normalization (ADDED)
+    const userBoardRaw = req.user?.board || "";
+    const normalizedBoard = userBoardRaw.trim();
 
-    // const match = {
-    //   type: qType,
-    //   class: normalizedClass, // <-- FIXED
-    //   // subject: { $regex: new RegExp("^" + subject + "$", "i") },
-    //   // topic: { $regex: new RegExp("^" + topic + "$", "i") },
-    //   topic: { $regex: topic, $options: "i" },
-    //   subject: { $regex: subject, $options: "i" },
-    // };
-    // Build match object
+    // ⭐ Build match object (UNCHANGED)
     const match = {
       type: qType,
       subject: { $regex: subject, $options: "i" },
       topic: { $regex: topic, $options: "i" },
     };
 
-    // Apply class filter ONLY if valid
+    // ⭐ Apply class filter ONLY if valid (UNCHANGED)
     if (
       normalizedClass &&
       normalizedClass !== "Class" &&
@@ -142,7 +326,14 @@ export const startExam = async (req, res) => {
       console.log("⚠ User has no valid class → class filter skipped");
     }
 
-    console.log("MATCH USED:", match);
+    // ⭐ Apply board filter ONLY if present (ADDED)
+    if (normalizedBoard) {
+      match.board = normalizedBoard;
+    } else {
+      console.log("⚠ User has no board → board filter skipped");
+    }
+
+    console.log("MATCH USED (with board):", match);
 
     const pipeline = [
       { $match: match },
@@ -187,7 +378,7 @@ export const startExam = async (req, res) => {
     if (!questions.length)
       return res.status(404).json({ message: "No questions found" });
 
-    // ⭐ CLOZE PARSER (unchanged)
+    // ⭐ CLOZE PARSER (UNCHANGED)
     function parseCloze(q) {
       const text = q.clozeDrag?.text || "";
       const tokens = q.clozeDrag?.tokens || [];
@@ -211,7 +402,7 @@ export const startExam = async (req, res) => {
       return { clozeText: parts, options: tokens, correct };
     }
 
-    // ⭐ FORMAT QUESTIONS (unchanged)
+    // ⭐ FORMAT QUESTIONS (UNCHANGED)
     const finalQuestions = questions.map((q) => {
       if (q.type === "cloze-drag") {
         const parsed = parseCloze(q);
@@ -225,12 +416,11 @@ export const startExam = async (req, res) => {
         };
       }
 
-      // ⭐ FIX: Cloze-Select was not being returned to frontend
       if (q.type === "cloze-select") {
         return {
           _id: q._id,
           type: q.type,
-          clozeSelect: q.clozeSelect, // includes text + blanks
+          clozeSelect: q.clozeSelect,
           explanation: q.explanation,
         };
       }
@@ -250,12 +440,10 @@ export const startExam = async (req, res) => {
       };
     });
 
-    // ⭐ create attempt (unchanged)
+    // ⭐ create attempt (UNCHANGED)
     const attempt = await Attempt.create({
       userId,
       stage,
-      // subject,
-      // topic,
       subject: new mongoose.Types.ObjectId(subject),
       topic: new mongoose.Types.ObjectId(topic),
       type,
@@ -263,7 +451,7 @@ export const startExam = async (req, res) => {
       total: finalQuestions.length,
     });
 
-    // ⭐ Response (unchanged)
+    // ⭐ Response (UNCHANGED)
     res.status(201).json({
       attemptId: attempt._id,
       stage,
@@ -1064,7 +1252,9 @@ export const adminAttemptDetail = async (req, res) => {
           const key = (ans.mcq || [])[0] || "";
           const opt = (q.options || []).find((o) => o.key === key);
           const correctKey = (q.correct || [])[0] || "";
-          const correctOpt = (q.options || []).find((o) => o.key === correctKey);
+          const correctOpt = (q.options || []).find(
+            (o) => o.key === correctKey
+          );
           studentAnswer = key ? `${key}) ${opt?.text || ""}` : "—";
           correctAnswer = correctKey
             ? `${correctKey}) ${correctOpt?.text || ""}`
@@ -1122,7 +1312,6 @@ export const adminAttemptDetail = async (req, res) => {
   }
 };
 
-
 export const getUserResults = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -1172,5 +1361,66 @@ export const getUserResults = async (req, res) => {
       success: false,
       message: "Failed to fetch results",
     });
+  }
+};
+
+export const getClassRank = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const userClass = user.class || user.className;
+    const userBoard = user.board;
+
+    // 1️⃣ Get all students of same class & board
+    const students = await User.find({
+      role: "student",
+      board: userBoard,
+      $or: [{ class: userClass }, { className: userClass }],
+    }).select("_id");
+
+    const studentIds = students.map(s => s._id);
+
+    // 2️⃣ Aggregate average score per student
+    const scores = await Attempt.aggregate([
+      { $match: { userId: { $in: studentIds } } },
+      {
+        $group: {
+          _id: "$userId",
+          avgPercent: {
+            $avg: {
+              $cond: [
+                { $gt: ["$total", 0] },
+                { $multiply: [{ $divide: ["$score", "$total"] }, 100] },
+                0
+              ]
+            }
+          }
+        }
+      },
+      { $sort: { avgPercent: -1 } }
+    ]);
+
+    const totalStudents = scores.length;
+
+    // 3️⃣ Find rank
+    const rankIndex = scores.findIndex(
+      s => s._id.toString() === userId.toString()
+    );
+
+    const rank = rankIndex >= 0 ? rankIndex + 1 : totalStudents;
+
+    res.json({
+      success: true,
+      rank,
+      totalStudents
+    });
+  } catch (err) {
+    console.error("CLASS RANK ERROR:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

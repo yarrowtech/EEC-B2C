@@ -19,7 +19,11 @@ import {
   Sparkles,
   XCircle,
   User,
-  Lightbulb
+  Lightbulb,
+  BarChart,
+  TrophyIcon,
+  GitGraphIcon,
+  BookPlus
 } from 'lucide-react';
 
 const ResultsView = () => {
@@ -28,7 +32,25 @@ const ResultsView = () => {
   const [examResults, setExamResults] = useState([]);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user._id || user.id;
+  const [classRank, setClassRank] = useState(null);
+  const [totalStudents, setTotalStudents] = useState(null);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  useEffect(() => {
+    if (!userId) return;
+
+    fetch(`${API}/api/exams/class-rank/${userId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setClassRank(data.rank);
+          setTotalStudents(data.totalStudents);
+        }
+      })
+      .catch(err => console.error("Rank fetch error", err));
+  }, []);
+
   // useEffect(() => {
   //   fetch(`${API}/api/exams/user-results/${user._id}`, {
   //     headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
@@ -287,6 +309,22 @@ const ResultsView = () => {
     (examPage - 1) * examsPerPage,
     examPage * examsPerPage
   );
+  const hasResults = examResults.length > 0;
+
+  const avgScore = hasResults
+    ? (
+      examResults.reduce((acc, exam) => acc + exam.percentage, 0) /
+      examResults.length
+    ).toFixed(1)
+    : "0.0";
+
+  const bestScore = hasResults
+    ? Math.max(...examResults.map(exam => exam.percentage)).toFixed(1)
+    : "0.0";
+
+  const excellentCount = hasResults
+    ? examResults.filter(exam => exam.percentage >= 85).length
+    : 0;
 
 
   return (
@@ -328,7 +366,7 @@ const ResultsView = () => {
             <div className="p-3 bg-yellow-100 rounded-lg">
               <Target className="w-6 h-6 text-yellow-600" />
             </div>
-            <span className="text-2xl">📊</span>
+            <span className="text-2xl"><BarChart /></span>
           </div>
 
           <div>
@@ -356,13 +394,17 @@ const ResultsView = () => {
             <div className="p-3 bg-blue-100 rounded-lg">
               <Award className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-2xl">🏆</span>
+            <span className="text-2xl"><TrophyIcon /></span>
           </div>
 
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">#1</h3>
-            <p className="text-gray-600 text-sm">Class Rank</p>
-            <p className="text-xs text-gray-500 mt-1">out of 1 students</p>
+            <h3 className="text-2xl font-bold text-gray-800">
+              #{classRank ?? "—"}
+            </h3>
+            <p className="text-gray-600 text-sm">Rank</p>
+            <p className="text-xs text-gray-500 mt-1">
+              out of {totalStudents ?? "—"} students
+            </p>
           </div>
         </div>
 
@@ -372,7 +414,7 @@ const ResultsView = () => {
             <div className="p-3 bg-green-100 rounded-lg">
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
-            <span className="text-2xl">📈</span>
+            <span className="text-2xl"><GitGraphIcon /></span>
           </div>
 
           <div>
@@ -394,7 +436,7 @@ const ResultsView = () => {
             <div className="p-3 bg-purple-100 rounded-lg">
               <BookOpen className="w-6 h-6 text-purple-600" />
             </div>
-            <span className="text-2xl">📚</span>
+            <span className="text-2xl"><BookPlus /></span>
           </div>
 
           <div>
@@ -461,7 +503,8 @@ const ResultsView = () => {
           {/* AVERAGE SCORE */}
           <div className="flex flex-col items-center bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-4 rounded-xl shadow-md w-full">
             <div className="text-3xl font-bold drop-shadow-sm">
-              {(examResults.reduce((acc, exam) => acc + exam.percentage, 0) / examResults.length).toFixed(1)}%
+              {/* {(examResults.reduce((acc, exam) => acc + exam.percentage, 0) / examResults.length).toFixed(1)}% */}
+              {avgScore}%
             </div>
             <div className="text-sm text-indigo-100 mt-1">Average Score</div>
             <span className="text-white/80 text-lg mt-1"> <ChartSpline /> </span>
@@ -470,7 +513,8 @@ const ResultsView = () => {
           {/* BEST PERFORMANCE */}
           <div className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 text-white p-4 rounded-xl shadow-md w-full">
             <div className="text-3xl font-bold drop-shadow-sm">
-              {Math.max(...examResults.map(exam => exam.percentage)).toFixed(1)}%
+              {/* {Math.max(...examResults.map(exam => exam.percentage)).toFixed(1)}% */}
+              {bestScore}%
             </div>
             <div className="text-sm text-green-100 mt-1">Best Performance</div>
             <span className="text-white/80 text-lg mt-1"><Medal /> </span>
@@ -479,7 +523,8 @@ const ResultsView = () => {
           {/* EXCELLENT SCORES */}
           <div className="flex flex-col items-center bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 rounded-xl shadow-md w-full">
             <div className="text-3xl font-bold drop-shadow-sm">
-              {examResults.filter(exam => exam.percentage >= 85).length}/{examResults.length}
+              {/* {examResults.filter(exam => exam.percentage >= 85).length}/{examResults.length} */}
+              {excellentCount}/{examResults.length || 0}
             </div>
             <div className="text-sm text-purple-100 mt-1">Excellent Scores</div>
             <span className="text-white/80 text-lg mt-1"> <Sparkles /> </span>
@@ -619,8 +664,8 @@ const ResultsView = () => {
             key={i}
             onClick={() => setExamPage(i + 1)}
             className={`px-3 py-1 rounded-lg border text-sm ${examPage === i + 1
-                ? "bg-yellow-500 text-white"
-                : "bg-white text-gray-700"
+              ? "bg-yellow-500 text-white"
+              : "bg-white text-gray-700"
               }`}
           >
             {i + 1}
@@ -639,40 +684,69 @@ const ResultsView = () => {
       {/* ---------------- MODAL VIEW ---------------- */}
       {showModal && activeExam && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn"
+          className="
+      fixed inset-0 z-50
+      bg-gradient-to-br from-black/50 via-black/40 to-black/60
+      backdrop-blur-lg
+      flex items-center justify-center p-4
+      animate-fadeIn
+    "
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowModal(false);
           }}
         >
           <div
-            className="relative bg-white/80 rounded-3xl shadow-xl w-full max-w-3xl p-8 animate-scaleIn border border-white/40"
+            className="
+        relative w-full max-w-3xl
+        rounded-[2.5rem]
+        bg-gradient-to-br from-white via-yellow-50 to-pink-50
+        shadow-[0_40px_100px_rgba(0,0,0,0.35)]
+        border border-white/60
+        animate-scaleIn
+        overflow-hidden p-14
+      "
             style={{ maxHeight: "90vh" }}
           >
-            {/* INNER SCROLL AREA */}
-            <div className="overflow-y-auto custom-scrollbar-hide pr-3" style={{ maxHeight: "80vh" }}>
+            {/* Decorative blobs */}
+            <div className="absolute -top-20 -right-20 w-72 h-72 bg-pink-300/30 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-yellow-300/30 rounded-full blur-3xl" />
 
+            {/* INNER SCROLL */}
+            <div
+              className="relative z-10 overflow-y-auto pr-3 custom-scrollbar-hide"
+              style={{ maxHeight: "80vh" }}
+            >
               {/* CLOSE BUTTON */}
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-4 right-4 bg-red-500/10 text-red-600 p-2 rounded-full hover:bg-red-500/20 transition"
+                className="
+            absolute top-5 right-5
+            bg-gradient-to-br from-red-400 to-pink-500
+            text-white p-2 rounded-full
+            shadow-lg hover:scale-110 transition
+          "
               >
                 <XCircle className="w-5 h-5" />
               </button>
 
               {/* HEADER */}
-              <h2 className="text-3xl font-extrabold text-gray-900 mb-6 flex items-center gap-3">
-                <Trophy className="w-8 h-8 text-yellow-500 drop-shadow" />
-                Detailed Performance Report
-              </h2>
+              <div className="flex items-center gap-4 mb-8">
+                {/* <div className="p-4 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-xl animate-bounce">
+                  🏆
+                </div> */}
+                <h2 className="text-3xl font-extrabold text-gray-900">
+                  Performance Report
+                </h2>
+              </div>
 
               {/* STUDENT INFO */}
-              <div className="mb-6 p-5 rounded-2xl shadow-sm bg-white">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-3">
-                  <User className="w-5 h-5 text-amber-600" />
+              <div className="mb-6 p-6 rounded-2xl bg-white/80 shadow-lg border border-white">
+                <h3 className="text-lg font-bold text-amber-700 flex items-center gap-2 mb-3">
+                  <User className="w-5 h-5" />
                   Student Information
                 </h3>
 
-                <div className="space-y-1 text-gray-700 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
                   <p><strong>Name:</strong> {user?.name}</p>
                   <p><strong>Class:</strong> {user?.class || user?.className}</p>
                   <p><strong>Exam:</strong> {activeExam.examName}</p>
@@ -681,9 +755,9 @@ const ResultsView = () => {
               </div>
 
               {/* SUBJECT & TOPIC */}
-              <div className="mb-6 p-5 rounded-2xl border shadow-sm bg-gradient-to-r from-blue-50 to-indigo-100/60">
-                <h3 className="text-lg font-semibold text-blue-700 flex items-center gap-2 mb-2">
-                  <BookOpen className="w-5 h-5 text-blue-700" />
+              <div className="mb-6 p-6 rounded-2xl bg-gradient-to-r from-blue-100 to-indigo-200 shadow-lg">
+                <h3 className="text-lg font-bold text-blue-800 flex items-center gap-2 mb-2">
+                  <BookOpen className="w-5 h-5" />
                   Subject & Topic
                 </h3>
 
@@ -691,31 +765,33 @@ const ResultsView = () => {
                 <p className="text-gray-800"><strong>Topic:</strong> {activeExam.topicName}</p>
               </div>
 
-              {/* SCORE SUGGESTION SECTION */}
-              <div className="mb-6 p-5 rounded-2xl border shadow-md bg-gradient-to-r from-green-50 to-emerald-100/60">
+              {/* SCORE TIP */}
+              <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-green-100 to-emerald-200 shadow-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Lightbulb className="w-5 h-5 text-emerald-600" />
-                  <h4 className="font-semibold text-emerald-700">Score Improvement Tip</h4>
+                  <h4 className="font-bold text-emerald-700">
+                    Smart Improvement Tip
+                  </h4>
                 </div>
 
                 <p className="text-gray-700 text-sm leading-relaxed">
                   {activeExam.percent >= 90
-                    ? "🔥 Incredible! Try harder-level questions to achieve mastery."
+                    ? "🔥 Outstanding! Try higher difficulty questions to become a champion."
                     : activeExam.percent >= 75
-                      ? "👏 Great work! Strengthen weak areas to hit the 90%+ zone."
+                      ? "👏 Amazing progress! Polish weak areas to cross 90%."
                       : activeExam.percent >= 50
-                        ? "📘 You're improving! Focus on reviewing incorrect answers."
-                        : "🌱 Start from basics and build confidence step-by-step. You can do it!"}
+                        ? "📘 Keep going! Revise mistakes and practice daily."
+                        : "🌱 Everyone starts somewhere. Practice basics and grow stronger!"}
                 </p>
               </div>
 
               {/* QUESTION BREAKDOWN */}
-              <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <BarChart3 className="w-6 h-6 text-purple-600" />
+              <h3 className="text-2xl font-extrabold text-purple-700 mb-4 flex items-center gap-2">
+                <BarChart3 className="w-6 h-6" />
                 Question Breakdown
               </h3>
 
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {activeExam.questions.map((q, index) => {
                   const userAns =
                     q.userAnswer?.mcq?.join(", ") ||
@@ -728,38 +804,43 @@ const ResultsView = () => {
                   return (
                     <div
                       key={q._id}
-                      className="p-5 rounded-2xl border shadow-sm bg-white/70 backdrop-blur-md hover:shadow-lg transition-all"
+                      className="
+                  p-6 rounded-2xl
+                  bg-white/90
+                  shadow-lg
+                  border border-white
+                  hover:scale-[1.02]
+                  transition-all
+                "
                     >
-                      {/* QUESTION TITLE */}
                       <p className="font-semibold text-gray-900 mb-3 flex items-start gap-2">
                         <Sparkles className="w-5 h-5 text-yellow-500 mt-1" />
                         {index + 1}. {q.question}
                       </p>
 
-                      {/* Correct Answer */}
                       <p className="text-green-700 text-sm font-semibold">
-                        Correct Answer:{" "}
-                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                        Correct Answer:
+                        <span className="ml-2 px-2 py-0.5 rounded bg-green-100">
                           {correctAns}
                         </span>
                       </p>
 
-                      {/* User Answer */}
                       <p className="text-blue-700 text-sm font-semibold mt-1">
-                        Your Answer:{" "}
-                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                        Your Answer:
+                        <span className="ml-2 px-2 py-0.5 rounded bg-blue-100">
                           {userAns}
                         </span>
                       </p>
 
-                      {/* STATUS BADGE */}
                       <span
-                        className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold ${isCorrect
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                          }`}
+                        className={`
+                    inline-block mt-4 px-4 py-1 rounded-full text-xs font-bold
+                    ${isCorrect
+                            ? "bg-green-200 text-green-800"
+                            : "bg-red-200 text-red-800"}
+                  `}
                       >
-                        {isCorrect ? "Correct ✔" : "Incorrect ✘"}
+                        {isCorrect ? "🎉 Correct" : "❌ Incorrect"}
                       </span>
                     </div>
                   );

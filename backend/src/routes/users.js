@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { listStudents } from "../controllers/users.js";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
+import { autoPromoteStudent } from "../utils/autoPromoteStudent.js";
 
 const router = Router();
 
@@ -195,11 +196,18 @@ router.get("/profile", requireAuth, async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    /* ---------------- AUTO PROMOTION ---------------- */
+    const promoted = autoPromoteStudent(user);
+    if (promoted) {
+      await user.save(); // save only if promotion happened
+    }
+
     const mappedUser = {
       ...user._doc,
 
       // Fix class → className
       className: user.className || user.class || "",
+      board: user.board || "",
 
       // Ensure missing fields exist
       gender: user.gender || "",
@@ -213,6 +221,7 @@ router.get("/profile", requireAuth, async (req, res) => {
       emailNotifications: user.emailNotifications ?? true,
       smsNotifications: user.smsNotifications ?? false,
       pushNotifications: user.pushNotifications ?? true,
+      lastPromotedYear: user.lastPromotedYear || null,
     };
 
     res.json({ user: mappedUser });

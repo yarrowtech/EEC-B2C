@@ -110,6 +110,11 @@ const QuestionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    board: {
+      type: String,
+      required: true,
+      index: true,
+    },
 
     // Shared fields
     question: { type: String, trim: true }, // MCQ / TrueFalse / essays

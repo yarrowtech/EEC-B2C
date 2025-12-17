@@ -21,9 +21,9 @@ const transporter = nodemailer.createTransport({
 async function verifyTransporter() {
   try {
     await transporter.verify();
-    console.log("✅ SMTP server ready");
+    // console.log("✅ SMTP server ready");
   } catch (err) {
-    console.error("❌ SMTP verification failed:", err.message);
+    // console.error("❌ SMTP verification failed:", err.message);
   }
 }
 verifyTransporter();

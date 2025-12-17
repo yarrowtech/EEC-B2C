@@ -194,6 +194,7 @@ export const create = async (req, res) => {
     if (!ok) return res.status(400).json({ message });
 
     doc.class = req.body.class;
+    doc.board = req.body.board;
 
     const saved = await Question.create(doc);
     res.status(201).json({ message: "Created", id: saved._id });
@@ -202,7 +203,6 @@ export const create = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // export const list = async (req, res) => {
 //   try {
@@ -241,6 +241,7 @@ export const list = async (req, res) => {
       topic,
       stage,
       level,
+      board,
       q,
       page = 1,
       limit = 20,
@@ -250,13 +251,24 @@ export const list = async (req, res) => {
     // const userClass = req.user?.class;
     // if (userClass) filter.class = userClass;
     // ⭐ Student class restriction
-    if (req.user?.role === "student" && req.user.class) {
-      filter.class = req.user.class;
+    // if (req.user?.role === "student" && req.user.class) {
+    //   filter.class = req.user.class;
+    // }
+    if (req.user?.role === "student") {
+      if (req.user.class) {
+        filter.class = req.user.class;
+      }
+      if (req.user.board) {
+        filter.board = req.user.board; // ✅ AUTO board filter
+      }
     }
 
     // ⭐ Admin class filter (from UI class tabs)
     if (req.query.class) {
       filter.class = req.query.class;
+    }
+    if (req.query.board) {
+      filter.board = req.query.board; // ✅ Admin filter
     }
 
     if (type) filter.type = type;
@@ -270,6 +282,7 @@ export const list = async (req, res) => {
         { prompt: { $regex: q, $options: "i" } },
         { subject: { $regex: q, $options: "i" } },
         { topic: { $regex: q, $options: "i" } },
+        { board: { $regex: q, $options: "i" } },
       ];
     }
     const skip = (Number(page) - 1) * Number(limit);
@@ -363,7 +376,6 @@ export const update = async (req, res) => {
   }
 };
 
-
 // export const remove = async (req, res) => {
 //   try {
 //     if (!requireAdmin(req, res)) return;
@@ -405,7 +417,6 @@ export const remove = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 /**
  * For populating dropdowns quickly from DB:

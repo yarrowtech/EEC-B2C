@@ -377,6 +377,34 @@ function getUser() {
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+function showPromotionPopup(newClass) {
+  toast(
+    <div className="flex flex-col items-center gap-2 text-center">
+      <div className="text-4xl animate-bounce">🎉</div>
+      <h3 className="text-lg font-bold text-green-700">
+        Congratulations!
+      </h3>
+      <p className="text-sm text-gray-700">
+        You have been automatically promoted to
+      </p>
+      <span className="px-4 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold shadow">
+        {newClass}
+      </span>
+    </div>,
+    {
+      position: "top-center",
+      autoClose: 6000,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: false,
+      theme: "light",
+      className:
+        "rounded-2xl shadow-2xl border border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50",
+    }
+  );
+}
+
+
 /* ------------------------- component ------------------------- */
 export default function ProfilePage() {
   const user = getUser();
@@ -540,11 +568,32 @@ export default function ProfilePage() {
 
         const data = await res.json();
 
+        // if (res.ok && data.user && mounted) {
+        //   setForm((prev) => ({ ...prev, ...data.user }));
+        //   if (data.user.avatar) setImagePreview(data.user.avatar);
+        //   setPointsState(data.user.points || 0);
+        //   localStorage.setItem("user", JSON.stringify(data.user));
+        // }
         if (res.ok && data.user && mounted) {
+          const oldUser = getUser();
+          const oldClass = oldUser?.className || oldUser?.class || "";
+          const newClass = data.user.className || "";
+
           setForm((prev) => ({ ...prev, ...data.user }));
           if (data.user.avatar) setImagePreview(data.user.avatar);
           setPointsState(data.user.points || 0);
+
           localStorage.setItem("user", JSON.stringify(data.user));
+
+          // 🎉 AUTO PROMOTION POPUP
+          if (
+            user?.role === "student" &&
+            oldClass &&
+            newClass &&
+            oldClass !== newClass
+          ) {
+            showPromotionPopup(newClass);
+          }
         }
       } catch (err) {
         console.error("Failed to load profile", err);
@@ -566,6 +615,11 @@ export default function ProfilePage() {
       delete profileData.oldPassword;
       delete profileData.newPassword;
       delete profileData.confirmPassword;
+
+      if (user?.role === "student") {
+        delete profileData.className;
+        delete profileData.board;
+      }
 
       const res = await fetch(`${API}/users/update-profile`, {
         method: "PUT",
@@ -880,40 +934,100 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Semester / Class Field */}
+                    {/* Class / Semester + Board (Student only) */}
                     {user.role === "student" && (
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Class / Semester
-                      </label>
-                      <div className="relative">
-                        <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                        <select
-                          name="className"
-                          value={form.className}
-                          onChange={handleChange}
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.className
-                            ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                            : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
-                            } focus:ring-4 bg-white`}
-                        >
-                          <option value="">Select Class</option>
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={`Class ${i + 1}`}>
-                              Class {i + 1}
-                            </option>
-                          ))}
-                        </select>
+                        {/* Class / Semester */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Class / Semester
+                          </label>
+                          <div className="relative">
+                            <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
+                            {/* <select
+                              name="className"
+                              value={form.className}
+                              onChange={handleChange}
+                              className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.className
+                                ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                                : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
+                                } focus:ring-4 bg-white`}
+                            >
+                              <option value="">Select Class</option>
+                              {Array.from({ length: 12 }, (_, i) => (
+                                <option key={i + 1} value={`Class ${i + 1}`}>
+                                  Class {i + 1}
+                                </option>
+                              ))}
+                            </select> */}
+                            <select
+                              name="className"
+                              value={form.className}
+                              disabled
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl bg-gray-100 cursor-not-allowed"
+                            >
+                              <option>{form.className}</option>
+                            </select>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Class is auto-promoted based on board rules
+                          </p>
+
+                          {errors.className && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors.className}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Board */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Board
+                          </label>
+                          <div className="relative">
+                            <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
+                            {/* <select
+                              name="board"
+                              value={form.board}
+                              onChange={handleChange}
+                              className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.board
+                                ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                                : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
+                                } focus:ring-4 bg-white`}
+                            >
+                              <option value="">Select Board</option>
+                              <option value="CBSE">CBSE</option>
+                              <option value="ICSE">ICSE</option>
+                              <option value="WB">West Bengal Board</option>
+                              <option value="STATE">State Board</option>
+                            </select> */}
+                            <select
+                              name="board"
+                              value={form.board}
+                              disabled
+                              className="w-full pl-12 pr-4 py-3 border rounded-xl bg-gray-100 cursor-not-allowed"
+                            >
+                              <option>{form.board}</option>
+                            </select>
+                          </div>
+
+                          {errors.board && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors.board}
+                            </p>
+                          )}
+                        </div>
+
                       </div>
-
-                      {errors.className && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-4 h-4" />
-                          {errors.className}
-                        </p>
-                      )}
-                    </div>
                     )}
+
+
 
                     {/* Address Field */}
                     <div className="md:col-span-2">
@@ -989,221 +1103,221 @@ export default function ProfilePage() {
                     </div> */}
                     {/* ---------------- Parent Details Section ---------------- */}
                     {user.role === "student" && (
-                    <div className="md:col-span-2 mt-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                        Parent Details
-                      </h3>
-                    </div>
+                      <div className="md:col-span-2 mt-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
+                          Parent Details
+                        </h3>
+                      </div>
                     )}
 
                     {/* ---------------------- FATHER SECTION ---------------------- */}
                     {user.role === "student" && (
-                    <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
-                      <h4 className="text-md font-semibold text-gray-800 mb-3">Father Information</h4>
+                      <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+                        <h4 className="text-md font-semibold text-gray-800 mb-3">Father Information</h4>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        {/* Father Name */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Father Name
-                          </label>
-                          <div className="relative">
-                            <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          {/* Father Name */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Father Name
+                            </label>
+                            <div className="relative">
+                              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
                           text-gray-400 w-5 h-5" />
-                            <input
-                              type="text"
-                              name="fatherName"
-                              value={form.fatherName}
-                              onChange={handleChange}
-                              placeholder="Enter father's name"
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Father Occupation */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Father Occupation
-                          </label>
-                          <div className="relative">
-                            <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                              text-gray-400 w-5 h-5" />
-                            <select
-                              name="fatherOccupation"
-                              value={
-                                occupationOptions.includes(form.fatherOccupation)
-                                  ? form.fatherOccupation
-                                  : "Others"
-                              }
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === "Others") {
-                                  setForm((prev) => ({ ...prev, fatherOccupation: "" }));
-                                } else {
-                                  setForm((prev) => ({ ...prev, fatherOccupation: value }));
-                                }
-                              }}
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                            >
-                              <option value="">Select Occupation</option>
-                              {occupationOptions.map((job) => (
-                                <option key={job} value={job}>
-                                  {job}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Custom Father Occupation */}
-                          {(!occupationOptions.includes(form.fatherOccupation) ||
-                            form.fatherOccupation === "") && (
                               <input
                                 type="text"
-                                name="fatherOccupation"
-                                value={form.fatherOccupation}
+                                name="fatherName"
+                                value={form.fatherName}
                                 onChange={handleChange}
-                                placeholder="Enter custom occupation"
-                                className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                                placeholder="Enter father's name"
+                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
                      border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               />
-                            )}
-                        </div>
+                            </div>
+                          </div>
 
-                        {/* Father Contact Number */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Father Contact Number
-                          </label>
-                          <div className="relative">
-                            <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                          text-gray-400 w-5 h-5" />
-                            <input
-                              type="tel"
-                              name="fatherContact"
-                              value={form.fatherContact}
-                              onChange={handleChange}
-                              placeholder="Enter father's mobile number"
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                          {/* Father Occupation */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Father Occupation
+                            </label>
+                            <div className="relative">
+                              <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                              text-gray-400 w-5 h-5" />
+                              <select
+                                name="fatherOccupation"
+                                value={
+                                  occupationOptions.includes(form.fatherOccupation)
+                                    ? form.fatherOccupation
+                                    : "Others"
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === "Others") {
+                                    setForm((prev) => ({ ...prev, fatherOccupation: "" }));
+                                  } else {
+                                    setForm((prev) => ({ ...prev, fatherOccupation: value }));
+                                  }
+                                }}
+                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
                      border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
                      focus:ring-yellow-100 focus:ring-4 bg-white"
-                            />
-                          </div>
-                        </div>
+                              >
+                                <option value="">Select Occupation</option>
+                                {occupationOptions.map((job) => (
+                                  <option key={job} value={job}>
+                                    {job}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
 
+                            {/* Custom Father Occupation */}
+                            {(!occupationOptions.includes(form.fatherOccupation) ||
+                              form.fatherOccupation === "") && (
+                                <input
+                                  type="text"
+                                  name="fatherOccupation"
+                                  value={form.fatherOccupation}
+                                  onChange={handleChange}
+                                  placeholder="Enter custom occupation"
+                                  className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                                />
+                              )}
+                          </div>
+
+                          {/* Father Contact Number */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Father Contact Number
+                            </label>
+                            <div className="relative">
+                              <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          text-gray-400 w-5 h-5" />
+                              <input
+                                type="tel"
+                                name="fatherContact"
+                                value={form.fatherContact}
+                                onChange={handleChange}
+                                placeholder="Enter father's mobile number"
+                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                        </div>
                       </div>
-                    </div>
                     )}
                     {/* ---------------------- MOTHER SECTION ---------------------- */}
                     {user.role === "student" && (
-                    <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4">
-                      <h4 className="text-md font-semibold text-gray-800 mb-3">Mother Information</h4>
+                      <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <h4 className="text-md font-semibold text-gray-800 mb-3">Mother Information</h4>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        {/* Mother Name */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Mother Name
-                          </label>
-                          <div className="relative">
-                            <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          {/* Mother Name */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Mother Name
+                            </label>
+                            <div className="relative">
+                              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
                         text-gray-400 w-5 h-5" />
-                            <input
-                              type="text"
-                              name="motherName"
-                              value={form.motherName}
-                              onChange={handleChange}
-                              placeholder="Enter mother's name"
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Mother Occupation */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Mother Occupation
-                          </label>
-                          <div className="relative">
-                            <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                              text-gray-400 w-5 h-5" />
-
-                            <select
-                              name="motherOccupation"
-                              value={
-                                occupationOptions.includes(form.motherOccupation)
-                                  ? form.motherOccupation
-                                  : "Others"
-                              }
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === "Others") {
-                                  setForm((prev) => ({ ...prev, motherOccupation: "" }));
-                                } else {
-                                  setForm((prev) => ({ ...prev, motherOccupation: value }));
-                                }
-                              }}
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                            >
-                              <option value="">Select Occupation</option>
-                              {occupationOptions.map((job) => (
-                                <option key={job} value={job}>
-                                  {job}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Custom Mother Occupation */}
-                          {(!occupationOptions.includes(form.motherOccupation) ||
-                            form.motherOccupation === "") && (
                               <input
                                 type="text"
-                                name="motherOccupation"
-                                value={form.motherOccupation}
+                                name="motherName"
+                                value={form.motherName}
                                 onChange={handleChange}
-                                placeholder="Enter custom occupation"
-                                className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                                placeholder="Enter mother's name"
+                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
                      border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               />
-                            )}
-                        </div>
+                            </div>
+                          </div>
 
-                        {/* Mother Contact Number */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Mother Contact Number
-                          </label>
-                          <div className="relative">
-                            <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                          text-gray-400 w-5 h-5" />
-                            <input
-                              type="tel"
-                              name="motherContact"
-                              value={form.motherContact}
-                              onChange={handleChange}
-                              placeholder="Enter mother's mobile number"
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                          {/* Mother Occupation */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Mother Occupation
+                            </label>
+                            <div className="relative">
+                              <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                              text-gray-400 w-5 h-5" />
+
+                              <select
+                                name="motherOccupation"
+                                value={
+                                  occupationOptions.includes(form.motherOccupation)
+                                    ? form.motherOccupation
+                                    : "Others"
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === "Others") {
+                                    setForm((prev) => ({ ...prev, motherOccupation: "" }));
+                                  } else {
+                                    setForm((prev) => ({ ...prev, motherOccupation: value }));
+                                  }
+                                }}
+                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
                      border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
                      focus:ring-yellow-100 focus:ring-4 bg-white"
-                            />
-                          </div>
-                        </div>
+                              >
+                                <option value="">Select Occupation</option>
+                                {occupationOptions.map((job) => (
+                                  <option key={job} value={job}>
+                                    {job}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
 
+                            {/* Custom Mother Occupation */}
+                            {(!occupationOptions.includes(form.motherOccupation) ||
+                              form.motherOccupation === "") && (
+                                <input
+                                  type="text"
+                                  name="motherOccupation"
+                                  value={form.motherOccupation}
+                                  onChange={handleChange}
+                                  placeholder="Enter custom occupation"
+                                  className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                                />
+                              )}
+                          </div>
+
+                          {/* Mother Contact Number */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Mother Contact Number
+                            </label>
+                            <div className="relative">
+                              <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                          text-gray-400 w-5 h-5" />
+                              <input
+                                type="tel"
+                                name="motherContact"
+                                value={form.motherContact}
+                                onChange={handleChange}
+                                placeholder="Enter mother's mobile number"
+                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                     focus:ring-yellow-100 focus:ring-4 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                        </div>
                       </div>
-                    </div>
                     )}
 
 

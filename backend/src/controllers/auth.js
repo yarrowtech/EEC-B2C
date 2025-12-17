@@ -19,6 +19,7 @@ function signToken(user) {
     email: user.email,
     name: user.name,
     role: user.role,
+    board: user.board,
   }; // ✅ role added
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "1h",
@@ -36,6 +37,7 @@ export async function register(req, res) {
       class: classValue, // <-- NEW
       state, // <-- NEW
       referral, // <-- NEW
+      board, // <-- NEW
     } = req.body;
 
     if (!name || !email || !password) {
@@ -66,6 +68,7 @@ export async function register(req, res) {
       class: (classValue || "").trim(), // <-- NEW
       state: (state || "").trim(), // <-- NEW
       referral: (referral || "").trim(), // <-- NEW
+      board: (board || "").trim(), // <-- NEW
     });
     sendWelcomeEmail({ to: user.email, name: user.name }).catch((err) =>
       console.error("Welcome email failed:", err?.message)
@@ -120,6 +123,7 @@ export async function login(req, res) {
         state: user.state,
         role: user.role,
         points: user.points || 0,
+        board: user.board,
       }, // ✅ include role
       token,
     });

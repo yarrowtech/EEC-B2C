@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { FiSliders, FiHelpCircle, FiCheckCircle, FiTag, FiUpload } from "react-icons/fi";
+import { toast, ToastContainer } from "react-toastify";
 
 export default function QuestionsMCQUpload() {
   const { scope } = useQuestionScope();
@@ -17,6 +18,7 @@ export default function QuestionsMCQUpload() {
     stage: 1,
     level: "basic",
     className: "",
+    board: "",
   });
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -31,7 +33,14 @@ export default function QuestionsMCQUpload() {
   async function submit(e) {
     e.preventDefault();
     if (!scope.subject || !scope.topic)
-      return alert("Pick Subject & Topic first");
+      // return alert("Pick Subject & Topic first");
+      return toast.warn("Pick Subject & Topic first");
+
+    if (!form.className)
+      return toast.warn("Select Class for the question.");
+
+    if (!form.board)
+      return toast.warn("Select Board for the question.");
 
     setBusy(true);
     try {
@@ -47,11 +56,13 @@ export default function QuestionsMCQUpload() {
         stage: form.stage,
         level: form.level,
         class: form.className,
+        board: form.board,
         // createdBy: req.user.id, 
       };
 
       const out = await postQuestion("mcq-single", payload);
-      alert(`Saved! id=${out.id}`);
+      // alert(`Saved! id=${out.id}`);
+      toast.success("Question saved!");
 
       setForm({
         difficulty: "easy",
@@ -63,15 +74,19 @@ export default function QuestionsMCQUpload() {
         stage: 1,
         level: "basic",
         className: "",
+        board: "",
       });
     } catch (err) {
-      alert(err.message);
+      // alert(err.message);
+      toast.error(err.message || "Failed to save question.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
+    <>
+      <ToastContainer />
     <form
       onSubmit={submit}
       className="space-y-8 rounded-3xl bg-gradient-to-br from-white/70 to-white/30 
@@ -153,6 +168,19 @@ export default function QuestionsMCQUpload() {
               <option value="Class 12">Class 12</option>
             </select>
           </div>
+
+          <select
+            className="w-full rounded-xl px-4 py-3"
+            value={form.board}
+            onChange={(e) => update("board", e.target.value)}
+          >
+            <option value="">Select Board</option>
+            <option value="CBSE">CBSE</option>
+            <option value="ICSE">ICSE</option>
+            <option value="WB Board">WB Board</option>
+            <option value="State Board">State Board</option>
+          </select>
+
 
 
           {/* Tags */}
@@ -258,5 +286,6 @@ export default function QuestionsMCQUpload() {
         <FiUpload /> {busy ? "Saving..." : "Save Question"}
       </button>
     </form>
+  </>
   );
 }

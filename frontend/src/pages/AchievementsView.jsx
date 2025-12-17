@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Award, Medal, Target, Lock } from 'lucide-react';
+import { Trophy, Award, Medal, Target, Lock, Calendar, Book, PuzzleIcon } from 'lucide-react';
 
 const AchievementsView = () => {
   const [activeTab, setActiveTab] = useState('history');
@@ -7,21 +7,6 @@ const AchievementsView = () => {
   const userPoints = user.points;
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [attempts, setAttempts] = useState([]);
-
-  // useEffect(() => {
-  //   async function fetchAttempts() {
-  //     if (!user?._id) return;
-
-  //     const res = await fetch(`${API}/api/attempt/user/${user._id}`);
-  //     const data = await res.json();
-
-  //     if (res.ok) {
-  //       setAttempts(data.attempts || []);
-  //     }
-  //   }
-
-  //   fetchAttempts();
-  // }, []);
 
   useEffect(() => {
     async function fetchAttempts() {
@@ -41,21 +26,17 @@ const AchievementsView = () => {
         const data = await res.json();
 
         if (res.ok) {
-          // setAttempts(data.attempts || []);
           setAttempts(data.results || []);
         } else {
-          console.error("ATTEMPT FETCH ERROR:", data);
           setAttempts([]);
         }
-      } catch (err) {
-        console.error("ATTEMPT FETCH ERROR:", err);
+      } catch {
         setAttempts([]);
       }
     }
 
     fetchAttempts();
   }, []);
-
 
   const pointsHistory = attempts.map(attempt => ({
     exam: attempt.stage,
@@ -64,209 +45,197 @@ const AchievementsView = () => {
     pointsEarned: attempt.score,
     date: attempt.createdAt
   }));
-  // Points-based Achievements Recalculation
+
   const totalAchievements = pointsHistory.length;
-
-  // Consider "earned" as any exam where score > 0
   const earnedCount = pointsHistory.filter(item => item.pointsEarned > 0).length;
-
-  // In progress means attempt exists, but maybe below 100%
-  const inProgressCount = pointsHistory.filter(item => item.pointsEarned < item.total).length;
-
-  // Available = Total - Earned
   const availableCount = totalAchievements - earnedCount;
 
-
-  // Achievements intentionally empty because you commented them out.
   const achievements = [];
-
   const earnedAchievements = achievements.filter(a => a.earned);
-  const availableAchievements = achievements.filter(a => !a.earned);
-  const inProgressAchievements = achievements.filter(a => !a.earned && a.progress > 0);
 
-  const getFilteredAchievements = () => {
-    switch (activeTab) {
-      case 'earned': return earnedAchievements;
-      case 'available': return availableAchievements;
-      case 'progress': return inProgressAchievements;
-      case 'history': return [];
-      default: return achievements;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
-  };
 
-  // Pagination for points history cards
   const [historyPage, setHistoryPage] = useState(1);
   const historyPerPage = 6;
-
   const totalHistoryPages = Math.ceil(pointsHistory.length / historyPerPage);
-
   const paginatedHistory = pointsHistory.slice(
     (historyPage - 1) * historyPerPage,
     historyPage * historyPerPage
   );
 
-
   return (
-    <div className="space-y-6">
+    <div className="
+      space-y-8 p-6 rounded-[2.5rem]
+      bg-gradient-to-br from-yellow-50 via-pink-50 to-indigo-50
+      shadow-[0_25px_70px_rgba(0,0,0,0.15)]
+      relative overflow-hidden
+    ">
 
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      {/* Decorative blobs */}
+      <div className="absolute -top-20 -right-20 w-72 h-72 bg-yellow-300/30 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-pink-300/30 rounded-full blur-3xl" />
+
+      {/* HEADER */}
+      <div className="relative z-10 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Achievements</h1>
-          <p className="text-gray-600">Track your progress and unlock new achievements</p>
+          <h1 className="text-4xl font-extrabold text-gray-900 flex items-center gap-2">
+            🏆 Achievements
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Track your progress & collect rewards ✨
+          </p>
         </div>
 
-        <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-xl border shadow-sm">
-          <div className="bg-yellow-100 p-2 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg"
-              className="w-7 h-7 text-yellow-600"
-              fill="none" viewBox="0 0 24 24"
-              strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M9 14.25c-.621 0-1.21-.138-1.738-.385A3.752 3.752 0 019 9.75m6 
-          4.5c-.621 0-1.21-.138-1.738-.385A3.752 3.752 0 0015 9.75M12 
-          6.75v2.25m0 6v2.25m9-6c0 3.728-4.03 6.75-9 
-          6.75S3 15.728 3 12s4.03-6.75 9-6.75 9 
-          3.022 9 6.75z" />
-            </svg>
+        <div className="
+          flex items-center gap-4
+          bg-white/80 backdrop-blur
+          px-5 py-3 rounded-2xl
+          shadow-lg border border-white
+        ">
+          <div className="bg-yellow-100 p-3 rounded-xl shadow-inner">
+            <Trophy className="w-7 h-7 text-yellow-600" />
           </div>
-
-          <div className="text-left">
-            <p className="text-sm text-gray-600">Total Points</p>
-            <p className="text-2xl font-bold text-yellow-600">
+          <div>
+            <p className="text-xs text-gray-500">Total Points</p>
+            <p className="text-3xl font-extrabold text-yellow-600">
               {userPoints}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-600">Total Achievements</p>
-          <p className="text-2xl font-bold text-gray-900">{totalAchievements}</p>
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        <div className="bg-white/80 rounded-2xl p-6 shadow-lg border border-white">
+          <p className="text-sm text-gray-600">Total Achievements</p>
+          <p className="text-3xl font-extrabold text-gray-900">{totalAchievements}</p>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-600">Earned</p>
-          <p className="text-2xl font-bold text-green-600">{earnedCount}</p>
+        <div className="bg-white/80 rounded-2xl p-6 shadow-lg border border-white">
+          <p className="text-sm text-gray-600">Earned</p>
+          <p className="text-3xl font-extrabold text-green-600">{earnedCount}</p>
         </div>
 
-        {/* <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-600">In Progress</p>
-          <p className="text-2xl font-bold text-blue-600">{inProgressCount}</p>
+        <div className="bg-white/80 rounded-2xl p-6 shadow-lg border border-white">
+          <p className="text-sm text-gray-600">Not Earned</p>
+          <p className="text-3xl font-extrabold text-purple-600">{availableCount}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-600">Available</p>
-          <p className="text-2xl font-bold text-purple-600">{availableCount}</p>
-        </div> */}
       </div>
 
       {/* TABS */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="relative z-10 flex bg-white/70 backdrop-blur p-1 rounded-2xl shadow-md">
         {[
           { id: 'history', label: 'Points History', count: pointsHistory.length },
           { id: 'earned', label: 'Earned', count: earnedAchievements.length },
-          // { id: 'progress', label: 'In Progress', count: inProgressAchievements.length },
-          // { id: 'available', label: 'Available', count: availableAchievements.length },
-        ].map((tab) => (
+        ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-              }`}
+            className={`
+              flex-1 py-2 rounded-xl font-bold transition-all
+              ${activeTab === tab.id
+                ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg"
+                : "text-gray-600 hover:text-gray-900"}
+            `}
           >
             {tab.label} ({tab.count})
           </button>
         ))}
       </div>
 
-      {/* CARD GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        {/* HISTORY TAB */}
+      {/* CARDS */}
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {activeTab === "history" &&
           paginatedHistory.map((item, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm border-gray-200 border p-6 relative">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-400"></div>
+            <div
+              key={index}
+              className="
+                relative bg-white/85 rounded-2xl
+                shadow-lg border border-white
+                p-6 hover:scale-[1.03]
+                transition-all
+              "
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-t-2xl" />
 
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{item.exam?.toUpperCase()}</h3>
+              <h3 className="text-lg font-extrabold text-gray-900 mb-2">
+                🎯 {item.exam?.toUpperCase()}
+              </h3>
 
-              <p className="text-gray-700 text-sm">Subject: {item.subject}</p>
-              <p className="text-gray-700 text-sm">Topic: {item.topic}</p>
+              <p className="text-sm text-gray-700"><Book className='inline' size={15} /> Subject: {item.subject}</p>
+              <p className="text-sm text-gray-700"><PuzzleIcon className='inline' size={15} /> Topic: {item.topic}</p>
 
-              <p className="text-gray-500 text-xs mt-2">{formatDate(item.date)}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                <Calendar className='inline' size={15} /> {formatDate(item.date)}
+              </p>
 
               <div className="flex justify-between items-center border-t pt-3 mt-3">
                 <span className="text-sm text-gray-600">Points Earned</span>
-                <span className="text-yellow-600 font-bold text-sm md:text-lg lg:text-lg bg-yellow-100 px-2 md:px-1.5 lg:px-1.5 rounded-full">+{item.pointsEarned} pts</span>
+                <span className="
+                  bg-gradient-to-r from-yellow-300 to-orange-400
+                  text-white font-bold text-sm
+                  px-3 py-1 rounded-full shadow
+                ">
+                  +{item.pointsEarned} pts
+                </span>
               </div>
             </div>
           ))
         }
 
-        {/* ACHIEVEMENT CARDS */}
         {activeTab !== "history" &&
-          getFilteredAchievements().map((achievement) => {
+          earnedAchievements.map((achievement) => {
             const IconComponent = achievement.icon;
             return (
               <div
                 key={achievement.id}
-                className="bg-white rounded-xl shadow-sm border-gray-200 border p-6 relative"
+                className="bg-white rounded-2xl shadow-lg border border-white p-6"
               >
-                <IconComponent className="w-6 h-6 text-blue-600" />
+                <IconComponent className="w-8 h-8 text-blue-600" />
                 <h3 className="text-lg font-bold mt-3">{achievement.title}</h3>
               </div>
             );
-          })
-        }
-
+          })}
       </div>
-      {/* Pagination for Points History */}
-      {activeTab === "history" && totalHistoryPages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-6">
 
-          {/* Previous */}
+      {/* PAGINATION */}
+      {activeTab === "history" && totalHistoryPages > 1 && (
+        <div className="relative z-10 flex justify-center items-center gap-3 mt-6">
           <button
-            className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
             disabled={historyPage === 1}
             onClick={() => setHistoryPage(historyPage - 1)}
+            className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
           >
-            Previous
+            Prev
           </button>
 
-          {/* Page Numbers */}
           {[...Array(totalHistoryPages)].map((_, i) => (
             <button
               key={i}
               onClick={() => setHistoryPage(i + 1)}
-              className={`px-3 py-1 rounded-lg border text-sm ${historyPage === i + 1
-                  ? "bg-yellow-500 text-white"
-                  : "bg-white text-gray-700"
-                }`}
+              className={`
+                px-3 py-1 rounded-xl font-bold
+                ${historyPage === i + 1
+                  ? "bg-yellow-500 text-white shadow"
+                  : "bg-white text-gray-700 border"}
+              `}
             >
               {i + 1}
             </button>
           ))}
 
-          {/* Next */}
           <button
-            className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
             disabled={historyPage === totalHistoryPages}
             onClick={() => setHistoryPage(historyPage + 1)}
+            className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
           >
             Next
           </button>
-
         </div>
       )}
     </div>

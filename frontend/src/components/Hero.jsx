@@ -195,6 +195,7 @@ const Hero = () => {
     const referral = form.elements["referral"]?.value || ""; // <-- NEW
     const password = form.password?.value;
     const confirm = form.confirm?.value;
+    const board = form.elements["board"]?.value || "";
 
     if (!name || !email || !password) {
       const msg = "Name, Email and Password are required.";
@@ -215,7 +216,7 @@ const Hero = () => {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password, class: klass, state, referral })
+        body: JSON.stringify({ name, email, phone, password, class: klass, state, referral, board })
       });
       const data = await res.json();
 
@@ -503,6 +504,17 @@ const Hero = () => {
                   label: `Class ${i + 1}`,
                 }))}
               />
+              <CustomSelect
+                name="board"
+                placeholder="Select Board"
+                options={[
+                  "CBSE",
+                  "ICSE",
+                  // "WB Board",
+                  // "State Board"
+                ]}
+              />
+
 
               <CustomSelect
                 name="state"

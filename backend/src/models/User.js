@@ -40,6 +40,15 @@ const UserSchema = new mongoose.Schema(
         ref: "StudyMaterial",
       },
     ],
+    board: {
+      type: String,
+      enum: ["CBSE", "ICSE", "WB Board", "State Board"],
+      required: false,
+    },
+    lastPromotedYear: {
+      type: Number,
+      default: null,
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },

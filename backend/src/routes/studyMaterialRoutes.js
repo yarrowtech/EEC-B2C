@@ -52,18 +52,55 @@ router.post(
  * STUDENT → List materials (by class, board, subject)
  * PROTECTED (student must be logged in)
  */
+// router.get("/", requireAuth, async (req, res) => {
+//   try {
+//     // ✅ take class directly from logged-in user
+//     const studentClass = req.user.class || req.user.className;
+
+//     if (!studentClass) {
+//       return res.status(400).json({ message: "Student class not found" });
+//     }
+
+//     const materials = await StudyMaterial.find({
+//       class: studentClass,
+//     }).sort({ createdAt: -1 });
+
+//     res.json(materials);
+//   } catch (err) {
+//     console.error("FETCH MATERIALS ERROR:", err);
+//     res.status(500).json({ message: "Failed to fetch materials" });
+//   }
+// });
+
 router.get("/", requireAuth, async (req, res) => {
   try {
-    // ✅ take class directly from logged-in user
     const studentClass = req.user.class || req.user.className;
+    const studentBoard = req.user.board;
 
     if (!studentClass) {
       return res.status(400).json({ message: "Student class not found" });
     }
 
-    const materials = await StudyMaterial.find({
+    // ✅ build dynamic filter
+    const filter = {
       class: studentClass,
-    }).sort({ createdAt: -1 });
+    };
+
+    // ✅ board filter (important)
+    if (studentBoard) {
+      filter.board = studentBoard;
+    }
+
+    // ✅ subject filter (from frontend buttons)
+    if (req.query.subject && req.query.subject !== "All") {
+      filter.subject = req.query.subject;
+    }
+
+    // console.log("📘 STUDY MATERIAL FILTER:", filter);
+
+    const materials = await StudyMaterial.find(filter).sort({
+      createdAt: -1,
+    });
 
     res.json(materials);
   } catch (err) {
@@ -71,6 +108,7 @@ router.get("/", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch materials" });
   }
 });
+
 
 router.get("/secure-pdf/:id", requireAuth, async (req, res) => {
   const material = await StudyMaterial.findById(req.params.id);

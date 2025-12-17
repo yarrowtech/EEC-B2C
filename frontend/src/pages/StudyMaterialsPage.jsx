@@ -52,6 +52,7 @@ export default function StudyMaterialsPage() {
                 const url = new URL(`${API}/api/study-materials`);
                 url.searchParams.set("class", user.class);
                 if (user.board) url.searchParams.set("board", user.board);
+                if (subject !== "All") url.searchParams.set("subject", subject);
 
                 const res = await fetch(url.toString(), {
                     headers: { Authorization: `Bearer ${token}` },
@@ -186,9 +187,18 @@ export default function StudyMaterialsPage() {
                 ))}
             </div>
 
-            {/* CONTENT */}
             {loading ? (
                 <div className="text-center text-gray-500">Loading materials...</div>
+            ) : visibleMaterials.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                    <FileText className="w-14 h-14 mb-4 text-gray-300" />
+                    <h3 className="text-lg font-semibold text-gray-700">
+                        No study materials found
+                    </h3>
+                    <p className="text-sm text-gray-400 mt-1">
+                        Study Materials will appear here very soon
+                    </p>
+                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMaterials.map((m) => (

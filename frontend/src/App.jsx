@@ -65,6 +65,8 @@ import AchievementsView from "./pages/AchievementsView";
 import StudyMaterialsPage from "./pages/StudyMaterialsPage";
 import UploadStudyMaterial from "./pages/UploadStudyMaterial";
 import ResetPassword from "./pages/ResetPassword";
+import CreateNotification from "./pages/CreateNotification";
+import NotificationDetails from "./pages/NotificationDetails";
 
 
 function getToken() {
@@ -129,7 +131,7 @@ function RoleRedirect() {
 
 
 function ShellLayout() {
-  
+
   const location = useLocation();
   const hideFooter = location.pathname.startsWith("/dashboard");
 
@@ -223,6 +225,8 @@ export default function App() {
             <Route path="study-materials" element={<StudyMaterialsPage />} />
             <Route path="study-materials/upload" element={<RequireAdmin><UploadStudyMaterial /> </RequireAdmin>} />
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
+            <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
+            <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />
