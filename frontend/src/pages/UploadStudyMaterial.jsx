@@ -26,10 +26,35 @@ export default function UploadStudyMaterial() {
     const ITEMS_PER_PAGE = 6;
     const [currentPage, setCurrentPage] = useState(1);
     const [existingPdfUrl, setExistingPdfUrl] = useState(null);
+    const [classes, setClasses] = useState([]);
+    const [boards, setBoards] = useState([]);
+    const [subjects, setSubjects] = useState([]);
 
     useEffect(() => {
         fetchMaterials();
     }, []);
+
+    useEffect(() => {
+        async function loadMeta() {
+            try {
+                const [clsRes, brdRes] = await Promise.all([
+                    fetch(`${API}/api/classes`),
+                    fetch(`${API}/api/boards`)
+                ]);
+
+                const clsData = await clsRes.json();
+                const brdData = await brdRes.json();
+
+                setClasses(Array.isArray(clsData) ? clsData : []);
+                setBoards(Array.isArray(brdData) ? brdData : []);
+            } catch (err) {
+                console.error("Failed to load class/board", err);
+            }
+        }
+
+        loadMeta();
+    }, []);
+
 
     async function fetchMaterials() {
         const res = await fetch(`${API}/api/study-materials/admin/all`, {
@@ -266,27 +291,66 @@ export default function UploadStudyMaterial() {
 
                         {/* CLASS / BOARD / SUBJECT */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {[
-                                { name: "class", options: ["Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8"] },
-                                { name: "board", options: ["CBSE", "ICSE", "State Board"] },
-                                { name: "subject", options: ["Maths", "Science", "English"] }
-                            ].map((f) => (
-                                <div key={f.name}>
-                                    <label className="text-sm font-semibold text-slate-700 capitalize">
-                                        {f.name}
-                                    </label>
-                                    <select
-                                        name={f.name}
-                                        value={form[f.name]}
-                                        onChange={handleChange}
-                                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 bg-white/80 focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        {f.options.map(o => (
-                                            <option key={o}>{o}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            ))}
+
+                            {/* CLASS */}
+                            <div>
+                                <label className="text-sm font-semibold text-slate-700">
+                                    Class
+                                </label>
+                                <select
+                                    name="class"
+                                    value={form.class}
+                                    onChange={handleChange}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 bg-white/80 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="">Select Class</option>
+                                    {classes.map((c) => (
+                                        <option key={c._id} value={c.name}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* BOARD */}
+                            <div>
+                                <label className="text-sm font-semibold text-slate-700">
+                                    Board
+                                </label>
+                                <select
+                                    name="board"
+                                    value={form.board}
+                                    onChange={handleChange}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 bg-white/80 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="">Select Board</option>
+                                    {boards.map((b) => (
+                                        <option key={b._id} value={b.name}>
+                                            {b.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* SUBJECT (kept as-is) */}
+                            <div>
+                                <label className="text-sm font-semibold text-slate-700">
+                                    Subject
+                                </label>
+                                <select
+                                    name="subject"
+                                    value={form.subject}
+                                    onChange={handleChange}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 bg-white/80 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    {["Maths", "Science", "English"].map((s) => (
+                                        <option key={s} value={s}>
+                                            {s}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
                         </div>
 
                         {/* FREE / PAID */}

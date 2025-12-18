@@ -251,7 +251,7 @@ export default function StudyMaterialsPage() {
                                     {m.isFree
                                         ? "Free Access"
                                         : hasAccess(m)
-                                            ? "✔ Purchased"
+                                            ? "Purchased"
                                             : `₹ ${m.price} Only`}
                                 </span>
                             </div>
@@ -291,6 +291,7 @@ export default function StudyMaterialsPage() {
             {openPdf && (
                 <SecurePdfViewer
                     pdfUrl={openPdf.pdfUrl}
+                    subject={openPdf.subject}
                     title={openPdf.title}
                     onClose={() => setOpenPdf(null)}
                 />

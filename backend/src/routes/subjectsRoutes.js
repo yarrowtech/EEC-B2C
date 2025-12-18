@@ -6,7 +6,7 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 const router = express.Router();
 
 // Get all subjects
-router.get("/", requireAuth, requireAdmin, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const subjects = await Subject.find();
     res.json({ items: subjects });

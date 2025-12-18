@@ -177,8 +177,44 @@ const Hero = () => {
   // Signup submit states (existing)
   const [signSubmitting, setSignSubmitting] = useState(false);
   const [signError, setSignError] = useState("");
+  const [classes, setClasses] = useState([]);
+  const [boards, setBoards] = useState([]);
+  // Confirm modal state (NEW)
+  const [showConfirmSignup, setShowConfirmSignup] = useState(false);
+  const pendingFormRef = useRef(null);
+
 
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    async function loadMeta() {
+      try {
+        const [clsRes, brdRes] = await Promise.all([
+          fetch(`${API_BASE}/api/classes`),
+          fetch(`${API_BASE}/api/boards`)
+        ]);
+
+        const clsData = await clsRes.json();
+        const brdData = await brdRes.json();
+
+        setClasses(Array.isArray(clsData) ? clsData : []);
+        setBoards(Array.isArray(brdData) ? brdData : []);
+      } catch (err) {
+        console.error("Failed to load class/board", err);
+      }
+    }
+
+    loadMeta();
+  }, []);
+
+
+  function handleSignupIntercept(e) {
+    e.preventDefault();
+    // pendingFormRef.current = e;
+    pendingFormRef.current = e.currentTarget; // ✅ store form, NOT event
+    setShowConfirmSignup(true);
+  }
+
 
   async function handleSignupSubmit(e) {
     e.preventDefault();
@@ -491,20 +527,33 @@ const Hero = () => {
               </p>
             </div>
 
-            <form className="grid gap-3" onSubmit={handleSignupSubmit}>
+            <form className="grid gap-3" onSubmit={handleSignupIntercept}>
               <input className="input" name="name" placeholder="Enter your name" />
               <input className="input" name="mobile" placeholder="Enter your Mobile Number" />
               <input className="input" name="email" placeholder="Email Address" />
 
+              {/* <CustomSelect
+                name="class"
+                placeholder="Select Class"
+                options={Array.from({ length: 8 }, (_, i) => {
+                  const cls = i + 3; // starts from Class 3
+                  return {
+                    value: `Class ${cls}`,
+                    label: `Class ${cls}`,
+                  };
+                })}
+              /> */}
+
               <CustomSelect
                 name="class"
                 placeholder="Select Class"
-                options={Array.from({ length: 12 }, (_, i) => ({
-                  value: `Class ${i + 1}`,
-                  label: `Class ${i + 1}`,
-                }))}
+                options={classes}
+                valueProp={(c) => c.name}
+                labelProp={(c) => c.name}
               />
-              <CustomSelect
+
+
+              {/* <CustomSelect
                 name="board"
                 placeholder="Select Board"
                 options={[
@@ -513,7 +562,16 @@ const Hero = () => {
                   // "WB Board",
                   // "State Board"
                 ]}
+              /> */}
+
+              <CustomSelect
+                name="board"
+                placeholder="Select Board"
+                options={boards}
+                valueProp={(b) => b.name}
+                labelProp={(b) => b.name}
               />
+
 
 
               <CustomSelect
@@ -737,6 +795,65 @@ const Hero = () => {
           </div>
         </div>
       )}
+
+      {showConfirmSignup && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center"
+          aria-modal="true"
+          role="dialog"
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-blue-950/50 backdrop-blur-sm" />
+
+          {/* Modal Card */}
+          <div className="relative z-[71] w-[92%] max-w-md">
+            <div className="rounded-3xl border border-blue-100/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(2,32,71,0.35)] backdrop-blur-md">
+              <h3 className="text-lg font-bold text-blue-950">
+                Confirm Your Selection
+              </h3>
+
+              <p className="mt-2 text-sm text-blue-900/80">
+                You <strong>won’t be able to change your Class or Board later</strong>.
+                <br />
+                Please confirm before continuing.
+              </p>
+
+              <div className="mt-5 flex justify-end gap-3">
+                {/* Go Back */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmSignup(false);
+                    pendingFormRef.current = null;
+                  }}
+                  className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50"
+                >
+                  Go Back
+                </button>
+
+                {/* Confirm */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmSignup(false);
+                    if (pendingFormRef.current) {
+                      handleSignupSubmit({
+                        preventDefault: () => { },
+                        currentTarget: pendingFormRef.current,
+                      });
+                      pendingFormRef.current = null;
+                    }
+                  }}
+                  className="rounded-xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow hover:bg-yellow-300"
+                >
+                  Confirm & Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Toastify container (bottom-right) */}
       <ToastContainer

@@ -725,12 +725,12 @@ export default function ProfilePage() {
       <ToastContainer />
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="h-10 w-10 rounded-full bg-yellow-500 flex items-center justify-center">
-              <User className="h-6 w-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 md:py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-yellow-500 flex items-center justify-center">
+              <User className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
               {(user.role?.charAt(0).toUpperCase() + user.role?.slice(1))} Portal
             </h1>
           </div>
@@ -744,28 +744,28 @@ export default function ProfilePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl border border-yellow-100 overflow-hidden">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl md:rounded-3xl shadow-2xl border border-yellow-100 overflow-hidden">
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-yellow-400 to-amber-400 px-8 py-6 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-yellow-400 to-amber-400 px-4 sm:px-6 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-bold text-white">Profile Settings</h2>
-              <p className="text-yellow-100">Manage your personal and account information</p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">Profile Settings</h2>
+              <p className="text-sm md:text-base text-yellow-100">Manage your personal and account information</p>
             </div>
             {user?.role === "student" && (
-              <div className="flex justify-center items-center gap-2 px-2 md:px-3 md:py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm">
-                <Coins className="w-5 h-5 text-amber-700" />
+              <div className="flex justify-center items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold shadow-sm text-sm md:text-base whitespace-nowrap">
+                <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
                 <span>{points} Points</span>
               </div>
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row w-full overflow-x-hidden">
+          <div className="flex flex-col lg:flex-row w-full overflow-x-hidden">
             {/* Sidebar Navigation */}
-            <aside className="w-full md:w-64 bg-gray-50 border-r border-gray-200 p-4 md:p-6">
-              <div className="flex flex-col items-center space-y-4 mb-8">
+            <aside className="w-full lg:w-64 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-200 p-4 md:p-6">
+              <div className="flex flex-col items-center space-y-3 md:space-y-4 mb-6 md:mb-8">
                 <div className="relative group">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-yellow-300 shadow-lg bg-gray-100">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-yellow-300 shadow-lg bg-gray-100">
                     {imagePreview ? (
                       <img
                         src={imagePreview}
@@ -774,7 +774,7 @@ export default function ProfilePage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-yellow-100 to-amber-100">
-                        <div className="text-yellow-700 text-4xl font-bold">
+                        <div className="text-yellow-700 text-3xl sm:text-4xl font-bold">
                           {getInitial()}
                         </div>
                       </div>
@@ -785,10 +785,10 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     // onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-2 -right-2 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-yellow-500 hover:bg-yellow-600 text-white p-2 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
                     title="Change profile picture"
                   >
-                    <Camera className="w-5 h-5" />
+                    <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
 
                   <input
@@ -800,48 +800,48 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <h3 className="text-xl font-semibold text-gray-800">{form.name || "—"}</h3>
-                <p className="text-gray-500 text-sm">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)} Account</p>
-                <div className="w-full max-w-md bg-white bg-opacity-70 backdrop-blur-md p-4 rounded-xl shadow-md border border-yellow-100 hover:shadow-lg transition-all duration-300">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                    <span className="px-2 py-1 bg-yellow-100 rounded-lg text-yellow-700 text-sm font-bold">Bio</span>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 text-center">{form.name || "—"}</h3>
+                <p className="text-gray-500 text-xs sm:text-sm text-center">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)} Account</p>
+                <div className="w-full max-w-md bg-white bg-opacity-70 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-md border border-yellow-100 hover:shadow-lg transition-all duration-300">
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <span className="px-2 py-1 bg-yellow-100 rounded-lg text-yellow-700 text-xs sm:text-sm font-bold">Bio</span>
                   </h4>
 
                   {user?.bio ? (
-                    <p className="text-gray-700 leading-relaxed">{user.bio}</p>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{user.bio}</p>
                   ) : (
-                    <p className="text-gray-400 italic">No bio added yet.</p>
+                    <p className="text-sm sm:text-base text-gray-400 italic">No bio added yet</p>
                   )}
                 </div>
               </div>
 
-              <nav className="space-y-2">
+              <nav className="space-y-2 grid grid-cols-2 lg:grid-cols-1 gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab('personal')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'personal'
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${activeTab === 'personal'
                     ? 'bg-yellow-100 text-yellow-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-100'
                     }`}
                 >
-                  Personal Information
+                  Personal Info
                 </button>
 
                 {/* <button
                   type="button"
                   onClick={() => setActiveTab('account')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'account'
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${activeTab === 'account'
                     ? 'bg-yellow-100 text-yellow-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-100'
                     }`}
                 >
-                  Account Settings
+                  Account
                 </button> */}
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('security')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === 'security'
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${activeTab === 'security'
                     ? 'bg-yellow-100 text-yellow-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-100'
                     }`}
@@ -852,33 +852,33 @@ export default function ProfilePage() {
             </aside>
 
             {/* Main Form Content */}
-            <section className="flex-1 w-full p-4 md:p-8">
+            <section className="flex-1 w-full p-3 sm:p-4 md:p-6 lg:p-8">
               {/* PERSONAL TAB */}
               {activeTab === 'personal' && (
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-semibold text-gray-800 border-b pb-3">Personal Information</h3>
+                <div className="space-y-4 md:space-y-6">
+                  <h3 className="text-xl md:text-2xl font-semibold text-gray-800 border-b pb-2 md:pb-3">Personal Information</h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     {/* Name Field */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         Full Name *
                       </label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="text"
                           name="name"
                           value={form.name}
                           onChange={handleChange}
                           placeholder="Enter your full name"
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                          className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                           required
                         />
                       </div>
                       {errors.name && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-4 h-4" />
+                        <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                           {errors.name}
                         </p>
                       )}
@@ -886,24 +886,24 @@ export default function ProfilePage() {
 
                     {/* Email Field */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         Email Address *
                       </label>
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Mail className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="email"
                           name="email"
                           value={form.email}
                           onChange={handleChange}
                           placeholder="Enter your email address"
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                          className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                           required
                         />
                       </div>
                       {errors.email && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-4 h-4" />
+                        <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                           {errors.email}
                         </p>
                       )}
@@ -911,23 +911,23 @@ export default function ProfilePage() {
 
                     {/* Phone Field */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         Phone Number
                       </label>
                       <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Phone className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="tel"
                           name="phone"
                           value={form.phone}
                           onChange={handleChange}
                           placeholder="Enter your phone number"
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.phone ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                          className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.phone ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                         />
                       </div>
                       {errors.phone && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-4 h-4" />
+                        <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                           {errors.phone}
                         </p>
                       )}
@@ -936,15 +936,15 @@ export default function ProfilePage() {
                     {/* Semester / Class Field */}
                     {/* Class / Semester + Board (Student only) */}
                     {user.role === "student" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
 
                         {/* Class / Semester */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                             Class / Semester
                           </label>
                           <div className="relative">
-                            <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
 
                             {/* <select
                               name="className"
@@ -966,7 +966,7 @@ export default function ProfilePage() {
                               name="className"
                               value={form.className}
                               disabled
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl bg-gray-100 cursor-not-allowed"
+                              className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl bg-gray-100 cursor-not-allowed text-sm sm:text-base"
                             >
                               <option>{form.className}</option>
                             </select>
@@ -976,8 +976,8 @@ export default function ProfilePage() {
                           </p>
 
                           {errors.className && (
-                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                              <AlertCircle className="w-4 h-4" />
+                            <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                               {errors.className}
                             </p>
                           )}
@@ -985,11 +985,11 @@ export default function ProfilePage() {
 
                         {/* Board */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                             Board
                           </label>
                           <div className="relative">
-                            <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <BookOpen className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
 
                             {/* <select
                               name="board"
@@ -1010,15 +1010,15 @@ export default function ProfilePage() {
                               name="board"
                               value={form.board}
                               disabled
-                              className="w-full pl-12 pr-4 py-3 border rounded-xl bg-gray-100 cursor-not-allowed"
+                              className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl bg-gray-100 cursor-not-allowed text-sm sm:text-base"
                             >
                               <option>{form.board}</option>
                             </select>
                           </div>
 
                           {errors.board && (
-                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                              <AlertCircle className="w-4 h-4" />
+                            <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                               {errors.board}
                             </p>
                           )}
@@ -1031,42 +1031,42 @@ export default function ProfilePage() {
 
                     {/* Address Field */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         Address
                       </label>
                       <div className="relative">
-                        <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <MapPin className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="text"
                           name="address"
                           value={form.address}
                           onChange={handleChange}
                           placeholder="Enter your address"
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.address ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                          className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.address ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                         />
                       </div>
                     </div>
 
                     {/* DOB Field */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         Date of Birth
                       </label>
                       <div className="relative">
-                        <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="date"
                           name="dob"
                           value={form.dob}
                           onChange={handleChange}
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.dob ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                          className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.dob ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                         />
                       </div>
                     </div>
 
                     {/* Gender Field */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         Gender
                       </label>
                       <div className="relative">
@@ -1074,7 +1074,7 @@ export default function ProfilePage() {
                           name="gender"
                           value={form.gender}
                           onChange={handleChange}
-                          className={`w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.gender ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                          className={`w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.gender ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
                         >
                           <option value="">Select gender</option>
                           <option value="male">Male</option>
@@ -1103,8 +1103,8 @@ export default function ProfilePage() {
                     </div> */}
                     {/* ---------------- Parent Details Section ---------------- */}
                     {user.role === "student" && (
-                      <div className="md:col-span-2 mt-4">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
+                      <div className="md:col-span-2 mt-3 md:mt-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 md:mb-3 border-b pb-2">
                           Parent Details
                         </h3>
                       </div>
@@ -1112,27 +1112,27 @@ export default function ProfilePage() {
 
                     {/* ---------------------- FATHER SECTION ---------------------- */}
                     {user.role === "student" && (
-                      <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
-                        <h4 className="text-md font-semibold text-gray-800 mb-3">Father Information</h4>
+                      <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4 mb-4 md:mb-6">
+                        <h4 className="text-sm sm:text-md font-semibold text-gray-800 mb-2 md:mb-3">Father Information</h4>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
                           {/* Father Name */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                               Father Name
                             </label>
                             <div className="relative">
-                              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                          text-gray-400 w-5 h-5" />
+                              <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
+                          text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                               <input
                                 type="text"
                                 name="fatherName"
                                 value={form.fatherName}
                                 onChange={handleChange}
                                 placeholder="Enter father's name"
-                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               />
                             </div>
@@ -1140,12 +1140,12 @@ export default function ProfilePage() {
 
                           {/* Father Occupation */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                               Father Occupation
                             </label>
                             <div className="relative">
-                              <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                              text-gray-400 w-5 h-5" />
+                              <Briefcase className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
+                              text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                               <select
                                 name="fatherOccupation"
                                 value={
@@ -1161,8 +1161,8 @@ export default function ProfilePage() {
                                     setForm((prev) => ({ ...prev, fatherOccupation: value }));
                                   }
                                 }}
-                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               >
                                 <option value="">Select Occupation</option>
@@ -1183,8 +1183,8 @@ export default function ProfilePage() {
                                   value={form.fatherOccupation}
                                   onChange={handleChange}
                                   placeholder="Enter custom occupation"
-                                  className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                  className="mt-2 w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                                 />
                               )}
@@ -1192,20 +1192,20 @@ export default function ProfilePage() {
 
                           {/* Father Contact Number */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                               Father Contact Number
                             </label>
                             <div className="relative">
-                              <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                          text-gray-400 w-5 h-5" />
+                              <Phone className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
+                          text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                               <input
                                 type="tel"
                                 name="fatherContact"
                                 value={form.fatherContact}
                                 onChange={handleChange}
                                 placeholder="Enter father's mobile number"
-                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               />
                             </div>
@@ -1216,27 +1216,27 @@ export default function ProfilePage() {
                     )}
                     {/* ---------------------- MOTHER SECTION ---------------------- */}
                     {user.role === "student" && (
-                      <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-4">
-                        <h4 className="text-md font-semibold text-gray-800 mb-3">Mother Information</h4>
+                      <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4">
+                        <h4 className="text-sm sm:text-md font-semibold text-gray-800 mb-2 md:mb-3">Mother Information</h4>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
                           {/* Mother Name */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                               Mother Name
                             </label>
                             <div className="relative">
-                              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                        text-gray-400 w-5 h-5" />
+                              <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
+                        text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                               <input
                                 type="text"
                                 name="motherName"
                                 value={form.motherName}
                                 onChange={handleChange}
                                 placeholder="Enter mother's name"
-                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               />
                             </div>
@@ -1244,12 +1244,12 @@ export default function ProfilePage() {
 
                           {/* Mother Occupation */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                               Mother Occupation
                             </label>
                             <div className="relative">
-                              <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                              text-gray-400 w-5 h-5" />
+                              <Briefcase className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
+                              text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
 
                               <select
                                 name="motherOccupation"
@@ -1266,8 +1266,8 @@ export default function ProfilePage() {
                                     setForm((prev) => ({ ...prev, motherOccupation: value }));
                                   }
                                 }}
-                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               >
                                 <option value="">Select Occupation</option>
@@ -1288,8 +1288,8 @@ export default function ProfilePage() {
                                   value={form.motherOccupation}
                                   onChange={handleChange}
                                   placeholder="Enter custom occupation"
-                                  className="mt-2 w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                  className="mt-2 w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                                 />
                               )}
@@ -1297,20 +1297,20 @@ export default function ProfilePage() {
 
                           {/* Mother Contact Number */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                               Mother Contact Number
                             </label>
                             <div className="relative">
-                              <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 
-                          text-gray-400 w-5 h-5" />
+                              <Phone className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
+                          text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                               <input
                                 type="tel"
                                 name="motherContact"
                                 value={form.motherContact}
                                 onChange={handleChange}
                                 placeholder="Enter mother's mobile number"
-                                className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none 
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500 
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
+                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
                      focus:ring-yellow-100 focus:ring-4 bg-white"
                               />
                             </div>
@@ -1325,7 +1325,7 @@ export default function ProfilePage() {
 
                     {/* About / Bio */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                         About / Bio
                       </label>
                       <div className="relative">
@@ -1335,7 +1335,7 @@ export default function ProfilePage() {
                           onChange={handleChange}
                           rows={4}
                           placeholder="Tell us a bit about yourself"
-                          className="w-full pl-4 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 focus:ring-4 bg-white"
+                          className="w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 focus:ring-4 bg-white"
                         />
                       </div>
                     </div>
@@ -1430,55 +1430,55 @@ export default function ProfilePage() {
 
               {/* SECURITY TAB */}
               {activeTab === 'security' && (
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-semibold text-gray-800 border-b pb-3">Security Settings</h3>
+                <div className="space-y-4 md:space-y-6">
+                  <h3 className="text-xl md:text-2xl font-semibold text-gray-800 border-b pb-2 md:pb-3">Security Settings</h3>
 
-                  <div className="grid grid-cols-1 gap-6">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6">
 
                     {/* Old Password */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Old Password</label>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">Old Password</label>
                       <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Lock className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="password"
                           name="oldPassword"
                           value={form.oldPassword || ""}
                           onChange={(e) => setForm(prev => ({ ...prev, oldPassword: e.target.value }))}
                           placeholder="Enter old password"
-                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
+                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
                         />
                       </div>
                     </div>
 
                     {/* New Password */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">New Password</label>
                       <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Lock className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="password"
                           name="newPassword"
                           value={form.newPassword || ""}
                           onChange={(e) => setForm(prev => ({ ...prev, newPassword: e.target.value }))}
                           placeholder="Enter new password"
-                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
+                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
                         />
                       </div>
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password</label>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">Confirm New Password</label>
                       <div className="relative">
-                        <Shield className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Shield className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                         <input
                           type="password"
                           name="confirmPassword"
                           value={form.confirmPassword || ""}
                           onChange={(e) => setForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                           placeholder="Confirm new password"
-                          className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
+                          className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
                         />
                       </div>
                     </div>
@@ -1497,15 +1497,15 @@ export default function ProfilePage() {
               )}
 
               {/* SUBMIT BUTTON (all tabs share same button) */}
-              <div className="pt-6 mt-6 border-t border-gray-200">
+              <div className="pt-4 md:pt-6 mt-4 md:mt-6 border-t border-gray-200">
                 <button
                   type="submit"
                   disabled={saving || Object.keys(errors).length > 0}
-                  className="w-full md:w-auto px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {saving ? (
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Saving Changes...
                     </div>
                   ) : (
@@ -1515,13 +1515,13 @@ export default function ProfilePage() {
 
                 {/* SUCCESS MESSAGE */}
                 {success && (
-                  <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
+                  <div className="mt-3 md:mt-4 bg-green-50 border border-green-200 rounded-xl p-3 md:p-4 flex items-center gap-2 md:gap-3 animate-fade-in">
                     <div className="bg-green-500 rounded-full p-1">
-                      <Check className="w-4 h-4 text-white" />
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-green-800 font-semibold">Profile Updated Successfully!</p>
-                      <p className="text-green-700 text-sm">Your changes have been saved.</p>
+                      <p className="text-green-800 font-semibold text-sm sm:text-base">Profile Updated Successfully!</p>
+                      <p className="text-green-700 text-xs sm:text-sm">Your changes have been saved.</p>
                     </div>
                   </div>
                 )}
@@ -1532,14 +1532,14 @@ export default function ProfilePage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className="h-8 w-8 rounded-full bg-yellow-500 flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
+      <footer className="bg-white border-t border-gray-200 mt-8 md:mt-12">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-yellow-500 flex items-center justify-center">
+                <User className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
               </div>
-              <p className="text-gray-600">© 2025 Student Portal. All rights reserved to EEC.</p>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 text-center">© 2025 Student Portal. All rights reserved to EEC.</p>
             </div>
 
             {/* <div className="flex space-x-6 mt-4 md:mt-0">

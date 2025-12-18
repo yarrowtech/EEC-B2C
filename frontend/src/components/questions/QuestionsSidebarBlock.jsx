@@ -31,12 +31,30 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
       </button>
 
       <div
-        className={`overflow-hidden transition-all duration-300 ${
-          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`overflow-hidden transition-all duration-300 ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="ml-2 mt-1 pl-2 border-l border-slate-200 space-y-1">
-          
+
+          <NavLink
+            to="/dashboard/add-class"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
+            }
+          >
+            ➤ Classes
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/add-board"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
+            }
+          >
+            ➤ Boards
+          </NavLink>
+
+
           {/* SUBJECTS */}
           <NavLink
             to="/dashboard/add-subject"
@@ -58,24 +76,24 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
           </NavLink>
 
           {/* VIEW SUBJECTS */}
-          <NavLink
+          {/* <NavLink
             to="/dashboard/subjects"
             className={({ isActive }) =>
               `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
             }
           >
             ➤ View Subjects
-          </NavLink>
+          </NavLink> */}
 
           {/* VIEW TOPICS */}
-          <NavLink
+          {/* <NavLink
             to="/dashboard/topics"
             className={({ isActive }) =>
               `${linkBase} ${isActive ? linkActive : "text-slate-700"}`
             }
           >
             ➤ View Topics
-          </NavLink>
+          </NavLink> */}
 
           {/* QUESTIONS INDEX */}
           <NavLink

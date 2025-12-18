@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { FiFileText, FiList, FiUpload, FiSettings } from "react-icons/fi";
+import { toast, ToastContainer } from "react-toastify";
 
 export default function QuestionsClozeSelect() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [boards, setBoards] = useState([]);
 
   const [form, setForm] = useState({
     text: "Water boils at [[blank1]] °C.",
@@ -21,7 +24,14 @@ export default function QuestionsClozeSelect() {
   async function submit(e) {
     e.preventDefault();
     if (!scope.subject || !scope.topic)
-      return alert("Pick Subject & Topic first");
+      // return alert("Pick Subject & Topic first");
+      return toast.warn("Pick Subject & Topic first");
+
+    if (!form.className)
+      return toast.warn("Select Class for the question.");
+
+    if (!form.board)
+      return toast.warn("Select Board for the question.");
 
     setBusy(true);
     try {
@@ -31,6 +41,7 @@ export default function QuestionsClozeSelect() {
         explanation: form.explanation,
         stage: form.stage,         // ⭐ ADDED
         class: form.className,     // ⭐ ADDED
+        board: form.board,         // ⭐ ADDED
         clozeSelect: {
           text: form.text,
           blanks: form.blanks,
@@ -38,212 +49,252 @@ export default function QuestionsClozeSelect() {
       };
 
       const out = await postQuestion("cloze-select", payload);
-      alert(`Saved! id=${out.id}`);
+      // alert(`Saved! id=${out.id}`);
+      toast.success("Question saved!");
     } catch (err) {
-      alert(err.message);
+      // alert(err.message);
+      toast.error(err.message || "Failed to save question.");
     } finally {
       setBusy(false);
     }
   }
 
+  useEffect(() => {
+    async function loadMeta() {
+      try {
+        const [clsRes, brdRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/api/classes`),
+          fetch(`${import.meta.env.VITE_API_URL}/api/boards`)
+        ]);
+
+        const clsData = await clsRes.json();
+        const brdData = await brdRes.json();
+
+        setClasses(Array.isArray(clsData) ? clsData : []);
+        setBoards(Array.isArray(brdData) ? brdData : []);
+      } catch (err) {
+        console.error("Failed to load class/board", err);
+      }
+    }
+
+    loadMeta();
+  }, []);
+
   return (
-    <form
-      onSubmit={submit}
-      className="
+    <>
+      <ToastContainer position="bottom-right" />
+      <form
+        onSubmit={submit}
+        className="
         space-y-8 
         rounded-3xl bg-gradient-to-br from-white/70 to-white/30 
         border border-white/40 backdrop-blur-xl shadow-xl p-8
       "
-    >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-3 bg-orange-100 text-orange-600 rounded-2xl shadow">
-          <FiList size={22} />
-        </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Cloze — Drop-Down
-        </h1>
-      </div>
-
-      {/* Picker */}
-      <SubjectTopicPicker />
-
-      {/* ⭐ CLASS + STAGE SECTION */}
-      <div className="rounded-2xl backdrop-blur-lg p-6 space-y-5">
-
-        {/* Class */}
-        <div>
-          <label className="font-medium text-slate-700 mb-1 block">
-            Select Class
-          </label>
-          <select
-            className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                        focus:ring-2 focus:ring-purple-500"
-            value={form.className}
-            onChange={(e) =>
-              setForm((s) => ({ ...s, className: e.target.value }))
-            }
-          >
-            <option value="">Select Class</option>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <option key={i + 1} value={`Class ${i + 1}`}>
-                Class {i + 1}
-              </option>
-            ))}
-          </select>
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-3 bg-orange-100 text-orange-600 rounded-2xl shadow">
+            <FiList size={22} />
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Cloze — Drop-Down
+          </h1>
         </div>
 
-        {/* Stage */}
-        <div>
-          <label className="font-medium text-slate-700 mb-1 block">
-            Stage
-          </label>
-          <select
-            className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
+        {/* Picker */}
+        <SubjectTopicPicker />
+
+        {/* ⭐ CLASS + STAGE SECTION */}
+        <div className="rounded-2xl backdrop-blur-lg p-6 space-y-5">
+
+          {/* Class */}
+          <div>
+            <label className="font-medium text-slate-700 mb-1 block">
+              Select Class
+            </label>
+            <select
+              className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
                         focus:ring-2 focus:ring-purple-500"
-            value={form.stage}
-            onChange={(e) =>
-              setForm((s) => ({ ...s, stage: Number(e.target.value) }))
-            }
-          >
-            <option value={1}>Stage 1: Basic</option>
-            {/* <option value={2}>Stage 2: Intermediate</option>
+              value={form.className}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, className: e.target.value }))
+              }
+            >
+              <option value="">Select Class</option>
+              {classes.map((c) => (
+                <option key={c._id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Stage */}
+          <div>
+            <label className="font-medium text-slate-700 mb-1 block">
+              Stage
+            </label>
+            <select
+              className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
+                        focus:ring-2 focus:ring-purple-500"
+              value={form.stage}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, stage: Number(e.target.value) }))
+              }
+            >
+              <option value={1}>Stage 1: Basic</option>
+              {/* <option value={2}>Stage 2: Intermediate</option>
             <option value={3}>Stage 3: Advanced</option> */}
-          </select>
+            </select>
+          </div>
+          <div>
+            <label className="font-medium text-slate-700 mb-1 flex gap-1 items-center">Select Board</label>
+            <select
+              className="w-full rounded-xl px-4 py-3 bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
+              value={form.board}
+              onChange={(e) => update("board", e.target.value)}
+            >
+              <option value="">Select Board</option>
+              {boards.map((b) => (
+                <option key={b._id} value={b.name}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-      </div>
+        {/* Text Section */}
+        <div className="rounded-2xl backdrop-blur-lg p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <FiFileText className="text-indigo-600" />
+            <h2 className="font-semibold text-slate-800 text-lg">Cloze Text</h2>
+          </div>
 
-      {/* Text Section */}
-      <div className="rounded-2xl backdrop-blur-lg p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <FiFileText className="text-indigo-600" />
-          <h2 className="font-semibold text-slate-800 text-lg">Cloze Text</h2>
-        </div>
-
-        <textarea
-          className="
+          <textarea
+            className="
             w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28
             focus:ring-2 focus:ring-indigo-500
           "
-          placeholder="Write text using [[blank1]] syntax..."
-          value={form.text}
-          onChange={(e) =>
-            setForm((s) => ({ ...s, text: e.target.value }))
-          }
-        />
-      </div>
-
-      {/* Blank Editor */}
-      <div
-        className="
-        rounded-2xl backdrop-blur-lg p-6 space-y-4
-      "
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <FiSettings className="text-purple-600" />
-          <h2 className="font-semibold text-slate-800 text-lg">Blank Options</h2>
+            placeholder="Write text using [[blank1]] syntax..."
+            value={form.text}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, text: e.target.value }))
+            }
+          />
         </div>
 
-        {/* Single Blank UI */}
-        <div className="rounded-2xl bg-white shadow-sm p-5 space-y-4">
-          <div className="text-sm font-semibold text-slate-700">blank1</div>
+        {/* Blank Editor */}
+        <div
+          className="
+        rounded-2xl backdrop-blur-lg p-6 space-y-4
+      "
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <FiSettings className="text-purple-600" />
+            <h2 className="font-semibold text-slate-800 text-lg">Blank Options</h2>
+          </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Options Input */}
-            <div>
-              <label className="font-medium text-slate-600 mb-1 block">
-                Options (comma-separated)
-              </label>
-              <input
-                className="
+          {/* Single Blank UI */}
+          <div className="rounded-2xl bg-white shadow-sm p-5 space-y-4">
+            <div className="text-sm font-semibold text-slate-700">blank1</div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {/* Options Input */}
+              <div>
+                <label className="font-medium text-slate-600 mb-1 block">
+                  Options (comma-separated)
+                </label>
+                <input
+                  className="
                   w-full rounded-xl px-4 py-2 bg-white shadow-sm
                   focus:ring-2 focus:ring-purple-500
                 "
-                value={(form.blanks.blank1?.options || []).join(",")}
-                placeholder="e.g. 50, 70, 100"
-                onChange={(e) =>
-                  setForm((s) => ({
-                    ...s,
-                    blanks: {
-                      ...s.blanks,
-                      blank1: {
-                        ...(s.blanks.blank1 || {}),
-                        options: e.target.value
-                          .split(",")
-                          .map((x) => x.trim())
-                          .filter(Boolean),
+                  value={(form.blanks.blank1?.options || []).join(",")}
+                  placeholder="e.g. 50, 70, 100"
+                  onChange={(e) =>
+                    setForm((s) => ({
+                      ...s,
+                      blanks: {
+                        ...s.blanks,
+                        blank1: {
+                          ...(s.blanks.blank1 || {}),
+                          options: e.target.value
+                            .split(",")
+                            .map((x) => x.trim())
+                            .filter(Boolean),
+                        },
                       },
-                    },
-                  }))
-                }
-              />
-            </div>
+                    }))
+                  }
+                />
+              </div>
 
-            {/* Correct Answer */}
-            <div>
-              <label className="font-medium text-slate-600 mb-1 block">
-                Correct Answer
-              </label>
-              <input
-                className="
+              {/* Correct Answer */}
+              <div>
+                <label className="font-medium text-slate-600 mb-1 block">
+                  Correct Answer
+                </label>
+                <input
+                  className="
                   w-full rounded-xl px-4 py-2 bg-white shadow-sm
                   focus:ring-2 focus:ring-green-500
                 "
-                placeholder="Correct option"
-                value={form.blanks.blank1?.correct || ""}
-                onChange={(e) =>
-                  setForm((s) => ({
-                    ...s,
-                    blanks: {
-                      ...s.blanks,
-                      blank1: {
-                        ...(s.blanks.blank1 || {}),
-                        correct: e.target.value,
+                  placeholder="Correct option"
+                  value={form.blanks.blank1?.correct || ""}
+                  onChange={(e) =>
+                    setForm((s) => ({
+                      ...s,
+                      blanks: {
+                        ...s.blanks,
+                        blank1: {
+                          ...(s.blanks.blank1 || {}),
+                          correct: e.target.value,
+                        },
                       },
-                    },
-                  }))
-                }
-              />
+                    }))
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Explanation */}
-      <div
-        className="
+        {/* Explanation */}
+        <div
+          className="
         rounded-2xl backdrop-blur-lg p-6
       "
-      >
-        <label className="font-semibold text-slate-800 mb-2 block">
-          Explanation (optional)
-        </label>
-        <textarea
-          className="
+        >
+          <label className="font-semibold text-slate-800 mb-2 block">
+            Explanation (optional)
+          </label>
+          <textarea
+            className="
             w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28 
             focus:ring-2 focus:ring-blue-500
           "
-          placeholder="Write explanation if needed…"
-          value={form.explanation}
-          onChange={(e) =>
-            setForm((s) => ({ ...s, explanation: e.target.value }))
-          }
-        />
-      </div>
+            placeholder="Write explanation if needed…"
+            value={form.explanation}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, explanation: e.target.value }))
+            }
+          />
+        </div>
 
-      {/* Save Button */}
-      <button
-        disabled={busy}
-        className="
+        {/* Save Button */}
+        <button
+          disabled={busy}
+          className="
           flex items-center gap-2 rounded-xl px-6 py-3 
           bg-indigo-600 text-white font-semibold
           shadow-md hover:bg-indigo-700 hover:shadow-xl
           active:scale-95 transition-all disabled:opacity-50
         "
-      >
-        <FiUpload /> {busy ? "Saving..." : "Save Question"}
-      </button>
-    </form>
+        >
+          <FiUpload /> {busy ? "Saving..." : "Save Question"}
+        </button>
+      </form>
+    </>
   );
 }

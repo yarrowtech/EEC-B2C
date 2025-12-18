@@ -67,6 +67,8 @@ import UploadStudyMaterial from "./pages/UploadStudyMaterial";
 import ResetPassword from "./pages/ResetPassword";
 import CreateNotification from "./pages/CreateNotification";
 import NotificationDetails from "./pages/NotificationDetails";
+import AddClass from "./pages/questions/AddClass";
+import AddBoard from "./pages/questions/AddBoard";
 
 
 function getToken() {
@@ -189,6 +191,17 @@ export default function App() {
       window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
     }
   }, []);
+
+  useEffect(() => {
+    const razorpayKeys = [
+      "rzp_checkout_anon_id",
+      "rzp_device_id",
+      "rzp_stored_checkout_id",
+    ];
+
+    razorpayKeys.forEach((k) => localStorage.removeItem(k));
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -216,6 +229,8 @@ export default function App() {
             {/* more outlet pages */}
             <Route path="add-subject" element={<AddSubject />} />
             <Route path="add-topic" element={<AddTopic />} />
+            <Route path="/dashboard/add-class" element={<AddClass />} />
+            <Route path="/dashboard/add-board" element={<AddBoard />} />
             <Route path="students" element={<StudentsList />} />
             <Route path="subjects" element={<SubjectsList />} />
             <Route path="topics" element={<TopicsList />} />

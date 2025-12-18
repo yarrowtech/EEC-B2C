@@ -197,10 +197,10 @@ router.get("/profile", requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     /* ---------------- AUTO PROMOTION ---------------- */
-    const promoted = autoPromoteStudent(user);
-    if (promoted) {
-      await user.save(); // save only if promotion happened
-    }
+    // const promoted = autoPromoteStudent(user);
+    // if (promoted) {
+    //   await user.save(); // save only if promotion happened
+    // }
 
     const mappedUser = {
       ...user._doc,
@@ -386,6 +386,12 @@ router.put("/change-password", requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+// routes/users.js
+router.get("/me/purchased", requireAuth, async (req, res) => {
+  const user = await User.findById(req.user.id).select("purchasedMaterials");
+  res.json(user?.purchasedMaterials || []);
 });
 
 export default router;

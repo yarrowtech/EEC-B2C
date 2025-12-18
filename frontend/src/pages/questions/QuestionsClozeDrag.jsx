@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
@@ -9,10 +9,13 @@ import {
   FiFileText,
   FiLink,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
 
 export default function QuestionsClozeDrag() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [boards, setBoards] = useState([]);
 
   const [form, setForm] = useState({
     text: "The capital of India is [[blank1]]. The currency is [[blank2]].",
@@ -21,12 +24,20 @@ export default function QuestionsClozeDrag() {
     explanation: "",
     stage: 1,        // ⭐ ADDED
     className: "",   // ⭐ ADDED
+    board: "",      // ⭐ ADDED
   });
 
   async function submit(e) {
     e.preventDefault();
     if (!scope.subject || !scope.topic)
-      return alert("Pick Subject & Topic first");
+      // return alert("Pick Subject & Topic first");
+      return toast.warn("Pick Subject & Topic first");
+
+    if (!form.className)
+      return toast.warn("Select Class for the question.");
+
+    if (!form.board)
+      return toast.warn("Select Board for the question.");
 
     setBusy(true);
     try {
@@ -35,6 +46,7 @@ export default function QuestionsClozeDrag() {
         topic: scope.topic,
         stage: form.stage,          // ⭐ ADDED
         class: form.className,      // ⭐ ADDED
+        board: form.board,          // ⭐ ADDED
         explanation: form.explanation,
         clozeDrag: {
           text: form.text,
@@ -44,9 +56,11 @@ export default function QuestionsClozeDrag() {
       };
 
       const out = await postQuestion("cloze-drag", payload);
-      alert(`Saved! id=${out.id}`);
+      // alert(`Saved! id=${out.id}`);
+      toast.success("Question saved!")
     } catch (err) {
-      alert(err.message);
+      // alert(err.message);
+      toast.error(err.message || "Failed to save question.");
     } finally {
       setBusy(false);
     }
@@ -58,6 +72,27 @@ export default function QuestionsClozeDrag() {
       tokens[i] = val;
       return { ...s, tokens };
     });
+
+  useEffect(() => {
+    async function loadMeta() {
+      try {
+        const [clsRes, brdRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/api/classes`),
+          fetch(`${import.meta.env.VITE_API_URL}/api/boards`)
+        ]);
+
+        const clsData = await clsRes.json();
+        const brdData = await brdRes.json();
+
+        setClasses(Array.isArray(clsData) ? clsData : []);
+        setBoards(Array.isArray(brdData) ? brdData : []);
+      } catch (err) {
+        console.error("Failed to load class/board", err);
+      }
+    }
+
+    loadMeta();
+  }, []);
 
   return (
     <form
@@ -98,9 +133,9 @@ export default function QuestionsClozeDrag() {
             }
           >
             <option value="">Select Class</option>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <option key={i + 1} value={`Class ${i + 1}`}>
-                Class {i + 1}
+            {classes.map((c) => (
+              <option key={c._id} value={c.name}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -122,6 +157,21 @@ export default function QuestionsClozeDrag() {
             <option value={1}>Stage 1: Basic</option>
             {/* <option value={2}>Stage 2: Intermediate</option>
             <option value={3}>Stage 3: Advanced</option> */}
+          </select>
+        </div>
+        <div>
+          <label className="font-medium text-slate-700 mb-1 flex gap-1 items-center">Select Board</label>
+          <select
+            className="w-full rounded-xl px-4 py-3 bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
+            value={form.board}
+            onChange={(e) => update("board", e.target.value)}
+          >
+            <option value="">Select Board</option>
+            {boards.map((b) => (
+              <option key={b._id} value={b.name}>
+                {b.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
