@@ -20,6 +20,7 @@ function signToken(user) {
     name: user.name,
     role: user.role,
     board: user.board,
+    state: user.state,
   }; // ✅ role added
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "1h",

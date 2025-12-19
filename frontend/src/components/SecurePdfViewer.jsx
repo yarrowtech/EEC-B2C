@@ -17,8 +17,8 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
   const [scale, setScale] = useState(1);
   const [fitMode, setFitMode] = useState("width"); // width | height | free
   const [ready, setReady] = useState(false);
-  const MIN_ZOOM = 0.5; // 50%
-  const MAX_ZOOM = 4;   // 400%
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 4;
 
   /* ---------------- LOAD PDF ---------------- */
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
         const ctx = canvas.getContext("2d");
         const container = containerRef.current;
 
-        const baseViewport = page.getViewport({ scale: 1, rotation: 0 });
+        const baseViewport = page.getViewport({ scale: 1 });
 
         let finalScale = scale;
         if (fitMode === "width") {
@@ -69,11 +69,7 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
           finalScale = container.clientHeight / baseViewport.height;
         }
 
-        const viewport = page.getViewport({
-          scale: finalScale,
-          rotation: 0,
-        });
-
+        const viewport = page.getViewport({ scale: finalScale });
         const dpr = window.devicePixelRatio || 1;
 
         canvas.width = viewport.width * dpr;
@@ -90,7 +86,7 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
     renderAll();
   }, [pdfDoc, scale, fitMode, ready]);
 
-  /* ---------------- PAGE TRACKING (FIXED) ---------------- */
+  /* ---------------- PAGE TRACKING ---------------- */
   useEffect(() => {
     if (!containerRef.current || !totalPages) return;
 
@@ -103,9 +99,9 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
           visibleRatios.current[page] = entry.intersectionRatio;
         });
 
-        // pick page with highest visibility
-        const mostVisible = Object.entries(visibleRatios.current)
-          .sort((a, b) => b[1] - a[1])[0];
+        const mostVisible = Object.entries(visibleRatios.current).sort(
+          (a, b) => b[1] - a[1]
+        )[0];
 
         if (mostVisible) {
           setCurrentPage(Number(mostVisible[0]));
@@ -127,16 +123,6 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
   }, [totalPages]);
 
   /* ---------------- ZOOM ---------------- */
-  // const zoomIn = () => {
-  //   setFitMode("free");
-  //   setScale((s) => Math.min(3, s + 0.2));
-  // };
-
-  // const zoomOut = () => {
-  //   setFitMode("free");
-  //   setScale((s) => Math.max(0.5, s - 0.2));
-  // };
-
   const zoomIn = () => {
     setFitMode("free");
     setScale((s) => Math.min(MAX_ZOOM, Number((s + 0.2).toFixed(2))));
@@ -169,62 +155,49 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
   }, []);
 
   const handleZoomSelect = (value) => {
-    // If it's percentage
     if (value.endsWith("%")) {
-      const percent = parseInt(value.replace("%", ""), 10);
       setFitMode("free");
-      setScale(percent / 100);
+      setScale(parseInt(value.replace("%", ""), 10) / 100);
     } else {
-      // width / height / free
       setFitMode(value);
     }
   };
-
 
   /* ---------------- UI ---------------- */
   return (
     <div className="fixed inset-0 z-50 bg-[#2a2a2e] flex flex-col select-none">
       {/* HEADER */}
-      <div className="relative flex items-center justify-between px-5 py-3 bg-[#38383d] text-white shadow-lg">
+      <div className="relative flex flex-wrap items-center justify-between gap-2 px-3 md:px-5 py-2 md:py-3 bg-[#38383d] text-white shadow-lg">
         {/* LEFT */}
-        <div className="font-semibold truncate text-sm md:text-base max-w-[40%]">
-          <FileText className="w-4 h-4 inline mr-2" /> {subject ? `${subject} •` : ""} {title}
+        <div className="flex items-center gap-2 font-semibold truncate text-xs sm:text-sm md:text-base max-w-full md:max-w-[40%]">
+          <FileText className="w-4 h-4" />
+          {subject ? `${subject} •` : ""} {title}
         </div>
 
-        {/* CENTER PAGE INDICATOR */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold bg-[#4a4a4f] px-4 py-1 rounded-full">
+        {/* CENTER PAGE INDICATOR (DESKTOP) */}
+        <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block text-xs sm:text-sm font-semibold bg-[#4a4a4f] px-3 py-1 rounded-full">
           Page: {currentPage} / {totalPages}
         </div>
 
         {/* RIGHT CONTROLS */}
-        <div className="flex items-center gap-3">
-          <button onClick={zoomOut}
-            disabled={scale <= MIN_ZOOM}
-            className={`hover:text-yellow-300 ${scale <= MIN_ZOOM ? "opacity-40 cursor-not-allowed" : ""
-              }`}>
+        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+          <button onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
             <ZoomOut />
           </button>
 
-          <button onClick={zoomIn}
-            disabled={scale >= MAX_ZOOM}
-            className={`hover:text-yellow-300 ${scale >= MAX_ZOOM ? "opacity-40 cursor-not-allowed" : ""
-              }`}>
+          <button onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
             <ZoomIn />
           </button>
 
           <select
             value={fitMode === "free" ? `${Math.round(scale * 100)}%` : fitMode}
             onChange={(e) => handleZoomSelect(e.target.value)}
-            className="bg-[#4a4a4f] text-white text-sm px-3 py-1 rounded-md outline-none"
+            className="bg-[#4a4a4f] text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-md outline-none"
           >
-            {/* Fit options */}
             <option value="width">Fit to Width</option>
             <option value="height">Fit to Height</option>
             <option value="free">Actual Size</option>
-
             <option disabled>──────────</option>
-
-            {/* Percentage zoom */}
             <option value="50%">50%</option>
             <option value="75%">75%</option>
             <option value="100%">100%</option>
@@ -235,14 +208,15 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
             <option value="400%">400%</option>
           </select>
 
-
-          <button onClick={onClose} className="hover:text-red-300">
+          <button onClick={onClose}>
             <X />
           </button>
         </div>
       </div>
 
-      {/* CONTINUOUS SCROLL */}
+      {/* MOBILE PAGE INDICATOR */}
+
+      {/* PDF CONTENT */}
       <div
         ref={containerRef}
         className="flex-1 overflow-auto px-6 py-8 space-y-8 flex flex-col items-center"
@@ -254,6 +228,11 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
             className="bg-white rounded-lg shadow-xl select-none"
           />
         ))}
+      </div>
+      <div className="sm:hidden flex justify-center bg-[#2a2a2e] py-2">
+        <div className="text-xs font-semibold bg-[#4a4a4f] text-white px-4 py-1 rounded-full">
+          Page: {currentPage} / {totalPages}
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,8 @@ import {
   GraduationCap,
   ChevronDown,
   ListChecks,
-  GraduationCapIcon
+  GraduationCapIcon,
+  Table2
 } from "lucide-react";
 import { getJSON } from "../../lib/api";
 
@@ -140,6 +141,17 @@ export default function ExamSidebarBlock({ role = "student" }) {
       >
         <GraduationCapIcon size={18} />
         <span>Study Materials</span>
+      </NavLink>
+      <NavLink
+        to="/dashboard/leaderboard"
+        className={({ isActive }) =>
+          `${linkBase} ${
+            isActive ? linkActive : "hover:bg-yellow-100"
+          }`
+        }
+      >
+        <Table2 size={18} />
+        <span>Leaderboard</span>
       </NavLink>
     </div>
   );

@@ -1370,7 +1370,9 @@ export const getClassRank = async (req, res) => {
 
     const user = await User.findById(userId).lean();
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const userClass = user.class || user.className;
@@ -1383,7 +1385,7 @@ export const getClassRank = async (req, res) => {
       $or: [{ class: userClass }, { className: userClass }],
     }).select("_id");
 
-    const studentIds = students.map(s => s._id);
+    const studentIds = students.map((s) => s._id);
 
     // 2️⃣ Aggregate average score per student
     const scores = await Attempt.aggregate([
@@ -1396,20 +1398,20 @@ export const getClassRank = async (req, res) => {
               $cond: [
                 { $gt: ["$total", 0] },
                 { $multiply: [{ $divide: ["$score", "$total"] }, 100] },
-                0
-              ]
-            }
-          }
-        }
+                0,
+              ],
+            },
+          },
+        },
       },
-      { $sort: { avgPercent: -1 } }
+      { $sort: { avgPercent: -1 } },
     ]);
 
     const totalStudents = scores.length;
 
     // 3️⃣ Find rank
     const rankIndex = scores.findIndex(
-      s => s._id.toString() === userId.toString()
+      (s) => s._id.toString() === userId.toString()
     );
 
     const rank = rankIndex >= 0 ? rankIndex + 1 : totalStudents;
@@ -1417,10 +1419,90 @@ export const getClassRank = async (req, res) => {
     res.json({
       success: true,
       rank,
-      totalStudents
+      totalStudents,
     });
   } catch (err) {
     console.error("CLASS RANK ERROR:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// GET /api/exams/leaderboard
+export const getLeaderboard = async (req, res) => {
+  try {
+    const { board, className } = req.query;
+
+    const pipeline = [
+      // 1️⃣ Join users correctly
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",   // ✅ FIXED
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+
+      // 2️⃣ Only students
+      {
+        $match: {
+          "user.role": "student",
+        },
+      },
+
+      // 3️⃣ Board filter (on USER)
+      ...(board
+        ? [
+            {
+              $match: {
+                "user.board": board,
+              },
+            },
+          ]
+        : []),
+
+      // 4️⃣ Class filter (support BOTH class & className)
+      ...(className
+        ? [
+            {
+              $match: {
+                $or: [
+                  { "user.class": className },
+                  { "user.className": className },
+                ],
+              },
+            },
+          ]
+        : []),
+
+      // 5️⃣ Group by student
+      {
+        $group: {
+          _id: "$user._id",
+          name: { $first: "$user.name" },
+          className: {
+            $first: {
+              $ifNull: ["$user.className", "$user.class"],
+            },
+          },
+          board: { $first: "$user.board" },
+          state: { $first: "$user.state" },
+          totalScore: { $sum: "$score" },
+          avgPercent: { $avg: "$percent" },
+          examsAttempted: { $sum: 1 },
+        },
+      },
+
+      // 6️⃣ Sort leaderboard
+      { $sort: { totalScore: -1, avgPercent: -1 } },
+    ];
+
+    const leaderboard = await Attempt.aggregate(pipeline);
+
+    res.json({ success: true, leaderboard });
+  } catch (err) {
+    console.error("LEADERBOARD ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

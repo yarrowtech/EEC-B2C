@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Upload, FileText, Trash2, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -115,8 +116,54 @@ export default function UploadStudyMaterial() {
     }
 
 
+    // async function deleteMaterial(id) {
+    //     if (!window.confirm("Delete this material permanently?")) return;
+
+    //     try {
+    //         const res = await fetch(`${API}/api/study-materials/${id}`, {
+    //             method: "DELETE",
+    //             headers: {
+    //                 Authorization: `Bearer ${getToken()}`,
+    //             },
+    //         });
+
+    //         // 🔥 Safely read response
+    //         const text = await res.text();
+    //         let data = {};
+
+    //         try {
+    //             data = text ? JSON.parse(text) : {};
+    //         } catch {
+    //             data = {};
+    //         }
+
+    //         if (!res.ok) {
+    //             throw new Error(data.message || "Delete failed");
+    //         }
+
+    //         toast.success(data.message || "Material deleted");
+    //         fetchMaterials();
+    //         setCurrentPage(1);
+    //     } catch (err) {
+    //         console.error("DELETE ERROR:", err);
+    //         toast.error(err.message || "Delete failed");
+    //     }
+    // }
+
     async function deleteMaterial(id) {
-        if (!window.confirm("Delete this material permanently?")) return;
+        const result = await Swal.fire({
+            title: "Delete study material?",
+            text: "This material will be permanently removed.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc2626", // red
+            cancelButtonColor: "#64748b",  // slate
+            confirmButtonText: "Yes, delete",
+            cancelButtonText: "Cancel",
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             const res = await fetch(`${API}/api/study-materials/${id}`, {
@@ -126,7 +173,6 @@ export default function UploadStudyMaterial() {
                 },
             });
 
-            // 🔥 Safely read response
             const text = await res.text();
             let data = {};
 
@@ -140,14 +186,26 @@ export default function UploadStudyMaterial() {
                 throw new Error(data.message || "Delete failed");
             }
 
-            toast.success(data.message || "Material deleted");
+            await Swal.fire({
+                icon: "success",
+                title: "Deleted!",
+                text: data.message || "Study material has been deleted.",
+                timer: 1500,
+                showConfirmButton: false,
+            });
+
             fetchMaterials();
             setCurrentPage(1);
         } catch (err) {
             console.error("DELETE ERROR:", err);
-            toast.error(err.message || "Delete failed");
+            Swal.fire({
+                icon: "error",
+                title: "Delete failed",
+                text: err.message || "Something went wrong",
+            });
         }
     }
+
 
 
     function editMaterial(m) {

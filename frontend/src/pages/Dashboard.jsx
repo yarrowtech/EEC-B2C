@@ -525,7 +525,8 @@ function StudentContent() {
   return (
     <>
       <WelcomeCard />
-      <Section title="My Exam Stats" icon={<Trophy size={18} />}>
+      {/* <Section title="My Exam Stats" icon={<Trophy size={18} />}> */}
+      <Section title="My Exam Stats">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* ✅ UPDATED CARD */}

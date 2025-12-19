@@ -8,6 +8,7 @@ import {
   adminAttemptDetail,
   getUserResults,
   getClassRank,
+  getLeaderboard,
 } from "../controllers/examsController.js";
 
 const router = Router();
@@ -55,5 +56,6 @@ router.get(
 );
 
 router.get("/class-rank/:userId", requireAuth, getClassRank);
+router.get("/leaderboard", requireAuth, getLeaderboard);
 
 export default router;

@@ -167,13 +167,14 @@ export default function ResultsList() {
                         {/* {subjectMap[r.subject] || r.subject} */}
                         {r.subjectName || subjectMap[r.subject] || r.subject}
                       </div>
+                      <span className="uppercase text-[10px] bg-slate-200 px-2 py-0.5 rounded-full">
+                        {r.type}
+                      </span>
                       <div className="text-xs text-gray-500">
                         {/* {r.topic || "Topic"} •{" "} */}
                         {/* {topicMap[r.topic] || r.topic} */}
-                        {r.topicName || topicMap[r.topic] || r.topic} • {" "}
-                        <span className="uppercase text-[10px] bg-slate-200 px-2 py-0.5 rounded-full">
-                          {r.type}
-                        </span>
+                        {r.topicName || topicMap[r.topic] || r.topic} {" "}
+
                       </div>
                     </div>
                   </div>
@@ -202,7 +203,12 @@ export default function ResultsList() {
 
                 {/* Date */}
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {new Date(r.createdAt).toLocaleString()}
+                  <div className="flex flex-col leading-tight">
+                    <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(r.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Action */}

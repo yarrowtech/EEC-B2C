@@ -4,6 +4,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { getJSON, deleteQuestion } from "../../lib/api";
 import { FiFilter, FiSearch, FiTrash2, FiEdit3, FiList } from "react-icons/fi";
+import Swal from "sweetalert2";
 
 const TYPES = [
   "mcq-single", "mcq-multi", "choice-matrix", "true-false",
@@ -97,15 +98,52 @@ export default function QuestionsList() {
     setTimeout(load, 0);
   }
 
+  // async function onDelete(id) {
+  //   if (!confirm("Delete this question?")) return;
+  //   try {
+  //     await deleteQuestion(id);
+  //     await load();
+  //   } catch (e) {
+  //     alert(e.message);
+  //   }
+  // }
+
   async function onDelete(id) {
-    if (!confirm("Delete this question?")) return;
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This question will be permanently deleted.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626", // red
+      cancelButtonColor: "#64748b", // slate
+      confirmButtonText: "Yes, delete it",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await deleteQuestion(id);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "The question has been deleted.",
+        timer: 1400,
+        showConfirmButton: false,
+      });
+
       await load();
     } catch (e) {
-      alert(e.message);
+      Swal.fire({
+        icon: "error",
+        title: "Delete failed",
+        text: e.message || "Something went wrong",
+      });
     }
   }
+
 
   const pages = Math.max(1, Math.ceil(total / limit));
   async function loadSubjectTopicNames() {
@@ -308,7 +346,7 @@ export default function QuestionsList() {
           <table className="min-w-[900px] w-full text-sm">
             <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
               <tr>
-                {["Type", "Subject", "Topic", "Difficulty", "Preview", "Actions"].map((h) => (
+                {["Type", "Subject", "Topic", "Preview", "Actions"].map((h) => (
                   <th
                     key={h}
                     className="
@@ -341,7 +379,7 @@ export default function QuestionsList() {
                     {topicMap[r.topic] || "—"}
                   </td>
 
-                  <td className="px-4 py-3 text-slate-600">{r.difficulty || "-"}</td>
+                  {/* <td className="px-4 py-3 text-slate-600">{r.difficulty || "-"}</td> */}
 
                   <td className="px-4 py-3">
                     <div className="line-clamp-2 max-w-[380px] text-slate-700">

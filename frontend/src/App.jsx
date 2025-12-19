@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import Topbar from "./components/Topbar";
 import Navbar from "./components/Navbar";
@@ -69,6 +69,8 @@ import CreateNotification from "./pages/CreateNotification";
 import NotificationDetails from "./pages/NotificationDetails";
 import AddClass from "./pages/questions/AddClass";
 import AddBoard from "./pages/questions/AddBoard";
+import Swal from "sweetalert2";
+import Leaderboard from "./pages/Leaderboard";
 
 
 function getToken() {
@@ -202,8 +204,36 @@ export default function App() {
     razorpayKeys.forEach((k) => localStorage.removeItem(k));
   }, []);
 
+  function AuthExpiryHandler() {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      const onAuthEvent = (e) => {
+        if (e?.detail?.type === "logout") {
+          Swal.fire({
+            icon: "warning",
+            title: "Session Expired",
+            text: "Please login again to continue",
+            confirmButtonColor: "#f59e0b",
+            confirmButtonText: "OK",
+            allowOutsideClick: false,
+          }).then(() => {
+            navigate("/", { replace: true });
+          });
+        }
+      };
+
+      window.addEventListener("eec:auth", onAuthEvent);
+      return () => window.removeEventListener("eec:auth", onAuthEvent);
+    }, [navigate]);
+
+    return null;
+  }
+
+
   return (
     <BrowserRouter>
+    <AuthExpiryHandler />
       <Routes>
         <Route element={<ShellLayout />}>
           <Route index element={<Home />} />
@@ -242,6 +272,7 @@ export default function App() {
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
             <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
+            <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Bell, Send } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function CreateNotification() {
     const ITEMS_PER_PAGE = 5;
@@ -65,8 +66,43 @@ export default function CreateNotification() {
         loadNotifications();
     }, []);
 
+    // async function deleteNotification(id) {
+    //     if (!window.confirm("Delete this notification?")) return;
+
+    //     try {
+    //         const res = await fetch(`${API}/api/notifications/${id}`, {
+    //             method: "DELETE",
+    //             headers: {
+    //                 Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+    //             },
+    //         });
+
+    //         if (res.ok) {
+    //             toast.success("Notification deleted");
+    //             setNotifications((prev) => prev.filter((n) => n._id !== id));
+    //         } else {
+    //             toast.error("Failed to delete");
+    //         }
+    //     } catch (err) {
+    //         toast.error("Something went wrong");
+    //     }
+    // }
+
+
     async function deleteNotification(id) {
-        if (!window.confirm("Delete this notification?")) return;
+        const result = await Swal.fire({
+            title: "Delete notification?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Yes, delete",
+            cancelButtonText: "Cancel",
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             const res = await fetch(`${API}/api/notifications/${id}`, {
@@ -77,13 +113,28 @@ export default function CreateNotification() {
             });
 
             if (res.ok) {
-                toast.success("Notification deleted");
+                await Swal.fire({
+                    icon: "success",
+                    title: "Deleted!",
+                    text: "Notification has been removed.",
+                    timer: 1400,
+                    showConfirmButton: false,
+                });
+
                 setNotifications((prev) => prev.filter((n) => n._id !== id));
             } else {
-                toast.error("Failed to delete");
+                Swal.fire({
+                    icon: "error",
+                    title: "Delete failed",
+                    text: "Unable to delete notification.",
+                });
             }
         } catch (err) {
-            toast.error("Something went wrong");
+            Swal.fire({
+                icon: "error",
+                title: "Something went wrong",
+                text: "Please try again later.",
+            });
         }
     }
 
