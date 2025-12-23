@@ -87,7 +87,7 @@ const AchievementsView = () => {
             🏆 Achievements
           </h1>
           <p className="text-gray-600 text-sm">
-            Track your progress & collect rewards ✨
+            Track your progress & collect rewards
           </p>
         </div>
 
