@@ -328,27 +328,36 @@ const ResultsView = () => {
 
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="min-h-screen space-y-6 md:space-y-8 p-4 sm:p-6 md:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+        <div className="absolute -top-20 -right-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
+        <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
+      </div>
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 rounded-2xl p-6 text-white relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-4 w-32 h-32 bg-white rounded-full"></div>
-          <div className="absolute bottom-4 left-4 w-24 h-24 bg-white rounded-full"></div>
-        </div>
+      <div className="relative z-10 overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 p-6 md:p-8 text-white shadow-2xl">
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
 
         <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Trophy className="w-8 h-8 text-yellow-200" />
-                <h1 className="text-3xl font-bold">My Results</h1>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg">
+                <Trophy size={40} className="drop-shadow-lg" />
               </div>
-              <p className="text-yellow-100">Track your academic performance and achievements</p>
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-lg">
+                  My Results
+                </h1>
+                <p className="text-sm md:text-base text-blue-100 mt-1">Track your academic performance and achievements</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-yellow-100 text-sm mb-1">Current Class</p>
-              <p className="text-xl font-semibold">
+            <div className="bg-white/20 backdrop-blur-sm px-4 sm:px-5 py-3 rounded-xl md:rounded-2xl shadow-lg border border-white/30">
+              <p className="text-xs text-white/80">Current Class</p>
+              <p className="text-lg sm:text-xl font-bold text-white drop-shadow-lg">
                 {user?.className || user?.class || "N/A"}
               </p>
             </div>
@@ -357,29 +366,28 @@ const ResultsView = () => {
       </div>
 
       {/* Quick Stats */}
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 
         {/* GPA */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-yellow-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-yellow-100 rounded-lg">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
               <Target className="w-6 h-6 text-yellow-600" />
             </div>
-            <span className="text-2xl"><BarChart /></span>
+            <BarChart className="w-6 h-6 text-yellow-400" />
           </div>
 
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">
+            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
               {examResults.length > 0
                 ? (overallPercentage / 25).toFixed(2)
                 : 0}
             </h3>
-            <p className="text-gray-600 text-sm">GPA (Auto Calculated)</p>
+            <p className="text-xs md:text-sm text-gray-600 mt-1">GPA (Auto Calculated)</p>
 
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-yellow-500 h-2 rounded-full"
+                className="bg-gradient-to-r from-yellow-500 to-amber-500 h-2 rounded-full transition-all duration-500"
                 style={{
                   width: `${Math.min((overallPercentage / 25) * 25, 100)}%`
                 }}
@@ -389,19 +397,19 @@ const ResultsView = () => {
         </div>
 
         {/* Rank */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
               <Award className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-2xl"><TrophyIcon /></span>
+            <TrophyIcon className="w-6 h-6 text-blue-400" />
           </div>
 
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">
+            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               #{classRank ?? "—"}
             </h3>
-            <p className="text-gray-600 text-sm">Rank</p>
+            <p className="text-xs md:text-sm text-gray-600 mt-1">Class Rank</p>
             <p className="text-xs text-gray-500 mt-1">
               out of {totalStudents ?? "—"} students
             </p>
@@ -409,21 +417,21 @@ const ResultsView = () => {
         </div>
 
         {/* Overall Percentage */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-green-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-lg">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
-            <span className="text-2xl"><GitGraphIcon /></span>
+            <GitGraphIcon className="w-6 h-6 text-green-400" />
           </div>
 
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">{overallPercentage}%</h3>
-            <p className="text-gray-600 text-sm">Overall Average</p>
+            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{overallPercentage}%</h3>
+            <p className="text-xs md:text-sm text-gray-600 mt-1">Overall Average</p>
 
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-green-500 h-2 rounded-full"
+                className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${overallPercentage}%` }}
               />
             </div>
@@ -431,18 +439,18 @@ const ResultsView = () => {
         </div>
 
         {/* Total Exams */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-lg">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
               <BookOpen className="w-6 h-6 text-purple-600" />
             </div>
-            <span className="text-2xl"><BookPlus /></span>
+            <BookPlus className="w-6 h-6 text-purple-400" />
           </div>
 
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">{examResults.length}</h3>
-            <p className="text-gray-600 text-sm">Total Exams</p>
-            <p className="text-xs text-green-600 mt-1">All completed</p>
+            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{examResults.length}</h3>
+            <p className="text-xs md:text-sm text-gray-600 mt-1">Total Exams</p>
+            <p className="text-xs text-green-600 mt-1 font-medium">All completed</p>
           </div>
         </div>
 
@@ -488,78 +496,76 @@ const ResultsView = () => {
         </div>
       </div> */}
 
-      <div className="relative overflow-hidden rounded-2xl p-6 bg-white/60 backdrop-blur-md shadow-[0_8px_24px_-6px_rgba(0,0,0,0.15)] border border-white/70 transition-all hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.25)] hover:scale-[1.01] duration-300">
+      <div className="relative z-10 overflow-hidden rounded-xl md:rounded-2xl p-5 md:p-6 bg-white/90 backdrop-blur-xl shadow-lg hover:shadow-2xl border border-gray-200/50">
 
         {/* subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/60 via-purple-50/60 to-pink-50/60 pointer-events-none"></div>
 
-        <h3 className="relative z-10 text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-600" />
+        <h3 className="relative z-10 text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-5 flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-indigo-600" />
           Performance Summary
         </h3>
 
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
           {/* AVERAGE SCORE */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-4 rounded-xl shadow-md w-full">
-            <div className="text-3xl font-bold drop-shadow-sm">
-              {/* {(examResults.reduce((acc, exam) => acc + exam.percentage, 0) / examResults.length).toFixed(1)}% */}
+          <div className="flex flex-col items-center bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
+            <div className="text-3xl md:text-4xl font-extrabold drop-shadow-lg">
               {avgScore}%
             </div>
-            <div className="text-sm text-indigo-100 mt-1">Average Score</div>
-            <span className="text-white/80 text-lg mt-1"> <ChartSpline /> </span>
+            <div className="text-xs md:text-sm text-indigo-100 mt-2">Average Score</div>
+            <ChartSpline className="w-6 h-6 md:w-7 md:h-7 text-white/80 mt-2" />
           </div>
 
           {/* BEST PERFORMANCE */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 text-white p-4 rounded-xl shadow-md w-full">
-            <div className="text-3xl font-bold drop-shadow-sm">
-              {/* {Math.max(...examResults.map(exam => exam.percentage)).toFixed(1)}% */}
+          <div className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
+            <div className="text-3xl md:text-4xl font-extrabold drop-shadow-lg">
               {bestScore}%
             </div>
-            <div className="text-sm text-green-100 mt-1">Best Performance</div>
-            <span className="text-white/80 text-lg mt-1"><Medal /> </span>
+            <div className="text-xs md:text-sm text-green-100 mt-2">Best Performance</div>
+            <Medal className="w-6 h-6 md:w-7 md:h-7 text-white/80 mt-2" />
           </div>
 
           {/* EXCELLENT SCORES */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 rounded-xl shadow-md w-full">
-            <div className="text-3xl font-bold drop-shadow-sm">
-              {/* {examResults.filter(exam => exam.percentage >= 85).length}/{examResults.length} */}
+          <div className="flex flex-col items-center bg-gradient-to-br from-purple-500 to-pink-600 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
+            <div className="text-3xl md:text-4xl font-extrabold drop-shadow-lg">
               {excellentCount}/{examResults.length || 0}
             </div>
-            <div className="text-sm text-purple-100 mt-1">Excellent Scores</div>
-            <span className="text-white/80 text-lg mt-1"> <Sparkles /> </span>
+            <div className="text-xs md:text-sm text-purple-100 mt-2">Excellent Scores</div>
+            <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white/80 mt-2" />
           </div>
 
         </div>
       </div>
 
       {/* Exam Results */}
-      <div className="space-y-6">
+      <div className="relative z-10 space-y-4 md:space-y-6">
         {paginatedExams.map((exam) => (
-          <div key={exam.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+          <div key={exam.id} className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl border border-gray-200/50 overflow-hidden">
+            <div className="p-5 md:p-6 border-b border-gray-200/50 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-yellow-100 rounded-lg">
-                      <FileText className="w-5 h-5 text-yellow-600" />
+                    <div className="p-2.5 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl">
+                      <FileText className="w-5 h-5 text-indigo-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{exam.examName}</h3>
-                      <p className="text-sm text-gray-500">Date: {new Date(exam.date).toLocaleDateString()}</p>
+                      <h3 className="text-base md:text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{exam.examName}</h3>
+                      <p className="text-xs md:text-sm text-gray-500 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                        {new Date(exam.date).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-600">{exam.percentage}%</p>
-                      <p className="text-sm text-gray-500">{exam.obtainedMarks}/{exam.totalMarks} marks</p>
-                    </div>
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <Trophy className="w-6 h-6 text-green-600" />
-                    </div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="text-right">
+                    <p className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{exam.percentage}%</p>
+                    <p className="text-xs md:text-sm text-gray-500 font-medium">{exam.obtainedMarks}/{exam.totalMarks} marks</p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl">
+                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                   </div>
                 </div>
               </div>
@@ -567,62 +573,59 @@ const ResultsView = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Subject</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Marks Obtained</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Percentage</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Grade</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Performance</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Remarks</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Action</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Subject</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Marks Obtained</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Percentage</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Grade</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Performance</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Remarks</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200/50">
                   {exam.subjects.map((subject, subIndex) => (
-                    <tr key={subIndex} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <BookOpen className="w-4 h-4 text-blue-600" />
+                    <tr key={subIndex} className="hover:bg-indigo-50/30 transition-colors duration-200">
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
+                            <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
                           </div>
 
                           <div className="font-medium text-gray-900">
-                            {/* SUBJECT NAME */}
-                            {subject.name || "Subject"}
-
-                            {/* TOPIC NAME */}
+                            <div className="text-xs md:text-sm">{subject.name || "Subject"}</div>
                             <div className="text-xs text-gray-500">
                               {subject.topicName || "Topic"}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          <span className="font-semibold text-gray-900">{subject.marks}</span>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="text-xs md:text-sm">
+                          <span className="font-bold text-gray-900">{subject.marks}</span>
                           <span className="text-gray-500">/{subject.maxMarks}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-900">{subject.percentage}%</div>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="font-bold text-xs md:text-sm bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{subject.percentage}%</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${getGradeColor(subject.grade)}`}>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <span className={`inline-flex px-2 md:px-3 py-1 text-xs font-bold rounded-full border ${getGradeColor(subject.grade)}`}>
                           {subject.grade}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="w-full bg-gray-200 rounded-full h-3">
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 md:h-3">
                           <div
-                            className={`h-3 rounded-full transition-all duration-300 ${getPerformanceColor(subject.percentage)}`}
+                            className={`h-2.5 md:h-3 rounded-full transition-all duration-500 ${getPerformanceColor(subject.percentage)}`}
                             style={{ width: `${subject.percentage}%` }}
                           />
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">{subject.percentage}%</div>
+                        <div className="text-xs text-gray-500 mt-1 font-medium">{subject.percentage}%</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-sm font-medium ${subject.remarks === 'Excellent' || subject.remarks === 'Outstanding' ? 'text-green-600' :
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <span className={`text-xs md:text-sm font-bold ${subject.remarks === 'Excellent' || subject.remarks === 'Outstanding' ? 'text-green-600' :
                           subject.remarks === 'Very Good' ? 'text-blue-600' :
                             subject.remarks === 'Good' ? 'text-yellow-600' :
                               'text-gray-600'
@@ -630,13 +633,13 @@ const ResultsView = () => {
                           {subject.remarks}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 md:px-6 py-3 md:py-4">
                         <button
                           onClick={() => {
                             setActiveExam(exam);
                             setShowModal(true);
                           }}
-                          className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                          className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                         >
                           View Details
                         </button>
@@ -650,9 +653,9 @@ const ResultsView = () => {
         ))}
       </div>
       {/* Pagination Controls for Exam Tables */}
-      <div className="flex justify-center items-center gap-3 mt-6">
+      <div className="relative z-10 flex justify-center items-center gap-2 md:gap-3 mt-6">
         <button
-          className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+          className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
           disabled={examPage === 1}
           onClick={() => setExamPage(examPage - 1)}
         >
@@ -663,9 +666,9 @@ const ResultsView = () => {
           <button
             key={i}
             onClick={() => setExamPage(i + 1)}
-            className={`px-3 py-1 rounded-lg border text-sm ${examPage === i + 1
-              ? "bg-yellow-500 text-white"
-              : "bg-white text-gray-700"
+            className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl font-bold text-sm md:text-base transition-all duration-300 ${examPage === i + 1
+              ? "bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 text-white shadow-lg scale-110"
+              : "bg-white/80 backdrop-blur-sm text-gray-700 border border-gray-200/50 hover:border-indigo-300 hover:bg-indigo-50 shadow-md hover:shadow-lg"
               }`}
           >
             {i + 1}
@@ -673,7 +676,7 @@ const ResultsView = () => {
         ))}
 
         <button
-          className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+          className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
           disabled={examPage === totalExamPages}
           onClick={() => setExamPage(examPage + 1)}
         >
@@ -686,7 +689,7 @@ const ResultsView = () => {
         <div
           className="
       fixed inset-0 z-50
-      bg-gradient-to-br from-black/50 via-black/40 to-black/60
+      bg-gradient-to-br from-black/60 via-black/50 to-black/70
       backdrop-blur-lg
       flex items-center justify-center p-4
       animate-fadeIn
@@ -698,18 +701,18 @@ const ResultsView = () => {
           <div
             className="
         relative w-full max-w-3xl
-        rounded-[2.5rem]
-        bg-gradient-to-br from-white via-yellow-50 to-pink-50
+        rounded-2xl md:rounded-3xl
+        bg-gradient-to-br from-white via-indigo-50 to-purple-50
         shadow-[0_40px_100px_rgba(0,0,0,0.35)]
         border border-white/60
         animate-scaleIn
-        overflow-hidden p-14
+        overflow-hidden p-6 md:p-10
       "
             style={{ maxHeight: "90vh" }}
           >
             {/* Decorative blobs */}
-            <div className="absolute -top-20 -right-20 w-72 h-72 bg-pink-300/30 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-yellow-300/30 rounded-full blur-3xl" />
+            <div className="absolute -top-20 -right-20 w-72 h-72 bg-purple-300/30 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-indigo-300/30 rounded-full blur-3xl" />
 
             {/* INNER SCROLL */}
             <div
@@ -720,33 +723,33 @@ const ResultsView = () => {
               <button
                 onClick={() => setShowModal(false)}
                 className="
-            absolute top-5 right-5
-            bg-gradient-to-br from-red-400 to-pink-500
+            absolute top-3 right-3 md:top-5 md:right-5
+            bg-gradient-to-br from-red-500 to-pink-600
             text-white p-2 rounded-full
-            shadow-lg hover:scale-110 transition
+            shadow-lg hover:scale-110 hover:shadow-xl transition-all duration-300
           "
               >
                 <XCircle className="w-5 h-5" />
               </button>
 
               {/* HEADER */}
-              <div className="flex items-center gap-4 mb-8">
-                {/* <div className="p-4 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-xl animate-bounce">
-                  🏆
-                </div> */}
-                <h2 className="text-3xl font-extrabold text-gray-900">
+              <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl">
+                  <Trophy className="w-6 h-6 md:w-8 md:h-8" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   Performance Report
                 </h2>
               </div>
 
               {/* STUDENT INFO */}
-              <div className="mb-6 p-6 rounded-2xl bg-white/80 shadow-lg border border-white">
-                <h3 className="text-lg font-bold text-amber-700 flex items-center gap-2 mb-3">
-                  <User className="w-5 h-5" />
+              <div className="mb-5 md:mb-6 p-4 md:p-6 rounded-xl md:rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50">
+                <h3 className="text-base md:text-lg font-bold text-indigo-700 flex items-center gap-2 mb-3">
+                  <User className="w-4 h-4 md:w-5 md:h-5" />
                   Student Information
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm text-gray-700">
                   <p><strong>Name:</strong> {user?.name}</p>
                   <p><strong>Class:</strong> {user?.class || user?.className}</p>
                   <p><strong>Exam:</strong> {activeExam.examName}</p>
@@ -755,33 +758,33 @@ const ResultsView = () => {
               </div>
 
               {/* SUBJECT & TOPIC */}
-              <div className="mb-6 p-6 rounded-2xl bg-gradient-to-r from-blue-100 to-indigo-200 shadow-lg">
-                <h3 className="text-lg font-bold text-blue-800 flex items-center gap-2 mb-2">
-                  <BookOpen className="w-5 h-5" />
+              <div className="mb-5 md:mb-6 p-4 md:p-6 rounded-xl md:rounded-2xl bg-gradient-to-r from-blue-100 to-indigo-200 shadow-lg">
+                <h3 className="text-base md:text-lg font-bold text-blue-800 flex items-center gap-2 mb-2 md:mb-3">
+                  <BookOpen className="w-4 h-4 md:w-5 md:h-5" />
                   Subject & Topic
                 </h3>
 
-                <p className="text-gray-800"><strong>Subject:</strong> {activeExam.subjectName}</p>
-                <p className="text-gray-800"><strong>Topic:</strong> {activeExam.topicName}</p>
+                <p className="text-xs md:text-sm text-gray-800"><strong>Subject:</strong> {activeExam.subjectName}</p>
+                <p className="text-xs md:text-sm text-gray-800"><strong>Topic:</strong> {activeExam.topicName}</p>
               </div>
 
               {/* SCORE TIP */}
-              <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-green-100 to-emerald-200 shadow-lg">
+              <div className="mb-6 md:mb-8 p-4 md:p-6 rounded-xl md:rounded-2xl bg-gradient-to-r from-green-100 to-emerald-200 shadow-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-5 h-5 text-emerald-600" />
-                  <h4 className="font-bold text-emerald-700">
+                  <Lightbulb className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
+                  <h4 className="text-sm md:text-base font-bold text-emerald-700">
                     Smart Improvement Tip
                   </h4>
                 </div>
 
-                <p className="text-gray-700 text-sm leading-relaxed">
+                <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
                   {activeExam.percent >= 90
-                    ? "🔥 Outstanding! Try higher difficulty questions to become a champion."
+                    ? "Outstanding! Try higher difficulty questions to become a champion."
                     : activeExam.percent >= 75
-                      ? "👏 Amazing progress! Polish weak areas to cross 90%."
+                      ? "Amazing progress! Polish weak areas to cross 90%."
                       : activeExam.percent >= 50
-                        ? "📘 Keep going! Revise mistakes and practice daily."
-                        : "🌱 Everyone starts somewhere. Practice basics and grow stronger!"}
+                        ? "Keep going! Revise mistakes and practice daily."
+                        : "Everyone starts somewhere. Practice basics and grow stronger!"}
                 </p>
               </div>
 

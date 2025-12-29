@@ -69,66 +69,95 @@ const AchievementsView = () => {
   );
 
   return (
-    <div className="
-      space-y-8 p-6 rounded-[2.5rem]
-      bg-gradient-to-br from-yellow-50 via-pink-50 to-indigo-50
-      shadow-[0_25px_70px_rgba(0,0,0,0.15)]
-      relative overflow-hidden
-    ">
+    <div className="min-h-screen space-y-6 md:space-y-8 p-4 sm:p-6 md:p-8 bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 relative overflow-hidden">
 
-      {/* Decorative blobs */}
-      <div className="absolute -top-20 -right-20 w-72 h-72 bg-yellow-300/30 rounded-full blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-pink-300/30 rounded-full blur-3xl" />
+      {/* Animated Decorative blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+        <div className="absolute -top-20 -right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
+        <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
+      </div>
 
       {/* HEADER */}
-      <div className="relative z-10 flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 flex items-center gap-2">
-            🏆 Achievements
-          </h1>
-          <p className="text-gray-600 text-sm">
-            Track your progress & collect rewards
-          </p>
-        </div>
+      <div className="relative z-10 overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-6 md:p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
 
-        <div className="
-          flex items-center gap-4
-          bg-white/80 backdrop-blur
-          px-5 py-3 rounded-2xl
-          shadow-lg border border-white
-        ">
-          <div className="bg-yellow-100 p-3 rounded-xl shadow-inner">
-            <Trophy className="w-7 h-7 text-yellow-600" />
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg">
+              <Trophy size={40} className="drop-shadow-lg" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-lg">
+                Achievements
+              </h1>
+              <p className="text-sm md:text-base text-yellow-100 mt-1">
+                Track your progress & collect rewards
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Total Points</p>
-            <p className="text-3xl font-extrabold text-yellow-600">
-              {userPoints}
-            </p>
+
+          <div className="
+            flex items-center gap-3
+            bg-white/20 backdrop-blur-sm
+            px-4 sm:px-5 py-3 rounded-xl md:rounded-2xl
+            shadow-lg border border-white/30
+          ">
+            <div className="bg-white/30 p-2.5 sm:p-3 rounded-xl shadow-inner">
+              <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-200" />
+            </div>
+            <div>
+              <p className="text-xs text-white/80">Total Points</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-lg">
+                {userPoints}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-        <div className="bg-white/80 rounded-2xl p-6 shadow-lg border border-white">
-          <p className="text-sm text-gray-600">Total Achievements</p>
-          <p className="text-3xl font-extrabold text-gray-900">{totalAchievements}</p>
+      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs md:text-sm text-gray-600 mb-1">Total Achievements</p>
+              <p className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">{totalAchievements}</p>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Award className="w-6 h-6 md:w-7 md:h-7 text-yellow-600" />
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white/80 rounded-2xl p-6 shadow-lg border border-white">
-          <p className="text-sm text-gray-600">Earned</p>
-          <p className="text-3xl font-extrabold text-green-600">{earnedCount}</p>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs md:text-sm text-gray-600 mb-1">Earned</p>
+              <p className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{earnedCount}</p>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Medal className="w-6 h-6 md:w-7 md:h-7 text-green-600" />
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white/80 rounded-2xl p-6 shadow-lg border border-white">
-          <p className="text-sm text-gray-600">Not Earned</p>
-          <p className="text-3xl font-extrabold text-purple-600">{availableCount}</p>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs md:text-sm text-gray-600 mb-1">Not Earned</p>
+              <p className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{availableCount}</p>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Lock className="w-6 h-6 md:w-7 md:h-7 text-purple-600" />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* TABS */}
-      <div className="relative z-10 flex bg-white/70 backdrop-blur p-1 rounded-2xl shadow-md">
+      <div className="relative z-10 flex bg-white/80 backdrop-blur-xl p-1.5 rounded-xl md:rounded-2xl shadow-lg border border-gray-200/50">
         {[
           { id: 'history', label: 'Points History', count: pointsHistory.length },
           { id: 'earned', label: 'Earned', count: earnedAchievements.length },
@@ -137,10 +166,10 @@ const AchievementsView = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`
-              flex-1 py-2 rounded-xl font-bold transition-all
+              flex-1 py-2.5 md:py-3 rounded-lg md:rounded-xl font-bold text-sm md:text-base transition-all duration-300
               ${activeTab === tab.id
-                ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg"
-                : "text-gray-600 hover:text-gray-900"}
+                ? "bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white shadow-xl transform scale-[1.02]"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}
             `}
           >
             {tab.label} ({tab.count})
@@ -149,37 +178,47 @@ const AchievementsView = () => {
       </div>
 
       {/* CARDS */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {activeTab === "history" &&
           paginatedHistory.map((item, index) => (
             <div
               key={index}
               className="
-                relative bg-white/85 rounded-2xl
-                shadow-lg border border-white
-                p-6 hover:scale-[1.03]
-                transition-all
+                group relative bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl
+                shadow-lg hover:shadow-2xl border border-gray-200/50
+                p-5 md:p-6
               "
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-t-2xl" />
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-t-xl md:rounded-t-2xl" />
 
-              <h3 className="text-lg font-extrabold text-gray-900 mb-2">
-                🎯 {item.exam?.toUpperCase()}
-              </h3>
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-base md:text-lg font-extrabold">
+                  🎯 {item.exam?.toUpperCase()}
+                </h3>
+              </div>
 
-              <p className="text-sm text-gray-700"><Book className='inline' size={15} /> Subject: {item.subject}</p>
-              <p className="text-sm text-gray-700"><PuzzleIcon className='inline' size={15} /> Topic: {item.topic}</p>
+              <div className="space-y-2 mb-3">
+                <p className="text-xs md:text-sm text-gray-700 flex items-center gap-2">
+                  <Book size={16} className="text-orange-500" />
+                  <span className="font-medium">Subject:</span> {item.subject}
+                </p>
+                <p className="text-xs md:text-sm text-gray-700 flex items-center gap-2">
+                  <PuzzleIcon size={16} className="text-yellow-500" />
+                  <span className="font-medium">Topic:</span> {item.topic}
+                </p>
+                <p className="text-xs text-gray-500 flex items-center gap-2">
+                  <Calendar size={16} className="text-pink-500" />
+                  {formatDate(item.date)}
+                </p>
+              </div>
 
-              <p className="text-xs text-gray-500 mt-2">
-                <Calendar className='inline' size={15} /> {formatDate(item.date)}
-              </p>
-
-              <div className="flex justify-between items-center border-t pt-3 mt-3">
-                <span className="text-sm text-gray-600">Points Earned</span>
+              <div className="flex justify-between items-center border-t border-gray-200/50 pt-3 mt-3">
+                <span className="text-xs md:text-sm text-gray-600 font-medium">Points Earned</span>
                 <span className="
-                  bg-gradient-to-r from-yellow-300 to-orange-400
-                  text-white font-bold text-sm
-                  px-3 py-1 rounded-full shadow
+                  bg-gradient-to-r from-yellow-400 to-orange-500
+                  text-white font-bold text-xs md:text-sm
+                  px-3 py-1.5 rounded-full shadow-md
+                  group-hover:shadow-lg group-hover:scale-110 transition-all duration-300
                 ">
                   +{item.pointsEarned} pts
                 </span>
@@ -194,10 +233,14 @@ const AchievementsView = () => {
             return (
               <div
                 key={achievement.id}
-                className="bg-white rounded-2xl shadow-lg border border-white p-6"
+                className="group relative bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl border border-gray-200/50 p-5 md:p-6 hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300"
               >
-                <IconComponent className="w-8 h-8 text-blue-600" />
-                <h3 className="text-lg font-bold mt-3">{achievement.title}</h3>
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                    <IconComponent className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900">{achievement.title}</h3>
+                </div>
               </div>
             );
           })}
@@ -205,11 +248,11 @@ const AchievementsView = () => {
 
       {/* PAGINATION */}
       {activeTab === "history" && totalHistoryPages > 1 && (
-        <div className="relative z-10 flex justify-center items-center gap-3 mt-6">
+        <div className="relative z-10 flex justify-center items-center gap-2 md:gap-3 mt-6">
           <button
             disabled={historyPage === 1}
             onClick={() => setHistoryPage(historyPage - 1)}
-            className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+            className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
           >
             Prev
           </button>
@@ -219,10 +262,10 @@ const AchievementsView = () => {
               key={i}
               onClick={() => setHistoryPage(i + 1)}
               className={`
-                px-3 py-1 rounded-xl font-bold
+                px-3 md:px-4 py-2 rounded-lg md:rounded-xl font-bold text-sm md:text-base transition-all duration-300
                 ${historyPage === i + 1
-                  ? "bg-yellow-500 text-white shadow"
-                  : "bg-white text-gray-700 border"}
+                  ? "bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white shadow-lg scale-110"
+                  : "bg-white/80 backdrop-blur-sm text-gray-700 border border-gray-200/50 hover:border-orange-300 hover:bg-orange-50 shadow-md hover:shadow-lg"}
               `}
             >
               {i + 1}
@@ -232,7 +275,7 @@ const AchievementsView = () => {
           <button
             disabled={historyPage === totalHistoryPages}
             onClick={() => setHistoryPage(historyPage + 1)}
-            className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+            className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
           >
             Next
           </button>
