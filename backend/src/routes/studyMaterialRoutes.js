@@ -305,4 +305,63 @@ router.post("/verify-payment", requireAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+// Purchase with wallet
+router.post("/purchase-with-wallet", requireAuth, async (req, res) => {
+  try {
+    const { materialId } = req.body;
+
+    if (!materialId) {
+      return res.status(400).json({ message: "materialId is required" });
+    }
+
+    // Get user
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if already purchased
+    if (user.purchasedMaterials.includes(materialId)) {
+      return res.status(400).json({ message: "Already purchased this material" });
+    }
+
+    // Get material
+    const material = await StudyMaterial.findById(materialId);
+    if (!material) {
+      return res.status(404).json({ message: "Study material not found" });
+    }
+
+    // Check if wallet has sufficient balance
+    const walletBalance = user.wallet || 0;
+    if (walletBalance < material.price) {
+      return res.status(400).json({
+        message: `Insufficient wallet balance. Required: ₹${material.price}, Available: ₹${walletBalance}`,
+      });
+    }
+
+    // Deduct from wallet
+    user.wallet = walletBalance - material.price;
+
+    // Add to purchased materials
+    user.purchasedMaterials.push(materialId);
+
+    // Save user
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Material purchased successfully",
+      remainingWallet: user.wallet,
+      purchasedMaterial: {
+        id: material._id,
+        title: material.title,
+        price: material.price,
+      },
+    });
+  } catch (err) {
+    console.error("WALLET PURCHASE ERROR:", err);
+    res.status(500).json({ message: "Failed to purchase with wallet" });
+  }
+});
+
 export default router;

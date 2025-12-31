@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FileText, Lock } from "lucide-react";
+import { FileText, Lock, Wallet, Coins, CreditCard } from "lucide-react";
 import SecurePdfViewer from "../components/SecurePdfViewer.jsx";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -11,6 +11,9 @@ export default function StudyMaterialsPage() {
     const [subject, setSubject] = useState("All");
     const [loading, setLoading] = useState(true);
     const [openPdf, setOpenPdf] = useState(null);
+    const [wallet, setWallet] = useState(0);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedMaterial, setSelectedMaterial] = useState(null);
 
     /* ---------------- USER ACCESS CHECK ---------------- */
     function hasAccess(material) {
@@ -39,6 +42,28 @@ export default function StudyMaterialsPage() {
         }
 
         fetchUser();
+    }, []);
+
+    /* ---------------- FETCH WALLET BALANCE ---------------- */
+    useEffect(() => {
+        async function fetchWallet() {
+            const token = localStorage.getItem("jwt");
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${API}/api/users/wallet`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) return;
+
+                const data = await res.json();
+                setWallet(data.wallet || 0);
+            } catch (err) {
+                console.error("FETCH WALLET ERROR:", err);
+            }
+        }
+
+        fetchWallet();
     }, []);
 
     /* ---------------- FETCH STUDY MATERIALS ---------------- */
@@ -85,9 +110,15 @@ export default function StudyMaterialsPage() {
 
     /* ---------------- PURCHASE HANDLER ---------------- */
     async function handlePurchase(material) {
+        setSelectedMaterial(material);
+        setShowPaymentModal(true);
+    }
+
+    /* ---------------- PURCHASE WITH RAZORPAY ---------------- */
+    async function purchaseWithRazorpay(material) {
         const token = localStorage.getItem("jwt");
         const loaded = await loadRazorpay();
-        if (!loaded) return alert("Razorpay failed to load");
+        if (!loaded) return toast.error("Razorpay failed to load");
 
         const res = await fetch(`${API}/api/study-materials/create-order`, {
             method: "POST",
@@ -133,11 +164,60 @@ export default function StudyMaterialsPage() {
                 });
                 const userData = await userRes.json();
                 setUser(userData.user);
+                setShowPaymentModal(false);
             },
             theme: { color: "#4f46e5" },
         };
 
         new window.Razorpay(options).open();
+    }
+
+    /* ---------------- PURCHASE WITH WALLET ---------------- */
+    async function purchaseWithWallet(material) {
+        const token = localStorage.getItem("jwt");
+
+        if (wallet < material.price) {
+            toast.error("Insufficient wallet balance");
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API}/api/study-materials/purchase-with-wallet`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ materialId: material._id }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.message || "Purchase failed");
+                return;
+            }
+
+            toast.success("Material purchased successfully!");
+
+            // Refresh user and wallet
+            const userRes = await fetch(`${API}/api/users/profile`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const userData = await userRes.json();
+            setUser(userData.user);
+
+            const walletRes = await fetch(`${API}/api/users/wallet`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const walletData = await walletRes.json();
+            setWallet(walletData.wallet || 0);
+
+            setShowPaymentModal(false);
+        } catch (err) {
+            console.error("Wallet purchase error:", err);
+            toast.error("Something went wrong");
+        }
     }
 
     /* ---------------- FILTER ---------------- */
@@ -188,11 +268,24 @@ export default function StudyMaterialsPage() {
                                 </p>
                             </div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-sm px-4 sm:px-5 py-3 rounded-xl md:rounded-2xl shadow-lg border border-white/30">
-                            <p className="text-xs text-white/80">Total Materials</p>
-                            <p className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-lg">
-                                {materials.length}
-                            </p>
+                        <div className="flex gap-3">
+                            <div className="bg-white/20 backdrop-blur-sm px-4 sm:px-5 py-3 rounded-xl md:rounded-2xl shadow-lg border border-white/30">
+                                <p className="text-xs text-white/80">Total Materials</p>
+                                <p className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-lg">
+                                    {materials.length}
+                                </p>
+                            </div>
+                            {user?.role === "student" && (
+                                <div className="bg-gradient-to-br from-amber-400/30 to-yellow-500/30 backdrop-blur-sm px-4 sm:px-5 py-3 rounded-xl md:rounded-2xl shadow-lg border border-amber-300/50">
+                                    <div className="flex items-center gap-2">
+                                        <Wallet className="w-4 h-4 text-white" />
+                                        <p className="text-xs text-white/80">My Wallet</p>
+                                    </div>
+                                    <p className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-lg">
+                                        ₹{wallet.toFixed(2)}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -325,6 +418,113 @@ export default function StudyMaterialsPage() {
                     // userName={user.name}
                     onClose={() => setOpenPdf(null)}
                 />
+            )}
+
+            {/* PAYMENT MODAL */}
+            {showPaymentModal && selectedMaterial && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 md:p-8 transform transition-all">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl md:text-2xl font-bold text-gray-900">Choose Payment Method</h3>
+                            <button
+                                onClick={() => setShowPaymentModal(false)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Material Info */}
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6">
+                            <p className="text-sm text-gray-600 mb-1">Purchasing</p>
+                            <h4 className="font-bold text-gray-900 mb-2">{selectedMaterial.title}</h4>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Price</span>
+                                <span className="text-2xl font-bold text-indigo-600">₹{selectedMaterial.price}</span>
+                            </div>
+                        </div>
+
+                        {/* Wallet Balance Info */}
+                        {user?.role === "student" && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Wallet className="w-5 h-5 text-amber-600" />
+                                        <span className="text-sm font-semibold text-gray-700">Your Wallet Balance</span>
+                                    </div>
+                                    <span className="text-lg font-bold text-amber-600">₹{wallet.toFixed(2)}</span>
+                                </div>
+                                {wallet >= selectedMaterial.price && (
+                                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Sufficient balance available
+                                    </p>
+                                )}
+                                {wallet < selectedMaterial.price && (
+                                    <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                        </svg>
+                                        Need ₹{(selectedMaterial.price - wallet).toFixed(2)} more
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Payment Options */}
+                        <div className="space-y-3">
+                            {/* Wallet Payment Option */}
+                            {user?.role === "student" && wallet >= selectedMaterial.price && (
+                                <button
+                                    onClick={() => purchaseWithWallet(selectedMaterial)}
+                                    className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-white/20 rounded-lg">
+                                            <Wallet className="w-5 h-5" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-bold">Pay with Wallet</p>
+                                            <p className="text-xs text-white/80">Instant purchase</p>
+                                        </div>
+                                    </div>
+                                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            )}
+
+                            {/* Razorpay Payment Option */}
+                            <button
+                                onClick={() => purchaseWithRazorpay(selectedMaterial)}
+                                className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white/20 rounded-lg">
+                                        <CreditCard className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-bold">Pay with Card/UPI</p>
+                                        <p className="text-xs text-white/80">Razorpay secure payment</p>
+                                    </div>
+                                </div>
+                                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Info Note */}
+                        <p className="text-xs text-gray-500 text-center mt-6 flex flex-wrap justify-center items-center gap-1">
+                           <Lock size={10} />  All transactions are secure and encrypted
+                        </p>
+                    </div>
+                </div>
             )}
         </div>
     );

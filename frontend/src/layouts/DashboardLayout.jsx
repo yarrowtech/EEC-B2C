@@ -219,7 +219,8 @@ import {
     Users,
     Library,
     LogOut,
-    LayoutGrid
+    LayoutGrid,
+    Gift
 } from "lucide-react";
 
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
@@ -287,7 +288,8 @@ export default function DashboardLayout() {
                 { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} /> },
                 { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> },
                 { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },
-                { to: "/dashboard/notifications/create", label: "Create Notification", icon: <LayoutGrid size={18} /> }
+                { to: "/dashboard/notifications/create", label: "Create Notification", icon: <LayoutGrid size={18} /> },
+                { to : "/dashboard/gift-cards", label: "Gift Cards", icon: <Gift size={18} /> }
             );
         }
 

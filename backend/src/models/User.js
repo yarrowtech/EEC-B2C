@@ -33,6 +33,7 @@ const UserSchema = new mongoose.Schema(
     points: { type: Number, default: 0 },
     fatherContact: { type: String, default: "" },
     motherContact: { type: String, default: "" },
+    wallet: { type: Number, default: 0 },
     // models/User.js
     purchasedMaterials: [
       {
