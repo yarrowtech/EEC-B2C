@@ -38,7 +38,7 @@ const TYPES = [
 
 export default function QuestionsIndex() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-6">
 
       {/* Header */}
       <div>

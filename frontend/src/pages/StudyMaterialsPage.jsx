@@ -320,6 +320,9 @@ export default function StudyMaterialsPage() {
                     pdfUrl={openPdf.pdfUrl}
                     subject={openPdf.subject}
                     title={openPdf.title}
+                    // board={openPdf.board}
+                    // className={openPdf.class}
+                    // userName={user.name}
                     onClose={() => setOpenPdf(null)}
                 />
             )}

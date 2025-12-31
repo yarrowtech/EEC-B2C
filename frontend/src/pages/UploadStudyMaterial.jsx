@@ -240,7 +240,7 @@ export default function UploadStudyMaterial() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
 
             {/* HEADER */}
             <div className="bg-gradient-to-r from-indigo-500 via-blue-600 to-sky-600 rounded-2xl p-6 text-white relative overflow-hidden">

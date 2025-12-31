@@ -10,6 +10,9 @@ export default function ExamTake() {
   const [answers, setAnswers] = useState({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [translatedQuestions, setTranslatedQuestions] = useState({});
+  const [targetLanguage, setTargetLanguage] = useState('en');
+  const [isTranslating, setIsTranslating] = useState(false);
   const WORD_LIMIT = 500;
 
 
@@ -41,6 +44,59 @@ export default function ExamTake() {
 
   function setAns(qid, payload) {
     setAnswers(prev => ({ ...prev, [qid]: { ...(prev[qid] || {}), ...payload } }));
+  }
+
+  async function translateText(text, targetLang) {
+    try {
+      const response = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+      );
+      const data = await response.json();
+      return data[0]?.map(item => item[0]).join('') || text;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return text;
+    }
+  }
+
+  async function handleTranslateAllQuestions(targetLang) {
+    if (targetLang === 'en') {
+      setTranslatedQuestions({});
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const translations = {};
+
+      for (const q of questions) {
+        const translatedQuestion = await translateText(q.question || q.prompt || q.plainText || '', targetLang);
+
+        let translatedOptions = [];
+        if (q.options && Array.isArray(q.options)) {
+          translatedOptions = await Promise.all(
+            q.options.map(async (opt) => ({
+              ...opt,
+              text: await translateText(opt.text, targetLang)
+            }))
+          );
+        }
+
+        const translatedExplanation = q.explanation ? await translateText(q.explanation, targetLang) : null;
+
+        translations[q._id] = {
+          question: translatedQuestion,
+          options: translatedOptions,
+          explanation: translatedExplanation
+        };
+      }
+
+      setTranslatedQuestions(translations);
+    } catch (error) {
+      console.error('Translation failed:', error);
+    } finally {
+      setIsTranslating(false);
+    }
   }
 
   async function onSubmit(e) {
@@ -144,33 +200,88 @@ export default function ExamTake() {
 
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-800">Stage 1 — {type}</h1>
-          <div className="text-xs text-slate-500">Questions: {total}</div>
-        </div>
-        {result && (
-          <div className="rounded-lg border bg-white px-4 py-2">
-            <div className="text-sm font-semibold text-slate-800">Score: {result.score} / {result.total}</div>
-            <div className="text-xs text-slate-600">{result.percent}%</div>
-          </div>
-        )}
-      </div>
-
-      {/* RENDER QUESTIONS */}
-      <div className="space-y-4">
-        {questions.map((q, idx) => (
-          <div key={q._id} className="rounded-xl bg-white p-4">
-            <div className="text-sm text-slate-500 mb-1">Q{idx + 1}.</div>
-            {/* <div className="font-medium text-slate-800">{q.question || "(no text)"}</div> */}
-            <div className="font-medium text-slate-800">
-              {q.question ||
-                q.prompt ||
-                q.plainText ||
-                // q.clozeSelect?.text ||
-                q.choiceMatrix?.prompt}
+    <form onSubmit={onSubmit} className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-indigo-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Stage 1 — {type}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                  {total} Questions
+                </span>
+              </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              {/* Language Translation Dropdown */}
+              {type === "mcq-single" && (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={targetLanguage}
+                    onChange={(e) => {
+                      const newLang = e.target.value;
+                      setTargetLanguage(newLang);
+                      handleTranslateAllQuestions(newLang);
+                    }}
+                    className="text-sm border-2 border-indigo-200 rounded-xl px-4 py-2 bg-white hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer shadow-sm transition-all font-medium text-slate-700"
+                    disabled={isTranslating}
+                  >
+                    <option value="en">🇬🇧 English</option>
+                    <option value="bn">🇧🇩 Bengali</option>
+                    <option value="hi">🇮🇳 Hindi</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="de">🇩🇪 German</option>
+                    <option value="zh-CN">🇨🇳 Chinese</option>
+                    <option value="ar">🇸🇦 Arabic</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="pt">🇵🇹 Portuguese</option>
+                    <option value="ru">🇷🇺 Russian</option>
+                    <option value="it">🇮🇹 Italian</option>
+                  </select>
+                  {isTranslating && (
+                    <span className="text-sm text-indigo-600 font-medium animate-pulse">
+                      Translating...
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {result && (
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl px-6 py-3 shadow-lg">
+                  <div className="text-sm font-bold text-white">
+                    Score: {result.score} / {result.total}
+                  </div>
+                  <div className="text-xs text-emerald-50 font-medium">{result.percent}%</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RENDER QUESTIONS */}
+        <div className="space-y-5">
+          {questions.map((q, idx) => (
+            <div key={q._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-slate-100">
+              {/* Question Number Badge */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md">
+                  Question {idx + 1}
+                </span>
+              </div>
+
+              {/* Display Question Text */}
+              <div className="font-semibold text-lg text-slate-800 mb-4 leading-relaxed">
+                {translatedQuestions[q._id]?.question || q.question ||
+                  q.prompt ||
+                  q.plainText ||
+                  q.choiceMatrix?.prompt}
+              </div>
 
 
 
@@ -191,37 +302,65 @@ export default function ExamTake() {
             )} */}
 
             {type === "mcq-single" && (
-              <div className="mt-3 space-y-2">
-                {q.options.map((o) => {
+              <div className="space-y-3">
+                {(translatedQuestions[q._id]?.options || q.options).map((o) => {
                   const checked = (answers[q._id]?.mcq || "") === o.key;
                   return (
                     <label
                       key={o.key}
                       className={`
-            flex items-center justify-between 
-            px-4 py-2 cursor-pointer 
-            transition-all 
-            ${checked ? "bg-yellow-200 border-yellow-800" : "bg-white hover:bg-slate-50"}
+            flex items-center gap-4
+            px-5 py-4 cursor-pointer
+            rounded-xl border-2
+            transition-all duration-200
+            ${checked
+              ? "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-400 shadow-md scale-[1.02]"
+              : "bg-slate-50 border-slate-200 hover:border-indigo-300 hover:bg-white hover:shadow-sm"}
           `}
                     >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name={`q-${q._id}`}
-                          checked={checked}
-                          onChange={() => setAns(q._id, { mcq: o.key })}
-                          className="h-4 w-4 accent-indigo-600"
-                        />
-                        <span className="text-sm">{o.key}) {o.text}</span>
+                      <span className={`
+                          text-sm font-semibold px-2.5 py-1 rounded-lg
+                          ${checked ? "bg-indigo-500 text-white" : "bg-slate-200 text-slate-700"}
+                        `}>
+                          {o.key}
+                        </span>
+                      <input
+                        type="radio"
+                        name={`q-${q._id}`}
+                        checked={checked}
+                        onChange={() => setAns(q._id, { mcq: o.key })}
+                        className="h-5 w-5 accent-indigo-600 cursor-pointer"
+                      />
+                      <div className="flex items-center gap-3 flex-1">
+                        {/* <span className={`
+                          text-sm font-semibold px-2.5 py-1 rounded-lg
+                          ${checked ? "bg-indigo-500 text-white" : "bg-slate-200 text-slate-700"}
+                        `}>
+                          {o.key}
+                        </span> */}
+                        <span className={`text-base ${checked ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                          {o.text}
+                        </span>
                       </div>
+                      {checked && (
+                        <span className="text-indigo-600 text-xl font-bold"></span>
+                      )}
                     </label>
                   );
                 })}
 
-                {/* 🔥 ADD THIS HERE */}
+                {/* 🔥 Explanation with Translation Support */}
                 {result && q.explanation && (
-                  <div className="mt-2 text-sm bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-3 py-2 shadow-sm">
-                    <strong>Explanation:</strong> {q.explanation}
+                  <div className="mt-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 rounded-xl px-5 py-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">💡</span>
+                      <div>
+                        <strong className="text-amber-900 font-bold">Explanation:</strong>
+                        <p className="text-amber-800 mt-1 leading-relaxed">
+                          {translatedQuestions[q._id]?.explanation || q.explanation}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 {result && (
@@ -467,7 +606,39 @@ export default function ExamTake() {
                     {result.detail?.[q._id] === "wrong" && (
                       <div className="
             absolute left-0 top-0 bg-red-100 border border-red-300 px-4 py-2 
-            rounded-xl text-red-700 font-semibold shakeWrong shadow-md flex items-center gap-2
+            rounded-xl text-red-700 font-semibold shakeWrong shadow-@keyframes option-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}@keyframes option-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes option-selected {
+  0% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.mcq-option-hover:hover {
+  animation: option-pulse 0.6s ease infinite;
+}
+
+.mcq-option-selected {
+  animation: option-selected 0.3s ease forwards;
+}
+
+@keyframes option-selected {
+  0% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.mcq-option-hover:hover {
+  animation: option-pulse 0.6s ease infinite;
+}
+
+.mcq-option-selected {
+  animation: option-selected 0.3s ease forwards;
+}md flex items-center gap-2
           ">
                         <span className="text-2xl">❌</span>
                         Wrong! Try again!
@@ -827,17 +998,24 @@ export default function ExamTake() {
         ))}
       </div>
 
-      <div className="flex items-center gap-3">
-        <button disabled={busy || !!result}
-          className="rounded-lg bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700 disabled:opacity-50">
-          {busy ? "Submitting..." : "Submit Exam"}
-        </button>
-        {result && (
-          <button type="button" onClick={() => window.location.assign("/dashboard/exams")}
-            className="rounded-lg border px-4 py-2 hover:bg-slate-50">
-            Back to Stage 1
+        {/* Submit Button Section */}
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            disabled={busy || !!result}
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+          >
+            {busy ? "Submitting..." : "Submit Exam"}
           </button>
-        )}
+          {result && (
+            <button
+              type="button"
+              onClick={() => window.location.assign("/dashboard/exams")}
+              className="bg-white border-2 border-slate-300 hover:border-indigo-400 text-slate-700 font-semibold px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+            >
+              Back to Stage 1
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );

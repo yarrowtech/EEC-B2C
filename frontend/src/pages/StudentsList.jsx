@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { Eye, Pencil, X, Search, Users, GraduationCap, BadgeCheck, Loader2, AlertTriangle } from "lucide-react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { Eye, Pencil, X, Search, Users, GraduationCap, BadgeCheck, Loader2, AlertTriangle, Filter, XCircle, Download, ChevronDown } from "lucide-react";
 import * as XLSX from "xlsx";
 
 /* pull role the same way the layout does (read-only) */
@@ -31,6 +31,16 @@ export default function StudentsList() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
+
+  // Filters
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedBoard, setSelectedBoard] = useState("");
+  const [selectedClass, setSelectedClass] = useState("");
+
+  // Export dropdown
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
   // pagination
   const [page, setPage] = useState(1);
   const pageSize = 10; // show 10 rows per page
@@ -44,6 +54,23 @@ export default function StudentsList() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showExportMenu]);
 
   // Fetch students from backend
   useEffect(() => {
@@ -95,6 +122,8 @@ export default function StudentsList() {
             id: s._id || i + 1,
             grade: s.className || s.class || "-",
             rollNo: s.class,
+            board: s.board || "",
+            state: s.state || "",
           }));
           setRows(mapped);
         }
@@ -114,16 +143,63 @@ export default function StudentsList() {
   }, [query]); // re-fetch when searching (server-side search)
 
   const filtered = useMemo(() => {
-    // we already do server-side filtering by ?q=, but keep client-side fallback if needed
+    let result = rows;
+
+    // Apply text search filter
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.grade.toLowerCase().includes(q) ||
-        String(r.rollNo).toLowerCase().includes(q)
-    );
-  }, [query, rows]);
+    if (q) {
+      result = result.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          r.grade.toLowerCase().includes(q) ||
+          String(r.rollNo).toLowerCase().includes(q) ||
+          (r.email && r.email.toLowerCase().includes(q)) ||
+          (r.phone && r.phone.toLowerCase().includes(q))
+      );
+    }
+
+    // Apply state filter
+    if (selectedState) {
+      result = result.filter((r) => r.state === selectedState);
+    }
+
+    // Apply board filter
+    if (selectedBoard) {
+      result = result.filter((r) => r.board === selectedBoard);
+    }
+
+    // Apply class filter
+    if (selectedClass) {
+      result = result.filter((r) => r.grade === selectedClass || r.className === selectedClass);
+    }
+
+    return result;
+  }, [query, rows, selectedState, selectedBoard, selectedClass]);
+
+  // Extract unique values for filter dropdowns
+  const uniqueStates = useMemo(() => {
+    const states = rows.map((r) => r.state).filter(Boolean);
+    return [...new Set(states)].sort();
+  }, [rows]);
+
+  const uniqueBoards = useMemo(() => {
+    const boards = rows.map((r) => r.board).filter(Boolean);
+    return [...new Set(boards)].sort();
+  }, [rows]);
+
+  const uniqueClasses = useMemo(() => {
+    const classes = rows.map((r) => r.grade || r.className).filter(Boolean);
+    return [...new Set(classes)].sort();
+  }, [rows]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedState("");
+    setSelectedBoard("");
+    setSelectedClass("");
+  };
+
+  const hasActiveFilters = selectedState || selectedBoard || selectedClass;
 
   const openModal = (row) => {
     // allow only non-student roles to view (admin / teacher)
@@ -146,17 +222,74 @@ export default function StudentsList() {
     return filtered.slice(start, start + pageSize);
   }, [page, filtered]);
 
-  // Export all students to Excel
-  function exportToExcel() {
-    const worksheet = XLSX.utils.json_to_sheet(rows);   // rows = ALL students
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+  // Export students to Excel
+  function exportToExcel(dataToExport = rows, filenameSuffix = "") {
+    // Create organized data with only relevant fields in a specific order
+    const exportData = dataToExport.map((student, index) => ({
+      "S.No": index + 1,
+      "Name": student.name || "-",
+      "Email": student.email || "-",
+      "Phone": student.phone || "-",
+      "Class": student.grade || student.className || "-",
+      "Roll No": student.rollNo || "-",
+      "Board": student.board || "-",
+      "State": student.state || "-",
+      "Gender": student.gender || "-",
+      "Date of Birth": student.dob || "-",
+      "Address": student.address || "-",
+      "Father Name": student.fatherName || "-",
+      "Father Contact": student.fatherContact || "-",
+      "Father Occupation": student.fatherOccupation || "-",
+      "Mother Name": student.motherName || "-",
+      "Mother Contact": student.motherContact || "-",
+      "Mother Occupation": student.motherOccupation || "-",
+      "Points": student.points ?? 0,
+      "Created At": student.createdAt ? new Date(student.createdAt).toLocaleString() : "-",
+      "Updated At": student.updatedAt ? new Date(student.updatedAt).toLocaleString() : "-",
+    }));
 
-    XLSX.writeFile(workbook, "students.xlsx");
+    // Create worksheet from organized data
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths for better readability
+    const columnWidths = [
+      { wch: 6 },  // S.No
+      { wch: 20 }, // Name
+      { wch: 25 }, // Email
+      { wch: 15 }, // Phone
+      { wch: 10 }, // Class
+      { wch: 12 }, // Roll No
+      { wch: 15 }, // Board
+      { wch: 15 }, // State
+      { wch: 10 }, // Gender
+      { wch: 15 }, // Date of Birth
+      { wch: 30 }, // Address
+      { wch: 20 }, // Father Name
+      { wch: 15 }, // Father Contact
+      { wch: 20 }, // Father Occupation
+      { wch: 20 }, // Mother Name
+      { wch: 15 }, // Mother Contact
+      { wch: 20 }, // Mother Occupation
+      { wch: 10 }, // Points
+      { wch: 20 }, // Created At
+      { wch: 20 }, // Updated At
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Create workbook and add worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students List");
+
+    // Generate filename with current date
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const filename = `Students_List${filenameSuffix ? '_' + filenameSuffix : ''}_${dateStr}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -181,38 +314,139 @@ export default function StudentsList() {
       {/* Card */}
       <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-xl overflow-hidden">
         {/* Toolbar */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-3 border-b bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              type="text"
-              placeholder="Search by name, class, email, phone…"
-              className="w-full rounded-lg border border-blue-500/30 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white"
-            />
+        <div className="flex flex-col gap-3 p-4 border-b bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50">
+          {/* Search Bar Row */}
+          <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                type="text"
+                placeholder="Search by name, class, email, phone…"
+                className="w-full rounded-lg border border-blue-500/30 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              {loading ? (
+                <span className="inline-flex items-center gap-2 text-sm text-slate-600">
+                  <Loader2 className="animate-spin" size={16} /> Loading…
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium bg-indigo-100 text-indigo-800 border-indigo-200">
+                  <GraduationCap size={14} />
+                  {filtered.length} {filtered.length === 1 ? 'student' : 'students'}
+                </span>
+              )}
+
+              {/* Export Dropdown */}
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm shadow-md transition-all font-medium"
+                >
+                  <Download size={16} />
+                  Export
+                  <ChevronDown size={16} className={`transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        exportToExcel(rows, "All");
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 border-b"
+                    >
+                      <Download size={14} className="text-green-600" />
+                      <div>
+                        <div className="font-medium text-slate-900">Export All Students</div>
+                        <div className="text-xs text-slate-500">{rows.length} students</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportToExcel(filtered, "Filtered");
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2"
+                      disabled={filtered.length === 0}
+                    >
+                      <Download size={14} className="text-blue-600" />
+                      <div>
+                        <div className="font-medium text-slate-900">Export Filtered Results</div>
+                        <div className="text-xs text-slate-500">{filtered.length} students</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {loading ? (
-              <span className="inline-flex items-center gap-2 text-sm text-slate-600">
-                <Loader2 className="animate-spin" size={16} /> Loading…
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 border-indigo-200">
-                <GraduationCap size={14} />
-                {filtered.length} results
-              </span>
-            )}
-            {/* Export Button */}
-            <div className="flex justify-end mb-3">
-              <button
-                onClick={exportToExcel}
-                className="rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm shadow-md transition-all"
-              >
-                Export to Excel
-              </button>
+          {/* Filter Buttons Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+              <Filter size={16} className="text-slate-500" />
+              <span>Filters:</span>
             </div>
+
+            {/* State Filter */}
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="rounded-lg border border-blue-500/30 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white hover:border-blue-500/50 transition-colors"
+            >
+              <option value="">All States</option>
+              {uniqueStates.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+
+            {/* Board Filter */}
+            <select
+              value={selectedBoard}
+              onChange={(e) => setSelectedBoard(e.target.value)}
+              className="rounded-lg border border-blue-500/30 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white hover:border-blue-500/50 transition-colors"
+            >
+              <option value="">All Boards</option>
+              {uniqueBoards.map((board) => (
+                <option key={board} value={board}>
+                  {board}
+                </option>
+              ))}
+            </select>
+
+            {/* Class Filter */}
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="rounded-lg border border-blue-500/30 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white hover:border-blue-500/50 transition-colors"
+            >
+              <option value="">All Classes</option>
+              {uniqueClasses.map((cls) => (
+                <option key={cls} value={cls}>
+                  {cls}
+                </option>
+              ))}
+            </select>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 text-sm font-medium transition-colors"
+              >
+                <XCircle size={14} />
+                Clear Filters
+              </button>
+            )}
           </div>
         </div>
 
@@ -232,6 +466,7 @@ export default function StudentsList() {
                 <th className="px-4 py-3 font-medium">#</th>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Class</th>
+                <th className="px-4 py-3 font-medium">Board</th>
                 <th className="px-4 py-3 font-medium">State</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Phone</th>
@@ -242,14 +477,14 @@ export default function StudentsList() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={role !== "student" ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={role !== "student" ? 8 : 7} className="px-4 py-6 text-center text-slate-500">
                     <Loader2 className="inline-block animate-spin mr-2" size={16} />
                     Fetching students data...
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={role !== "student" ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={role !== "student" ? 8 : 7} className="px-4 py-6 text-center text-slate-500">
                     No students found.
                   </td>
                 </tr>
@@ -263,7 +498,22 @@ export default function StudentsList() {
                     <td className="px-4 py-3 font-medium text-slate-900">{r.name}</td>
                     <td className="px-4 py-3 text-slate-700">{r.grade}</td>
                     <td className="px-4 py-3">
-                      {r.state || "-"}
+                      {r.board ? (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 border border-blue-200">
+                          {r.board}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.state ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800 border border-emerald-200">
+                          {r.state}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-700">{r.email}</td>
                     <td className="px-4 py-3 text-slate-700">{r.phone}</td>
@@ -278,12 +528,6 @@ export default function StudentsList() {
                             <Eye size={14} />
                             View
                           </button>
-                          {/* {role === "admin" && (
-                            <button className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2.5 py-1 text-xs font-medium shadow-sm hover:opacity-90 transition-all">
-                              <Pencil size={14} />
-                              Edit
-                            </button>
-                          )} */}
                         </div>
                       </td>
                     )}
@@ -327,7 +571,7 @@ export default function StudentsList() {
       {/* Modal */}
       {open && selected && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6"
           aria-modal="true"
           role="dialog"
         >
@@ -338,13 +582,11 @@ export default function StudentsList() {
           />
           {/* Panel */}
           <div
-            className="relative z-10 w-full sm:max-w-5xl rounded-t-2xl sm:rounded-2xl border border-white/60 bg-white/95 backdrop-blur-md shadow-[0_24px_48px_-16px_rgba(2,6,23,0.35)] animate-scale-in"
+            className="relative z-10 w-full h-full sm:h-auto sm:max-w-5xl sm:rounded-2xl border-0 sm:border border-white/60 bg-white/95 backdrop-blur-md shadow-[0_24px_48px_-16px_rgba(2,6,23,0.35)] animate-scale-in overflow-y-auto sm:max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-blue-600/10 to-indigo-600/10">
-
+            <div className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-blue-600/10 to-indigo-600/10 backdrop-blur-sm">
               <div className="flex items-center gap-3">
 
                 {/* Avatar */}
@@ -393,10 +635,10 @@ export default function StudentsList() {
 
 
             {/* Body */}
-            <div className="px-4 py-4">
+            <div className="px-4 py-4 pb-20 sm:pb-4">
 
               {/* LANDSCAPE TWO-COLUMN GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 
                 <InfoRow label="Name" value={selected.name} />
                 <InfoRow label="Email" value={selected.email} />
@@ -405,9 +647,11 @@ export default function StudentsList() {
                 <InfoRow label="Class" value={selected.grade} />
 
                 <InfoRow label="Roll No" value={selected.rollNo} />
-                <InfoRow label="State" value={selected.state || "-"} />
+                <InfoRow label="Board" value={selected.board || "-"} />
 
+                <InfoRow label="State" value={selected.state || "-"} />
                 <InfoRow label="Date of Birth" value={selected.dob || "-"} />
+
                 <InfoRow label="Gender" value={selected.gender || "-"} />
 
                 <InfoRow label="Address" value={selected.address || "-"} />
@@ -431,10 +675,10 @@ export default function StudentsList() {
 
 
             {/* Footer */}
-            <div className="rounded-br-xl rounded-bl-xl flex items-center justify-end gap-2 px-4 py-3 border-t bg-gradient-to-r from-slate-50 to-slate-100">
+            <div className="sticky bottom-0 z-20 sm:rounded-br-xl sm:rounded-bl-xl flex items-center justify-end gap-2 px-4 py-3 border-t bg-gradient-to-r from-slate-50 to-slate-100 backdrop-blur-sm">
               <button
                 onClick={closeModal}
-                className="rounded-lg border px-3 py-2 text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
+                className="rounded-lg border px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm"
               >
                 Close
               </button>

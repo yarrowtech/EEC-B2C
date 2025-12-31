@@ -71,6 +71,7 @@ import AddClass from "./pages/questions/AddClass";
 import AddBoard from "./pages/questions/AddBoard";
 import Swal from "sweetalert2";
 import Leaderboard from "./pages/Leaderboard";
+import MindTrainingGames from "./games/MindTrainingGames";
 
 
 function getToken() {
@@ -273,6 +274,7 @@ export default function App() {
             <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
             <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
             <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
+            <Route path="games/mind-training" element={<MindTrainingGames />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

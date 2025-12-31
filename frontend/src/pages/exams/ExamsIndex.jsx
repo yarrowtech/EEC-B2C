@@ -202,7 +202,7 @@ export default function ExamsIndex() {
   }
 
   return (
-    <div className="relative space-y-8 p-8 rounded-[2.5rem] bg-gradient-to-br from-emerald-50 via-sky-50 to-indigo-50 shadow-2xl overflow-hidden">
+    <div className="relative space-y-8 p-8 bg-gradient-to-br from-emerald-50 via-sky-50 to-indigo-50 shadow-2xl overflow-hidden">
       <ToastContainer />
 
       {/* Decorative blobs */}

@@ -28,6 +28,7 @@ import studyMaterialRoutes from "./routes/studyMaterialRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
 import boardRoutes from "./routes/boardRoutes.js";
+import gameRoutes from "./routes/gameRoutes.js";
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use("/api/webhooks/razorpay", express.raw({ type: "application/json" }));
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/boards", boardRoutes);
+app.use("/api/games", gameRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;

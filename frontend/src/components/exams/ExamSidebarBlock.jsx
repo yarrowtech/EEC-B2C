@@ -5,7 +5,10 @@ import {
   ChevronDown,
   ListChecks,
   GraduationCapIcon,
-  Table2
+  Table2,
+  Gamepad2,
+  Brain,
+  Zap
 } from "lucide-react";
 import { getJSON } from "../../lib/api";
 
@@ -24,6 +27,7 @@ const stageNames = {
 export default function ExamSidebarBlock({ role = "student" }) {
   const [open, setOpen] = useState(false);
   const [stages, setStages] = useState([]);
+  const [gamesOpen, setGamesOpen] = useState(false);
 
   // ----------------------------------------------------------------
   // 🔥 ADMIN SIDEBAR (UNCHANGED)
@@ -69,9 +73,8 @@ export default function ExamSidebarBlock({ role = "student" }) {
 
       <div
         id="emenu"
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
-          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="ml-2 mt-1 pl-2 border-l border-yellow-200 space-y-1">
           {stages.length === 0 && (
@@ -91,8 +94,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
                 key={stage}
                 to={url}
                 className={({ isActive }) =>
-                  `${linkBase} ${
-                    isActive ? linkActive : "hover:bg-yellow-100"
+                  `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
                   }`
                 }
               >
@@ -104,12 +106,64 @@ export default function ExamSidebarBlock({ role = "student" }) {
         </div>
       </div>
 
+      {/* 🎮 GAMES DROPDOWN */}
+      {/* <button
+        onClick={() => setGamesOpen((s) => !s)}
+        className={`${linkBase} w-full text-left hover:bg-yellow-100`}
+        aria-expanded={gamesOpen}
+        aria-controls="gmenu"
+      >
+        <Gamepad2 size={18} />
+        <span className="flex-1 truncate">Games</span>
+        <ChevronDown
+          size={16}
+          className={`transition-transform ${gamesOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <div
+        id="gmenu"
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ${gamesOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
+      >
+        <div className="ml-2 mt-1 pl-2 border-l border-yellow-200 space-y-1">
+          <NavLink
+            to="/dashboard/games/mind-training"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+            }
+          >
+            <Brain size={18} />
+            <span>Mind Training</span>
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/games/memory"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+            }
+          >
+            <GraduationCap size={18} />
+            <span>Memory Game</span>
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/games/reaction"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+            }
+          >
+            <Zap size={18} />
+            <span>Reaction Test</span>
+          </NavLink>
+        </div>
+      </div> */}
+
       {/* MY RESULTS */}
       <NavLink
         to="/dashboard/result"
         className={({ isActive }) =>
-          `${linkBase} ${
-            isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
@@ -121,8 +175,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
       <NavLink
         to="/dashboard/achievements"
         className={({ isActive }) =>
-          `${linkBase} ${
-            isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
@@ -134,8 +187,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
       <NavLink
         to="/dashboard/study-materials"
         className={({ isActive }) =>
-          `${linkBase} ${
-            isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
@@ -145,8 +197,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
       <NavLink
         to="/dashboard/leaderboard"
         className={({ isActive }) =>
-          `${linkBase} ${
-            isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
           }`
         }
       >
