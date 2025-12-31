@@ -70,6 +70,7 @@ export async function register(req, res) {
       state: (state || "").trim(), // <-- NEW
       referral: (referral || "").trim(), // <-- NEW
       board: (board || "").trim(), // <-- NEW
+      points: 100, // Welcome bonus: 100 coins
     });
     sendWelcomeEmail({ to: user.email, name: user.name }).catch((err) =>
       console.error("Welcome email failed:", err?.message)

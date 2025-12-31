@@ -827,7 +827,9 @@ export default function ProfilePage() {
       const coinsNeeded = type === "cash" ? Math.ceil(amount * 20) : amount * 20;
 
       if (points < coinsNeeded) {
-        return toast.error("Insufficient coins for this redemption");
+        toast.error("Insufficient coins for this redemption");
+        setRedeeming(false);
+        return;
       }
 
       const res = await fetch(`${API}/users/redeem-coins`, {
@@ -846,7 +848,9 @@ export default function ProfilePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        return toast.error(data.message || "Redemption failed");
+        toast.error(data.message || "Redemption failed");
+        setRedeeming(false);
+        return;
       }
 
       // Update points
@@ -862,6 +866,17 @@ export default function ProfilePage() {
       const historyData = await historyRes.json();
       if (historyRes.ok && historyData.redemptions) {
         setRedemptionHistory(historyData.redemptions);
+      }
+
+      // Refresh gift card availability
+      const availabilityRes = await fetch(`${API}/users/gift-card-availability`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+      const availabilityData = await availabilityRes.json();
+      if (availabilityRes.ok && availabilityData.availability) {
+        setGiftCardAvailability(availabilityData.availability);
       }
 
       toast.success(data.message || "Coins redeemed successfully!");
@@ -1833,28 +1848,76 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Coin Balance Card */}
-                  <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5 md:p-6 shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-amber-700 font-semibold">Available Coins</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Coins className="w-6 h-6 text-amber-600" />
-                          <span className="text-3xl md:text-4xl font-bold text-slate-900">{points}</span>
+                  <div className="rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-8 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-amber-200/20 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-200/20 rounded-full blur-3xl"></div>
+                    <div className="relative">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 flex items-center justify-center shadow-xl">
+                              <Coins className="w-7 h-7 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Available Balance</p>
+                              <div className="flex items-baseline gap-2 mt-1">
+                                <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
+                                  {points.toLocaleString()}
+                                </span>
+                                <span className="text-sm font-bold text-amber-600">Coins</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-amber-200">
+                            <div className="flex-1">
+                              <p className="text-xs text-slate-600 font-semibold mb-1">Wallet Value</p>
+                              <p className="text-2xl font-black text-green-600">₹{(points / 20).toFixed(2)}</p>
+                            </div>
+                            <div className="h-12 w-px bg-amber-200"></div>
+                            <div className="flex-1">
+                              <p className="text-xs text-slate-600 font-semibold mb-1">Total Earned</p>
+                              <p className="text-2xl font-black text-blue-600">{points.toLocaleString()}</p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-600 mt-1">≈ ₹{(points * 0.05).toFixed(2)} value</p>
+                        <div className="hidden lg:block">
+                          <img src="/coin.png" alt="coins" className="w-32 h-32 opacity-90 animate-pulse" />
+                        </div>
                       </div>
-                      <div className="hidden md:block">
-                        <img src="/coin.png" alt="coins" className="w-20 h-20 opacity-80" />
+                      {/* Progress bar */}
+                      <div className="mt-5 bg-white/50 rounded-full h-4 overflow-hidden shadow-inner">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500 rounded-full transition-all duration-700 shadow-lg"
+                          style={{ width: `${Math.min((points / 20000) * 100, 100)}%` }}
+                        ></div>
                       </div>
+                      <p className="text-xs text-amber-700 mt-2 text-center font-bold">
+                        {points >= 20000 ? "🎉 Max tier reached! Unlock all rewards!" : `${(20000 - points).toLocaleString()} more coins to unlock ₹1000 gift card`}
+                      </p>
                     </div>
                   </div>
 
                   {/* Conversion Rate Info */}
-                  <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-start gap-3">
-                    <Zap className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-blue-900">Conversion Rate</p>
-                      <p className="text-sm text-blue-700 mt-1">10 Coins = ₹0.50 | 20 Coins = ₹1.00</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 p-5 shadow-lg hover:shadow-xl transition-all hover:scale-105 duration-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <p className="text-xs font-extrabold text-blue-900 uppercase tracking-wide">Exchange Rate</p>
+                      </div>
+                      <p className="text-lg font-black text-blue-700">10 Coins = ₹0.50</p>
+                      <p className="text-xs text-blue-600 mt-1">Perfect for small redemptions</p>
+                    </div>
+                    <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 p-5 shadow-lg hover:shadow-xl transition-all hover:scale-105 duration-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-xl bg-purple-500 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <p className="text-xs font-extrabold text-purple-900 uppercase tracking-wide">Exchange Rate</p>
+                      </div>
+                      <p className="text-lg font-black text-purple-700">20 Coins = ₹1.00</p>
+                      <p className="text-xs text-purple-600 mt-1">Standard conversion rate</p>
                     </div>
                   </div>
 

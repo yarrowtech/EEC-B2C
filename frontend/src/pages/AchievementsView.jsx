@@ -38,13 +38,26 @@ const AchievementsView = () => {
     fetchAttempts();
   }, []);
 
-  const pointsHistory = attempts.map(attempt => ({
-    exam: attempt.stage,
-    subject: attempt.subjectName || attempt.subject,
-    topic: attempt.topicName || attempt.topic,
-    pointsEarned: attempt.score,
-    date: attempt.createdAt
-  }));
+  // Add welcome bonus as the first entry if user exists
+  const welcomeBonus = user?._id ? [{
+    exam: 'Welcome',
+    subject: 'Registration Bonus',
+    topic: 'New Member Reward',
+    pointsEarned: 100,
+    date: user.createdAt || new Date().toISOString(),
+    isWelcome: true
+  }] : [];
+
+  const pointsHistory = [
+    ...welcomeBonus,
+    ...attempts.map(attempt => ({
+      exam: attempt.stage,
+      subject: attempt.subjectName || attempt.subject,
+      topic: attempt.topicName || attempt.topic,
+      pointsEarned: attempt.score,
+      date: attempt.createdAt
+    }))
+  ];
 
   const totalAchievements = pointsHistory.length;
   const earnedCount = pointsHistory.filter(item => item.pointsEarned > 0).length;
@@ -183,43 +196,72 @@ const AchievementsView = () => {
           paginatedHistory.map((item, index) => (
             <div
               key={index}
-              className="
-                group relative bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl
-                shadow-lg hover:shadow-2xl border border-gray-200/50
+              className={`
+                group relative rounded-xl md:rounded-2xl
+                shadow-lg hover:shadow-2xl
                 p-5 md:p-6
-              "
+                ${item.isWelcome
+                  ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300'
+                  : 'bg-white/90 backdrop-blur-sm border border-gray-200/50'
+                }
+              `}
             >
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-t-xl md:rounded-t-2xl" />
+              <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-xl md:rounded-t-2xl ${
+                item.isWelcome
+                  ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500'
+                  : 'bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500'
+              }`} />
+
+              {item.isWelcome && (
+                <div className="absolute -top-3 -right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                  ✨ BONUS
+                </div>
+              )}
 
               <div className="flex items-start justify-between mb-3">
                 <h3 className="text-base md:text-lg font-extrabold">
-                  🎯 {item.exam?.toUpperCase()}
+                  {item.isWelcome ? '🎁' : '🎯'} {item.exam?.toUpperCase()}
                 </h3>
               </div>
 
               <div className="space-y-2 mb-3">
-                <p className="text-xs md:text-sm text-gray-700 flex items-center gap-2">
-                  <Book size={16} className="text-orange-500" />
+                <p className={`text-xs md:text-sm flex items-center gap-2 ${
+                  item.isWelcome ? 'text-amber-700' : 'text-gray-700'
+                }`}>
+                  <Book size={16} className={item.isWelcome ? 'text-amber-500' : 'text-orange-500'} />
                   <span className="font-medium">Subject:</span> {item.subject}
                 </p>
-                <p className="text-xs md:text-sm text-gray-700 flex items-center gap-2">
-                  <PuzzleIcon size={16} className="text-yellow-500" />
+                <p className={`text-xs md:text-sm flex items-center gap-2 ${
+                  item.isWelcome ? 'text-amber-700' : 'text-gray-700'
+                }`}>
+                  <PuzzleIcon size={16} className={item.isWelcome ? 'text-amber-500' : 'text-yellow-500'} />
                   <span className="font-medium">Topic:</span> {item.topic}
                 </p>
-                <p className="text-xs text-gray-500 flex items-center gap-2">
-                  <Calendar size={16} className="text-pink-500" />
+                <p className={`text-xs flex items-center gap-2 ${
+                  item.isWelcome ? 'text-amber-600' : 'text-gray-500'
+                }`}>
+                  <Calendar size={16} className={item.isWelcome ? 'text-amber-500' : 'text-pink-500'} />
                   {formatDate(item.date)}
                 </p>
               </div>
 
-              <div className="flex justify-between items-center border-t border-gray-200/50 pt-3 mt-3">
-                <span className="text-xs md:text-sm text-gray-600 font-medium">Points Earned</span>
-                <span className="
-                  bg-gradient-to-r from-yellow-400 to-orange-500
+              <div className={`flex justify-between items-center pt-3 mt-3 ${
+                item.isWelcome ? 'border-t-2 border-amber-200' : 'border-t border-gray-200/50'
+              }`}>
+                <span className={`text-xs md:text-sm font-medium ${
+                  item.isWelcome ? 'text-amber-700' : 'text-gray-600'
+                }`}>
+                  {item.isWelcome ? 'Welcome Bonus' : 'Points Earned'}
+                </span>
+                <span className={`
                   text-white font-bold text-xs md:text-sm
                   px-3 py-1.5 rounded-full shadow-md
                   group-hover:shadow-lg group-hover:scale-110 transition-all duration-300
-                ">
+                  ${item.isWelcome
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                    : 'bg-gradient-to-r from-yellow-400 to-orange-500'
+                  }
+                `}>
                   +{item.pointsEarned} pts
                 </span>
               </div>
