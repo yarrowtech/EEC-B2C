@@ -38,8 +38,9 @@ const AchievementsView = () => {
     fetchAttempts();
   }, []);
 
-  // Add welcome bonus as the first entry if user exists
-  const welcomeBonus = user?._id ? [{
+  // Add welcome bonus as the first entry if user exists and has at least 100 points (or is new)
+  // Only show welcome bonus if user has points (new users start with 100)
+  const welcomeBonus = user?._id && userPoints >= 100 ? [{
     exam: 'Welcome',
     subject: 'Registration Bonus',
     topic: 'New Member Reward',

@@ -87,6 +87,8 @@ export async function register(req, res) {
         class: user.class,
         state: user.state,
         referral: user.referral,
+        points: user.points || 100,
+        createdAt: user.createdAt,
       },
       token,
     });
