@@ -1171,7 +1171,7 @@ export default function ProfilePage() {
                       {/* Name Field */}
                       <div>
                         <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Full Name *
+                          Full Name <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
@@ -1196,7 +1196,7 @@ export default function ProfilePage() {
                       {/* Email Field */}
                       <div>
                         <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Email Address *
+                          Email Address <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <Mail className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
@@ -1259,6 +1259,7 @@ export default function ProfilePage() {
                                 name="className"
                                 value={form.className}
                                 onChange={handleChange}
+                                disabled
                                 className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.className
                                   ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
@@ -1288,9 +1289,9 @@ export default function ProfilePage() {
                                 <option>{form.className}</option>
                               </select> */}
                             </div>
-                            {/* <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 mt-1">
                               Class is auto-promoted based on board rules
-                            </p> */}
+                            </p>
 
                             {errors.className && (
                               <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">

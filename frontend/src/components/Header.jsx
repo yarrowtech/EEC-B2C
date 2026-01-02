@@ -234,6 +234,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Bell, Menu, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
     /* ---------------- CONFIG ---------------- */
@@ -570,8 +571,9 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                                                 localStorage.removeItem("jwt");
                                                 localStorage.removeItem("user");
                                                 window.dispatchEvent(
-                                                    new CustomEvent("eec:auth", { detail: { type: "logout" } })
+                                                    new CustomEvent("eec:auth", { detail: { type: "manual-logout" } })
                                                 );
+                                                toast.success("Logged out successfully");
                                                 navigate("/", { replace: true });
                                             }}
                                         >

@@ -61,16 +61,23 @@ export async function register(req, res) {
     }
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
+    const currentDate = new Date();
+
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase(),
       phone: phone?.trim() || "",
       password: hash,
-      class: (classValue || "").trim(), // <-- NEW
+      class: (classValue || "").trim(), // <-- OLD FIELD
+      className: (classValue || "").trim(), // <-- NEW FIELD
       state: (state || "").trim(), // <-- NEW
       referral: (referral || "").trim(), // <-- NEW
       board: (board || "").trim(), // <-- NEW
       points: 100, // Welcome bonus: 100 coins
+      registrationYear: currentDate.getFullYear(),
+      registrationMonth: currentDate.getMonth() + 1,
+      initialClass: (classValue || "").trim(),
+      canChangeClass: false, // Students cannot manually change class
     });
     sendWelcomeEmail({ to: user.email, name: user.name }).catch((err) =>
       console.error("Welcome email failed:", err?.message)
@@ -108,8 +115,15 @@ export async function login(req, res) {
     }
 
     const id = normalizeLoginId(emailOrPhone);
-    // We login only by email here (simplify). If you want phone login, add phone lookup.
-    const user = await User.findOne({ email: id }).select("+password");
+
+    // Query by email OR phone
+    const user = await User.findOne({
+      $or: [
+        { email: id },
+        { phone: id }
+      ]
+    }).select("+password");
+
     if (!user) return res.status(401).json({ message: "Invalid credentials." });
 
     const ok = await bcrypt.compare(password, user.password);

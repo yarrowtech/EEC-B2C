@@ -228,6 +228,7 @@ import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock
 import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import Header from "../components/Header";
+import { toast } from "react-toastify";
 
 /* ---- auth helpers (UNCHANGED) ---- */
 function getToken() {
@@ -412,7 +413,8 @@ export default function DashboardLayout() {
                                 onClick={() => {
                                     localStorage.removeItem("jwt");
                                     localStorage.removeItem("user");
-                                    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+                                    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
+                                    toast.success("Logged out successfully");
                                     navigate("/", { replace: true });
                                 }}
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 font-semibold hover:bg-red-50 transition"

@@ -46,9 +46,25 @@ const UserSchema = new mongoose.Schema(
       enum: ["CBSE", "ICSE", "WB Board", "State Board"],
       required: false,
     },
+    registrationYear: {
+      type: Number,
+      default: null, // Year when user registered (e.g., 2024)
+    },
+    registrationMonth: {
+      type: Number,
+      default: null, // Month when user registered (1-12)
+    },
+    initialClass: {
+      type: String,
+      default: "", // Class when user first registered (e.g., "1", "2", "10")
+    },
     lastPromotedYear: {
       type: Number,
       default: null,
+    },
+    canChangeClass: {
+      type: Boolean,
+      default: false, // Students cannot manually change class after registration
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,

@@ -303,6 +303,10 @@ router.get("/profile", requireAuth, async (req, res) => {
 router.put("/update-profile", requireAuth, async (req, res) => {
   try {
     delete req.body.points;
+
+    // Get current user to check permissions
+    const currentUser = await User.findById(req.user.id);
+
     const allowedFields = [
       "name",
       "email",
@@ -310,7 +314,6 @@ router.put("/update-profile", requireAuth, async (req, res) => {
       "gender",
       "dob",
       "address",
-      "className",
       "department",
       "bio",
       "avatar",
@@ -327,6 +330,11 @@ router.put("/update-profile", requireAuth, async (req, res) => {
       "motherContact",
     ];
 
+    // Only allow className update for admins or if user has permission
+    if (currentUser.role === "admin" || currentUser.canChangeClass === true) {
+      allowedFields.push("className");
+    }
+
     let updateData = {};
 
     // Add allowed fields
@@ -337,7 +345,8 @@ router.put("/update-profile", requireAuth, async (req, res) => {
     });
 
     // Special handling: Save className into "class" for old DB compatibility
-    if (req.body.className !== undefined) {
+    // Only if className was actually updated
+    if (req.body.className !== undefined && allowedFields.includes("className")) {
       updateData.class = req.body.className;
     }
 

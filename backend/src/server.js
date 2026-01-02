@@ -6,6 +6,7 @@ import http from "http";
 import { Server } from "socket.io";
 import rateLimit from "express-rate-limit";
 import { connectDB } from "./config/db.js";
+import { scheduleAutoPromotion } from "./services/autoPromotionService.js";
 
 import authRoutes from "./routes/auth.js";
 import userRouter from "./routes/users.js";
@@ -31,6 +32,7 @@ import boardRoutes from "./routes/boardRoutes.js";
 import gameRoutes from "./routes/gameRoutes.js";
 import giftCardRoutes from "./routes/giftCards.js";
 import pushNotificationRoutes from "./routes/pushNotificationRoutes.js";
+import promotionRoutes from "./routes/promotionRoutes.js";
 
 const app = express();
 
@@ -85,6 +87,7 @@ app.use("/api/boards", boardRoutes);
 app.use("/api/games", gameRoutes);
 app.use("/api/gift-cards", giftCardRoutes);
 app.use("/api/push", pushNotificationRoutes);
+app.use("/api/promotion", promotionRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;
@@ -124,5 +127,8 @@ connectDB(process.env.MONGO_URI).then(() => {
 
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server + Socket.io running on port: ${PORT}`);
+
+    // Start auto-promotion scheduler
+    scheduleAutoPromotion();
   });
 });

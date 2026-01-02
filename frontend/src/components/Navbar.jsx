@@ -135,9 +135,9 @@ export default function Navbar() {
       localStorage.removeItem("jwt");
       localStorage.removeItem("user");
       // notify the app (Navbar listens to this in your earlier setup)
-      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
       navigate("/", { replace: true });
-      toast.success("Logged out successfully.");
+      toast.success("Logged out successfully");
     } finally {
       setUserMenuOpen(false);
     }

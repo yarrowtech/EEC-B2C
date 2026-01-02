@@ -347,26 +347,37 @@ export default function App() {
 
   function AuthExpiryHandler() {
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
       const onAuthEvent = (e) => {
+        // Only show session expired modal for automatic logout (token expired)
         if (e?.detail?.type === "logout") {
-          Swal.fire({
-            icon: "warning",
-            title: "Session Expired",
-            text: "Please login again to continue",
-            confirmButtonColor: "#f59e0b",
-            confirmButtonText: "OK",
-            allowOutsideClick: false,
-          }).then(() => {
+          // Only show modal if user is in dashboard/protected route
+          if (location.pathname.startsWith("/dashboard")) {
+            Swal.fire({
+              icon: "warning",
+              title: "Session Expired",
+              text: "Please login again to continue",
+              confirmButtonColor: "#f59e0b",
+              confirmButtonText: "OK",
+              allowOutsideClick: false,
+            }).then(() => {
+              navigate("/", { replace: true });
+            });
+          } else {
             navigate("/", { replace: true });
-          });
+          }
+        }
+        // For manual logout, just navigate without showing modal
+        else if (e?.detail?.type === "manual-logout") {
+          // Do nothing, Header already handles navigation and toast
         }
       };
 
       window.addEventListener("eec:auth", onAuthEvent);
       return () => window.removeEventListener("eec:auth", onAuthEvent);
-    }, [navigate]);
+    }, [navigate, location]);
 
     return null;
   }
@@ -413,7 +424,7 @@ export default function App() {
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
             <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
-            <Route path="/dashboard/lea                                                                             derboard" element={<Leaderboard />} />
+            <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
             <Route path="games/mind-training" element={<MindTrainingGames />} />
             <Route path="gift-cards" element={<AdminGiftCardsPage />} />
             <Route path="purchases" element={<RequireAdmin><AdminPurchasesPage /></RequireAdmin>} />
