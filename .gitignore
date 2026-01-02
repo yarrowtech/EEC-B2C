@@ -1,0 +1,26 @@
+# Claude files
+.claude/
+
+# Documentation files
+GIFT_CARD_SYSTEM.md
+WELCOME_BONUS_DEBUG.md
+
+# Environment variables
+backend/.env
+frontend/.env
+.env
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
