@@ -105,7 +105,7 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             }
           >
             <ListChecks size={18} />
-            <span>Add Questions</span>
+            <span>Add Questionss</span>
           </NavLink>
 
           {/* ALL QUESTIONS */}
