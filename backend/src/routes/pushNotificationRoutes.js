@@ -79,7 +79,7 @@ router.post("/unsubscribe", requireAuth, async (req, res) => {
 });
 
 /* ---------------- SEND PUSH NOTIFICATION (HELPER) ---------------- */
-export async function sendPushNotification(userId, title, message) {
+export async function sendPushNotification(userId, title, message, notificationId = null) {
   try {
     // Get user's push subscriptions
     const subscriptions = await PushSubscription.find({ userId });
@@ -94,6 +94,8 @@ export async function sendPushNotification(userId, title, message) {
       icon: "/logo_new.png",
       badge: "/logo_new.png",
       timestamp: Date.now(),
+      notificationId,
+      url: notificationId ? `/dashboard/notification/${notificationId}` : "/dashboard",
     });
 
     // Send to all subscriptions

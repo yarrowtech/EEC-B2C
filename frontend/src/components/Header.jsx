@@ -270,6 +270,15 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
             }
         }
         load();
+
+        // Listen for push notifications to reload the list
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'NOTIFICATION_RECEIVED') {
+                    load(); // Reload notifications when a new one arrives
+                }
+            });
+        }
     }, [API]);
 
     /* ---------------- UNREAD COUNT ---------------- */

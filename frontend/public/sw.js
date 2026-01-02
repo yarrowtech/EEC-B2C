@@ -19,10 +19,24 @@ self.addEventListener("push", (event) => {
       image: data.image || null,
       data: {
         url: data.url || "/",
+        notificationId: data.notificationId,
       },
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    // Notify all clients that a new notification arrived
+    event.waitUntil(
+      Promise.all([
+        self.registration.showNotification(title, options),
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: 'NOTIFICATION_RECEIVED',
+              notificationId: data.notificationId,
+            });
+          });
+        }),
+      ])
+    );
   } catch (error) {
     console.error("Push event error:", error);
   }
@@ -31,19 +45,24 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || "/";
+  const urlToOpen = event.notification.data?.url || "/dashboard";
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window open
-        for (const client of clientList) {
-          if (client.url === urlToOpen && "focus" in client) {
-            return client.focus();
-          }
+        // Check if there's an EEC window open (any page)
+        const eecClient = clientList.find((client) => {
+          const url = new URL(client.url);
+          return url.origin === self.location.origin;
+        });
+
+        if (eecClient) {
+          // If EEC is open, navigate to the notification page and focus
+          return eecClient.navigate(urlToOpen).then((client) => client.focus());
         }
-        // If no window is open, open a new one
+
+        // If no EEC window is open, open a new one
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }

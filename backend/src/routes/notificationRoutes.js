@@ -27,9 +27,9 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       targetUsers = await User.find({ role }, "_id");
     }
 
-    // Send push notification to each user
+    // Send push notification to each user with notification ID
     const pushPromises = targetUsers.map((user) =>
-      sendPushNotification(user._id, title, message)
+      sendPushNotification(user._id, title, message, notification._id.toString())
     );
 
     await Promise.all(pushPromises);

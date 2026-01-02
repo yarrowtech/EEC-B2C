@@ -413,7 +413,7 @@ export default function App() {
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
             <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
-            <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
+            <Route path="/dashboard/lea                                                                             derboard" element={<Leaderboard />} />
             <Route path="games/mind-training" element={<MindTrainingGames />} />
             <Route path="gift-cards" element={<AdminGiftCardsPage />} />
             <Route path="purchases" element={<RequireAdmin><AdminPurchasesPage /></RequireAdmin>} />
