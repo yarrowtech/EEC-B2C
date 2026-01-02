@@ -17,6 +17,11 @@ node_modules/
 dist/
 build/
 
+# Zip files
+backend/backend.zip
+frontend/frontend.zip
+*.zip
+
 # Logs
 *.log
 npm-debug.log*
