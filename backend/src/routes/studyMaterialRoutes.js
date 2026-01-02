@@ -6,6 +6,8 @@ import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
 import { razorpay } from "../utils/razorpay.js";
 import User from "../models/User.js";
+import Purchase from "../models/Purchase.js";
+import { sendPurchaseConfirmationEmail } from "../utils/sendMail.js";
 
 const router = express.Router();
 
@@ -281,28 +283,90 @@ router.post("/create-order", requireAuth, async (req, res) => {
 });
 
 router.post("/verify-payment", requireAuth, async (req, res) => {
-  const {
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-    materialId,
-  } = req.body;
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      materialId,
+    } = req.body;
 
-  const body = razorpay_order_id + "|" + razorpay_payment_id;
-  const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(body)
-    .digest("hex");
+    // Get user and material details first
+    const user = await User.findById(req.user.id);
+    const material = await StudyMaterial.findById(materialId);
 
-  if (expected !== razorpay_signature) {
-    return res.status(400).json({ message: "Payment verification failed" });
+    if (!user || !material) {
+      return res.status(404).json({ message: "User or Material not found" });
+    }
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expected = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
+
+    if (expected !== razorpay_signature) {
+      // Payment verification failed - save as failed transaction
+      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      await Purchase.create({
+        user: user._id,
+        material: material._id,
+        amount: material.price,
+        paymentMethod: "Razorpay",
+        transactionId: razorpay_payment_id || `FAILED_${Date.now()}`,
+        invoiceNumber: invoiceNumber,
+        status: "failed",
+      });
+
+      return res.status(400).json({ message: "Payment verification failed" });
+    }
+
+    // Update user's purchased materials
+    await User.findByIdAndUpdate(req.user.id, {
+      $addToSet: { purchasedMaterials: materialId },
+    });
+
+    // Generate invoice number
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    // Create purchase record
+    await Purchase.create({
+      user: user._id,
+      material: material._id,
+      amount: material.price,
+      paymentMethod: "Razorpay",
+      transactionId: razorpay_payment_id,
+      invoiceNumber: invoiceNumber,
+      status: "completed",
+    });
+
+    // Send purchase confirmation email
+    sendPurchaseConfirmationEmail({
+      to: user.email,
+      name: user.name,
+      materialTitle: material.title,
+      materialSubject: material.subject,
+      materialClass: material.class,
+      amount: material.price,
+      paymentMethod: "Razorpay",
+      transactionId: razorpay_payment_id,
+      purchaseDate: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      userEmail: user.email,
+      userPhone: user.phone || "N/A",
+    }).catch((err) =>
+      console.error("Purchase confirmation email failed:", err?.message)
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("VERIFY PAYMENT ERROR:", err);
+    res.status(500).json({ message: "Payment verification failed" });
   }
-
-  await User.findByIdAndUpdate(req.user.id, {
-    $addToSet: { purchasedMaterials: materialId },
-  });
-
-  res.json({ success: true });
 });
 
 // Purchase with wallet
@@ -334,6 +398,20 @@ router.post("/purchase-with-wallet", requireAuth, async (req, res) => {
     // Check if wallet has sufficient balance
     const walletBalance = user.wallet || 0;
     if (walletBalance < material.price) {
+      // Save failed transaction due to insufficient balance
+      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const walletTransactionId = `WALLET_FAILED_${Date.now()}_${user._id.toString().slice(-6)}`;
+
+      await Purchase.create({
+        user: user._id,
+        material: material._id,
+        amount: material.price,
+        paymentMethod: "Wallet",
+        transactionId: walletTransactionId,
+        invoiceNumber: invoiceNumber,
+        status: "failed",
+      });
+
       return res.status(400).json({
         message: `Insufficient wallet balance. Required: ₹${material.price}, Available: ₹${walletBalance}`,
       });
@@ -348,6 +426,44 @@ router.post("/purchase-with-wallet", requireAuth, async (req, res) => {
     // Save user
     await user.save();
 
+    // Generate transaction ID for wallet purchase
+    const walletTransactionId = `WALLET_${Date.now()}_${user._id.toString().slice(-6)}`;
+
+    // Generate invoice number
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+    // Create purchase record
+    await Purchase.create({
+      user: user._id,
+      material: material._id,
+      amount: material.price,
+      paymentMethod: "Wallet",
+      transactionId: walletTransactionId,
+      invoiceNumber: invoiceNumber,
+      status: "completed",
+    });
+
+    // Send purchase confirmation email
+    sendPurchaseConfirmationEmail({
+      to: user.email,
+      name: user.name,
+      materialTitle: material.title,
+      materialSubject: material.subject,
+      materialClass: material.class,
+      amount: material.price,
+      paymentMethod: "Wallet",
+      transactionId: walletTransactionId,
+      purchaseDate: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      userEmail: user.email,
+      userPhone: user.phone || "N/A",
+    }).catch((err) =>
+      console.error("Purchase confirmation email failed:", err?.message)
+    );
+
     res.json({
       success: true,
       message: "Material purchased successfully",
@@ -361,6 +477,68 @@ router.post("/purchase-with-wallet", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("WALLET PURCHASE ERROR:", err);
     res.status(500).json({ message: "Failed to purchase with wallet" });
+  }
+});
+
+// Admin: Get all purchases
+router.get("/admin/purchases", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const purchases = await Purchase.find()
+      .populate("user", "name email phone")
+      .populate("material", "title subject class price")
+      .sort({ createdAt: -1 });
+
+    res.json(purchases);
+  } catch (err) {
+    console.error("FETCH PURCHASES ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch purchases" });
+  }
+});
+
+// Admin: Download invoice PDF
+router.get("/admin/purchases/:id/invoice", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id)
+      .populate("user", "name email phone")
+      .populate("material", "title subject class price");
+
+    if (!purchase) {
+      return res.status(404).json({ message: "Purchase not found" });
+    }
+
+    const { generateInvoicePdf, deleteInvoicePdf } = await import("../utils/generateInvoicePdf.js");
+
+    // Generate PDF
+    const pdfPath = await generateInvoicePdf({
+      name: purchase.user.name,
+      materialTitle: purchase.material.title,
+      materialSubject: purchase.material.subject,
+      materialClass: purchase.material.class,
+      amount: purchase.amount,
+      paymentMethod: purchase.paymentMethod,
+      transactionId: purchase.transactionId,
+      purchaseDate: new Date(purchase.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      userEmail: purchase.user.email,
+      userPhone: purchase.user.phone || "N/A",
+      invoiceNumber: purchase.invoiceNumber,
+    });
+
+    // Send PDF file
+    res.download(pdfPath, `${purchase.invoiceNumber}.pdf`, (err) => {
+      // Clean up PDF after sending
+      deleteInvoicePdf(pdfPath);
+
+      if (err) {
+        console.error("PDF download error:", err);
+      }
+    });
+  } catch (err) {
+    console.error("DOWNLOAD INVOICE ERROR:", err);
+    res.status(500).json({ message: "Failed to download invoice" });
   }
 });
 

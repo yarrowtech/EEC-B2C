@@ -1,6 +1,8 @@
 import express from "express";
 import Notification from "../models/Notification.js";
+import User from "../models/User.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { sendPushNotification } from "./pushNotificationRoutes.js";
 
 const router = express.Router();
 
@@ -14,6 +16,26 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
     role,
     createdBy: req.user.id,
   });
+
+  // Send web push notifications to target users
+  try {
+    let targetUsers = [];
+
+    if (role === "all") {
+      targetUsers = await User.find({}, "_id");
+    } else {
+      targetUsers = await User.find({ role }, "_id");
+    }
+
+    // Send push notification to each user
+    const pushPromises = targetUsers.map((user) =>
+      sendPushNotification(user._id, title, message)
+    );
+
+    await Promise.all(pushPromises);
+  } catch (error) {
+    console.error("Failed to send push notifications:", error);
+  }
 
   res.status(201).json(notification);
 });

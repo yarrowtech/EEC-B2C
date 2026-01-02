@@ -9,6 +9,7 @@ export default function StudyMaterialsPage() {
     const [user, setUser] = useState(null);
     const [materials, setMaterials] = useState([]);
     const [subject, setSubject] = useState("All");
+    const [priceFilter, setPriceFilter] = useState("All");
     const [loading, setLoading] = useState(true);
     const [openPdf, setOpenPdf] = useState(null);
     const [wallet, setWallet] = useState(0);
@@ -222,10 +223,21 @@ export default function StudyMaterialsPage() {
 
     /* ---------------- FILTER ---------------- */
     const subjects = ["All", ...new Set(materials.map((m) => m.subject))];
-    const visibleMaterials =
-        subject === "All"
-            ? materials
-            : materials.filter((m) => m.subject === subject);
+    const priceFilters = ["All", "Free", "Paid"];
+
+    let visibleMaterials = materials;
+
+    // Filter by subject
+    if (subject !== "All") {
+        visibleMaterials = visibleMaterials.filter((m) => m.subject === subject);
+    }
+
+    // Filter by price
+    if (priceFilter === "Free") {
+        visibleMaterials = visibleMaterials.filter((m) => m.isFree === true);
+    } else if (priceFilter === "Paid") {
+        visibleMaterials = visibleMaterials.filter((m) => m.isFree === false);
+    }
 
     /* ---------------- LOADING GUARD ---------------- */
     if (!user) {
@@ -291,24 +303,50 @@ export default function StudyMaterialsPage() {
                 </div>
             </div>
 
-            {/* SUBJECT FILTER */}
+            {/* FILTERS */}
             <div className="relative z-10 bg-white/80 backdrop-blur-xl rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border border-gray-200/50">
-                <h3 className="text-sm md:text-base font-bold text-gray-700 mb-3 flex items-center gap-2">
-                    <span className="text-indigo-600">📚</span> Filter by Subject
-                </h3>
-                <div className="flex gap-2 md:gap-3 flex-wrap">
-                    {subjects.map((s) => (
-                        <button
-                            key={s}
-                            onClick={() => setSubject(s)}
-                            className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all duration-300 ${subject === s
-                                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg scale-105"
-                                : "bg-white border border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 shadow-md hover:shadow-lg"
-                                }`}
-                        >
-                            {s}
-                        </button>
-                    ))}
+                {/* SUBJECT FILTER */}
+                <div className="mb-6">
+                    <h3 className="text-sm md:text-base font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <span className="text-indigo-600">📚</span> Filter by Subject
+                    </h3>
+                    <div className="flex gap-2 md:gap-3 flex-wrap">
+                        {subjects.map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setSubject(s)}
+                                className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all duration-300 ${subject === s
+                                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg scale-105"
+                                    : "bg-white border border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 shadow-md hover:shadow-lg"
+                                    }`}
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* PRICE FILTER */}
+                <div>
+                    <h3 className="text-sm md:text-base font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <span className="text-green-600">💰</span> Filter by Price
+                    </h3>
+                    <div className="flex gap-2 md:gap-3 flex-wrap">
+                        {priceFilters.map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPriceFilter(p)}
+                                className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all duration-300 ${priceFilter === p
+                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg scale-105"
+                                    : "bg-white border border-gray-200 text-gray-700 hover:border-green-300 hover:bg-green-50 shadow-md hover:shadow-lg"
+                                    }`}
+                            >
+                                {p === "Free" && " "}
+                                {p === "Paid" && " "}
+                                {p}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 

@@ -73,6 +73,7 @@ import Swal from "sweetalert2";
 import Leaderboard from "./pages/Leaderboard";
 import MindTrainingGames from "./games/MindTrainingGames";
 import AdminGiftCardsPage from './pages/AdminGiftCardsPage';
+import AdminPurchasesPage from './pages/AdminPurchasesPage';
 
 
 function getToken() {
@@ -206,6 +207,144 @@ export default function App() {
     razorpayKeys.forEach((k) => localStorage.removeItem(k));
   }, []);
 
+  // Push Notification Subscription
+  useEffect(() => {
+    const subscribeToPushNotifications = async () => {
+      try {
+        const token = getToken();
+        const user = getUser();
+
+        // Only subscribe if user is logged in and has push notifications enabled
+        if (!token || !user || user.pushNotifications === false) {
+          return;
+        }
+
+        // Check if service workers are supported
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+          console.log("Push notifications are not supported");
+          return;
+        }
+
+        // Check current permission status
+        if (Notification.permission === "denied") {
+          console.log("Notification permission denied");
+          return;
+        }
+
+        // Register service worker
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        console.log("Service Worker registered");
+
+        // Wait for service worker to be ready
+        await navigator.serviceWorker.ready;
+
+        // Check if already subscribed
+        const existingSubscription = await registration.pushManager.getSubscription();
+        if (existingSubscription) {
+          console.log("Already subscribed to push notifications");
+          return;
+        }
+
+        // If permission is default (not granted yet), we'll subscribe on first login
+        // The permission will be requested when they interact with the site
+        if (Notification.permission === "default") {
+          // Store a flag to request permission on next user interaction
+          sessionStorage.setItem("needsPushPermission", "true");
+
+          // Listen for any user interaction to request permission
+          const requestPermissionOnInteraction = async () => {
+            if (sessionStorage.getItem("needsPushPermission") === "true") {
+              sessionStorage.removeItem("needsPushPermission");
+
+              const permission = await Notification.requestPermission();
+              if (permission === "granted") {
+                // Now subscribe
+                await subscribeUserToPush(registration);
+              }
+            }
+            // Remove listeners after first interaction
+            document.removeEventListener("click", requestPermissionOnInteraction);
+            document.removeEventListener("keydown", requestPermissionOnInteraction);
+          };
+
+          document.addEventListener("click", requestPermissionOnInteraction, { once: true });
+          document.addEventListener("keydown", requestPermissionOnInteraction, { once: true });
+          return;
+        }
+
+        // If already granted, subscribe immediately
+        if (Notification.permission === "granted") {
+          await subscribeUserToPush(registration);
+        }
+
+        async function subscribeUserToPush(registration) {
+          try {
+            // Get VAPID public key from backend
+            const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+            const vapidResponse = await fetch(`${API}/api/push/vapid-public-key`);
+            const { publicKey } = await vapidResponse.json();
+
+            // Subscribe to push notifications
+            const subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey),
+            });
+
+            // Send subscription to backend
+            await fetch(`${API}/api/push/subscribe`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                endpoint: subscription.endpoint,
+                keys: {
+                  p256dh: arrayBufferToBase64(subscription.getKey("p256dh")),
+                  auth: arrayBufferToBase64(subscription.getKey("auth")),
+                },
+              }),
+            });
+
+            console.log("Successfully subscribed to push notifications");
+          } catch (error) {
+            console.error("Failed to subscribe to push:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to subscribe to push notifications:", error);
+      }
+    };
+
+    subscribeToPushNotifications();
+  }, []);
+
+  // Helper function to convert VAPID key
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, "+")
+      .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  // Helper function to convert ArrayBuffer to Base64
+  function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
   function AuthExpiryHandler() {
     const navigate = useNavigate();
 
@@ -277,6 +416,7 @@ export default function App() {
             <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
             <Route path="games/mind-training" element={<MindTrainingGames />} />
             <Route path="gift-cards" element={<AdminGiftCardsPage />} />
+            <Route path="purchases" element={<RequireAdmin><AdminPurchasesPage /></RequireAdmin>} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

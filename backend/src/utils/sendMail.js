@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { generateInvoicePdf, deleteInvoicePdf } from "./generateInvoicePdf.js";
 
 
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
@@ -42,15 +43,16 @@ verifyTransporter();
 // }
 
 /**
- * Base mail sender
+ * Base mail sender with optional attachments
  */
-export default async function sendMail({ to, subject, html }) {
+export default async function sendMail({ to, subject, html, attachments = [] }) {
   try {
     const info = await transporter.sendMail({
       from: `EEC Learning <${process.env.SMTP_EMAIL}>`,
       to,
       subject,
       html,
+      attachments,
     });
 
     console.log("✅ Email sent:", info.messageId);
@@ -564,4 +566,266 @@ export async function sendGiftCardEmail({ to, name, giftCardCode, amount, provid
     subject: `🎁 Your ${provider} Gift Card - ₹${amount}`,
     html,
   });
+}
+
+export async function sendPurchaseConfirmationEmail({
+  to,
+  name,
+  materialTitle,
+  materialSubject,
+  materialClass,
+  amount,
+  paymentMethod,
+  transactionId,
+  purchaseDate,
+  userEmail,
+  userPhone
+}) {
+  let invoicePath = null;
+
+  try {
+    // Generate invoice number
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    // Generate PDF invoice
+    invoicePath = await generateInvoicePdf({
+      name,
+      materialTitle,
+      materialSubject,
+      materialClass,
+      amount,
+      paymentMethod,
+      transactionId,
+      purchaseDate,
+      userEmail,
+      userPhone,
+      invoiceNumber
+    });
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Confirmation</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;">
+    <tr>
+      <td align="center" style="padding:40px 15px;">
+
+        <!-- MAIN CARD -->
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:16px;overflow:hidden;
+          box-shadow:0 4px 6px rgba(0,0,0,0.1);border:1px solid #e5e7eb;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+              padding:40px 30px;text-align:center;">
+              <h1 style="margin:0;font-size:28px;line-height:36px;font-weight:700;color:#ffffff;">
+                📚 Purchase Successful!
+              </h1>
+              <p style="margin:8px 0 0 0;font-size:14px;color:#e0e7ff;">
+                Thank you for your purchase
+              </p>
+            </td>
+          </tr>
+
+          <!-- BODY -->
+          <tr>
+            <td style="padding:40px 30px;">
+              <p style="margin:0 0 20px 0;font-size:16px;line-height:24px;color:#374151;">
+                Hi <strong>${name}</strong>,
+              </p>
+              <p style="margin:0 0 20px 0;font-size:16px;line-height:24px;color:#374151;">
+                Your purchase has been confirmed! You now have access to your study material.
+              </p>
+
+              <!-- INVOICE DETAILS -->
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;margin:30px 0;">
+                <tr>
+                  <td style="padding:24px;">
+                    <h2 style="margin:0 0 20px 0;font-size:18px;color:#111827;border-bottom:2px solid #e5e7eb;padding-bottom:10px;">
+                      📄 Invoice Details
+                    </h2>
+
+                    <!-- Material Details -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                      <tr>
+                        <td style="padding:8px 0;">
+                          <p style="margin:0;font-size:14px;color:#6b7280;font-weight:600;">
+                            Study Material
+                          </p>
+                          <p style="margin:4px 0 0 0;font-size:16px;color:#111827;font-weight:700;">
+                            ${materialTitle}
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;">
+                          <p style="margin:0;font-size:14px;color:#6b7280;">
+                            <strong>Subject:</strong> ${materialSubject} | <strong>Class:</strong> ${materialClass}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Payment Details -->
+                    <table width="100%" cellpadding="0" cellspacing="0"
+                      style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+                      <tr>
+                        <td style="padding:8px 0;">
+                          <table width="100%">
+                            <tr>
+                              <td style="font-size:14px;color:#6b7280;padding:4px 0;">Amount:</td>
+                              <td style="font-size:16px;color:#111827;font-weight:700;text-align:right;padding:4px 0;">₹${amount}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:14px;color:#6b7280;padding:4px 0;">Payment Method:</td>
+                              <td style="font-size:14px;color:#111827;font-weight:600;text-align:right;padding:4px 0;">${paymentMethod}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:14px;color:#6b7280;padding:4px 0;">Transaction ID:</td>
+                              <td style="font-size:12px;color:#6366f1;font-weight:600;text-align:right;padding:4px 0;font-family:monospace;">${transactionId}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:14px;color:#6b7280;padding:4px 0;">Date:</td>
+                              <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${purchaseDate}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Customer Details -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+                      <tr>
+                        <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
+                          <p style="margin:8px 0 4px 0;font-size:14px;color:#6b7280;font-weight:600;">
+                            Customer Details
+                          </p>
+                          <p style="margin:4px 0;font-size:14px;color:#111827;">
+                            <strong>Name:</strong> ${name}
+                          </p>
+                          <p style="margin:4px 0;font-size:14px;color:#111827;">
+                            <strong>Email:</strong> ${userEmail}
+                          </p>
+                          ${userPhone ? `<p style="margin:4px 0;font-size:14px;color:#111827;"><strong>Phone:</strong> ${userPhone}</p>` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ACCESS INFO -->
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="background:#ecfdf5;border-left:4px solid #10b981;
+                border-radius:4px;margin:24px 0;">
+                <tr>
+                  <td style="padding:16px;">
+                    <h3 style="margin:0 0 12px 0;font-size:16px;color:#065f46;font-weight:600;">
+                      ✅ How to Access Your Material
+                    </h3>
+                    <ol style="margin:0;padding-left:20px;color:#065f46;font-size:14px;line-height:22px;">
+                      <li>Login to your EEC account</li>
+                      <li>Go to "Study Materials" section</li>
+                      <li>Find your purchased material</li>
+                      <li>Click to view or download</li>
+                    </ol>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- IMPORTANT NOTES -->
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="background:#fef2f2;border-left:4px solid #ef4444;
+                border-radius:4px;margin:24px 0;">
+                <tr>
+                  <td style="padding:16px;">
+                    <h3 style="margin:0 0 12px 0;font-size:16px;color:#991b1b;font-weight:600;">
+                      ⚠️ Important Notes
+                    </h3>
+                    <ul style="margin:0;padding-left:20px;color:#991b1b;font-size:14px;line-height:22px;">
+                      <li>Keep this email for your records</li>
+                      <li>Your purchase is non-refundable</li>
+                      <li>Lifetime access to the material</li>
+                      <li>Contact support for any issues</li>
+                    </ul>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA BUTTON -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:30px 0;">
+                    <a href="${process.env.CLIENT_ORIGIN}/dashboard/study-materials"
+                      style="display:inline-block;background:#4f46e5;color:#ffffff;
+                      padding:14px 32px;border-radius:8px;text-decoration:none;
+                      font-weight:700;font-size:16px;
+                      box-shadow:0 4px 6px rgba(79,70,229,0.3);">
+                      Access Study Material →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0 0;font-size:14px;line-height:22px;color:#6b7280;">
+                Thank you for choosing EEC Learning Platform!
+              </p>
+              <p style="margin:8px 0 0 0;font-size:14px;line-height:22px;color:#6b7280;">
+                Happy Learning! 📖
+              </p>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding:30px;background:#f9fafb;text-align:center;">
+              <p style="margin:0 0 10px 0;font-size:14px;color:#6b7280;">
+                Need help? Contact our support team
+              </p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;">
+                This is an automated email. Please do not reply.<br>
+                © ${new Date().getFullYear()} EEC Learning Platform. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+    // Send email with PDF attachment
+    await sendMail({
+      to,
+      subject: `📚 Purchase Confirmation - ${materialTitle}`,
+      html,
+      attachments: [
+        {
+          filename: `Invoice_${invoiceNumber}.pdf`,
+          path: invoicePath,
+          contentType: "application/pdf"
+        }
+      ]
+    });
+
+    // Delete the temporary PDF file after sending
+    deleteInvoicePdf(invoicePath);
+
+  } catch (error) {
+    // Clean up PDF file if it was created
+    if (invoicePath) {
+      deleteInvoicePdf(invoicePath);
+    }
+    console.error("Error sending purchase confirmation email:", error);
+    throw error;
+  }
 }

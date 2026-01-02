@@ -30,6 +30,7 @@ import classRoutes from "./routes/classRoutes.js";
 import boardRoutes from "./routes/boardRoutes.js";
 import gameRoutes from "./routes/gameRoutes.js";
 import giftCardRoutes from "./routes/giftCards.js";
+import pushNotificationRoutes from "./routes/pushNotificationRoutes.js";
 
 const app = express();
 
@@ -83,6 +84,7 @@ app.use("/api/classes", classRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/games", gameRoutes);
 app.use("/api/gift-cards", giftCardRoutes);
+app.use("/api/push", pushNotificationRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;
