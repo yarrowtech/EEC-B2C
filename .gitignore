@@ -4,6 +4,13 @@
 # Documentation files
 GIFT_CARD_SYSTEM.md
 WELCOME_BONUS_DEBUG.md
+AI_QUESTION_GENERATOR_SETUP.md
+AI_SERVICE_SETUP.md
+MIGRATION_TO_LOCAL_AI.md
+QUICK_START.md
+
+# AI Service folder
+ai-service/
 
 # Environment variables
 backend/.env
