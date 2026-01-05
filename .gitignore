@@ -11,6 +11,7 @@ QUICK_START.md
 
 # AI Service folder
 ai-service/
+verify_setup.sh
 
 # Environment variables
 backend/.env
