@@ -248,6 +248,7 @@ export async function generateInvoicePdf({
         .fillColor("#374151")
         .font("Helvetica");
 
+      doc.text(`Payment Date: ${purchaseDate}`, 50, paymentY + 15);
       doc.text(`Payment Method: ${paymentMethod}`, 50, paymentY + 20);
       doc.text(`Transaction ID: ${transactionId}`, 50, paymentY + 35);
       doc.text("Status: PAID", 50, paymentY + 50);
@@ -300,13 +301,13 @@ export async function generateInvoicePdf({
           { align: "center", width: 495 }
         );
 
-      doc
-        .fontSize(8)
-        .fillColor("#9ca3af")
-        .text("Empowering Education, One Student at a Time", 50, footerY + 15, {
-          align: "center",
-          width: 495,
-        });
+      // doc
+      //   .fontSize(8)
+      //   .fillColor("#9ca3af")
+      //   .text("Empowering Education, One Student at a Time", 50, footerY + 15, {
+      //     align: "center",
+      //     width: 495,
+      //   });
 
       // Finalize PDF
       doc.end();

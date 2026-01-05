@@ -154,7 +154,7 @@ export async function runAutoPromotion() {
       timestamp: new Date(),
     };
 
-    console.log("Auto-promotion completed:", stats);
+    // console.log("Auto-promotion completed:", stats);
     return stats;
   } catch (error) {
     console.error("Auto-promotion error:", error);

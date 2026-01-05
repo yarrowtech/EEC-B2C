@@ -33,6 +33,8 @@ import gameRoutes from "./routes/gameRoutes.js";
 import giftCardRoutes from "./routes/giftCards.js";
 import pushNotificationRoutes from "./routes/pushNotificationRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
+import aiQuestionRoutes from "./routes/aiQuestionRoutes.js";
+import selfStudyRoutes from "./routes/selfStudyRoutes.js";
 
 const app = express();
 
@@ -88,6 +90,8 @@ app.use("/api/games", gameRoutes);
 app.use("/api/gift-cards", giftCardRoutes);
 app.use("/api/push", pushNotificationRoutes);
 app.use("/api/promotion", promotionRoutes);
+app.use("/api/ai-questions", aiQuestionRoutes);
+app.use("/api/self-study", selfStudyRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;

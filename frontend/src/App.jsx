@@ -74,6 +74,10 @@ import Leaderboard from "./pages/Leaderboard";
 import MindTrainingGames from "./games/MindTrainingGames";
 import AdminGiftCardsPage from './pages/AdminGiftCardsPage';
 import AdminPurchasesPage from './pages/AdminPurchasesPage';
+import AIQuestionGenerator from "./pages/AIQuestionGenerator";
+import SelfStudy from "./pages/SelfStudy";
+import SelfStudyResults from "./pages/SelfStudyResults";
+import SelfStudyResultDetail from "./pages/SelfStudyResultDetail";
 
 
 function getToken() {
@@ -428,11 +432,15 @@ export default function App() {
             <Route path="games/mind-training" element={<MindTrainingGames />} />
             <Route path="gift-cards" element={<AdminGiftCardsPage />} />
             <Route path="purchases" element={<RequireAdmin><AdminPurchasesPage /></RequireAdmin>} />
+            <Route path="self-study" element={<SelfStudy />} />
+            <Route path="self-study/results" element={<SelfStudyResults />} />
+            <Route path="self-study/results/:id" element={<SelfStudyResultDetail />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />
             <Route path="questions/list" element={<RequireAdmin><QuestionsList /></RequireAdmin>} />
             <Route path="questions/edit/:id" element={<RequireAdmin><QuestionsEdit /></RequireAdmin>} />
+            <Route path="questions/ai-generator" element={<RequireAdmin><AIQuestionGenerator /></RequireAdmin>} />
 
             <Route path="questions/mcq-single" element={
               <RequireAdmin><QuestionsMCQUpload /></RequireAdmin>

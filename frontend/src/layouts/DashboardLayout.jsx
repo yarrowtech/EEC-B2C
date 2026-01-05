@@ -284,6 +284,11 @@ export default function DashboardLayout() {
             { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true },
         ];
 
+        // Add Self Study for all users (students, teachers, admins)
+        // base.push(
+        //     { to: "/dashboard/self-study", label: "Self Study", icon: <Library size={18} /> }
+        // );
+
         if (role === "admin") {
             base.push(
                 { to: "/dashboard/students", label: "Students", icon: <Users size={18} /> },

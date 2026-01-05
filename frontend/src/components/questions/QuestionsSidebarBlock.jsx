@@ -5,6 +5,7 @@ import {
   HelpCircle,
   ChevronDown,
   ListChecks,
+  Sparkles,
 } from "lucide-react";
 
 /* MATCH DASHBOARD SIDEBAR STYLE */
@@ -105,7 +106,7 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             }
           >
             <ListChecks size={18} />
-            <span>Add Questionss</span>
+            <span>Add Questions</span>
           </NavLink>
 
           {/* ALL QUESTIONS */}
@@ -119,6 +120,19 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
           >
             <span className="w-2 h-2 rounded-full bg-orange-400" />
             All Questions
+          </NavLink>
+
+          {/* AI QUESTION GENERATOR */}
+          <NavLink
+            to="/dashboard/questions/ai-generator"
+            className={({ isActive }) =>
+              `${linkBase} ${
+                isActive ? linkActive : "hover:bg-yellow-100"
+              }`
+            }
+          >
+            <Sparkles size={18} />
+            <span>AI Generator</span>
           </NavLink>
 
         </div>
