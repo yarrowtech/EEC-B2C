@@ -25,6 +25,7 @@ import {
   GitGraphIcon,
   BookPlus
 } from 'lucide-react';
+import { getJSON } from '../lib/api';
 
 const ResultsView = () => {
   const [selectedSemester, setSelectedSemester] = useState('current');
@@ -34,6 +35,8 @@ const ResultsView = () => {
   const userId = user._id || user.id;
   const [classRank, setClassRank] = useState(null);
   const [totalStudents, setTotalStudents] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [activeExam, setActiveExam] = useState(null);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   useEffect(() => {
     if (!userId) return;
@@ -50,6 +53,62 @@ const ResultsView = () => {
       })
       .catch(err => console.error("Rank fetch error", err));
   }, []);
+
+  useEffect(() => {
+    if (!showModal || !activeExam) return;
+    let mounted = true;
+
+    async function hydrateQuestions() {
+      const questions = Array.isArray(activeExam.questions) ? activeExam.questions : [];
+      if (!questions.length) return;
+
+      const answerMap = new Map(
+        (activeExam.answers || []).map((a) => [String(a.qid), a])
+      );
+
+      const needsFetch = questions.some(
+        (q) =>
+          typeof q === "string" ||
+          (!q?.question && !q?.choiceMatrix?.prompt)
+      );
+
+      if (!needsFetch) return;
+
+      const ids = questions
+        .map((q) => (typeof q === "string" ? q : q?._id))
+        .filter(Boolean)
+        .map(String);
+
+      const uniqueIds = [...new Set(ids)];
+      const fetched = await Promise.all(
+        uniqueIds.map((qid) => getJSON(`/api/questions/${qid}`).catch(() => null))
+      );
+
+      const fetchedMap = new Map(
+        fetched.filter(Boolean).map((q) => [String(q._id), q])
+      );
+
+      const nextQuestions = questions.map((q) => {
+        const id = typeof q === "string" ? q : q?._id;
+        const base = typeof q === "object" ? q : null;
+        const full = fetchedMap.get(String(id)) || base;
+        if (!full) return q;
+        return {
+          ...full,
+          userAnswer: base?.userAnswer || answerMap.get(String(id)) || null,
+        };
+      });
+
+      if (mounted) {
+        setActiveExam((prev) => (prev ? { ...prev, questions: nextQuestions } : prev));
+      }
+    }
+
+    hydrateQuestions();
+    return () => {
+      mounted = false;
+    };
+  }, [showModal, activeExam]);
 
   // useEffect(() => {
   //   fetch(`${API}/api/exams/user-results/${user._id}`, {
@@ -176,7 +235,8 @@ const ResultsView = () => {
 
       subjects: [
         {
-          name: att.subjectName || "Unknown Subject",
+          name: att.subjectName || att.subject?.name || att.subject || "Unknown Subject",
+          topicName: att.topicName || att.topic?.name || att.topic || "Unknown Topic",
           marks: att.score,
           maxMarks: att.total,
 
@@ -203,6 +263,114 @@ const ResultsView = () => {
         }
       ]
     }));
+  }
+
+  function getSmartTip(percent) {
+    if (percent >= 90) {
+      return "Outstanding! Keep the streak—try higher difficulty questions and aim for 95%+.";
+    }
+    if (percent >= 75) {
+      return "Great job! Review 1–2 weak areas and you can cross 90% soon.";
+    }
+    if (percent >= 50) {
+      return "Good effort! Focus on mistakes and practice 10 questions daily to build speed.";
+    }
+    return "Every expert started here. Revisit basics and you will see steady improvement.";
+  }
+
+  function getMotivation(percent) {
+    if (percent >= 90) return "You are in the top band—keep pushing!";
+    if (percent >= 75) return "Strong progress—consistency will take you to the next level.";
+    if (percent >= 50) return "Momentum matters—small daily wins add up fast.";
+    return "No pressure—show up daily and your score will climb.";
+  }
+
+  function formatAnswerText(q, answerKeys, trueFalseValue) {
+    if (q.type === "true-false") {
+      if (!trueFalseValue) return "—";
+      return trueFalseValue.toString().toLowerCase() === "true" ? "True" : "False";
+    }
+
+    const keys = Array.isArray(answerKeys) ? answerKeys : [];
+    if (!keys.length) return "—";
+    return keys
+      .map((key) => {
+        const opt = q.options?.find((o) => o.key === key);
+        const label = `${key}`;
+        return opt?.text ? `${label}. ${opt.text}` : label;
+      })
+      .join(", ");
+  }
+
+  function formatChoiceMatrixCorrect(q) {
+    const rows = q.choiceMatrix?.rows || [];
+    const cols = q.choiceMatrix?.cols || [];
+    const cells = q.choiceMatrix?.correctCells || [];
+    if (!cells.length) return "—";
+
+    return cells
+      .map((cell) => {
+        const [rIdx, cIdx] = String(cell).split("-").map(Number);
+        const rowLabel = rows[rIdx] || `Row ${rIdx + 1}`;
+        const colLabel = cols[cIdx] || `Column ${cIdx + 1}`;
+        return `${rowLabel} — ${colLabel}`;
+      })
+      .join(", ");
+  }
+
+  function formatChoiceMatrixUser(q) {
+    const rows = q.choiceMatrix?.rows || [];
+    const cols = q.choiceMatrix?.cols || [];
+    const userMatrix = q.userAnswer?.matrix || {};
+    const entries = Object.entries(userMatrix);
+    if (!entries.length) return "—";
+
+    return entries
+      .map(([rowIndex, colValue]) => {
+        const rIdx = Number(rowIndex);
+        const rowLabel = rows[rIdx] || `Row ${rIdx + 1}`;
+        const colLabel =
+          cols.find((c) => c.toLowerCase() === String(colValue).toLowerCase()) ||
+          colValue ||
+          `Column`;
+        return `${rowLabel} — ${colLabel}`;
+      })
+      .join(", ");
+  }
+
+  function isChoiceMatrixCorrect(q) {
+    const rows = q.choiceMatrix?.rows || [];
+    const cols = q.choiceMatrix?.cols || [];
+    const userMatrix = q.userAnswer?.matrix || {};
+    const correctCells = q.choiceMatrix?.correctCells || [];
+    if (!correctCells.length) return false;
+
+    const expected = new Set(
+      correctCells.map((cell) => {
+        const [rIdx, cIdx] = String(cell).split("-").map(Number);
+        const rowLabel = rows[rIdx] || `Row ${rIdx + 1}`;
+        const colLabel = cols[cIdx] || `Column ${cIdx + 1}`;
+        return `${rowLabel}__${colLabel}`;
+      })
+    );
+
+    const actual = new Set(
+      Object.entries(userMatrix).map(([rowIndex, colValue]) => {
+        const rIdx = Number(rowIndex);
+        const rowLabel = rows[rIdx] || `Row ${rIdx + 1}`;
+        const colLabel =
+          cols.find((c) => c.toLowerCase() === String(colValue).toLowerCase()) ||
+          colValue ||
+          `Column`;
+        return `${rowLabel}__${colLabel}`;
+      })
+    );
+
+    if (!actual.size || actual.size !== expected.size) return false;
+    for (const item of expected) {
+      if (!actual.has(item)) return false;
+    }
+    return true;
   }
 
 
@@ -297,8 +465,6 @@ const ResultsView = () => {
     examResults.length > 0
       ? (examResults.reduce((acc, e) => acc + e.percentage, 0) / examResults.length).toFixed(2)
       : 0;
-  const [showModal, setShowModal] = useState(false);
-  const [activeExam, setActiveExam] = useState(null);
   // Pagination for exam tables
   const [examPage, setExamPage] = useState(1);
   const examsPerPage = 3;
@@ -319,7 +485,7 @@ const ResultsView = () => {
     : "0.0";
 
   const bestScore = hasResults
-    ? Math.max(...examResults.map(exam => exam.percentage)).toFixed(1)
+    ? Math.max(...examResults.map(exam => exam.percentage)).toFixed()
     : "0.0";
 
   const excellentCount = hasResults
@@ -778,13 +944,10 @@ const ResultsView = () => {
                 </div>
 
                 <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
-                  {activeExam.percent >= 90
-                    ? "Outstanding! Try higher difficulty questions to become a champion."
-                    : activeExam.percent >= 75
-                      ? "Amazing progress! Polish weak areas to cross 90%."
-                      : activeExam.percent >= 50
-                        ? "Keep going! Revise mistakes and practice daily."
-                        : "Everyone starts somewhere. Practice basics and grow stronger!"}
+                  {getSmartTip(activeExam.percent)}
+                </p>
+                <p className="text-emerald-700 text-xs md:text-sm font-semibold mt-2">
+                  {getMotivation(activeExam.percent)}
                 </p>
               </div>
 
@@ -796,13 +959,16 @@ const ResultsView = () => {
 
               <div className="space-y-6">
                 {activeExam.questions.map((q, index) => {
-                  const userAns =
-                    q.userAnswer?.mcq?.join(", ") ||
-                    q.userAnswer?.trueFalse ||
-                    "—";
-
-                  const correctAns = q.correct.join(", ");
-                  const isCorrect = userAns === correctAns;
+                  const userAns = formatAnswerText(
+                    q,
+                    q.userAnswer?.mcq,
+                    q.userAnswer?.trueFalse
+                  );
+                  const correctAns = formatAnswerText(q, q.correct);
+                  const isCorrect =
+                    q.type === "choice-matrix"
+                      ? isChoiceMatrixCorrect(q)
+                      : userAns === correctAns;
 
                   return (
                     <div
@@ -818,22 +984,41 @@ const ResultsView = () => {
                     >
                       <p className="font-semibold text-gray-900 mb-3 flex items-start gap-2">
                         <Sparkles className="w-5 h-5 text-yellow-500 mt-1" />
-                        {index + 1}. {q.question}
+                        {index + 1}. {q.type === "choice-matrix" ? q.choiceMatrix?.prompt : q.question}
                       </p>
 
-                      <p className="text-green-700 text-sm font-semibold">
-                        Correct Answer:
-                        <span className="ml-2 px-2 py-0.5 rounded bg-green-100">
-                          {correctAns}
-                        </span>
-                      </p>
+                      {q.type === "choice-matrix" ? (
+                        <>
+                          <p className="text-green-700 text-sm font-semibold">
+                            Correct Answer:
+                            <span className="ml-2 px-2 py-0.5 rounded bg-green-100">
+                              {formatChoiceMatrixCorrect(q)}
+                            </span>
+                          </p>
+                          <p className="text-blue-700 text-sm font-semibold mt-1">
+                            Your Answer:
+                            <span className="ml-2 px-2 py-0.5 rounded bg-blue-100">
+                              {formatChoiceMatrixUser(q)}
+                            </span>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-green-700 text-sm font-semibold">
+                            Correct Answer:
+                            <span className="ml-2 px-2 py-0.5 rounded bg-green-100">
+                              {correctAns}
+                            </span>
+                          </p>
 
-                      <p className="text-blue-700 text-sm font-semibold mt-1">
-                        Your Answer:
-                        <span className="ml-2 px-2 py-0.5 rounded bg-blue-100">
-                          {userAns}
-                        </span>
-                      </p>
+                          <p className="text-blue-700 text-sm font-semibold mt-1">
+                            Your Answer:
+                            <span className="ml-2 px-2 py-0.5 rounded bg-blue-100">
+                              {userAns}
+                            </span>
+                          </p>
+                        </>
+                      )}
 
                       <span
                         className={`

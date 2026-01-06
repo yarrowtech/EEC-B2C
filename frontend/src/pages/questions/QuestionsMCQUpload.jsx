@@ -1,50 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
-import { FiSliders, FiHelpCircle, FiCheckCircle, FiTag, FiUpload } from "react-icons/fi";
+import { FiCheckCircle, FiUpload, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 
 export default function QuestionsMCQUpload() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
-    difficulty: "easy",
     question: "",
     options: ["", "", "", ""],
     correct: "A",
     explanation: "",
     tags: "",
-    stage: 1,
-    level: "basic",
-    className: "",
-    board: "",
   });
-  const user = JSON.parse(localStorage.getItem("user"));
-  const [classes, setClasses] = useState([]);
-  const [boards, setBoards] = useState([]);
-
-  useEffect(() => {
-    async function loadMeta() {
-      try {
-        const [clsRes, brdRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/api/classes`),
-          fetch(`${import.meta.env.VITE_API_URL}/api/boards`)
-        ]);
-
-        const clsData = await clsRes.json();
-        const brdData = await brdRes.json();
-
-        setClasses(Array.isArray(clsData) ? clsData : []);
-        setBoards(Array.isArray(brdData) ? brdData : []);
-      } catch (err) {
-        console.error("Failed to load class/board", err);
-      }
-    }
-
-    loadMeta();
-  }, []);
-
 
   const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
   const updateOpt = (i, v) =>
@@ -56,269 +26,217 @@ export default function QuestionsMCQUpload() {
 
   async function submit(e) {
     e.preventDefault();
-    if (!scope.subject || !scope.topic)
-      // return alert("Pick Subject & Topic first");
-      return toast.warn("Pick Subject & Topic first");
 
-    if (!form.className)
-      return toast.warn("Select Class for the question.");
+    // Validate all required scope fields
+    if (!scope.board || !scope.class || !scope.subject || !scope.topic ||
+        !scope.stage || !scope.difficulty || !scope.questionType) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
 
-    if (!form.board)
-      return toast.warn("Select Board for the question.");
+    // Validate question fields
+    if (!form.question.trim()) {
+      return toast.warn("Please enter the question");
+    }
+
+    if (form.options.some(opt => !opt.trim())) {
+      return toast.warn("Please fill all options");
+    }
 
     setBusy(true);
     try {
+      // Map stage names to numbers (backend expects 1, 2, or 3)
+      const stageMap = {
+        "Foundation": 1,
+        "Intermediate": 2,
+        "Advanced": 3
+      };
+
+      // Map stage to level
+      const levelMap = {
+        "Foundation": "basic",
+        "Intermediate": "intermediate",
+        "Advanced": "advanced"
+      };
+
       const payload = {
+        board: scope.board,
+        class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        difficulty: form.difficulty,
-        tags: form.tags,
+        stage: stageMap[scope.stage] || 1,
+        level: levelMap[scope.stage] || "basic",
+        difficulty: scope.difficulty.toLowerCase(),
+        questionType: scope.questionType,
         question: form.question,
         options: form.options,
         correct: form.correct,
         explanation: form.explanation,
-        stage: form.stage,
-        level: form.level,
-        class: form.className,
-        board: form.board,
-        // createdBy: req.user.id, 
+        tags: form.tags,
       };
 
-      const out = await postQuestion("mcq-single", payload);
-      // alert(`Saved! id=${out.id}`);
-      toast.success("Question saved!");
+      await postQuestion("mcq-single", payload);
+      toast.success("Question saved successfully!");
 
+      // Reset only the question form, keep scope intact
       setForm({
-        difficulty: "easy",
         question: "",
         options: ["", "", "", ""],
         correct: "A",
         explanation: "",
         tags: "",
-        stage: 1,
-        level: "basic",
-        className: "",
-        board: "",
       });
     } catch (err) {
-      // alert(err.message);
       toast.error(err.message || "Failed to save question.");
     } finally {
       setBusy(false);
     }
   }
 
+  // Check if all scope parameters are selected
+  const isScopeComplete = scope.board && scope.class && scope.subject &&
+                          scope.topic && scope.stage && scope.difficulty &&
+                          scope.questionType;
+
   return (
     <>
       <ToastContainer position="bottom-right" />
-      <form
-        onSubmit={submit}
-        className="space-y-8 rounded-3xl bg-gradient-to-br from-white/70 to-white/30 
-                 border border-white/40 backdrop-blur-xl shadow-xl p-8"
-      >
+      <div className="space-y-6 p-6">
         {/* Page Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl shadow">
-            <FiSliders size={22} />
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg">
+            <FiCheckCircle size={24} />
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            MCQ — Single Correct
-          </h1>
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              Add MCQ — Single Correct
+            </h1>
+            <p className="text-slate-600 text-sm mt-1">
+              Select all parameters, then add your question below
+            </p>
+          </div>
         </div>
 
-        {/* Subject / Topic Picker */}
+        {/* Subject / Topic Picker - Now includes all 7 parameters */}
         <SubjectTopicPicker />
 
-        {/* Section: Settings */}
-        <div className="rounded-2xl backdrop-blur-lg p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <FiSliders className="text-indigo-600" />
-            <h2 className="text-lg font-bold text-slate-800">Question Settings</h2>
+        {/* Question Form - Only shows if scope is complete */}
+        {!isScopeComplete ? (
+          <div className="rounded-3xl bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 p-8 text-center">
+            <FiAlertCircle className="mx-auto text-orange-500 mb-3" size={48} />
+            <h3 className="text-xl font-bold text-orange-900 mb-2">
+              Complete All Parameters First
+            </h3>
+            <p className="text-orange-700">
+              Please select Board, Class, Subject, Topic, Stage, Difficulty, and Question Type above to continue
+            </p>
           </div>
-
-          <div className="grid sm:grid-cols-3 gap-6">
-            {/* Difficulty */}
+        ) : (
+          <form
+            onSubmit={submit}
+            className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8"
+          >
+            {/* Question Text */}
             <div>
-              <label className="font-medium text-slate-700 mb-1 flex gap-1 items-center">
-                <FiHelpCircle className="text-blue-500" /> Difficulty
+              <label className="font-bold text-slate-800 mb-2 block text-lg">
+                Question Text
               </label>
-              <select
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                         focus:ring-2 focus:ring-blue-500"
-                value={form.difficulty}
-                onChange={(e) => update("difficulty", e.target.value)}
-              >
-                <option value="easy">Easy</option>
-                <option value="moderate">Moderate</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-
-            {/* Stage */}
-            <div>
-              <label className="font-medium text-slate-700 mb-1">Stage</label>
-              <select
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                         focus:ring-2 focus:ring-purple-500"
-                value={form.stage}
-                onChange={(e) => update("stage", Number(e.target.value))}
-              >
-                <option value={1}>Stage 1: Basic</option>
-                {/* <option value={2}>Stage 2: Intermediate</option>
-              <option value={3}>Stage 3: Advanced</option> */}
-              </select>
-            </div>
-
-            <div>
-              <label className="font-medium text-slate-700 mb-1">Select Class</label>
-              <select
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-               focus:ring-2 focus:ring-purple-500"
-                value={form.className}
-                onChange={(e) => update("className", e.target.value)}
-              >
-                <option value="">Select Class</option>
-                {classes.map((c) => (
-                  <option key={c._id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-                {/* <option value="Class 11">Class 11</option>
-              <option value="Class 12">Class 12</option> */}
-              </select>
-            </div>
-
-            <div>
-              <label className="font-medium text-slate-700 mb-1 flex gap-1 items-center">Select Board</label>
-              <select
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
-                value={form.board}
-                onChange={(e) => update("board", e.target.value)}
-              >
-                <option value="">Select Board</option>
-                {boards.map((b) => (
-                  <option key={b._id} value={b.name}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* <select
-              className="w-full rounded-xl px-4 py-3 bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
-              value={form.board}
-              onChange={(e) => update("board", e.target.value)}
-            >
-              <option value="">Select Board</option>
-              <option value="CBSE">CBSE</option>
-              <option value="ICSE">ICSE</option>
-            </select> */}
-
-
-
-            {/* Tags */}
-            <div>
-              <label className="font-medium text-slate-700 mb-1 flex gap-1 items-center">
-                <FiTag className="text-green-600" /> Tags
-              </label>
-              <input
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                         focus:ring-2 focus:ring-green-500"
-                placeholder="algebra, motion, grammar…"
-                value={form.tags}
-                onChange={(e) => update("tags", e.target.value)}
+              <textarea
+                className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Enter your question here..."
+                value={form.question}
+                onChange={(e) => update("question", e.target.value)}
               />
             </div>
-          </div>
-        </div>
 
-        {/* Section: Question Text */}
-        <div className="rounded-2xlbackdrop-blur-lg p-6">
-          <label className="font-semibold text-slate-800 mb-2 block">
-            Question
-          </label>
-          <textarea
-            className="w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-32 
-                     focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your question here..."
-            value={form.question}
-            onChange={(e) => update("question", e.target.value)}
-          />
-        </div>
-
-        {/* Section: Options */}
-        <div className="rounded-2xl backdrop-blur-lg p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <FiCheckCircle className="text-green-600" />
-            <h2 className="text-lg font-semibold text-slate-800">Options</h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            {["A", "B", "C", "D"].map((L, i) => (
-              <div key={L}>
-                <label className="font-medium text-slate-700 mb-1">Option {L}</label>
-                <input
-                  className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                           focus:ring-2 focus:ring-blue-500"
-                  placeholder={`Enter option ${L}`}
-                  value={form.options[i]}
-                  onChange={(e) => updateOpt(i, e.target.value)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Section: Correct + Explanation */}
-        <div className="rounded-2xl backdrop-blur-lg p-6">
-          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Options */}
             <div>
-              <label className="font-medium text-slate-700 mb-2 block">
-                Correct Option
-              </label>
-              <select
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                         focus:ring-2 focus:ring-blue-500"
-                value={form.correct}
-                onChange={(e) => update("correct", e.target.value)}
-              >
-                {["A", "B", "C", "D"].map((x) => (
-                  <option key={x} value={x}>
-                    {x}
-                  </option>
+              <div className="flex items-center gap-2 mb-3">
+                <FiCheckCircle className="text-green-600" />
+                <h2 className="text-lg font-bold text-slate-800">Answer Options</h2>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                {["A", "B", "C", "D"].map((L, i) => (
+                  <div key={L}>
+                    <label className="font-semibold text-slate-700 mb-2 block">
+                      Option {L}
+                    </label>
+                    <input
+                      className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder={`Enter option ${L}`}
+                      value={form.options[i]}
+                      onChange={(e) => updateOpt(i, e.target.value)}
+                    />
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
 
+            {/* Correct Answer & Explanation */}
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div>
+                <label className="font-bold text-slate-800 mb-2 block">
+                  Correct Answer
+                </label>
+                <select
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                           focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                  value={form.correct}
+                  onChange={(e) => update("correct", e.target.value)}
+                >
+                  {["A", "B", "C", "D"].map((x) => (
+                    <option key={x} value={x}>
+                      Option {x}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-800 mb-2 block">
+                  Tags (optional)
+                </label>
+                <input
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                  placeholder="algebra, physics, grammar..."
+                  value={form.tags}
+                  onChange={(e) => update("tags", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Explanation */}
             <div>
-              <label className="font-medium text-slate-700 mb-2 block">
+              <label className="font-bold text-slate-800 mb-2 block">
                 Explanation (optional)
               </label>
               <textarea
-                className="w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-24 
-                         focus:ring-2 focus:ring-purple-500"
-                placeholder="Explain the logic behind the answer..."
+                className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                         focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                placeholder="Explain why this is the correct answer..."
                 value={form.explanation}
                 onChange={(e) => update("explanation", e.target.value)}
               />
             </div>
-          </div>
-        </div>
 
-        {/* Save Button */}
-        <button
-          disabled={busy}
-          className="
-          flex items-center gap-2
-          rounded-xl px-6 py-3 
-          bg-blue-600 text-white font-semibold
-          shadow-md hover:bg-blue-700 hover:shadow-xl
-          active:scale-95 transition-all disabled:opacity-50
-        "
-        >
-          <FiUpload /> {busy ? "Saving..." : "Save Question"}
-        </button>
-      </form>
+            {/* Save Button */}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full flex items-center justify-center gap-2
+                       rounded-xl px-6 py-4
+                       bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg
+                       shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-indigo-700
+                       active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiUpload size={20} /> {busy ? "Saving Question..." : "Save Question"}
+            </button>
+          </form>
+        )}
+      </div>
     </>
   );
 }

@@ -129,6 +129,37 @@ export async function login(req, res) {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ message: "Invalid credentials." });
 
+    // Look up Board and Class IDs
+    let boardId = null;
+    let classId = null;
+    let boardName = user.board;
+    let className = user.className;
+
+    try {
+      // Dynamically import models to avoid circular dependency
+      const Board = (await import("../models/Board.js")).default;
+      const Class = (await import("../models/Class.js")).default;
+
+      if (user.board) {
+        const boardDoc = await Board.findOne({ name: user.board });
+        if (boardDoc) {
+          boardId = boardDoc._id.toString();
+          boardName = boardDoc.name;
+        }
+      }
+
+      if (user.className) {
+        const classDoc = await Class.findOne({ name: user.className });
+        if (classDoc) {
+          classId = classDoc._id.toString();
+          className = classDoc.name;
+        }
+      }
+    } catch (lookupErr) {
+      console.error("Board/Class lookup error:", lookupErr);
+      // Continue without IDs if lookup fails
+    }
+
     const token = signToken(user);
     res.json({
       message: "Logged in",
@@ -137,12 +168,16 @@ export async function login(req, res) {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        className: user.className,
+        className: className,
+        classId: classId,
+        class: className,
         state: user.state,
         role: user.role,
         points: user.points || 0,
-        board: user.board,
-      }, // ✅ include role
+        board: boardName,
+        boardId: boardId,
+        boardName: boardName,
+      }, // ✅ include role and IDs
       token,
     });
   } catch (err) {

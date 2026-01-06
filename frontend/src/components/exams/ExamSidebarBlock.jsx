@@ -57,7 +57,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
   return (
     <div className="mt-1">
       {/* EXAMS DROPDOWN */}
-      <button
+      {/* <button
         onClick={() => setOpen((s) => !s)}
         className={`${linkBase} w-full text-left hover:bg-yellow-100`}
         aria-expanded={open}
@@ -69,7 +69,7 @@ export default function ExamSidebarBlock({ role = "student" }) {
           size={16}
           className={`transition-transform ${open ? "rotate-180" : ""}`}
         />
-      </button>
+      </button> */}
 
       <div
         id="emenu"

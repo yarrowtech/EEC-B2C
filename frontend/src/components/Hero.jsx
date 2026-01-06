@@ -428,7 +428,6 @@ const Hero = () => {
       <img
         // src="/hero.jpeg"
         src="/bg.png"
-        alt="Background"
         className="absolute inset-0 h-full w-full object-cover"
       />
       {/* Black tint */}

@@ -4,8 +4,20 @@ const API_BASE =
   import.meta.env.VITE_BACKEND_URL ||
   import.meta.env.VITE_API_URL;
 
+function readToken() {
+  const raw = localStorage.getItem("jwt");
+  if (!raw) return "";
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") return parsed;
+  } catch {
+    // raw is already a token string
+  }
+  return raw;
+}
+
 function authHeaders() {
-  const token = localStorage.getItem("jwt");
+  const token = readToken();
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

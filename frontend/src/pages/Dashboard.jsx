@@ -18,6 +18,7 @@ import {
 import { myAttempts, adminAttempts } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
 import WelcomeCard from "./WelcomeCard";
+import WelcomeModal from "../components/WelcomeModal";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -524,6 +525,7 @@ function StudentContent() {
 
   return (
     <>
+      <WelcomeModal />
       <WelcomeCard />
       {/* <Section title="My Exam Stats" icon={<Trophy size={18} />}> */}
       <Section title="My Exam Stats">

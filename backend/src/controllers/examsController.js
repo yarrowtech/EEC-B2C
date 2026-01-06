@@ -5,6 +5,17 @@ import Topic from "../models/Topic.js";
 import Subject from "../models/Subject.js";
 import mongoose from "mongoose";
 
+function extractEssayTokens(text) {
+  const tokens = String(text || "")
+    .toLowerCase()
+    .split(/\W+/)
+    .filter(Boolean);
+
+  return new Set(
+    tokens.filter((t) => /^[0-9]+$/.test(t) || t.length >= 3)
+  );
+}
+
 // utility: scoring for the types we support now
 function scoreForQuestion(q, ans) {
   switch (q.type) {
@@ -30,19 +41,15 @@ function scoreForQuestion(q, ans) {
     }
     case "essay-plain": {
       const userText = (ans.essay || "").toLowerCase();
-      const correctText = (q.correct?.[0] || "").toLowerCase();
+      const correctText = (q.plainText || "").toLowerCase();
 
       if (!userText || !correctText) return 0;
 
-      // Remove punctuation
-      const cleanUser = userText.replace(/[^a-z0-9 ]/g, "");
-      const cleanCorrect = correctText.replace(/[^a-z0-9 ]/g, "");
+      const userWords = extractEssayTokens(userText);
+      const correctWords = extractEssayTokens(correctText);
 
-      // Convert to word sets
-      const userWords = new Set(cleanUser.split(/\s+/));
-      const correctWords = new Set(cleanCorrect.split(/\s+/));
+      if (!correctWords.size) return 0;
 
-      // Count matching words
       let match = 0;
       userWords.forEach((w) => {
         if (correctWords.has(w)) match++;
@@ -51,8 +58,10 @@ function scoreForQuestion(q, ans) {
       // Semantic similarity %
       const percent = (match / correctWords.size) * 100;
 
-      // 70% or more = correct
-      return percent >= 70 ? 1 : 0;
+      // 70% or more = correct, 30%+ partial credit
+      if (percent >= 70) return 1;
+      if (percent >= 30) return 0.5;
+      return 0;
     }
     default:
       return 0; // extend for other types later
@@ -296,44 +305,55 @@ export const startExam = async (req, res) => {
     let qType = type;
     if (type === "cloze-dnd") qType = "cloze-drag";
 
-    // ⭐ User class normalization
-    const userClassRaw = req.user?.class || "";
+    async function buildMatchValue(value, modelPath) {
+      if (!value) return null;
 
-    // Accept both formats: "3" or "Class 3"
-    const normalizedClass = userClassRaw.startsWith("Class")
-      ? userClassRaw.trim()
-      : `Class ${userClassRaw.trim()}`;
+      if (mongoose.Types.ObjectId.isValid(value)) {
+        return { $in: [value, new mongoose.Types.ObjectId(value)] };
+      }
 
-    // ⭐ User board normalization (ADDED)
-    const userBoardRaw = req.user?.board || "";
-    const normalizedBoard = userBoardRaw.trim();
+      if (modelPath) {
+        const Model = (await import(modelPath)).default;
+        const doc = await Model.findOne({ name: value });
+        if (doc) {
+          return { $in: [value, doc._id] };
+        }
+      }
 
-    // ⭐ Build match object (UNCHANGED)
-    const match = {
-      type: qType,
-      subject: { $regex: subject, $options: "i" },
-      topic: { $regex: topic, $options: "i" },
-    };
-
-    // ⭐ Apply class filter ONLY if valid (UNCHANGED)
-    if (
-      normalizedClass &&
-      normalizedClass !== "Class" &&
-      normalizedClass !== "Class "
-    ) {
-      match.class = normalizedClass;
-    } else {
-      console.log("⚠ User has no valid class → class filter skipped");
+      return value;
     }
 
-    // ⭐ Apply board filter ONLY if present (ADDED)
-    if (normalizedBoard) {
-      match.board = normalizedBoard;
+    const match = {
+      type: qType,
+      subject: await buildMatchValue(subject),
+      topic: await buildMatchValue(topic),
+    };
+
+    const userClassRaw =
+      req.body.class || req.user?.className || req.user?.class || "";
+    const userBoardRaw = req.body.board || req.user?.board || "";
+
+    const classMatch = await buildMatchValue(
+      userClassRaw,
+      "../models/Class.js"
+    );
+    if (classMatch) {
+      match.class = classMatch;
+    } else {
+      console.log("⚠ User has no class → class filter skipped");
+    }
+
+    const boardMatch = await buildMatchValue(
+      userBoardRaw,
+      "../models/Board.js"
+    );
+    if (boardMatch) {
+      match.board = boardMatch;
     } else {
       console.log("⚠ User has no board → board filter skipped");
     }
 
-    console.log("MATCH USED (with board):", match);
+    // console.log("MATCH USED (with board):", match);
 
     const pipeline = [
       { $match: match },
@@ -708,12 +728,8 @@ export const submitExam = async (req, res) => {
         if (!correctText || !userText) {
           detail[q._id] = "wrong";
         } else {
-          const correctWords = new Set(
-            correctText.split(/\W+/).filter((w) => w.length > 3)
-          );
-          const userWords = new Set(
-            userText.split(/\W+/).filter((w) => w.length > 3)
-          );
+          const correctWords = extractEssayTokens(correctText);
+          const userWords = extractEssayTokens(userText);
 
           let overlap = 0;
           correctWords.forEach((w) => {
@@ -843,19 +859,30 @@ export const submitExam = async (req, res) => {
       // }
 
       if (q.type === "cloze-select") {
-        const blanks = q.clozeSelect?.blanks || {};
+        const blanksRaw = q.clozeSelect?.blanks || {};
+        let blanks = blanksRaw;
+
+        if (blanksRaw instanceof Map) {
+          blanks = Object.fromEntries(blanksRaw);
+        } else if (typeof blanksRaw.toObject === "function") {
+          blanks = blanksRaw.toObject();
+        }
+
         const user = ans.clozeSelect || {};
 
         let correctCount = 0;
-        let total = Object.keys(blanks).length;
+        const blankKeys = Object.keys(blanks);
+        const total = blankKeys.length;
 
-        for (const b of Object.keys(blanks)) {
-          if ((user[b] || "").trim() === (blanks[b].correct || "").trim()) {
+        for (const b of blankKeys) {
+          if ((user[b] || "").trim() === (blanks[b]?.correct || "").trim()) {
             correctCount++;
           }
         }
 
-        if (correctCount === total) {
+        if (total === 0) {
+          detail[q._id] = "wrong";
+        } else if (correctCount === total) {
           detail[q._id] = "correct";
           score++;
         } else if (correctCount > 0) {
@@ -1336,7 +1363,7 @@ export const getUserResults = async (req, res) => {
         const fullQuestions = await Question.find({
           _id: { $in: att.questions },
         })
-          .select("question options correct type")
+          .select("question options correct type choiceMatrix")
           .lean();
 
         const populatedQuestions = fullQuestions.map((q) => ({

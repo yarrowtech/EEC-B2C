@@ -222,7 +222,7 @@ export default function Leaderboard() {
                                     My Class
                                 </button>
 
-                                <button
+                                {/* <button
                                     onClick={() => setView("board")}
                                     className={`flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all duration-300 shadow-md transform hover:scale-105 text-sm sm:text-base ${view === "board"
                                         ? "bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-lg shadow-orange-200"
@@ -231,7 +231,7 @@ export default function Leaderboard() {
                                 >
                                     <TrendingUp className="w-4 h-4 inline mr-1.5" />
                                     My Board
-                                </button>
+                                </button> */}
                             </div>
                         </div>
 

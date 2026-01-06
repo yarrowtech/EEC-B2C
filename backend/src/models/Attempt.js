@@ -9,6 +9,7 @@ const AnswerSchema = new mongoose.Schema(
     },
     mcq: [{ type: String, trim: true }],
     trueFalse: { type: String, enum: ["true", "false"] },
+    matrix: { type: Object, default: {} },
   },
   { _id: false }
 );

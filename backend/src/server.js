@@ -41,13 +41,24 @@ const app = express();
 /* ---------- Security & Core ---------- */
 app.use(helmet());
 app.use(express.json({ limit: "1mb" }));
+const allowedOrigins = [
+  "https://eec-b2-c.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5000",
+];
 app.use(
   cors({
-    origin: [
-      "https://eec-b2-c.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:5000",
-    ],
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        /^http:\/\/localhost:\d+$/.test(origin) ||
+        /^http:\/\/127\.0\.0\.1:\d+$/.test(origin)
+      ) {
+        return cb(null, true);
+      }
+      return cb(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "DELETE", "PUT"],
     credentials: true,
   })
@@ -134,5 +145,22 @@ connectDB(process.env.MONGO_URI).then(() => {
 
     // Start auto-promotion scheduler
     scheduleAutoPromotion();
+
+    const keepAliveUrl = process.env.KEEP_ALIVE_URL;
+    if (keepAliveUrl) {
+      const ping = async () => {
+        try {
+          const res = await fetch(keepAliveUrl, { method: "GET" });
+          if (!res.ok) {
+            console.warn("Keep-alive ping failed:", res.status);
+          }
+        } catch (err) {
+          console.warn("Keep-alive ping error:", err.message || err);
+        }
+      };
+
+      ping();
+      setInterval(ping, 60 * 1000);
+    }
   });
 });

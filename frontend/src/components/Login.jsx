@@ -6,7 +6,7 @@ import axios from "axios";
 const LS_REMEMBER_KEY = "eecRemember";
 const LS_LOGIN_ID_KEY = "eecLoginId";
 
-export default function Login({ onClose, onForgot, onSubmit }) {
+export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -150,6 +150,20 @@ export default function Login({ onClose, onForgot, onSubmit }) {
             {loading ? "Signing in..." : "Login"}
           </button>
         </form>
+
+        {/* Sign up link */}
+        <div className="mt-6 text-center border-t border-blue-100 pt-4">
+          <p className="text-xs text-blue-900/70">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={onSignUp}
+              className="font-semibold text-blue-950 hover:text-yellow-600 transition-colors underline decoration-dotted underline-offset-2"
+            >
+              Sign up here
+            </button>
+          </p>
+        </div>
 
         {/* close button */}
         <button

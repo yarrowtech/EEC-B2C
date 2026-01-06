@@ -420,6 +420,7 @@ export default function ProfilePage() {
     gender: user?.gender || "",
     dob: user?.dob || "",
     address: user?.address || "",
+    state: user?.state || "",
     className: user?.className || "",
     board: user?.board || "",
     department: user?.department || "",
@@ -466,6 +467,8 @@ export default function ProfilePage() {
   const [points, setPointsState] = useState(0);
   const [classOptions, setClassOptions] = useState([]);
   const [boardOptions, setBoardOptions] = useState([]);
+  const [states, setStates] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(true);
   const [redeeming, setRedeeming] = useState(false);
   const [redeemAmount, setRedeemAmount] = useState("");
   const [redemptionHistory, setRedemptionHistory] = useState([]);
@@ -522,6 +525,67 @@ export default function ProfilePage() {
       fetchClassAndBoardOptions();
     }
   }, [user?.role]);
+
+  // Load Indian states (with graceful fallback)
+  useEffect(() => {
+    let mounted = true;
+    async function loadStates() {
+      try {
+        const res = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/states",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ country: "India" }),
+          }
+        );
+        const json = await res.json();
+        const list =
+          json?.data?.states?.map((s) => s.name).filter(Boolean) || [];
+        if (mounted) setStates(list);
+      } catch (_err) {
+        if (mounted)
+          setStates([
+            "Andhra Pradesh",
+            "Arunachal Pradesh",
+            "Assam",
+            "Bihar",
+            "Chhattisgarh",
+            "Delhi",
+            "Goa",
+            "Gujarat",
+            "Haryana",
+            "Himachal Pradesh",
+            "Jammu and Kashmir",
+            "Jharkhand",
+            "Karnataka",
+            "Kerala",
+            "Madhya Pradesh",
+            "Maharashtra",
+            "Manipur",
+            "Meghalaya",
+            "Mizoram",
+            "Nagaland",
+            "Odisha",
+            "Punjab",
+            "Rajasthan",
+            "Sikkim",
+            "Tamil Nadu",
+            "Telangana",
+            "Tripura",
+            "Uttar Pradesh",
+            "Uttarakhand",
+            "West Bengal",
+          ]);
+      } finally {
+        if (mounted) setLoadingStates(false);
+      }
+    }
+    loadStates();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   /* fetch redemption history */
   useEffect(() => {
@@ -1375,40 +1439,65 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      {/* DOB Field */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Date of Birth
-                        </label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="date"
-                            name="dob"
-                            value={form.dob}
-                            onChange={handleChange}
-                            className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.dob ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                          />
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                        {/* DOB Field */}
+                        <div>
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
+                            Date of Birth
+                          </label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+                            <input
+                              type="date"
+                              name="dob"
+                              value={form.dob}
+                              onChange={handleChange}
+                              className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.dob ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                            />
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Gender Field */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Gender
-                        </label>
-                        <div className="relative">
-                          <select
-                            name="gender"
-                            value={form.gender}
-                            onChange={handleChange}
-                            className={`w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.gender ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                          >
-                            <option value="">Select gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                          </select>
+                        {/* Gender Field */}
+                        <div>
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
+                            Gender
+                          </label>
+                          <div className="relative">
+                            <select
+                              name="gender"
+                              value={form.gender}
+                              onChange={handleChange}
+                              className={`w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.gender ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                            >
+                              <option value="">Select gender</option>
+                              <option value="male">Male</option>
+                              <option value="female">Female</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* State Field */}
+                        <div>
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
+                            State
+                          </label>
+                          <div className="relative">
+                            <select
+                              name="state"
+                              value={form.state}
+                              onChange={handleChange}
+                              disabled={loadingStates}
+                              className={`w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.state ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
+                            >
+                              <option value="">{loadingStates ? "Loading states..." : "Select State"}</option>
+                              {states.map((state) => (
+                                <option key={state} value={state}>
+                                  {state}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
 

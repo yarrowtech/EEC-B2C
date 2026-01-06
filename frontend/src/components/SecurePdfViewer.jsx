@@ -385,7 +385,7 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
           <div key={i} className="relative">
             <canvas
               ref={(el) => (canvasRefs.current[i] = el)}
-              className="bg-white rounded-lg shadow-xl select-none"
+              className="bg-white shadow-xl select-none"
             />
             {/* Watermark Overlay */}
             {/* <div className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-lg">

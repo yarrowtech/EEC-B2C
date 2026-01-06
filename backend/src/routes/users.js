@@ -199,6 +199,34 @@ router.get("/profile", requireAuth, async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    let boardId = null;
+    let classId = null;
+    let boardName = user.board || "";
+    let className = user.className || user.class || "";
+
+    try {
+      const Board = (await import("../models/Board.js")).default;
+      const Class = (await import("../models/Class.js")).default;
+
+      if (user.board) {
+        const boardDoc = await Board.findOne({ name: user.board });
+        if (boardDoc) {
+          boardId = boardDoc._id.toString();
+          boardName = boardDoc.name;
+        }
+      }
+
+      if (className) {
+        const classDoc = await Class.findOne({ name: className });
+        if (classDoc) {
+          classId = classDoc._id.toString();
+          className = classDoc.name;
+        }
+      }
+    } catch (lookupErr) {
+      console.error("Board/Class lookup error:", lookupErr);
+    }
+
     /* ---------------- AUTO PROMOTION ---------------- */
     // const promoted = autoPromoteStudent(user);
     // if (promoted) {
@@ -209,13 +237,18 @@ router.get("/profile", requireAuth, async (req, res) => {
       ...user._doc,
 
       // Fix class → className
-      className: user.className || user.class || "",
-      board: user.board || "",
+      className: className,
+      classId: classId,
+      class: className,
+      board: boardName,
+      boardId: boardId,
+      boardName: boardName,
 
       // Ensure missing fields exist
       gender: user.gender || "",
       dob: user.dob || "",
       address: user.address || "",
+      state: user.state || "",
       department: user.department || "",
       bio: user.bio || "",
       avatar: user.avatar || "",
@@ -314,6 +347,7 @@ router.put("/update-profile", requireAuth, async (req, res) => {
       "gender",
       "dob",
       "address",
+      "state",
       "department",
       "bio",
       "avatar",

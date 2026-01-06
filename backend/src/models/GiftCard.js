@@ -56,6 +56,5 @@ const GiftCardSchema = new mongoose.Schema(
 
 // Index for faster queries
 GiftCardSchema.index({ status: 1, amount: 1 });
-GiftCardSchema.index({ code: 1 });
 
 export default mongoose.model("GiftCard", GiftCardSchema);

@@ -85,6 +85,10 @@ export default function GlobalLoginModal() {
                 setShowLogin(false);
                 setShowForgot(true);
               }}
+              onSignUp={() => {
+                setShowLogin(false);
+                navigate("/register");
+              }}
               onSubmit={async ({ emailOrPhone, password, remember }) => {
                 try {
                   const res = await fetch(`${API_BASE}/api/auth/login`, {

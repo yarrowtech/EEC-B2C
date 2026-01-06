@@ -78,6 +78,7 @@ import AIQuestionGenerator from "./pages/AIQuestionGenerator";
 import SelfStudy from "./pages/SelfStudy";
 import SelfStudyResults from "./pages/SelfStudyResults";
 import SelfStudyResultDetail from "./pages/SelfStudyResultDetail";
+import SyllabusPage from "./pages/syllabus/SyllabusPage";
 
 
 function getToken() {
@@ -435,6 +436,7 @@ export default function App() {
             <Route path="self-study" element={<SelfStudy />} />
             <Route path="self-study/results" element={<SelfStudyResults />} />
             <Route path="self-study/results/:id" element={<SelfStudyResultDetail />} />
+            <Route path="syllabus" element={<SyllabusPage />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

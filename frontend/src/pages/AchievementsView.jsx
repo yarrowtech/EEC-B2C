@@ -51,13 +51,27 @@ const AchievementsView = () => {
 
   const pointsHistory = [
     ...welcomeBonus,
-    ...attempts.map(attempt => ({
-      exam: attempt.stage,
-      subject: attempt.subjectName || attempt.subject,
-      topic: attempt.topicName || attempt.topic,
-      pointsEarned: attempt.score,
-      date: attempt.createdAt
-    }))
+    ...attempts.map((attempt) => {
+      const stageLabel = attempt.stage ? `Stage Test - ${attempt.stage}` : "Exam";
+      const subjectLabel =
+        attempt.subjectName ||
+        attempt.subject?.name ||
+        attempt.subject ||
+        "Unknown Subject";
+      const topicLabel =
+        attempt.topicName ||
+        attempt.topic?.name ||
+        attempt.topic ||
+        "Unknown Topic";
+
+      return {
+        exam: attempt.examName || attempt.exam || stageLabel,
+        subject: subjectLabel,
+        topic: topicLabel,
+        pointsEarned: attempt.score,
+        date: attempt.createdAt
+      };
+    })
   ];
 
   const totalAchievements = pointsHistory.length;

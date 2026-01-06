@@ -11,6 +11,7 @@ import {
   metaSubjects,
   metaTopics,
   metaStages,
+  getQuestionTypes,
 } from "../controllers/questionsController.js";
 import {requireAuth} from "../middleware/auth.js";
 
@@ -44,6 +45,9 @@ router.get("/", requireAuth, list);
 router.get("/meta/stages", metaStages);
 router.get("/meta/subjects", requireAuth, metaSubjects);
 router.get("/meta/topics", requireAuth, metaTopics);
+
+// Get question types with counts (MUST be before /:id route)
+router.get("/types", requireAuth, getQuestionTypes);
 
 // Dynamic routes (place these LAST)
 router.get("/:id", requireAuth, getOne);

@@ -4,15 +4,35 @@ const QuestionScopeContext = createContext(null);
 
 export function QuestionScopeProvider({ children }) {
   const [scope, setScope] = useState({
+    board: "",
+    class: "",
     subject: "",
     topic: "",
+    stage: "",
+    difficulty: "",
+    questionType: "",
   });
+
   const value = {
     scope,
+    setBoard: (b) => setScope((prev) => ({ ...prev, board: b })),
+    setClass: (c) => setScope((prev) => ({ ...prev, class: c })),
     setSubject: (s) => setScope((prev) => ({ ...prev, subject: s })),
-    setTopic:   (t) => setScope((prev) => ({ ...prev, topic: t })),
-    clear:      ()  => setScope({ subject: "", topic: "" }),
+    setTopic: (t) => setScope((prev) => ({ ...prev, topic: t })),
+    setStage: (st) => setScope((prev) => ({ ...prev, stage: st })),
+    setDifficulty: (d) => setScope((prev) => ({ ...prev, difficulty: d })),
+    setQuestionType: (qt) => setScope((prev) => ({ ...prev, questionType: qt })),
+    clear: () => setScope({
+      board: "",
+      class: "",
+      subject: "",
+      topic: "",
+      stage: "",
+      difficulty: "",
+      questionType: ""
+    }),
   };
+
   return (
     <QuestionScopeContext.Provider value={value}>
       {children}

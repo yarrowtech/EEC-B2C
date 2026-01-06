@@ -124,7 +124,13 @@ function shapeByType(type, body, userId) {
     case "cloze-select": {
       const { text, blanks = {} } = body.clozeSelect || {};
       if (!text) return { ok: false, message: "clozeSelect: text required" };
-      return { ok: true, doc: { ...common, clozeSelect: { text, blanks } } };
+      const correctValues = Object.values(blanks)
+        .map((b) => b?.correct)
+        .filter(Boolean);
+      return {
+        ok: true,
+        doc: { ...common, clozeSelect: { text, blanks }, correct: correctValues },
+      };
     }
     case "cloze-text": {
       const { text, answers = {} } = body.clozeText || {};
@@ -367,7 +373,17 @@ export const update = async (req, res) => {
     if (!existing) return res.status(404).json({ message: "Not found" });
 
     const merged = { ...existing.toObject(), ...req.body };
-    await Question.findByIdAndUpdate(req.params.id, merged, { new: true });
+    const { ok, doc, message } = shapeByType(
+      existing.type,
+      merged,
+      existing.createdBy || req.user.id
+    );
+    if (!ok) return res.status(400).json({ message });
+
+    doc.class = merged.class || existing.class;
+    doc.board = merged.board || existing.board;
+
+    await Question.findByIdAndUpdate(req.params.id, doc, { new: true });
 
     res.json({ message: "Updated" });
   } catch (e) {
@@ -464,6 +480,103 @@ export const metaStages = async (_req, res) => {
     res.json({ stages });
   } catch (e) {
     console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get available question types with counts for a specific subject/topic
+export const getQuestionTypes = async (req, res) => {
+  try {
+    const { subject, topic, class: userClass, board } = req.query;
+
+    // Build filter
+    const filter = {};
+    if (subject) filter.subject = subject;
+    if (topic) filter.topic = topic;
+
+    // Handle board parameter (could be ObjectId or name)
+    if (board) {
+      const mongoose = await import("mongoose");
+      if (mongoose.default.Types.ObjectId.isValid(board) && /^[0-9a-fA-F]{24}$/.test(board)) {
+        filter.board = board;
+      } else {
+        // It's a board name, look up the ID
+        const Board = (await import("../models/Board.js")).default;
+        const boardDoc = await Board.findOne({ name: board });
+        if (boardDoc) {
+          filter.board = boardDoc._id;
+        } else {
+          // Board name not found, return empty types
+          return res.json({ types: [] });
+        }
+      }
+    }
+
+    // Handle class parameter (could be ObjectId or name)
+    if (userClass) {
+      const mongoose = await import("mongoose");
+      if (mongoose.default.Types.ObjectId.isValid(userClass) && /^[0-9a-fA-F]{24}$/.test(userClass)) {
+        filter.class = userClass;
+      } else {
+        // It's a class name, look up the ID
+        const Class = (await import("../models/Class.js")).default;
+        const classDoc = await Class.findOne({ name: userClass });
+        if (classDoc) {
+          filter.class = classDoc._id;
+        } else {
+          // Class name not found, return empty types
+          return res.json({ types: [] });
+        }
+      }
+    }
+
+    // Get counts by type
+    const typeCounts = await Question.aggregate([
+      { $match: filter },
+      { $group: { _id: "$type", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Map to friendly labels with icons
+    const typeLabels = {
+      "mcq-single": { label: "MCQ - Single Choice", icon: "📝" },
+      "mcq-multi": { label: "MCQ - Multiple Choice", icon: "✅" },
+      "true-false": { label: "True/False", icon: "✔️" },
+      "choice-matrix": { label: "Choice Matrix", icon: "📊" },
+      "cloze-drag": { label: "Fill in the Blanks (Drag)", icon: "🔤" },
+      "cloze-select": { label: "Fill in the Blanks (Select)", icon: "📋" },
+      "cloze-text": { label: "Fill in the Blanks (Type)", icon: "⌨️" },
+      "match-list": { label: "Match the Following", icon: "🔗" },
+      "essay-plain": { label: "Essay Questions", icon: "✍️" },
+      "essay-rich": { label: "Essay Questions (Rich)", icon: "📄" }
+    };
+
+    // Format response
+    const types = typeCounts
+      .filter(t => t.count > 0)
+      .map(t => ({
+        type: t._id,
+        count: t.count,
+        label: typeLabels[t._id]?.label || t._id,
+        icon: typeLabels[t._id]?.icon || "📝"
+      }));
+
+    // Calculate total count for "all" option
+    const totalCount = types.reduce((sum, t) => sum + t.count, 0);
+
+    // Add "all" option if there are questions
+    if (totalCount > 0) {
+      types.unshift({
+        type: "all",
+        count: totalCount,
+        label: "All Types (Recommended)",
+        icon: "🎯"
+      });
+    }
+
+    res.json({ types });
+  } catch (err) {
+    console.error("Failed to fetch question types", err);
     res.status(500).json({ message: "Server error" });
   }
 };

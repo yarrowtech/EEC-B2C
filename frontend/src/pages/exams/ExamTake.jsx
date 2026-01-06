@@ -1,41 +1,109 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getJSON, submitExam } from "../../lib/api";
+import { ToastContainer, useToast } from "../../components/Toast";
 
 export default function ExamTake() {
   const { attemptId } = useParams();
   const nav = useNavigate();
+  const toast = useToast();
   const state = useLocation().state; // {attemptId, questions,total,...} from start
-  const [meta, setMeta] = useState(state || null);
-  const [answers, setAnswers] = useState({});
+  const STORAGE_KEY = `exam_${attemptId}_answers`;
+  const META_STORAGE_KEY = `exam_${attemptId}_meta`;
+  const WORD_LIMIT = 500;
+
+  // Try to restore from localStorage first
+  const [meta, setMeta] = useState(() => {
+    if (state) return state;
+    // Try to restore meta from localStorage
+    try {
+      const saved = localStorage.getItem(META_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [answers, setAnswers] = useState(() => {
+    // Try to restore answers from localStorage
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [translatedQuestions, setTranslatedQuestions] = useState({});
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [isTranslating, setIsTranslating] = useState(false);
-  const WORD_LIMIT = 500;
 
+  // Save meta to localStorage when it changes
+  useEffect(() => {
+    if (meta) {
+      try {
+        localStorage.setItem(META_STORAGE_KEY, JSON.stringify(meta));
+      } catch (err) {
+        console.error("Failed to save exam meta", err);
+      }
+    }
+  }, [meta, META_STORAGE_KEY]);
+
+  // Auto-save answers to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+      } catch (err) {
+        console.error("Failed to save answers", err);
+      }
+    }
+  }, [answers, STORAGE_KEY]);
+
+  // Clean up localStorage after successful submission
+  useEffect(() => {
+    if (result) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(META_STORAGE_KEY);
+      } catch (err) {
+        console.error("Failed to clear saved data", err);
+      }
+    }
+  }, [result, STORAGE_KEY, META_STORAGE_KEY]);
 
   useEffect(() => {
     if (!meta) {
-      // F5 case: fetch attempt meta by id (simple version: refetch questions info from start endpoint is not public)
-      // For now, re-fetch via questions ids embedded isn’t available — recommend starting from /exams again if missing state
-      (async () => {
-        try {
-          // Minimal fallback: tell them to re-start
-          setMeta(null);
-        } catch {
-          setMeta(null);
-        }
-      })();
+      setMeta(null);
     }
   }, [meta]);
 
   if (!meta) {
     return (
-      <div className="space-y-3">
-        <div className="text-slate-700">Exam context missing.</div>
-        <button onClick={() => nav("/dashboard/exams")} className="rounded-lg border px-3 py-2 hover:bg-slate-50">Back to Stage 1</button>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="max-w-md text-center space-y-4 p-6">
+          <div className="text-6xl mb-4">📝</div>
+          <h2 className="text-2xl font-bold text-gray-900">Exam Not Found</h2>
+          <p className="text-gray-600">
+            We couldn't find this exam session. It may have expired or been completed already.
+          </p>
+          <div className="flex gap-3 justify-center mt-6">
+            <button
+              onClick={() => nav("/dashboard/syllabus")}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-yellow-500 font-semibold text-white hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md hover:shadow-lg"
+            >
+              Browse Syllabus
+            </button>
+            <button
+              onClick={() => nav("/dashboard/exams")}
+              className="px-6 py-3 rounded-xl border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              View Exams
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -145,8 +213,9 @@ export default function ExamTake() {
 
       const res = await submitExam(attemptId, arr);
       setResult(res); // {score,total,percent}
+      toast.success("Exam submitted successfully!");
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || "Failed to submit exam. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -200,11 +269,13 @@ export default function ExamTake() {
 
 
   return (
-    <form onSubmit={onSubmit} className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-      <div className="max-w-4xl mx-auto">
+    <>
+      <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+      <form onSubmit={onSubmit} className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-indigo-100">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Stage 1 — {type}
@@ -262,6 +333,26 @@ export default function ExamTake() {
               )}
             </div>
           </div>
+
+          {/* Progress Bar */}
+          {!result && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-indigo-700">
+                  Progress: {Object.keys(answers).length} of {total} answered
+                </span>
+                <span className="text-sm font-medium text-indigo-600">
+                  {Math.round((Object.keys(answers).length / total) * 100)}%
+                </span>
+              </div>
+              <div className="w-full bg-indigo-100 rounded-full h-3 overflow-hidden shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out shadow-md"
+                  style={{ width: `${(Object.keys(answers).length / total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RENDER QUESTIONS */}
@@ -271,7 +362,7 @@ export default function ExamTake() {
               {/* Question Number Badge */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md">
-                  Question {idx + 1}
+                  Question {idx + 1} of {total}
                 </span>
               </div>
 
@@ -1006,7 +1097,7 @@ export default function ExamTake() {
           >
             {busy ? "Submitting..." : "Submit Exam"}
           </button>
-          {result && (
+          {/* {result && (
             <button
               type="button"
               onClick={() => window.location.assign("/dashboard/exams")}
@@ -1014,9 +1105,10 @@ export default function ExamTake() {
             >
               Back to Stage 1
             </button>
-          )}
+          )} */}
         </div>
       </div>
-    </form>
+      </form>
+    </>
   );
 }

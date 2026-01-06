@@ -227,6 +227,7 @@ import {
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
 import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
+import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
 import Header from "../components/Header";
 import { toast } from "react-toastify";
 
@@ -376,6 +377,7 @@ export default function DashboardLayout() {
                                     </NavLink>
                                 ))}
 
+                                <SyllabusSidebarBlock role={role} />
                                 <ExamSidebarBlock role={role} />
                                 <QuestionsSidebarBlock role={role} />
                                 <SettingsSidebarBlock role={role} />
@@ -393,10 +395,10 @@ export default function DashboardLayout() {
                                 </div>
 
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-800 truncate">
+                                    <p className="text-sm font-semibold text-slate-800 truncate" title={user?.name || "User"}>
                                         {user?.name || "User"}
                                     </p>
-                                    <p className="text-xs text-slate-500 truncate">
+                                    <p className="text-xs text-slate-500 truncate" title={user?.email || "user@email.com"}>
                                         {user?.email || "user@email.com"}
                                     </p>
                                 </div>
@@ -423,6 +425,7 @@ export default function DashboardLayout() {
                                     navigate("/", { replace: true });
                                 }}
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 font-semibold hover:bg-red-50 transition"
+                                title="Logout"
                             >
                                 <LogOut size={18} />
                                 Logout

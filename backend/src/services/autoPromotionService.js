@@ -95,7 +95,7 @@ export async function promoteUser(user) {
   const nextClass = getNextClass(user.className);
 
   if (!nextClass) {
-    console.log(`User ${user.email} is already in final class (${user.className})`);
+    // console.log(`User ${user.email} is already in final class (${user.className})`);
     return null;
   }
 
@@ -106,7 +106,7 @@ export async function promoteUser(user) {
 
   await user.save();
 
-  console.log(`Promoted user ${user.email} from class ${user.className} to ${nextClass}`);
+  // console.log(`Promoted user ${user.email} from class ${user.className} to ${nextClass}`);
   return user;
 }
 
@@ -116,7 +116,7 @@ export async function promoteUser(user) {
  */
 export async function runAutoPromotion() {
   try {
-    console.log("Starting auto-promotion process...");
+    // console.log("Starting auto-promotion process...");
 
     const students = await User.find({
       role: "student",
@@ -126,7 +126,7 @@ export async function runAutoPromotion() {
       registrationMonth: { $exists: true, $ne: null },
     });
 
-    console.log(`Found ${students.length} students eligible for promotion check`);
+    // console.log(`Found ${students.length} students eligible for promotion check`);
 
     let promoted = 0;
     let skipped = 0;
@@ -177,5 +177,5 @@ export function scheduleAutoPromotion() {
     runAutoPromotion().catch(console.error);
   }, DAILY_INTERVAL);
 
-  console.log("Auto-promotion scheduler started (runs daily at startup time)");
+  // console.log("Auto-promotion scheduler started (runs daily at startup time)");
 }
