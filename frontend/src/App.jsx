@@ -71,6 +71,7 @@ import AddClass from "./pages/questions/AddClass";
 import AddBoard from "./pages/questions/AddBoard";
 import Swal from "sweetalert2";
 import MindTrainingGames from "./games/MindTrainingGames";
+import Leaderboard from "./pages/Leaderboard";
 import AdminGiftCardsPage from './pages/AdminGiftCardsPage';
 import AdminPurchasesPage from './pages/AdminPurchasesPage';
 import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
@@ -425,6 +426,7 @@ export default function App() {
             <Route path="topics" element={<TopicsList />} />
             <Route path="chat/:userId" element={<ChatBox />} />
             <Route path="result" element={<ResultsView />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="achievements" element={<AchievementsView />} />
             <Route path="study-materials" element={<StudyMaterialsPage />} />
             <Route path="study-materials/upload" element={<RequireAdmin><UploadStudyMaterial /> </RequireAdmin>} />

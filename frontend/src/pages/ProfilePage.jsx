@@ -361,7 +361,6 @@ import {
   Briefcase,
   Gift,
   ShoppingBag,
-  Zap,
 } from "lucide-react";
 import { getPoints } from "../lib/points"; // optional helper from your new design
 import { ToastContainer, toast } from "react-toastify";
@@ -960,7 +959,7 @@ export default function ProfilePage() {
       <div className="pointer-events-none absolute inset-x-0 bottom-[-16%] h-72 bg-gradient-to-t from-amber-200/40 to-transparent blur-3xl" />
       <ToastContainer position="bottom-right" />
       {/* Header */}
-      <header className="relative z-10 bg-white/85 backdrop-blur border-b border-amber-100 shadow-sm">
+      <header className="hidden md:block relative z-10 bg-white/85 backdrop-blur border-b border-amber-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-400 to-yellow-500 shadow-lg flex items-center justify-center text-white">
@@ -990,7 +989,7 @@ export default function ProfilePage() {
       </header>
 
       {/* Intro / Highlight */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-10 space-y-4 md:space-y-6">
+      <section className="hidden md:block relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-10 space-y-4 md:space-y-6">
         <div className="grid lg:grid-cols-[1.05fr,0.95fr] gap-4 md:gap-6">
           <div className="rounded-3xl bg-white/85 backdrop-blur border border-amber-100 shadow-xl p-5 md:p-6">
             <div className="flex flex-col gap-3 md:gap-4">
@@ -1101,13 +1100,54 @@ export default function ProfilePage() {
         </div>
       </section>
 
+      {/* ── MOBILE PROFILE BANNER (hidden md+) ── */}
+      <div className="md:hidden relative bg-gradient-to-br from-amber-400 via-orange-400 to-yellow-500 px-4 pt-10 pb-20 overflow-hidden">
+        <div className="absolute top-0 right-0 w-44 h-44 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full translate-y-10 -translate-x-10" />
+        <div className="relative z-10 flex flex-col items-center text-center gap-2">
+          {/* Avatar */}
+          <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden bg-amber-100">
+            {imagePreview ? (
+              <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-200 to-amber-300">
+                <span className="text-3xl font-bold text-amber-700">{getInitial()}</span>
+              </div>
+            )}
+          </div>
+          {/* Name + Role */}
+          <div>
+            <h2 className="text-xl font-bold text-white leading-tight">{form.name || "Student"}</h2>
+            <p className="text-white/80 text-xs mt-0.5 capitalize">{user?.role} Account</p>
+          </div>
+          {/* Quick stats */}
+          <div className="flex flex-wrap justify-center gap-2 mt-1">
+            {user?.role === "student" && (
+              <span className="flex items-center gap-1 bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-semibold">
+                <Coins size={11} /> {points} pts
+              </span>
+            )}
+            {form.className && (
+              <span className="flex items-center gap-1 bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-semibold">
+                <BookOpen size={11} /> {form.className}
+              </span>
+            )}
+            {form.board && (
+              <span className="bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-semibold">
+                {form.board}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 md:pb-16">
-        <form onSubmit={handleSubmit} className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-amber-100/80 overflow-hidden">
+      <main className="relative z-20 max-w-7xl mx-auto px-0 md:px-4 lg:px-8 pb-10 md:pb-16 -mt-10 md:mt-0">
+        <form onSubmit={handleSubmit} className="bg-white backdrop-blur-xl rounded-t-3xl md:rounded-3xl shadow-2xl border-0 md:border border-amber-100/80 overflow-hidden">
           <div className="flex flex-col lg:grid lg:grid-cols-[340px,1fr]">
             {/* Sidebar Navigation */}
-            <aside className="bg-gradient-to-b from-white via-amber-50/70 to-white border-b lg:border-b-0 lg:border-r border-amber-100 p-5 md:p-6">
-              <div className="flex flex-col items-center space-y-3 md:space-y-4">
+            <aside className="bg-white md:bg-gradient-to-b from-white via-amber-50/70 to-white border-b lg:border-b-0 lg:border-r border-amber-100 p-4 md:p-6">
+              <div className="hidden md:flex flex-col items-center space-y-3 md:space-y-4">
                 <div className="relative group">
                   <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-amber-200 shadow-xl bg-gray-100">
                     {imagePreview ? (
@@ -1171,13 +1211,13 @@ export default function ProfilePage() {
                 </div> */}
               </div>
 
-              <nav className="mt-6 space-y-2">
-                <div className={`flex bg-amber-100/60 rounded-full p-1 gap-1 ${user?.role === "student" ? "grid grid-cols-3" : ""}`}>
+              <nav className="mt-0 md:mt-6">
+                <div className={`flex bg-amber-100/60 rounded-2xl p-1 gap-1 ${user?.role === "student" ? "grid grid-cols-3" : "grid grid-cols-2"}`}>
                   <button
                     type="button"
                     onClick={() => setActiveTab("personal")}
-                    className={`flex-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeTab === "personal"
-                      ? "bg-white shadow text-amber-800"
+                    className={`flex-1 px-2 md:px-4 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 ${activeTab === "personal"
+                      ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow text-white"
                       : "text-amber-800/70 hover:bg-white/70"
                       }`}
                   >
@@ -1186,8 +1226,8 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("security")}
-                    className={`flex-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeTab === "security"
-                      ? "bg-white shadow text-amber-800"
+                    className={`flex-1 px-2 md:px-4 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 ${activeTab === "security"
+                      ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow text-white"
                       : "text-amber-800/70 hover:bg-white/70"
                       }`}
                   >
@@ -1197,8 +1237,8 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab("rewards")}
-                      className={`flex-1 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeTab === "rewards"
-                        ? "bg-white shadow text-amber-800"
+                      className={`flex-1 px-2 md:px-4 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 ${activeTab === "rewards"
+                        ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow text-white"
                         : "text-amber-800/70 hover:bg-white/70"
                         }`}
                     >
@@ -1210,7 +1250,7 @@ export default function ProfilePage() {
             </aside>
 
             {/* Main Form Content */}
-            <section className="flex-1 w-full bg-white/60 p-4 sm:p-6 lg:p-8">
+            <section className="flex-1 w-full bg-white/60 p-4 md:p-6 lg:p-8">
               {/* PERSONAL TAB */}
               {activeTab === 'personal' && (
                 <div className="space-y-5 md:space-y-7">
@@ -1926,291 +1966,213 @@ export default function ProfilePage() {
 
               {/* REWARDS TAB */}
               {activeTab === 'rewards' && user?.role === "student" && (
-                <div className="space-y-5 md:space-y-7">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 text-white flex items-center justify-center shadow-sm">
-                      <Gift className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Rewards</p>
-                      <h3 className="text-xl md:text-2xl font-semibold text-slate-900">Redeem Your Coins</h3>
-                    </div>
-                  </div>
+                <div className="space-y-4 md:space-y-6">
 
-                  {/* Coin Balance Card */}
-                  <div className="rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-8 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-amber-200/20 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-200/20 rounded-full blur-3xl"></div>
-                    <div className="relative">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 flex items-center justify-center shadow-xl">
-                              <Coins className="w-7 h-7 text-white" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Available Balance</p>
-                              <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
-                                  {points.toLocaleString()}
-                                </span>
-                                <span className="text-sm font-bold text-amber-600">Coins</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="mt-4 flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-amber-200">
-                            <div className="flex-1">
-                              <p className="text-xs text-slate-600 font-semibold mb-1">Wallet Value</p>
-                              <p className="text-2xl font-black text-green-600">₹{(points / 20).toFixed(2)}</p>
-                            </div>
-                            <div className="h-12 w-px bg-amber-200"></div>
-                            <div className="flex-1">
-                              <p className="text-xs text-slate-600 font-semibold mb-1">Total Earned</p>
-                              <p className="text-2xl font-black text-blue-600">{points.toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="hidden lg:block">
-                          <img src="/coin.png" alt="coins" className="w-32 h-32 opacity-90 animate-pulse" />
-                        </div>
+                  {/* ── Balance Card ── */}
+                  <div className="rounded-2xl md:rounded-3xl bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-500 p-4 md:p-6 shadow-xl relative overflow-hidden">
+                    <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full" />
+                    <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/10 rounded-full" />
+                    <div className="relative z-10">
+                      <p className="text-xs font-semibold text-white/80 uppercase tracking-widest mb-1">Coin Balance</p>
+                      <div className="flex items-end gap-2 mb-3">
+                        <span className="text-4xl md:text-5xl font-black text-white leading-none">{points.toLocaleString()}</span>
+                        <span className="text-sm font-bold text-white/80 mb-1">coins</span>
                       </div>
-                      {/* Progress bar */}
-                      <div className="mt-5 bg-white/50 rounded-full h-4 overflow-hidden shadow-inner">
+                      {/* Progress bar to 20 000 */}
+                      <div className="bg-white/30 rounded-full h-2 overflow-hidden mb-1">
                         <div
-                          className="h-full bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500 rounded-full transition-all duration-700 shadow-lg"
+                          className="h-full bg-white rounded-full transition-all duration-700"
                           style={{ width: `${Math.min((points / 20000) * 100, 100)}%` }}
-                        ></div>
+                        />
                       </div>
-                      <p className="text-xs text-amber-700 mt-2 text-center font-bold">
-                        {points >= 20000 ? "🎉 Max tier reached! Unlock all rewards!" : `${(20000 - points).toLocaleString()} more coins to unlock ₹1000 gift card`}
+                      <p className="text-[11px] text-white/80 font-medium">
+                        {points >= 20000
+                          ? "🎉 Max tier reached — all rewards unlocked!"
+                          : `${(20000 - points).toLocaleString()} coins to ₹1000 gift card`}
                       </p>
+                      {/* Stats row */}
+                      <div className="mt-3 flex gap-3">
+                        <div className="flex-1 bg-white/20 backdrop-blur rounded-xl px-3 py-2">
+                          <p className="text-[10px] text-white/70 font-semibold">Wallet Value</p>
+                          <p className="text-base font-black text-white">₹{(points / 20).toFixed(2)}</p>
+                        </div>
+                        <div className="flex-1 bg-white/20 backdrop-blur rounded-xl px-3 py-2">
+                          <p className="text-[10px] text-white/70 font-semibold">Rate</p>
+                          <p className="text-base font-black text-white">20 = ₹1</p>
+                        </div>
+                        <div className="hidden sm:flex flex-1 bg-white/20 backdrop-blur rounded-xl px-3 py-2">
+                          <div>
+                            <p className="text-[10px] text-white/70 font-semibold">Total Earned</p>
+                            <p className="text-base font-black text-white">{points.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Conversion Rate Info */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 p-5 shadow-lg hover:shadow-xl transition-all hover:scale-105 duration-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center">
-                          <Zap className="w-5 h-5 text-white" />
-                        </div>
-                        <p className="text-xs font-extrabold text-blue-900 uppercase tracking-wide">Exchange Rate</p>
+                  {/* ── Redeem Options label ── */}
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Redeem Options</p>
+
+                  {/* ── Study Materials ── */}
+                  <div className="rounded-2xl border border-amber-100 bg-white shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-50 bg-green-50/60">
+                      <div className="h-9 w-9 rounded-xl bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <ShoppingBag className="w-4 h-4 text-white" />
                       </div>
-                      <p className="text-lg font-black text-blue-700">10 Coins = ₹0.50</p>
-                      <p className="text-xs text-blue-600 mt-1">Perfect for small redemptions</p>
+                      <div>
+                        <h5 className="text-sm font-bold text-slate-900">Study Material Credit</h5>
+                        <p className="text-[11px] text-slate-500">Use coins as wallet credit on purchases</p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 p-5 shadow-lg hover:shadow-xl transition-all hover:scale-105 duration-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="h-10 w-10 rounded-xl bg-purple-500 flex items-center justify-center">
-                          <Zap className="w-5 h-5 text-white" />
-                        </div>
-                        <p className="text-xs font-extrabold text-purple-900 uppercase tracking-wide">Exchange Rate</p>
-                      </div>
-                      <p className="text-lg font-black text-purple-700">20 Coins = ₹1.00</p>
-                      <p className="text-xs text-purple-600 mt-1">Standard conversion rate</p>
-                    </div>
-                  </div>
-
-                  {/* Redemption Options */}
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-slate-800">Redemption Options</h4>
-
-                    {/* Cash Redemption for Study Materials */}
-                    <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 md:p-5 shadow-sm">
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="h-10 w-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                          <ShoppingBag className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="text-base font-semibold text-slate-900">Study Material Purchase</h5>
-                          <p className="text-sm text-slate-600 mt-1">Use your coins as credit when buying study materials</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Enter Amount (₹)
-                          </label>
+                    <div className="p-4 space-y-3">
+                      <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">₹</span>
                           <input
                             type="number"
                             value={redeemAmount}
                             onChange={(e) => setRedeemAmount(e.target.value)}
-                            placeholder="Enter amount in rupees"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100 bg-white"
+                            placeholder="Amount"
+                            className="w-full pl-7 pr-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 text-sm bg-slate-50"
                             min="0.5"
                             step="0.5"
                           />
-                          {redeemAmount && (
-                            <p className="text-xs text-slate-600 mt-2">
-                              Required: <span className="font-semibold text-amber-700">{Math.ceil(parseFloat(redeemAmount) * 20)} coins</span>
-                            </p>
-                          )}
                         </div>
-
                         <button
                           type="button"
                           onClick={() => redeemCoins("cash", parseFloat(redeemAmount))}
                           disabled={redeeming || !redeemAmount || parseFloat(redeemAmount) < 0.5}
-                          className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:cursor-not-allowed transition-all duration-200"
+                          className="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-500 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl font-semibold text-sm shadow-md disabled:cursor-not-allowed transition-all active:scale-95"
                         >
-                          {redeeming ? "Processing..." : "Redeem for Study Materials"}
+                          {redeeming ? "..." : "Redeem"}
                         </button>
                       </div>
-                    </div>
-
-                    {/* Amazon Gift Card */}
-                    <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 md:p-5 shadow-sm">
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-                          <Gift className="w-5 h-5 text-orange-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="text-base font-semibold text-slate-900">Amazon Gift Card</h5>
-                          <p className="text-sm text-slate-600 mt-1">Redeem coins for Amazon gift vouchers</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          { amount: 100, coins: 2000 },
-                          { amount: 250, coins: 5000 },
-                          { amount: 500, coins: 10000 },
-                          { amount: 1000, coins: 20000 },
-                        ].map((option) => {
-                          const isAvailable = giftCardAvailability[option.amount]?.available;
-                          const availableCount = giftCardAvailability[option.amount]?.count || 0;
-                          const canRedeem = points >= option.coins && isAvailable;
-
-                          return (
-                            <button
-                              key={option.amount}
-                              type="button"
-                              onClick={() => redeemCoins("giftcard", option.amount)}
-                              disabled={redeeming || !canRedeem}
-                              className={`p-4 rounded-xl border-2 transition-all duration-200 relative ${
-                                canRedeem
-                                  ? "border-amber-300 bg-amber-50 hover:bg-amber-100 hover:border-amber-400"
-                                  : "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                              }`}
-                            >
-                              {isAvailable && availableCount <= 5 && availableCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
-                                  {availableCount} left
-                                </span>
-                              )}
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-slate-900">₹{option.amount}</p>
-                                <p className="text-xs text-slate-600 mt-1">{option.coins} coins</p>
-                                {!isAvailable && (
-                                  <p className="text-xs text-red-600 mt-1 font-semibold">Out of stock</p>
-                                )}
-                                {isAvailable && points < option.coins && (
-                                  <p className="text-xs text-red-600 mt-1">Need {option.coins - points} more</p>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Redemption History */}
-                    <div className="mt-6">
-                      <h4 className="text-lg font-semibold text-slate-800 mb-4">Redemption History</h4>
-
-                      {redemptionHistory.length === 0 ? (
-                        <div className="rounded-xl bg-slate-50 border border-slate-200 p-6 text-center">
-                          <p className="text-sm text-slate-500">No redemptions yet</p>
-                          <p className="text-xs text-slate-400 mt-1">Your redemption history will appear here</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                          {redemptionHistory.map((redemption) => (
-                            <div
-                              key={redemption._id}
-                              className="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-3 flex-1">
-                                  <div className={`p-2 rounded-lg ${
-                                    redemption.type === "cash"
-                                      ? "bg-green-100"
-                                      : "bg-orange-100"
-                                  }`}>
-                                    {redemption.type === "cash" ? (
-                                      <ShoppingBag className={`w-5 h-5 ${
-                                        redemption.type === "cash"
-                                          ? "text-green-600"
-                                          : "text-orange-600"
-                                      }`} />
-                                    ) : (
-                                      <Gift className={`w-5 h-5 ${
-                                        redemption.type === "cash"
-                                          ? "text-green-600"
-                                          : "text-orange-600"
-                                      }`} />
-                                    )}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h5 className="font-semibold text-slate-900">
-                                        {redemption.type === "cash" ? "Wallet Credit" : "Amazon Gift Card"}
-                                      </h5>
-                                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                        redemption.status === "completed"
-                                          ? "bg-green-100 text-green-700"
-                                          : redemption.status === "pending"
-                                          ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-red-100 text-red-700"
-                                      }`}>
-                                        {redemption.status}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-slate-600 mb-2">
-                                      {redemption.description}
-                                    </p>
-                                    {redemption.giftCardCode && (
-                                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mt-2">
-                                        <p className="text-xs text-slate-600 mb-1">Gift Card Code:</p>
-                                        <code className="text-sm font-mono font-bold text-orange-700">
-                                          {redemption.giftCardCode}
-                                        </code>
-                                      </div>
-                                    )}
-                                    <p className="text-xs text-slate-400 mt-2">
-                                      {new Date(redemption.createdAt).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right ml-4">
-                                  <p className="text-lg font-bold text-indigo-600">
-                                    ₹{redemption.amount}
-                                  </p>
-                                  <p className="text-xs text-slate-500">
-                                    {redemption.coinsUsed} coins
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                      {redeemAmount && (
+                        <p className="text-xs text-slate-500">
+                          Costs <span className="font-semibold text-amber-600">{Math.ceil(parseFloat(redeemAmount) * 20)} coins</span>
+                        </p>
                       )}
                     </div>
+                  </div>
 
-                    {/* Redemption History Info */}
-                    <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 mt-6">
-                      <p className="text-sm text-slate-700">
-                        <span className="font-semibold">Note:</span> Redeemed coins will be credited to your wallet and can be used during checkout. Gift card codes will be sent to your registered email within 24 hours.
-                      </p>
+                  {/* ── Gift Cards ── */}
+                  <div className="rounded-2xl border border-amber-100 bg-white shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-50 bg-orange-50/60">
+                      <div className="h-9 w-9 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
+                        <Gift className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-bold text-slate-900">Amazon Gift Card</h5>
+                        <p className="text-[11px] text-slate-500">Tap a card to redeem instantly</p>
+                      </div>
+                    </div>
+                    <div className="p-4 grid grid-cols-2 gap-3">
+                      {[
+                        { amount: 100, coins: 2000 },
+                        { amount: 250, coins: 5000 },
+                        { amount: 500, coins: 10000 },
+                        { amount: 1000, coins: 20000 },
+                      ].map((option) => {
+                        const isAvailable = giftCardAvailability[option.amount]?.available;
+                        const availableCount = giftCardAvailability[option.amount]?.count || 0;
+                        const canRedeem = points >= option.coins && isAvailable;
+
+                        return (
+                          <button
+                            key={option.amount}
+                            type="button"
+                            onClick={() => redeemCoins("giftcard", option.amount)}
+                            disabled={redeeming || !canRedeem}
+                            className={`relative rounded-2xl p-3.5 border-2 text-left transition-all active:scale-95 ${
+                              canRedeem
+                                ? "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 hover:border-amber-400 hover:shadow-md"
+                                : "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                            }`}
+                          >
+                            {isAvailable && availableCount <= 5 && availableCount > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-tight">
+                                {availableCount} left
+                              </span>
+                            )}
+                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-2 shadow-sm">
+                              <Gift className="w-4 h-4 text-white" />
+                            </div>
+                            <p className="text-lg font-black text-slate-900">₹{option.amount}</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">{option.coins.toLocaleString()} coins</p>
+                            {!isAvailable && (
+                              <p className="text-[10px] text-red-500 font-semibold mt-1">Out of stock</p>
+                            )}
+                            {isAvailable && points < option.coins && (
+                              <p className="text-[10px] text-red-500 mt-1">Need {(option.coins - points).toLocaleString()} more</p>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+
+                  {/* ── Redemption History ── */}
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1 mb-3">History</p>
+                    {redemptionHistory.length === 0 ? (
+                      <div className="rounded-2xl bg-slate-50 border border-slate-100 p-6 text-center">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
+                          <Gift className="w-5 h-5 text-slate-400" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-500">No redemptions yet</p>
+                        <p className="text-xs text-slate-400 mt-1">Your history will appear here</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden divide-y divide-slate-50 max-h-96 overflow-y-auto">
+                        {redemptionHistory.map((redemption) => (
+                          <div key={redemption._id} className="flex items-center gap-3 px-4 py-3">
+                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                              redemption.type === "cash" ? "bg-green-100" : "bg-orange-100"
+                            }`}>
+                              {redemption.type === "cash"
+                                ? <ShoppingBag className="w-4 h-4 text-green-600" />
+                                : <Gift className="w-4 h-4 text-orange-600" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-semibold text-slate-900 truncate">
+                                  {redemption.type === "cash" ? "Wallet Credit" : "Amazon Gift Card"}
+                                </p>
+                                <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                  redemption.status === "completed"
+                                    ? "bg-green-100 text-green-700"
+                                    : redemption.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}>{redemption.status}</span>
+                              </div>
+                              {redemption.giftCardCode && (
+                                <p className="text-xs font-mono text-orange-600 truncate mt-0.5">{redemption.giftCardCode}</p>
+                              )}
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                {new Date(redemption.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-sm font-black text-slate-900">₹{redemption.amount}</p>
+                              <p className="text-[11px] text-slate-400">{redemption.coinsUsed} coins</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Note ── */}
+                  <div className="flex gap-2.5 bg-amber-50 border border-amber-100 rounded-2xl p-3.5">
+                    <div className="h-5 w-5 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-[10px] font-black">i</span>
+                    </div>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      Wallet credits apply during checkout. Gift card codes are sent to your registered email within 24 hours.
+                    </p>
+                  </div>
+
                 </div>
               )}
 
@@ -2270,7 +2232,7 @@ export default function ProfilePage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-white/80 backdrop-blur border-t border-amber-100 mt-8 md:mt-12">
+      <footer className="hidden md:block bg-white/80 backdrop-blur border-t border-amber-100 mt-8 md:mt-12">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
             <div className="flex items-center space-x-2 sm:space-x-4">

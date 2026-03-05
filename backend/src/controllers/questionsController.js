@@ -46,6 +46,29 @@ function getLevelFromStage(stageValue) {
   return "advanced";
 }
 
+function normalizeDifficulty(difficultyValue) {
+  const raw = String(difficultyValue || "easy").trim().toLowerCase();
+  if (!raw) return "easy";
+  if (raw === "medium") return "moderate";
+  if (["easy", "moderate", "hard"].includes(raw)) return raw;
+  return "easy";
+}
+
+function normalizeLevel(levelValue, stageValue) {
+  const fallback = getLevelFromStage(stageValue);
+  const raw = String(levelValue || fallback).trim().toLowerCase();
+  if (["basic", "intermediate", "advanced"].includes(raw)) return raw;
+  return fallback;
+}
+
+function levelToDifficulty(levelValue) {
+  const level = String(levelValue || "").trim().toLowerCase();
+  if (level === "basic") return "easy";
+  if (level === "intermediate") return "moderate";
+  if (level === "advanced") return "hard";
+  return null;
+}
+
 /**
  * Validate and normalize payload by type.
  * Returns: { ok: true, doc } OR { ok: false, message }
@@ -55,14 +78,14 @@ function shapeByType(type, body, userId) {
     type,
     subject: String(body.subject || "").trim(),
     topic: String(body.topic || "").trim(),
-    difficulty: body.difficulty || "easy",
+    difficulty: normalizeDifficulty(body.difficulty),
     tags: String(body.tags || "")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
     explanation: body.explanation || "",
     stage: normalizeStageValue(body.stage),
-    level: String(body.level || getLevelFromStage(body.stage)),
+    level: normalizeLevel(body.level, body.stage),
     createdBy: userId,
   };
 
@@ -556,25 +579,37 @@ export const metaStages = async (req, res) => {
 // Get available question types with counts for a specific subject/topic
 export const getQuestionTypes = async (req, res) => {
   try {
-    const { subject, topic, class: userClass, board, stage } = req.query;
+    const { subject, topic, class: userClass, board, stage, level } = req.query;
 
     // Build filter
     const filter = {};
     if (subject) filter.subject = subject;
     if (topic) filter.topic = topic;
     if (stage) filter.stage = normalizeStageValue(stage);
+    if (level) {
+      const normalizedLevel = normalizeLevel(level, stage);
+      const mappedDifficulty = levelToDifficulty(normalizedLevel);
+      if (mappedDifficulty) {
+        filter.$or = [
+          { level: normalizedLevel },
+          { difficulty: mappedDifficulty },
+        ];
+      } else {
+        filter.level = normalizedLevel;
+      }
+    }
 
     // Handle board parameter (could be ObjectId or name)
     if (board) {
       const mongoose = await import("mongoose");
       if (mongoose.default.Types.ObjectId.isValid(board) && /^[0-9a-fA-F]{24}$/.test(board)) {
-        filter.board = board;
+        filter.board = { $in: [board, new mongoose.default.Types.ObjectId(board)] };
       } else {
         // It's a board name, look up the ID
         const Board = (await import("../models/Board.js")).default;
         const boardDoc = await Board.findOne({ name: board });
         if (boardDoc) {
-          filter.board = boardDoc._id;
+          filter.board = { $in: [board, String(boardDoc._id), boardDoc._id] };
         } else {
           // Board name not found, return empty types
           return res.json({ types: [] });
@@ -586,13 +621,13 @@ export const getQuestionTypes = async (req, res) => {
     if (userClass) {
       const mongoose = await import("mongoose");
       if (mongoose.default.Types.ObjectId.isValid(userClass) && /^[0-9a-fA-F]{24}$/.test(userClass)) {
-        filter.class = userClass;
+        filter.class = { $in: [userClass, new mongoose.default.Types.ObjectId(userClass)] };
       } else {
         // It's a class name, look up the ID
         const Class = (await import("../models/Class.js")).default;
         const classDoc = await Class.findOne({ name: userClass });
         if (classDoc) {
-          filter.class = classDoc._id;
+          filter.class = { $in: [userClass, String(classDoc._id), classDoc._id] };
         } else {
           // Class name not found, return empty types
           return res.json({ types: [] });

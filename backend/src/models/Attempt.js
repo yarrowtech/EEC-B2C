@@ -9,7 +9,13 @@ const AnswerSchema = new mongoose.Schema(
     },
     mcq: [{ type: String, trim: true }],
     trueFalse: { type: String, enum: ["true", "false"] },
+    essay: { type: String, default: "" },
     matrix: { type: Object, default: {} },
+    cloze: { type: Object, default: {} },
+    clozeSelect: { type: Object, default: {} },
+    clozeText: { type: Object, default: {} },
+    matchList: { type: Object, default: {} },
+    essayRich: { type: Object, default: {} },
   },
   { _id: false }
 );

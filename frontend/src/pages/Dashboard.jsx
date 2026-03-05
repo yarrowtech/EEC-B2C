@@ -41,6 +41,40 @@ function isTokenValid(token) {
   }
 }
 
+const DASHBOARD_CACHE_PREFIX = "eec:dashboard-cache";
+
+function getDashboardCacheKey(section) {
+  const user = getUser();
+  const userKey = user?._id || user?.id || user?.email || "anonymous";
+  return `${DASHBOARD_CACHE_PREFIX}:${userKey}:${section}`;
+}
+
+function readDashboardCache(section, ttlMs) {
+  try {
+    const raw = localStorage.getItem(getDashboardCacheKey(section));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    const { ts, data } = parsed;
+    if (typeof ts !== "number") return null;
+    if (Date.now() - ts > ttlMs) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function writeDashboardCache(section, data) {
+  try {
+    localStorage.setItem(
+      getDashboardCacheKey(section),
+      JSON.stringify({ ts: Date.now(), data })
+    );
+  } catch {
+    // Ignore storage quota or serialization errors.
+  }
+}
+
 /* ===== UI atoms ===== */
 
 const Badge = ({ children, tone = "blue" }) => {
@@ -70,22 +104,18 @@ const IconBubble = ({ children, from, to }) => (
 const StatCard = ({ title, value, icon, gradient }) => {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl p-5 shadow-md text-white bg-gradient-to-br ${gradient[0]} ${gradient[1]} transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}
+      className={`relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br ${gradient[0]} ${gradient[1]} transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}
     >
-      {/* Soft background pattern */}
       <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
         <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
         <div className="absolute bottom-3 left-4 w-14 h-14 bg-white rounded-full"></div>
       </div>
-
-      {/* Foreground content */}
-      <div className="relative z-10 flex items-center justify-between">
-        <div>
-          <p className="text-sm text-white/80">{title}</p>
-          <h3 className="text-2xl font-bold mt-1">{value}</h3>
+      <div className="relative z-10 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs md:text-sm text-white/80 truncate">{title}</p>
+          <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">{value}</h3>
         </div>
-
-        <div className="p-3 bg-white/20 rounded-xl shadow-md">
+        <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
           {icon}
         </div>
       </div>
@@ -109,11 +139,11 @@ const Card = ({ title, icon, bubble = ["from-slate-700", "to-slate-900"], childr
 );
 
 const Section = ({ title, subtitle, icon, children, className = "" }) => (
-  <section className={`space-y-4 ${className}`}>
+  <section className={`space-y-3 md:space-y-4 ${className}`}>
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         {icon && <span className="text-slate-700">{icon}</span>}
-        <h2 className="text-lg font-bold text-slate-800 tracking-tight">{title}</h2>
+        <h2 className="text-sm md:text-lg font-bold text-slate-800 tracking-tight">{title}</h2>
       </div>
       {subtitle && <Badge tone="slate">{subtitle}</Badge>}
     </div>
@@ -136,6 +166,13 @@ function AdminContent() {
   const [topicMap, setTopicMap] = useState({});
 
   async function loadSubjectTopicNames() {
+    const cached = readDashboardCache("admin-subject-topic-map", 10 * 60 * 1000);
+    if (cached) {
+      setSubjectMap(cached.subjectMap || {});
+      setTopicMap(cached.topicMap || {});
+      return;
+    }
+
     try {
       const subjectRes = await fetch(`${import.meta.env.VITE_API_URL}/api/subjects`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
@@ -155,6 +192,10 @@ function AdminContent() {
 
       setSubjectMap(sMap);
       setTopicMap(tMap);
+      writeDashboardCache("admin-subject-topic-map", {
+        subjectMap: sMap,
+        topicMap: tMap,
+      });
     } catch (err) {
       console.error("Failed to load names", err);
     }
@@ -163,6 +204,15 @@ function AdminContent() {
 
   // Fetch attempts + counts
   useEffect(() => {
+    const cached = readDashboardCache("admin-dashboard-core", 60 * 1000);
+    if (cached) {
+      setRows(cached.rows || []);
+      setTotalStudents(cached.totalStudents || 0);
+      setTotalTeachers(cached.totalTeachers || 0);
+      loadSubjectTopicNames();
+      return;
+    }
+
     (async () => {
       setBusy(true);
       setErr("");
@@ -185,7 +235,14 @@ function AdminContent() {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         const tData = await tRes.json();
-        setTotalTeachers(tData.teachers?.length || 0);
+        const teachersCount = tData.teachers?.length || 0;
+        setTotalTeachers(teachersCount);
+
+        writeDashboardCache("admin-dashboard-core", {
+          rows: items || [],
+          totalStudents: sData.students?.length || 0,
+          totalTeachers: teachersCount,
+        });
 
       } catch (e) {
         setErr(e.message || "Failed to load attempts");
@@ -630,11 +687,18 @@ function StudentContent() {
   const [subscriptionErr, setSubscriptionErr] = useState("");
 
   useEffect(() => {
+    const cachedAttempts = readDashboardCache("student-attempts", 2 * 60 * 1000);
+    if (cachedAttempts) {
+      setAttempts(cachedAttempts.items || []);
+      return;
+    }
+
     (async () => {
       setBusy(true); setErr("");
       try {
         const { items } = await myAttempts();
         setAttempts(items || []);
+        writeDashboardCache("student-attempts", { items: items || [] });
       } catch (e) {
         setErr(e.message || "Failed to load");
       } finally {
@@ -645,51 +709,79 @@ function StudentContent() {
 
   useEffect(() => {
     const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const cachedPackages = readDashboardCache("student-packages", 5 * 60 * 1000);
+    if (cachedPackages) {
+      setPackages(cachedPackages.packages || []);
+    }
 
-    (async () => {
-      setPackagesBusy(true);
-      setPackagesErr("");
-      try {
-        const res = await fetch(`${API}/api/packages`);
-        const data = await res.json();
-        setPackages(data.packages || []);
-      } catch (e) {
-        setPackagesErr(e.message || "Failed to load packages");
-      } finally {
-        setPackagesBusy(false);
-      }
-    })();
+    const cachedSubscription = readDashboardCache("student-subscription", 60 * 1000);
+    if (cachedSubscription) {
+      setSubscriptionInfo(cachedSubscription.subscriptionInfo || null);
+      setSubscriptionType(cachedSubscription.subscriptionType || "none");
+      setSubscriptionEndDate(cachedSubscription.subscriptionEndDate || null);
+    }
 
-    (async () => {
-      setSubscriptionBusy(true);
-      setSubscriptionErr("");
-      try {
-        const res = await fetch(`${API}/api/subscriptions/current`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
-        const data = await res.json();
-        if (res.ok && data?.hasActiveSubscription) {
-          setSubscriptionInfo(data.subscription || null);
-          setSubscriptionType(
-            data.subscriptionType ||
-            data.subscription?.package?.name ||
-            data.subscription?.packageName ||
-            "none"
-          );
-          setSubscriptionEndDate(
-            data.endDate || data.subscription?.endDate || null
-          );
-        } else {
-          setSubscriptionInfo(null);
-          setSubscriptionType("none");
-          setSubscriptionEndDate(null);
+    if (!cachedPackages) {
+      (async () => {
+        setPackagesBusy(true);
+        setPackagesErr("");
+        try {
+          const res = await fetch(`${API}/api/packages`);
+          const data = await res.json();
+          setPackages(data.packages || []);
+          writeDashboardCache("student-packages", { packages: data.packages || [] });
+        } catch (e) {
+          setPackagesErr(e.message || "Failed to load packages");
+        } finally {
+          setPackagesBusy(false);
         }
-      } catch (e) {
-        setSubscriptionErr(e.message || "Failed to load subscription");
-      } finally {
-        setSubscriptionBusy(false);
-      }
-    })();
+      })();
+    }
+
+    if (!cachedSubscription) {
+      (async () => {
+        setSubscriptionBusy(true);
+        setSubscriptionErr("");
+        try {
+          const res = await fetch(`${API}/api/subscriptions/current`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          const data = await res.json();
+          if (res.ok && data?.hasActiveSubscription) {
+            const nextSubscriptionInfo = data.subscription || null;
+            const nextSubscriptionType =
+              data.subscriptionType ||
+              data.subscription?.package?.name ||
+              data.subscription?.packageName ||
+              "none";
+            const nextSubscriptionEndDate =
+              data.endDate || data.subscription?.endDate || null;
+
+            setSubscriptionInfo(nextSubscriptionInfo);
+            setSubscriptionType(nextSubscriptionType);
+            setSubscriptionEndDate(nextSubscriptionEndDate);
+            writeDashboardCache("student-subscription", {
+              subscriptionInfo: nextSubscriptionInfo,
+              subscriptionType: nextSubscriptionType,
+              subscriptionEndDate: nextSubscriptionEndDate,
+            });
+          } else {
+            setSubscriptionInfo(null);
+            setSubscriptionType("none");
+            setSubscriptionEndDate(null);
+            writeDashboardCache("student-subscription", {
+              subscriptionInfo: null,
+              subscriptionType: "none",
+              subscriptionEndDate: null,
+            });
+          }
+        } catch (e) {
+          setSubscriptionErr(e.message || "Failed to load subscription");
+        } finally {
+          setSubscriptionBusy(false);
+        }
+      })();
+    }
   }, []);
 
   const storedUser = getUser();
@@ -752,7 +844,7 @@ function StudentContent() {
       <WelcomeCard />
       {/* <Section title="My Exam Stats" icon={<Trophy size={18} />}> */}
       <Section title="My Exam Stats">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
 
           {/* ✅ UPDATED CARD */}
           <StatCard
@@ -791,10 +883,58 @@ function StudentContent() {
       </Section>
 
       <Section title="Recent Exams" subtitle={busy ? "Loading…" : `${attempts.length} attempts`}>
-        <div className="rounded `-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
+        <div className="rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
 
-          {/* Table Header - Enhanced */}
-          <div className="overflow-x-auto">
+          {/* ── MOBILE CARD LIST (< md) ── */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {attempts
+              .slice()
+              .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+              .slice(0, 5)
+              .map((a, index) => (
+                <div key={a._id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-sm font-bold flex items-center justify-center flex-shrink-0 shadow">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-800 text-sm truncate">
+                      {a.subject?.name || a.subjectName || "—"}
+                    </div>
+                    <div className="text-xs text-slate-500 truncate">
+                      {a.topic?.name || a.topicName || "—"}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold">
+                        {a.type}
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                        a.percent >= 90 ? "bg-green-100 text-green-700" :
+                        a.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                        a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                        "bg-red-100 text-red-700"
+                      }`}>
+                        {a.percent}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-bold text-gray-800 text-sm">{a.score}<span className="text-gray-400 font-normal">/{a.total}</span></div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      {a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" }) : "—"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            {!attempts.length && !busy && (
+              <div className="p-8 text-center">
+                <div className="text-4xl mb-2">📝</div>
+                <p className="text-gray-500 font-medium text-sm">No exam attempts yet</p>
+              </div>
+            )}
+          </div>
+
+          {/* ── DESKTOP TABLE (md+) ── */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-[720px] w-full text-sm">
               <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
                 <tr>
@@ -803,74 +943,39 @@ function StudentContent() {
                   <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Date & Time</th>
                 </tr>
               </thead>
-
-              {/* Table Body - Enhanced */}
               <tbody className="divide-y divide-gray-100">
                 {attempts
                   .slice()
                   .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
                   .slice(0, 5)
                   .map((a, index) => (
-                    <tr
-                      key={a._id}
-                      className="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-200"
-                    >
-                      {/* EXAM NAME - Enhanced */}
+                    <tr key={a._id} className="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-200">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-sm font-bold flex items-center justify-center shadow flex-shrink-0">
                             {index + 1}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-bold text-gray-800">
-                              {a.subject?.name || a.subjectName || "—"}
-                            </span>
-                            <span className="text-xs text-slate-600">
-                              {a.topic?.name || a.topicName || "—"}
-                            </span>
-                            <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">
-                              {a.type}
-                            </span>
+                            <span className="font-bold text-gray-800">{a.subject?.name || a.subjectName || "—"}</span>
+                            <span className="text-xs text-slate-600">{a.topic?.name || a.topicName || "—"}</span>
+                            <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{a.type}</span>
                           </div>
                         </div>
                       </td>
-
-                      {/* SCORE - Enhanced */}
                       <td className="p-4">
-                        <div className="font-bold text-gray-800 text-base">
-                          {a.score} / {a.total}
-                        </div>
-                        <div className="mt-1">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                              a.percent >= 90 ? "bg-green-100 text-green-700" :
-                              a.percent >= 75 ? "bg-blue-100 text-blue-700" :
-                              a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
-                              "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {a.percent}%
-                          </span>
-                        </div>
+                        <div className="font-bold text-gray-800 text-base">{a.score} / {a.total}</div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${
+                          a.percent >= 90 ? "bg-green-100 text-green-700" :
+                          a.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                          a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        }`}>{a.percent}%</span>
                       </td>
-
-                      {/* DATE - Enhanced */}
                       <td className="p-4 text-slate-600 text-xs">
-                        {a.submittedAt
-                          ? new Date(a.submittedAt).toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "2-digit",
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true
-                          })
-                          : "-"}
+                        {a.submittedAt ? new Date(a.submittedAt).toLocaleString("en-US", { year: "numeric", month: "short", day: "2-digit", hour: "numeric", minute: "2-digit", hour12: true }) : "-"}
                       </td>
                     </tr>
                   ))}
-
-                {/* NO DATA - Enhanced */}
                 {!attempts.length && !busy && (
                   <tr>
                     <td colSpan={3} className="p-12 text-center">
@@ -1084,7 +1189,7 @@ export default function Dashboard() {
         </div>
       </div> */}
 
-      <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
+      <main className="mx-auto max-w-7xl px-3 md:px-4 py-4 md:py-8 space-y-5 md:space-y-8">
         {roleContent}
 
         {/* <Section title="Announcements" icon={<Bell size={18} />}>

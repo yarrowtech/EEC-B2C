@@ -1164,12 +1164,387 @@ function EditClozeText({ doc, scope, busy, setBusy }) {
   );
 }
 
-function EditMatchList({ doc }) {
-  return <Card><div className="text-center text-slate-600 p-6">Match List editing coming soon...</div></Card>;
+function EditMatchList({ doc, scope, busy, setBusy }) {
+  const [form, setForm] = useState(() => {
+    const sourcePairs = doc.matchList?.pairs || {};
+    const normalizedPairs =
+      sourcePairs instanceof Map
+        ? Object.fromEntries(sourcePairs.entries())
+        : { ...sourcePairs };
+
+    return {
+      prompt: doc.matchList?.prompt || "",
+      left: Array.isArray(doc.matchList?.left) && doc.matchList.left.length ? doc.matchList.left : ["", ""],
+      right: Array.isArray(doc.matchList?.right) && doc.matchList.right.length ? doc.matchList.right : ["", ""],
+      pairs: normalizedPairs,
+      explanation: doc.explanation || "",
+    };
+  });
+
+  const update = (key, value) => setForm((s) => ({ ...s, [key]: value }));
+
+  const updateLeft = (index, value) =>
+    setForm((s) => {
+      const next = [...s.left];
+      next[index] = value;
+      return { ...s, left: next };
+    });
+
+  const updateRight = (index, value) =>
+    setForm((s) => {
+      const next = [...s.right];
+      next[index] = value;
+      return { ...s, right: next };
+    });
+
+  const addLeft = () => setForm((s) => ({ ...s, left: [...s.left, ""] }));
+  const addRight = () => setForm((s) => ({ ...s, right: [...s.right, ""] }));
+
+  const removeLeft = (index) =>
+    setForm((s) => {
+      if (s.left.length <= 2) return s;
+      const left = s.left.filter((_, i) => i !== index);
+      const pairs = {};
+      left.forEach((_, li) => {
+        const oldIndex = li >= index ? li + 1 : li;
+        if (s.pairs[String(oldIndex)] !== undefined) {
+          pairs[String(li)] = s.pairs[String(oldIndex)];
+        }
+      });
+      return { ...s, left, pairs };
+    });
+
+  const removeRight = (index) =>
+    setForm((s) => {
+      if (s.right.length <= 2) return s;
+      const right = s.right.filter((_, i) => i !== index);
+      const pairs = {};
+      Object.entries(s.pairs).forEach(([li, ri]) => {
+        const rightIndex = Number(ri);
+        if (Number.isNaN(rightIndex)) return;
+        if (rightIndex === index) return;
+        pairs[li] = String(rightIndex > index ? rightIndex - 1 : rightIndex);
+      });
+      return { ...s, right, pairs };
+    });
+
+  async function save(e) {
+    e.preventDefault();
+
+    if (!scope.board || !scope.class || !scope.subject || !scope.topic ||
+        !scope.stage || !scope.difficulty) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
+
+    if (!form.prompt.trim()) {
+      return toast.warn("Please enter the prompt");
+    }
+
+    if (form.left.some((x) => !x.trim()) || form.right.some((x) => !x.trim())) {
+      return toast.warn("Please fill all left and right items");
+    }
+
+    const missingPairs = form.left
+      .map((_, li) => li)
+      .filter((li) => form.pairs[String(li)] === undefined || form.pairs[String(li)] === "");
+    if (missingPairs.length) {
+      return toast.warn("Please set a right-side match for each left item");
+    }
+
+    setBusy(true);
+    try {
+      const stagePayload = buildQuestionStagePayload(scope.stage);
+
+      await updateQuestion(doc._id, {
+        type: "match-list",
+        board: scope.board,
+        class: scope.class,
+        subject: scope.subject,
+        topic: scope.topic,
+        ...stagePayload,
+        difficulty: scope.difficulty.toLowerCase(),
+        explanation: form.explanation,
+        matchList: {
+          prompt: form.prompt,
+          left: form.left,
+          right: form.right,
+          pairs: form.pairs,
+        },
+      });
+
+      toast.success("Question updated successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to update question");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-6">
+      <Card>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Question Content</h3>
+
+        <div className="mb-6">
+          <FieldLabel>Prompt</FieldLabel>
+          <textarea
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                     focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            placeholder="Match the following..."
+            value={form.prompt}
+            onChange={(e) => update("prompt", e.target.value)}
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6 mb-6">
+          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <FieldLabel>Left List</FieldLabel>
+              <button
+                type="button"
+                onClick={addLeft}
+                className="text-xs rounded-lg px-3 py-1 bg-blue-600 text-white font-semibold"
+              >
+                Add
+              </button>
+            </div>
+
+            {form.left.map((val, i) => (
+              <div key={`left-${i}`} className="flex gap-2">
+                <input
+                  className="w-full rounded-xl px-4 py-2 bg-white border border-slate-300
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  placeholder={`Left item ${i + 1}`}
+                  value={val}
+                  onChange={(e) => updateLeft(i, e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={form.left.length <= 2}
+                  onClick={() => removeLeft(i)}
+                  className="rounded-xl px-3 py-2 bg-white border border-slate-300 text-slate-700 disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <FieldLabel>Right List</FieldLabel>
+              <button
+                type="button"
+                onClick={addRight}
+                className="text-xs rounded-lg px-3 py-1 bg-purple-600 text-white font-semibold"
+              >
+                Add
+              </button>
+            </div>
+
+            {form.right.map((val, i) => (
+              <div key={`right-${i}`} className="flex gap-2">
+                <input
+                  className="w-full rounded-xl px-4 py-2 bg-white border border-slate-300
+                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                  placeholder={`Right item ${i + 1}`}
+                  value={val}
+                  onChange={(e) => updateRight(i, e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={form.right.length <= 2}
+                  onClick={() => removeRight(i)}
+                  className="rounded-xl px-3 py-2 bg-white border border-slate-300 text-slate-700 disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-4">
+          <FieldLabel>Correct Pairs</FieldLabel>
+          {form.left.map((leftVal, li) => (
+            <div key={`pair-${li}`} className="grid sm:grid-cols-2 gap-4 items-center">
+              <div className="font-semibold text-slate-700">{leftVal || `Left ${li + 1}`}</div>
+              <select
+                className="w-full rounded-xl px-4 py-2 bg-white border border-slate-300
+                         focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                value={form.pairs[String(li)] ?? ""}
+                onChange={(e) =>
+                  setForm((s) => ({
+                    ...s,
+                    pairs: { ...s.pairs, [String(li)]: e.target.value },
+                  }))
+                }
+              >
+                <option value="">Select right item</option>
+                {form.right.map((rightVal, ri) => (
+                  <option key={`pair-opt-${li}-${ri}`} value={String(ri)}>
+                    {rightVal || `Right ${ri + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-6">
+          <FieldLabel>Explanation (optional)</FieldLabel>
+          <textarea
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                     focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+            placeholder="Explain the matching logic..."
+            value={form.explanation}
+            onChange={(e) => update("explanation", e.target.value)}
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <SaveButton busy={busy} />
+        </div>
+      </Card>
+    </form>
+  );
 }
 
-function EditEssayRich({ doc }) {
-  return <Card><div className="text-center text-slate-600 p-6">Essay Rich editing coming soon...</div></Card>;
+function EditEssayRich({ doc, scope, busy, setBusy }) {
+  const editorRef = useRef(null);
+  const [form, setForm] = useState(() => ({
+    prompt: doc.prompt || "",
+    tags: (doc.tags || []).join(","),
+    explanation: doc.explanation || "",
+    richHtml: doc.richHtml || "",
+  }));
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    editorRef.current.innerHTML = form.richHtml || "";
+  }, [doc._id]);
+
+  const applyCmd = (cmd) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(cmd, false, null);
+    setForm((s) => ({ ...s, richHtml: editorRef.current?.innerHTML || "" }));
+  };
+
+  async function save(e) {
+    e.preventDefault();
+
+    if (!scope.board || !scope.class || !scope.subject || !scope.topic ||
+        !scope.stage || !scope.difficulty) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
+
+    if (!form.prompt.trim()) {
+      return toast.warn("Please enter the essay prompt");
+    }
+
+    setBusy(true);
+    try {
+      const stagePayload = buildQuestionStagePayload(scope.stage);
+      const html = editorRef.current?.innerHTML || "";
+
+      await updateQuestion(doc._id, {
+        type: "essay-rich",
+        board: scope.board,
+        class: scope.class,
+        subject: scope.subject,
+        topic: scope.topic,
+        ...stagePayload,
+        difficulty: scope.difficulty.toLowerCase(),
+        prompt: form.prompt,
+        richHtml: html,
+        tags: form.tags,
+        explanation: form.explanation,
+      });
+
+      toast.success("Question updated successfully!");
+      setForm((s) => ({ ...s, richHtml: html }));
+    } catch (err) {
+      toast.error(err.message || "Failed to update question");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-6">
+      <Card>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Question Content</h3>
+
+        <div className="mb-6">
+          <FieldLabel>Essay Prompt</FieldLabel>
+          <input
+            className="w-full rounded-xl px-4 py-2 bg-slate-50 border border-slate-300
+                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            placeholder="Enter essay prompt..."
+            value={form.prompt}
+            onChange={(e) => setForm((s) => ({ ...s, prompt: e.target.value }))}
+          />
+        </div>
+
+        <div className="mb-6 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+          <FieldLabel>Answer Guidance (Rich Text)</FieldLabel>
+          <div className="flex items-center gap-2 mb-3">
+            <button type="button" onClick={() => applyCmd("bold")} className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 transition">
+              <strong>B</strong>
+            </button>
+            <button type="button" onClick={() => applyCmd("italic")} className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 transition">
+              <em>I</em>
+            </button>
+            <button type="button" onClick={() => applyCmd("underline")} className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 transition">
+              <span className="underline">U</span>
+            </button>
+            <button type="button" onClick={() => applyCmd("insertUnorderedList")} className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 transition">
+              • List
+            </button>
+            <button type="button" onClick={() => applyCmd("insertOrderedList")} className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 transition">
+              1. List
+            </button>
+          </div>
+
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            className="min-h-40 rounded-xl bg-white p-4 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onInput={() => setForm((s) => ({ ...s, richHtml: editorRef.current?.innerHTML || "" }))}
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6 mb-6">
+          <div>
+            <FieldLabel>Tags (comma separated)</FieldLabel>
+            <input
+              className="w-full rounded-xl px-4 py-2 bg-slate-50 border border-slate-300
+                       focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+              placeholder="descriptive writing, grammar..."
+              value={form.tags}
+              onChange={(e) => setForm((s) => ({ ...s, tags: e.target.value }))}
+            />
+          </div>
+          <div>
+            <FieldLabel>Explanation (optional)</FieldLabel>
+            <textarea
+              className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                       focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              placeholder="Add evaluation hint or rubric note..."
+              value={form.explanation}
+              onChange={(e) => setForm((s) => ({ ...s, explanation: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <SaveButton busy={busy} />
+        </div>
+      </Card>
+    </form>
+  );
 }
 
 function EditEssayPlain({ doc, scope, busy, setBusy }) {

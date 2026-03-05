@@ -382,7 +382,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                         <img
                             src="/logo_new.png"
                             alt="EEC Logo"
-                            className="h-12 w-auto md:ml-16 cursor-pointer"
+                            className="h-9 md:h-12 w-auto md:ml-16 cursor-pointer"
                             onClick={() => navigate("/")}
                         />
                     </div>
@@ -392,10 +392,11 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
                         {/* POINTS */}
                         {user?.role === "student" && (
-                            <Link to="/dashboard/achievements" className="hidden sm:inline-flex">
-                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold">
-                                    <Coins size={18} />
-                                    {points} Points
+                            <Link to="/dashboard/achievements">
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-amber-200/80 text-amber-900 font-semibold text-xs md:text-sm">
+                                    <Coins size={15} className="md:w-[18px] md:h-[18px]" />
+                                    <span>{points}</span>
+                                    <span className="hidden sm:inline">pts</span>
                                 </div>
                             </Link>
                         )}

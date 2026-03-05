@@ -222,7 +222,11 @@ import {
     LayoutGrid,
     Gift,
     ShoppingCart,
-    CreditCard
+    CreditCard,
+    BookOpen,
+    ListChecks,
+    Trophy,
+    User,
 } from "lucide-react";
 
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
@@ -349,7 +353,7 @@ export default function DashboardLayout() {
                 {/* MOBILE BACKDROP */}
                 {open && (
                     <div
-                        className="fixed inset-0 z-30 bg-black/40 sm:hidden"
+                        className="fixed inset-0 z-30 bg-black/40 md:hidden"
                         onClick={() => setOpen(false)}
                     />
                 )}
@@ -360,7 +364,7 @@ export default function DashboardLayout() {
   bg-[#FFF7DB] border-r border-yellow-200
   transition-transform
   ${open ? "translate-x-0" : "-translate-x-full"}
-  sm:translate-x-0`}
+  md:translate-x-0`}
                 >
                     {/* <div className="h-full overflow-y-auto px-3 py-4"> */}
                     <div className="h-full flex flex-col px-3 py-4">
@@ -453,18 +457,57 @@ export default function DashboardLayout() {
 
                 {/* MAIN CONTENT */}
                 <main
-                    className="
-            ml-0 sm:ml-72
+                    className={`
+            ml-0 md:ml-72
             h-[calc(100vh-56px)]
             overflow-y-auto
             w-full
-          "
+            ${role === "student" ? "pb-16 md:pb-0" : ""}
+          `}
                 >
                     <div className="mx-auto max-w-7xl">
                         <Outlet />
                     </div>
                 </main>
             </div>
+
+            {/* MOBILE / TABLET FOOTER NAV — students only, visible below md */}
+            {role === "student" && (
+                <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+                    <div className="flex items-stretch h-16">
+                        {[
+                            { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true },
+                            { to: "/dashboard/syllabus?stage=1", label: "Exam", icon: <BookOpen size={22} /> },
+                            { to: "/dashboard/study-materials", label: "Study", icon: <Library size={22} /> },
+                            { to: "/dashboard/result", label: "Results", icon: <ListChecks size={22} /> },
+                            { to: "/dashboard/leaderboard", label: "Ranks", icon: <Trophy size={22} /> },
+                            { to: "/dashboard/profile", label: "Profile", icon: <User size={22} /> },
+                        ].map((item) => (
+                            <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end={item.end}
+                                className={({ isActive }) =>
+                                    `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
+                                        isActive
+                                            ? "text-orange-600"
+                                            : "text-orange-800/50 hover:text-orange-700"
+                                    }`
+                                }
+                            >
+                                {({ isActive }) => (
+                                    <>
+                                        <span className={`transition-transform ${isActive ? "scale-110" : ""}`}>
+                                            {item.icon}
+                                        </span>
+                                        <span>{item.label}</span>
+                                    </>
+                                )}
+                            </NavLink>
+                        ))}
+                    </div>
+                </nav>
+            )}
 
             {/* Teacher Verification Modal */}
             {showTeacherVerification && user?.role === "teacher" && (

@@ -64,9 +64,13 @@ export default function ResultDetail() {
     }
   }
 
-  const correctCount = doc.items.filter(it => it.isCorrect).length;
-  const wrongCount = doc.items.length - correctCount;
-  const accuracy = doc.items.length > 0 ? Math.round((correctCount / doc.items.length) * 100) : 0;
+  const safeItems = Array.isArray(doc.items) ? doc.items : [];
+  const correctCount = safeItems.filter((it) => it.isCorrect).length;
+  const wrongCount = safeItems.length - correctCount;
+  const accuracy =
+    safeItems.length > 0
+      ? Math.round((correctCount / safeItems.length) * 100)
+      : 0;
 
   return (
     <div className="space-y-6 p-6">
@@ -156,7 +160,7 @@ export default function ResultDetail() {
         <InfoCard
           icon={<Check size={20} />}
           title="Correct Answers"
-          value={`${correctCount} / ${doc.items.length}`}
+          value={`${correctCount} / ${safeItems.length}`}
           gradient="from-green-600 to-teal-600"
         />
 
@@ -190,7 +194,7 @@ export default function ResultDetail() {
             </thead>
 
             <tbody className="divide-y divide-gray-200">
-              {doc.items.map((it, idx) => (
+              {safeItems.map((it, idx) => (
                 <tr
                   key={it.qid}
                   className={`transition-all ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50`}
@@ -249,7 +253,7 @@ export default function ResultDetail() {
             </div>
           </div>
           <div className="text-sm text-slate-600">
-            Total Questions: <span className="font-semibold text-slate-800">{doc.items.length}</span>
+            Total Questions: <span className="font-semibold text-slate-800">{safeItems.length}</span>
           </div>
         </div>
       </div>

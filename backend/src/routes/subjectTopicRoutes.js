@@ -1,9 +1,25 @@
 import express from "express";
 import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
+import Question from "../models/Question.js";
 import { requireAuth } from "../middleware/auth.js"; // ✅ FIXED IMPORT
 
 const router = express.Router();
+
+function normalizeStageQuery(stageValue) {
+  if (stageValue === null || stageValue === undefined || stageValue === "") {
+    return null;
+  }
+  const raw = String(stageValue).trim().toLowerCase();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Math.max(1, Number(raw));
+  const match = raw.match(/^stage[-\s]*(\d+)$/);
+  if (match) return Math.max(1, Number(match[1]));
+  if (raw === "foundation") return 1;
+  if (raw === "intermediate") return 2;
+  if (raw === "advanced") return 3;
+  return null;
+}
 
 /* ---------- SUBJECT ROUTES ---------- */
 
@@ -31,7 +47,7 @@ router.post("/subject", requireAuth, async (req, res) => {
 // Get all subjects (filtered by board and class if provided)
 router.get("/subject", requireAuth, async (req, res) => {
   try {
-    const { board, class: className } = req.query;
+    const { board, class: className, stage } = req.query;
     // console.log("GET /api/subject - board:", board, "class:", className);
 
     // Build filter
@@ -76,11 +92,22 @@ router.get("/subject", requireAuth, async (req, res) => {
 
     // console.log("Final filter:", JSON.stringify(filter));
 
-    const subjects = await Subject.find(filter)
+    let subjects = await Subject.find(filter)
       .populate("board", "name")
       .populate("class", "name")
       .populate("createdBy", "name role")
       .sort({ createdAt: -1 });
+
+    const stageNumber = normalizeStageQuery(stage);
+    if (stageNumber !== null && subjects.length > 0) {
+      const subjectIds = subjects.map((s) => String(s._id));
+      const activeSubjectIds = await Question.distinct("subject", {
+        stage: stageNumber,
+        subject: { $in: subjectIds },
+      });
+      const allowed = new Set(activeSubjectIds.map((id) => String(id)));
+      subjects = subjects.filter((s) => allowed.has(String(s._id)));
+    }
 
     // console.log(`Found ${subjects.length} subjects`);
     res.json(subjects);
@@ -131,7 +158,7 @@ router.post("/topic", requireAuth, async (req, res) => {
 
 router.get("/topic/:subjectId", requireAuth, async (req, res) => {
   try {
-    const { board, class: className } = req.query;
+    const { board, class: className, stage } = req.query;
 
     // Build filter
     const filter = { subject: req.params.subjectId };
@@ -172,11 +199,23 @@ router.get("/topic/:subjectId", requireAuth, async (req, res) => {
       }
     }
 
-    const topics = await Topic.find(filter)
+    let topics = await Topic.find(filter)
       .populate("board", "name")
       .populate("class", "name")
       .populate("createdBy", "name")
       .sort({ createdAt: -1 });
+
+    const stageNumber = normalizeStageQuery(stage);
+    if (stageNumber !== null && topics.length > 0) {
+      const topicIds = topics.map((t) => String(t._id));
+      const activeTopicIds = await Question.distinct("topic", {
+        stage: stageNumber,
+        subject: String(req.params.subjectId),
+        topic: { $in: topicIds },
+      });
+      const allowed = new Set(activeTopicIds.map((id) => String(id)));
+      topics = topics.filter((t) => allowed.has(String(t._id)));
+    }
 
     res.json(topics);
   } catch (err) {

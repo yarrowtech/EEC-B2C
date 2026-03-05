@@ -291,7 +291,7 @@ function scoreChoiceMatrix(q, ans) {
 export const startExam = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { stage = "stage-1", subject, topic, type, limit = 10 } = req.body;
+    const { stage = "stage-1", level, subject, topic, type, limit = 10 } = req.body;
 
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     if (!subject || !topic || !type) {
@@ -324,6 +324,19 @@ export const startExam = async (req, res) => {
       return stageNameMap[stageStr] || null;
     };
 
+    const normalizeLevel = (levelValue) => {
+      const raw = String(levelValue || "").trim().toLowerCase();
+      if (["basic", "intermediate", "advanced"].includes(raw)) return raw;
+      return null;
+    };
+
+    const levelToDifficulty = (levelValue) => {
+      if (levelValue === "basic") return "easy";
+      if (levelValue === "intermediate") return "moderate";
+      if (levelValue === "advanced") return "hard";
+      return null;
+    };
+
     async function buildMatchValue(value, modelPath) {
       if (!value) return null;
 
@@ -335,7 +348,7 @@ export const startExam = async (req, res) => {
         const Model = (await import(modelPath)).default;
         const doc = await Model.findOne({ name: value });
         if (doc) {
-          return { $in: [value, doc._id] };
+          return { $in: [value, String(doc._id), doc._id] };
         }
       }
 
@@ -351,6 +364,13 @@ export const startExam = async (req, res) => {
     const stageNumber = normalizeStage(stage);
     if (stageNumber !== null) {
       match.stage = stageNumber;
+    }
+    const normalizedLevel = normalizeLevel(level);
+    if (normalizedLevel) {
+      const mappedDifficulty = levelToDifficulty(normalizedLevel);
+      match.$or = mappedDifficulty
+        ? [{ level: normalizedLevel }, { difficulty: mappedDifficulty }]
+        : [{ level: normalizedLevel }];
     }
 
     const userClassRaw =
@@ -410,9 +430,13 @@ export const startExam = async (req, res) => {
             },
           },
           prompt: 1,
+          plainText: 1,
+          richHtml: 1,
           explanation: 1,
           clozeDrag: 1,
           clozeSelect: 1,
+          clozeText: 1,
+          matchList: 1,
         },
       },
     ];
@@ -465,6 +489,45 @@ export const startExam = async (req, res) => {
           _id: q._id,
           type: q.type,
           clozeSelect: q.clozeSelect,
+          explanation: q.explanation,
+        };
+      }
+
+      if (q.type === "cloze-text") {
+        return {
+          _id: q._id,
+          type: q.type,
+          clozeText: q.clozeText || {},
+          explanation: q.explanation,
+        };
+      }
+
+      if (q.type === "match-list") {
+        return {
+          _id: q._id,
+          type: q.type,
+          matchList: q.matchList || {},
+          prompt: q.matchList?.prompt || q.prompt || "",
+          explanation: q.explanation,
+        };
+      }
+
+      if (q.type === "essay-plain") {
+        return {
+          _id: q._id,
+          type: q.type,
+          prompt: q.prompt || "",
+          plainText: q.plainText || "",
+          explanation: q.explanation,
+        };
+      }
+
+      if (q.type === "essay-rich") {
+        return {
+          _id: q._id,
+          type: q.type,
+          prompt: q.prompt || "",
+          richHtml: q.richHtml || "",
           explanation: q.explanation,
         };
       }
@@ -1020,6 +1083,110 @@ export const submitExam = async (req, res) => {
         continue;
       }
 
+      // ------ CLOZE TEXT (typed blanks) ------
+      if (q.type === "cloze-text") {
+        const answersRaw = q.clozeText?.answers || {};
+        let correctAnswers = answersRaw;
+        if (answersRaw instanceof Map) {
+          correctAnswers = Object.fromEntries(answersRaw);
+        } else if (typeof answersRaw.toObject === "function") {
+          correctAnswers = answersRaw.toObject();
+        }
+
+        const userAnswers = ans.clozeText || ans.cloze || {};
+        const keys = Object.keys(correctAnswers);
+        const total = keys.length;
+
+        let matched = 0;
+        for (const k of keys) {
+          const expected = String(correctAnswers[k] || "").trim().toLowerCase();
+          const actual = String(userAnswers[k] || "").trim().toLowerCase();
+          if (expected && actual && expected === actual) matched++;
+        }
+
+        if (total === 0) {
+          detail[q._id] = "wrong";
+        } else if (matched === total) {
+          score += 1;
+          detail[q._id] = "correct";
+        } else if (matched > 0) {
+          detail[q._id] = "partial";
+        } else {
+          detail[q._id] = "wrong";
+        }
+        continue;
+      }
+
+      // ------ ESSAY RICH ------
+      if (type === "essay-rich") {
+        const userText = (ans.essay || ans.essayRich?.text || "").toLowerCase();
+        const guideText = (q.plainText || q.prompt || "").toLowerCase();
+
+        if (!userText) {
+          detail[q._id] = "wrong";
+        } else if (!guideText) {
+          // No model answer/guidance: accept submission and mark as attempted.
+          detail[q._id] = "partial";
+        } else {
+          const correctWords = extractEssayTokens(guideText);
+          const userWords = extractEssayTokens(userText);
+
+          let overlap = 0;
+          correctWords.forEach((w) => {
+            if (userWords.has(w)) overlap++;
+          });
+
+          const ratio = correctWords.size ? overlap / correctWords.size : 0;
+
+          if (ratio >= 0.7) {
+            score += 1;
+            detail[q._id] = "correct";
+          } else if (ratio >= 0.3) {
+            score += 0.5;
+            detail[q._id] = "partial";
+          } else {
+            detail[q._id] = "wrong";
+          }
+        }
+        continue;
+      }
+
+      // ------ MATCH LIST ------
+      if (q.type === "match-list") {
+        const pairsRaw = q.matchList?.pairs || {};
+        let correctPairs = pairsRaw;
+
+        if (pairsRaw instanceof Map) {
+          correctPairs = Object.fromEntries(pairsRaw);
+        } else if (typeof pairsRaw.toObject === "function") {
+          correctPairs = pairsRaw.toObject();
+        }
+
+        const userPairs = ans.matchList || {};
+        const keys = Object.keys(correctPairs);
+        const total = keys.length;
+
+        let matched = 0;
+        for (const k of keys) {
+          if (String(userPairs[k] ?? "").trim() === String(correctPairs[k] ?? "").trim()) {
+            matched++;
+          }
+        }
+
+        if (total === 0) {
+          detail[q._id] = "wrong";
+        } else if (matched === total) {
+          score += 1;
+          detail[q._id] = "correct";
+        } else if (matched > 0) {
+          detail[q._id] = "partial";
+        } else {
+          detail[q._id] = "wrong";
+        }
+
+        continue;
+      }
+
       // ------ default / unknown type ------
       detail[q._id] = "wrong";
     }
@@ -1273,8 +1440,6 @@ export const adminAttempts = async (req, res) => {
 
 export const adminAttemptDetail = async (req, res) => {
   try {
-    // ❌ Removed admin-only block — route already checks role
-
     const { id } = req.params;
     const attempt = await Attempt.findById(id).lean();
     if (!attempt) return res.status(404).json({ message: "Not found" });
@@ -1283,13 +1448,16 @@ export const adminAttemptDetail = async (req, res) => {
       .select("_id name email")
       .lean();
 
-    const questions = await Question.find({ _id: { $in: attempt.questions } })
-      .select("_id type question options correct")
+    const questionIds = Array.isArray(attempt.questions) ? attempt.questions : [];
+    const questions = await Question.find({ _id: { $in: questionIds } })
+      .select(
+        "_id type question prompt plainText options correct choiceMatrix clozeDrag clozeSelect clozeText matchList richHtml"
+      )
       .lean();
 
     const qMap = new Map(questions.map((q) => [String(q._id), q]));
 
-    const items = (attempt.answers || [])
+    const items = (Array.isArray(attempt.answers) ? attempt.answers : [])
       .map((ans) => {
         const q = qMap.get(String(ans.qid));
         if (!q) return null;
@@ -1329,6 +1497,60 @@ export const adminAttemptDetail = async (req, res) => {
           studentAnswer = key || "—";
           correctAnswer = ck || "—";
           isCorrect = !!key && key === ck;
+        } else if (type === "essay-plain" || type === "essay-rich") {
+          studentAnswer = ans.essay || ans.essayRich?.text || "—";
+          correctAnswer = q.plainText || q.prompt || "—";
+          isCorrect = false;
+        } else if (type === "cloze-select") {
+          const userMap = ans.clozeSelect || {};
+          const blankMap = q.clozeSelect?.blanks || {};
+          const keys = Object.keys(blankMap || {});
+          studentAnswer = keys.length
+            ? keys.map((k) => `${k}: ${userMap[k] || "—"}`).join(", ")
+            : "—";
+          correctAnswer = keys.length
+            ? keys.map((k) => `${k}: ${blankMap[k]?.correct || "—"}`).join(", ")
+            : "—";
+          isCorrect = false;
+        } else if (type === "cloze-drag") {
+          const userMap = ans.cloze || {};
+          const correctMap = q.clozeDrag?.correctMap || {};
+          const keys = Object.keys(correctMap || {});
+          studentAnswer = keys.length
+            ? keys.map((k) => `${k}: ${userMap[k] || "—"}`).join(", ")
+            : "—";
+          correctAnswer = keys.length
+            ? keys.map((k) => `${k}: ${correctMap[k] || "—"}`).join(", ")
+            : "—";
+          isCorrect = false;
+        } else if (type === "cloze-text") {
+          const userMap = ans.clozeText || {};
+          const correctMap = q.clozeText?.answers || {};
+          const keys = Object.keys(correctMap || {});
+          studentAnswer = keys.length
+            ? keys.map((k) => `${k}: ${userMap[k] || "—"}`).join(", ")
+            : "—";
+          correctAnswer = keys.length
+            ? keys.map((k) => `${k}: ${correctMap[k] || "—"}`).join(", ")
+            : "—";
+          isCorrect = false;
+        } else if (type === "match-list") {
+          const left = q.matchList?.left || [];
+          const right = q.matchList?.right || [];
+          const correctPairs = q.matchList?.pairs || {};
+          const userPairs = ans.matchList || {};
+          const keys = Object.keys(correctPairs || {});
+          studentAnswer = keys.length
+            ? keys
+                .map((k) => `${left[Number(k)] || `Left ${Number(k) + 1}`} -> ${right[Number(userPairs[k])] || "—"}`)
+                .join(", ")
+            : "—";
+          correctAnswer = keys.length
+            ? keys
+                .map((k) => `${left[Number(k)] || `Left ${Number(k) + 1}`} -> ${right[Number(correctPairs[k])] || "—"}`)
+                .join(", ")
+            : "—";
+          isCorrect = false;
         } else {
           studentAnswer = "—";
           correctAnswer = "—";
@@ -1337,7 +1559,15 @@ export const adminAttemptDetail = async (req, res) => {
 
         return {
           qid: String(q._id),
-          question: q.question || "(no text)",
+          question:
+            q.question ||
+            q.prompt ||
+            q.choiceMatrix?.prompt ||
+            q.matchList?.prompt ||
+            q.clozeDrag?.text ||
+            q.clozeSelect?.text ||
+            q.clozeText?.text ||
+            "(no text)",
           studentAnswer,
           correctAnswer,
           isCorrect,
@@ -1387,7 +1617,9 @@ export const getUserResults = async (req, res) => {
         const fullQuestions = await Question.find({
           _id: { $in: att.questions },
         })
-          .select("question options correct type choiceMatrix")
+          .select(
+            "question prompt plainText richHtml options correct type choiceMatrix matchList clozeDrag clozeSelect clozeText explanation"
+          )
           .lean();
 
         const populatedQuestions = fullQuestions.map((q) => ({

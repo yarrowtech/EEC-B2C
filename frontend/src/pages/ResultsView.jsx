@@ -10,6 +10,8 @@ import {
   Star,
   Trophy,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   GitGraph,
   ChartSpline,
@@ -25,6 +27,36 @@ import {
 } from 'lucide-react';
 import { getJSON } from '../lib/api';
 
+const RESULTS_CACHE_PREFIX = "eec:results-cache:v2";
+
+function getCacheKey(section, userKey = "anonymous") {
+  return `${RESULTS_CACHE_PREFIX}:${userKey}:${section}`;
+}
+
+function readCache(section, userKey, ttlMs) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(section, userKey));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.ts !== "number") return null;
+    if (Date.now() - parsed.ts > ttlMs) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(section, userKey, data) {
+  try {
+    localStorage.setItem(
+      getCacheKey(section, userKey),
+      JSON.stringify({ ts: Date.now(), data })
+    );
+  } catch {
+    // Ignore quota/storage errors.
+  }
+}
+
 const ResultsView = () => {
   const [selectedSemester, setSelectedSemester] = useState('current');
   const [selectedExam, setSelectedExam] = useState('all');
@@ -34,7 +66,6 @@ const ResultsView = () => {
   const [showModal, setShowModal] = useState(false);
   const [activeExam, setActiveExam] = useState(null);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
   useEffect(() => {
     if (!showModal || !activeExam) return;
     let mounted = true;
@@ -47,22 +78,48 @@ const ResultsView = () => {
         (activeExam.answers || []).map((a) => [String(a.qid), a])
       );
 
-      const needsFetch = questions.some(
-        (q) =>
-          typeof q === "string" ||
-          (!q?.question && !q?.choiceMatrix?.prompt)
-      );
-
-      if (!needsFetch) return;
-
-      const ids = questions
-        .map((q) => (typeof q === "string" ? q : q?._id))
+      const idsToFetch = questions
+        .filter((q) => {
+          if (typeof q === "string") return true;
+          if (!q?._id) return false;
+          if (q.type === "choice-matrix") return !q.choiceMatrix?.prompt;
+          if (q.type === "match-list") return !q.matchList?.left?.length || !q.matchList?.right?.length;
+          if (q.type === "cloze-drag") return !q.clozeDrag?.text;
+          if (q.type === "cloze-select") return !q.clozeSelect?.text;
+          if (q.type === "cloze-text") return !q.clozeText?.text;
+          if (q.type === "essay-plain") return !q.prompt && !q.plainText;
+          if (q.type === "true-false") return !q.question;
+          return !q.question && !q.prompt;
+        })
+        .map((q) => (typeof q === "string" ? q : q._id))
         .filter(Boolean)
         .map(String);
 
-      const uniqueIds = [...new Set(ids)];
+      const uniqueIds = [...new Set(idsToFetch)];
+      if (!uniqueIds.length) {
+        const nextQuestions = questions.map((q) => {
+          const id = typeof q === "string" ? q : q?._id;
+          const base = typeof q === "object" ? q : {};
+          return {
+            _id: String(id || base._id || ""),
+            ...base,
+            userAnswer: base?.userAnswer || answerMap.get(String(id)) || null,
+          };
+        });
+        if (mounted) {
+          setActiveExam((prev) => (prev ? { ...prev, questions: nextQuestions } : prev));
+        }
+        return;
+      }
+
       const fetched = await Promise.all(
-        uniqueIds.map((qid) => getJSON(`/api/questions/${qid}`).catch(() => null))
+        uniqueIds.map(async (qid) => {
+          const cachedQuestion = readCache(`question:${qid}`, "global", 30 * 60 * 1000);
+          if (cachedQuestion) return cachedQuestion;
+          const question = await getJSON(`/api/questions/${qid}`).catch(() => null);
+          if (question) writeCache(`question:${qid}`, "global", question);
+          return question;
+        })
       );
 
       const fetchedMap = new Map(
@@ -71,10 +128,11 @@ const ResultsView = () => {
 
       const nextQuestions = questions.map((q) => {
         const id = typeof q === "string" ? q : q?._id;
-        const base = typeof q === "object" ? q : null;
+        const base = typeof q === "object" ? q : {};
         const full = fetchedMap.get(String(id)) || base;
-        if (!full) return q;
+
         return {
+          _id: String(id || base._id || ""),
           ...full,
           userAnswer: base?.userAnswer || answerMap.get(String(id)) || null,
         };
@@ -89,7 +147,28 @@ const ResultsView = () => {
     return () => {
       mounted = false;
     };
-  }, [showModal, activeExam]);
+  }, [showModal, activeExam?.id, activeExam?._id]);
+
+  function openExamDetails(exam) {
+    const answerMap = new Map(
+      (exam?.answers || []).map((a) => [String(a.qid), a])
+    );
+    const normalizedQuestions = (exam?.questions || []).map((q) => {
+      const id = typeof q === "string" ? q : q?._id;
+      const base = typeof q === "object" ? q : {};
+      return {
+        _id: String(id || ""),
+        ...base,
+        userAnswer: base?.userAnswer || answerMap.get(String(id)) || null,
+      };
+    });
+
+    setActiveExam({
+      ...exam,
+      questions: normalizedQuestions,
+    });
+    setShowModal(true);
+  }
 
   // useEffect(() => {
   //   fetch(`${API}/api/exams/user-results/${user._id}`, {
@@ -112,6 +191,12 @@ const ResultsView = () => {
       return;
     }
 
+    const cachedAttempts = readCache("attempts", String(userId), 2 * 60 * 1000);
+    if (cachedAttempts) {
+      setExamResults(formatResults(cachedAttempts));
+      return;
+    }
+
     fetch(`${API}/api/exams/user-results/${userId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
     })
@@ -119,6 +204,7 @@ const ResultsView = () => {
       .then(data => {
         if (data.success) {
           setExamResults(formatResults(data.results));
+          writeCache("attempts", String(userId), data.results || []);
         }
       })
       .catch(err => console.error("Failed to load results", err));
@@ -266,12 +352,7 @@ const ResultsView = () => {
     return "No pressure—show up daily and your score will climb.";
   }
 
-  function formatAnswerText(q, answerKeys, trueFalseValue) {
-    if (q.type === "true-false") {
-      if (!trueFalseValue) return "—";
-      return trueFalseValue.toString().toLowerCase() === "true" ? "True" : "False";
-    }
-
+  function formatMCQAnswerText(q, answerKeys) {
     const keys = Array.isArray(answerKeys) ? answerKeys : [];
     if (!keys.length) return "—";
     return keys
@@ -281,6 +362,133 @@ const ResultsView = () => {
         return opt?.text ? `${label}. ${opt.text}` : label;
       })
       .join(", ");
+  }
+
+  function normalizeMatchPairs(raw) {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+      const out = {};
+      raw.forEach((item) => {
+        if (!item || typeof item !== "object") return;
+        const leftKey = item.leftIndex ?? item.left ?? item.key;
+        const rightVal = item.rightIndex ?? item.right ?? item.value;
+        if (leftKey === undefined || leftKey === null) return;
+        out[String(leftKey)] = rightVal === undefined || rightVal === null ? "" : String(rightVal);
+      });
+      return out;
+    }
+    if (raw instanceof Map) return Object.fromEntries(raw);
+    if (typeof raw === "object") {
+      const out = {};
+      Object.entries(raw).forEach(([k, v]) => {
+        if (v && typeof v === "object") {
+          const nested = v.rightIndex ?? v.right ?? v.value ?? v.index;
+          out[String(k)] = nested === undefined || nested === null ? "" : String(nested);
+          return;
+        }
+        out[String(k)] = v === undefined || v === null ? "" : String(v);
+      });
+      return out;
+    }
+    return {};
+  }
+
+  function resolveMatchLabel(left, right, leftKey, rightVal) {
+    const leftIndex = Number(leftKey);
+    const hasLeftIndex = Number.isFinite(leftIndex);
+    const leftText = hasLeftIndex ? (left[leftIndex] || `Left ${leftIndex + 1}`) : String(leftKey);
+
+    const rightIndex = Number(rightVal);
+    const hasRightIndex = Number.isFinite(rightIndex);
+    const rightText = hasRightIndex ? (right[rightIndex] || `Right ${rightIndex + 1}`) : String(rightVal || "—");
+
+    return `${leftText} -> ${rightText}`;
+  }
+
+  function formatCorrectAnswer(q) {
+    if (q.type === "true-false") {
+      const v = q.correct?.[0];
+      if (!v) return "—";
+      return String(v).toLowerCase() === "true" ? "True" : "False";
+    }
+    if (q.type === "essay-plain") {
+      return q.plainText || "—";
+    }
+    if (q.type === "essay-rich") {
+      return q.plainText || q.prompt || "—";
+    }
+    if (q.type === "match-list") {
+      const pairs = normalizeMatchPairs(q.matchList?.pairs || {});
+      const right = q.matchList?.right || [];
+      const left = q.matchList?.left || [];
+      const keys = Object.keys(pairs);
+      if (!keys.length) return "—";
+      return keys
+        .map((li) => resolveMatchLabel(left, right, li, pairs[li]))
+        .join(", ");
+    }
+    if (q.type === "cloze-select") {
+      const blanks = q.clozeSelect?.blanks || {};
+      const keys = Object.keys(blanks);
+      if (!keys.length) return "—";
+      return keys.map((k) => `${k}: ${blanks[k]?.correct || "—"}`).join(", ");
+    }
+    if (q.type === "cloze-drag") {
+      const correct = q.clozeDrag?.correctMap || q.correctMap || {};
+      const keys = Object.keys(correct);
+      if (!keys.length) return "—";
+      return keys.map((k) => `${k}: ${correct[k]}`).join(", ");
+    }
+    if (q.type === "cloze-text") {
+      const correct = q.clozeText?.answers || {};
+      const keys = Object.keys(correct).sort();
+      if (!keys.length) return "—";
+      return keys.map((k) => `${k}: ${correct[k]}`).join(", ");
+    }
+    return formatMCQAnswerText(q, q.correct);
+  }
+
+  function formatUserAnswer(q) {
+    const ua = q.userAnswer || {};
+    if (q.type === "true-false") {
+      if (!ua.trueFalse) return "—";
+      return String(ua.trueFalse).toLowerCase() === "true" ? "True" : "False";
+    }
+    if (q.type === "essay-plain") {
+      return ua.essay || "—";
+    }
+    if (q.type === "essay-rich") {
+      return ua.essay || ua.essayRich?.text || "—";
+    }
+    if (q.type === "match-list") {
+      const pairs = normalizeMatchPairs(ua.matchList || ua.pairs || ua.match || {});
+      const right = q.matchList?.right || [];
+      const left = q.matchList?.left || [];
+      const keys = Object.keys(pairs);
+      if (!keys.length) return "—";
+      return keys
+        .map((li) => resolveMatchLabel(left, right, li, pairs[li]))
+        .join(", ");
+    }
+    if (q.type === "cloze-select") {
+      const answers = ua.clozeSelect || {};
+      const keys = Object.keys(answers);
+      if (!keys.length) return "—";
+      return keys.map((k) => `${k}: ${answers[k]}`).join(", ");
+    }
+    if (q.type === "cloze-drag") {
+      const answers = ua.cloze || {};
+      const keys = Object.keys(answers);
+      if (!keys.length) return "—";
+      return keys.map((k) => `${k}: ${answers[k]}`).join(", ");
+    }
+    if (q.type === "cloze-text") {
+      const answers = ua.clozeText || {};
+      const keys = Object.keys(answers).sort();
+      if (!keys.length) return "—";
+      return keys.map((k) => `${k}: ${answers[k]}`).join(", ");
+    }
+    return formatMCQAnswerText(q, ua.mcq);
   }
 
   function formatChoiceMatrixCorrect(q) {
@@ -475,7 +683,7 @@ const ResultsView = () => {
 
 
   return (
-    <div className="min-h-screen space-y-6 md:space-y-8 p-4 sm:p-6 md:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen space-y-4 md:space-y-8 p-3 md:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
         <div className="absolute -top-20 -right-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
@@ -490,21 +698,22 @@ const ResultsView = () => {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
 
         <div className="relative z-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg">
-                <Trophy size={40} className="drop-shadow-lg" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 md:p-3 bg-white/20 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-lg">
+                <Trophy size={24} className="drop-shadow-lg md:hidden" />
+                <Trophy size={36} className="drop-shadow-lg hidden md:block" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-lg">
+                <h1 className="text-xl md:text-4xl font-extrabold tracking-tight drop-shadow-lg">
                   My Results
                 </h1>
-                <p className="text-sm md:text-base text-blue-100 mt-1">Track your academic performance and achievements</p>
+                <p className="hidden md:block text-sm md:text-base text-blue-100 mt-1">Track your academic performance and achievements</p>
               </div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm px-4 sm:px-5 py-3 rounded-xl md:rounded-2xl shadow-lg border border-white/30">
-              <p className="text-xs text-white/80">Current Class</p>
-              <p className="text-lg sm:text-xl font-bold text-white drop-shadow-lg">
+            <div className="bg-white/20 backdrop-blur-sm px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl shadow-lg border border-white/30">
+              <p className="text-[10px] md:text-xs text-white/80">Class</p>
+              <p className="text-sm md:text-xl font-bold text-white drop-shadow-lg">
                 {user?.className || user?.class || "N/A"}
               </p>
             </div>
@@ -513,72 +722,58 @@ const ResultsView = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
 
         {/* GPA */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Target className="w-6 h-6 text-yellow-600" />
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-3 md:p-6 shadow-md md:shadow-lg border border-gray-200/50 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <div className="p-2 md:p-3 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-lg md:rounded-xl">
+              <Target className="w-4 h-4 md:w-6 md:h-6 text-yellow-600" />
             </div>
-            <BarChart className="w-6 h-6 text-yellow-400" />
+            <BarChart className="w-4 h-4 md:w-6 md:h-6 text-yellow-400" />
           </div>
-
           <div>
-            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
-              {examResults.length > 0
-                ? (overallPercentage / 25).toFixed(2)
-                : 0}
+            <h3 className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+              {examResults.length > 0 ? (overallPercentage / 25).toFixed(2) : 0}
             </h3>
-            <p className="text-xs md:text-sm text-gray-600 mt-1">GPA (Auto Calculated)</p>
-
-            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-yellow-500 to-amber-500 h-2 rounded-full transition-all duration-500"
-                style={{
-                  width: `${Math.min((overallPercentage / 25) * 25, 100)}%`
-                }}
-              />
+            <p className="text-[11px] md:text-sm text-gray-600 mt-0.5 md:mt-1">GPA</p>
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 md:h-2">
+              <div className="bg-gradient-to-r from-yellow-500 to-amber-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((overallPercentage / 25) * 25, 100)}%` }} />
             </div>
           </div>
         </div>
 
-
         {/* Overall Percentage */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-3 md:p-6 shadow-md md:shadow-lg border border-gray-200/50 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <div className="p-2 md:p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg md:rounded-xl">
+              <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-green-600" />
             </div>
-            <GitGraphIcon className="w-6 h-6 text-green-400" />
+            <GitGraphIcon className="w-4 h-4 md:w-6 md:h-6 text-green-400" />
           </div>
-
           <div>
-            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{overallPercentage}%</h3>
-            <p className="text-xs md:text-sm text-gray-600 mt-1">Overall Average</p>
-
-            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${overallPercentage}%` }}
-              />
+            <h3 className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{overallPercentage}%</h3>
+            <p className="text-[11px] md:text-sm text-gray-600 mt-0.5 md:mt-1">Avg Score</p>
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 md:h-2">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${overallPercentage}%` }} />
             </div>
           </div>
         </div>
 
         {/* Total Exams */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <BookOpen className="w-6 h-6 text-purple-600" />
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-3 md:p-6 shadow-md md:shadow-lg border border-gray-200/50 transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <div className="p-2 md:p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg md:rounded-xl">
+              <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-purple-600" />
             </div>
-            <BookPlus className="w-6 h-6 text-purple-400" />
+            <BookPlus className="w-4 h-4 md:w-6 md:h-6 text-purple-400" />
           </div>
-
           <div>
-            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{examResults.length}</h3>
-            <p className="text-xs md:text-sm text-gray-600 mt-1">Total Exams</p>
-            <p className="text-xs text-green-600 mt-1 font-medium">All completed</p>
+            <h3 className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{examResults.length}</h3>
+            <p className="text-[11px] md:text-sm text-gray-600 mt-0.5 md:mt-1">Total Exams</p>
+            <p className="text-[11px] md:text-xs text-green-600 mt-0.5 md:mt-1 font-medium">All completed</p>
           </div>
         </div>
 
@@ -624,150 +819,159 @@ const ResultsView = () => {
         </div>
       </div> */}
 
-      <div className="relative z-10 overflow-hidden rounded-xl md:rounded-2xl p-5 md:p-6 bg-white/90 backdrop-blur-xl shadow-lg hover:shadow-2xl border border-gray-200/50">
-
-        {/* subtle gradient overlay */}
+      <div className="relative z-10 overflow-hidden rounded-xl md:rounded-2xl p-4 md:p-6 bg-white/90 backdrop-blur-xl shadow-lg border border-gray-200/50">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/60 via-purple-50/60 to-pink-50/60 pointer-events-none"></div>
 
-        <h3 className="relative z-10 text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-5 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-indigo-600" />
+        <h3 className="relative z-10 text-sm md:text-lg font-bold text-gray-800 mb-3 md:mb-5 flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 md:w-6 md:h-6 text-indigo-600" />
           Performance Summary
         </h3>
 
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-
+        <div className="relative z-10 grid grid-cols-3 gap-2 md:gap-6">
           {/* AVERAGE SCORE */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
-            <div className="text-3xl md:text-4xl font-extrabold drop-shadow-lg">
-              {avgScore}%
-            </div>
-            <div className="text-xs md:text-sm text-indigo-100 mt-2">Average Score</div>
-            <ChartSpline className="w-6 h-6 md:w-7 md:h-7 text-white/80 mt-2" />
+          <div className="flex flex-col items-center bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md">
+            <div className="text-xl md:text-4xl font-extrabold">{avgScore}%</div>
+            <div className="text-[10px] md:text-sm text-indigo-100 mt-1 md:mt-2 text-center">Avg Score</div>
+            <ChartSpline className="w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
           </div>
 
           {/* BEST PERFORMANCE */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
-            <div className="text-3xl md:text-4xl font-extrabold drop-shadow-lg">
-              {bestScore}%
-            </div>
-            <div className="text-xs md:text-sm text-green-100 mt-2">Best Performance</div>
-            <Medal className="w-6 h-6 md:w-7 md:h-7 text-white/80 mt-2" />
+          <div className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md">
+            <div className="text-xl md:text-4xl font-extrabold">{bestScore}%</div>
+            <div className="text-[10px] md:text-sm text-green-100 mt-1 md:mt-2 text-center">Best</div>
+            <Medal className="w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
           </div>
 
           {/* EXCELLENT SCORES */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-purple-500 to-pink-600 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
-            <div className="text-3xl md:text-4xl font-extrabold drop-shadow-lg">
-              {excellentCount}/{examResults.length || 0}
-            </div>
-            <div className="text-xs md:text-sm text-purple-100 mt-2">Excellent Scores</div>
-            <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white/80 mt-2" />
+          <div className="flex flex-col items-center bg-gradient-to-br from-purple-500 to-pink-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md">
+            <div className="text-xl md:text-4xl font-extrabold">{excellentCount}/{examResults.length || 0}</div>
+            <div className="text-[10px] md:text-sm text-purple-100 mt-1 md:mt-2 text-center">Excellent</div>
+            <Sparkles className="w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
           </div>
-
         </div>
       </div>
 
       {/* Exam Results */}
-      <div className="relative z-10 space-y-4 md:space-y-6">
+      <div className="relative z-10 space-y-3 md:space-y-6">
         {paginatedExams.map((exam) => (
-          <div key={exam.id} className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl border border-gray-200/50 overflow-hidden">
-            <div className="p-5 md:p-6 border-b border-gray-200/50 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2.5 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl">
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-base md:text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{exam.examName}</h3>
-                      <p className="text-xs md:text-sm text-gray-500 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 md:w-4 md:h-4" />
-                        {new Date(exam.date).toLocaleDateString()}
-                      </p>
-                    </div>
+          <div key={exam.id} className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-md md:shadow-lg border border-gray-200/50 overflow-hidden">
+
+            {/* Card Header — shared mobile + desktop */}
+            <div className="p-4 md:p-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl">
+                    <FileText className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm md:text-lg font-bold text-gray-900 leading-tight">{exam.examName}</h3>
+                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(exam.date).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <div className="text-right">
-                    <p className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{exam.percentage}%</p>
-                    <p className="text-xs md:text-sm text-gray-500 font-medium">{exam.obtainedMarks}/{exam.totalMarks} marks</p>
+                    <p className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{exam.percentage}%</p>
+                    <p className="text-xs text-gray-500">{exam.obtainedMarks}/{exam.totalMarks}</p>
                   </div>
-                  <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl">
-                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
-                  </div>
+                </div>
+              </div>
+              {/* Progress bar — mobile only */}
+              <div className="mt-2.5 md:hidden">
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className={`h-1.5 rounded-full transition-all duration-500 ${getPerformanceColor(exam.percentage)}`}
+                    style={{ width: `${exam.percentage}%` }} />
                 </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* MOBILE: Subject card list */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {exam.subjects.map((subject, subIndex) => (
+                <div key={subIndex} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{subject.name || "Subject"}</p>
+                    <p className="text-xs text-gray-500 truncate">{subject.topicName || "Topic"}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-sm font-bold text-gray-800">{subject.marks}/{subject.maxMarks}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getGradeColor(subject.grade)}`}>{subject.grade}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="px-4 py-3">
+                <button
+                  onClick={() => openExamDetails(exam)}
+                  className="w-full py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md active:scale-95 transition-all"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            {/* DESKTOP: Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Subject</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Marks Obtained</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Percentage</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Grade</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Performance</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Remarks</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold text-gray-700">Action</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Subject</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Marks Obtained</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Percentage</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Grade</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Performance</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Remarks</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200/50">
                   {exam.subjects.map((subject, subIndex) => (
                     <tr key={subIndex} className="hover:bg-indigo-50/30 transition-colors duration-200">
-                      <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="flex items-center gap-2 md:gap-3">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
                           <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
-                            <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
+                            <BookOpen className="w-4 h-4 text-blue-600" />
                           </div>
-
                           <div className="font-medium text-gray-900">
-                            <div className="text-xs md:text-sm">{subject.name || "Subject"}</div>
-                            <div className="text-xs text-gray-500">
-                              {subject.topicName || "Topic"}
-                            </div>
+                            <div className="text-sm">{subject.name || "Subject"}</div>
+                            <div className="text-xs text-gray-500">{subject.topicName || "Topic"}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="text-xs md:text-sm">
-                          <span className="font-bold text-gray-900">{subject.marks}</span>
-                          <span className="text-gray-500">/{subject.maxMarks}</span>
-                        </div>
+                      <td className="px-6 py-4 text-sm">
+                        <span className="font-bold text-gray-900">{subject.marks}</span>
+                        <span className="text-gray-500">/{subject.maxMarks}</span>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="font-bold text-xs md:text-sm bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{subject.percentage}%</div>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{subject.percentage}%</div>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4">
-                        <span className={`inline-flex px-2 md:px-3 py-1 text-xs font-bold rounded-full border ${getGradeColor(subject.grade)}`}>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full border ${getGradeColor(subject.grade)}`}>
                           {subject.grade}
                         </span>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 md:h-3">
-                          <div
-                            className={`h-2.5 md:h-3 rounded-full transition-all duration-500 ${getPerformanceColor(subject.percentage)}`}
-                            style={{ width: `${subject.percentage}%` }}
-                          />
+                      <td className="px-6 py-4">
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div className={`h-3 rounded-full transition-all duration-500 ${getPerformanceColor(subject.percentage)}`}
+                            style={{ width: `${subject.percentage}%` }} />
                         </div>
                         <div className="text-xs text-gray-500 mt-1 font-medium">{subject.percentage}%</div>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4">
-                        <span className={`text-xs md:text-sm font-bold ${subject.remarks === 'Excellent' || subject.remarks === 'Outstanding' ? 'text-green-600' :
+                      <td className="px-6 py-4">
+                        <span className={`text-sm font-bold ${subject.remarks === 'Excellent' || subject.remarks === 'Outstanding' ? 'text-green-600' :
                           subject.remarks === 'Very Good' ? 'text-blue-600' :
-                            subject.remarks === 'Good' ? 'text-yellow-600' :
-                              'text-gray-600'
-                          }`}>
+                            subject.remarks === 'Good' ? 'text-yellow-600' : 'text-gray-600'}`}>
                           {subject.remarks}
                         </span>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4">
+                      <td className="px-6 py-4">
                         <button
-                          onClick={() => {
-                            setActiveExam(exam);
-                            setShowModal(true);
-                          }}
-                          className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+                          onClick={() => openExamDetails(exam)}
+                          className="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                         >
                           View Details
                         </button>
@@ -777,225 +981,206 @@ const ResultsView = () => {
                 </tbody>
               </table>
             </div>
+
           </div>
         ))}
       </div>
-      {/* Pagination Controls for Exam Tables */}
-      <div className="relative z-10 flex justify-center items-center gap-2 md:gap-3 mt-6">
-        <button
-          className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
-          disabled={examPage === 1}
-          onClick={() => setExamPage(examPage - 1)}
-        >
-          Previous
-        </button>
+      {/* Pagination Controls */}
+      {totalExamPages > 1 && (
+        <div className="relative z-10 flex justify-center items-center gap-2 md:gap-3 mt-4 md:mt-6">
 
-        {[...Array(totalExamPages)].map((_, i) => (
+          {/* Prev */}
           <button
-            key={i}
-            onClick={() => setExamPage(i + 1)}
-            className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl font-bold text-sm md:text-base transition-all duration-300 ${examPage === i + 1
-              ? "bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 text-white shadow-lg scale-110"
-              : "bg-white/80 backdrop-blur-sm text-gray-700 border border-gray-200/50 hover:border-indigo-300 hover:bg-indigo-50 shadow-md hover:shadow-lg"
-              }`}
+            className="flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-700 font-semibold text-xs md:text-sm shadow-sm hover:shadow-md hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+            disabled={examPage === 1}
+            onClick={() => setExamPage(examPage - 1)}
           >
-            {i + 1}
+            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden md:inline">Previous</span>
           </button>
-        ))}
 
-        <button
-          className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
-          disabled={examPage === totalExamPages}
-          onClick={() => setExamPage(examPage + 1)}
-        >
-          Next
-        </button>
-      </div>
+          {/* MOBILE: compact page indicator */}
+          <span className="md:hidden text-sm font-bold text-gray-800 bg-white/90 px-4 py-2 rounded-xl border border-gray-200 shadow-sm min-w-[72px] text-center">
+            {examPage} <span className="text-gray-400 font-normal text-xs">/ {totalExamPages}</span>
+          </span>
+
+          {/* DESKTOP: smart windowed page buttons */}
+          <div className="hidden md:flex items-center gap-1.5">
+            {(() => {
+              const items = [];
+              for (let i = 1; i <= totalExamPages; i++) {
+                if (i === 1 || i === totalExamPages || (i >= examPage - 1 && i <= examPage + 1)) {
+                  items.push({ type: 'page', value: i });
+                } else if (items[items.length - 1]?.type !== 'ellipsis') {
+                  items.push({ type: 'ellipsis', value: i });
+                }
+              }
+              return items.map((item, idx) =>
+                item.type === 'ellipsis' ? (
+                  <span key={idx} className="text-gray-400 text-sm px-1 select-none">…</span>
+                ) : (
+                  <button
+                    key={item.value}
+                    onClick={() => setExamPage(item.value)}
+                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 font-bold rounded-xl transition-all duration-200 active:scale-95 text-sm ${
+                      examPage === item.value
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md scale-105"
+                        : "bg-white/90 text-gray-600 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 shadow-sm"
+                    }`}
+                  >
+                    {item.value}
+                  </button>
+                )
+              );
+            })()}
+          </div>
+
+          {/* Next */}
+          <button
+            className="flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-700 font-semibold text-xs md:text-sm shadow-sm hover:shadow-md hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+            disabled={examPage === totalExamPages || totalExamPages === 0}
+            onClick={() => setExamPage(examPage + 1)}
+          >
+            <span className="hidden md:inline">Next</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+        </div>
+      )}
 
       {/* ---------------- MODAL VIEW ---------------- */}
       {showModal && activeExam && (
         <div
-          className="
-      fixed inset-0 z-50
-      bg-gradient-to-br from-black/60 via-black/50 to-black/70
-      backdrop-blur-lg
-      flex items-center justify-center p-4
-      animate-fadeIn
-    "
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false);
-          }}
+          className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-2 md:p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
           <div
-            className="
-        relative w-full max-w-3xl
-        rounded-2xl md:rounded-3xl
-        bg-gradient-to-br from-white via-indigo-50 to-purple-50
-        shadow-[0_40px_100px_rgba(0,0,0,0.35)]
-        border border-white/60
-        animate-scaleIn
-        overflow-hidden p-6 md:p-10
-      "
-            style={{ maxHeight: "90vh" }}
+            className="relative w-full md:max-w-3xl rounded-t-3xl md:rounded-3xl bg-gradient-to-br from-white via-indigo-50 to-purple-50 shadow-2xl border border-white/60 overflow-hidden flex flex-col"
+            style={{ maxHeight: "calc(100dvh - 4.5rem)" }}
           >
-            {/* Decorative blobs */}
-            <div className="absolute -top-20 -right-20 w-72 h-72 bg-purple-300/30 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-indigo-300/30 rounded-full blur-3xl" />
+            {/* Drag handle — mobile only */}
+            <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            </div>
 
-            {/* INNER SCROLL */}
-            <div
-              className="relative z-10 overflow-y-auto pr-3 custom-scrollbar-hide"
-              style={{ maxHeight: "80vh" }}
-            >
-              {/* CLOSE BUTTON */}
+            {/* Decorative blobs */}
+            <div className="absolute -top-16 -right-16 w-56 h-56 bg-purple-300/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-indigo-300/20 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Sticky modal header */}
+            <div className="relative z-10 flex items-center justify-between px-5 md:px-8 py-4 md:py-6 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg">
+                  <Trophy className="w-5 h-5 md:w-7 md:h-7" />
+                </div>
+                <div>
+                  <h2 className="text-base md:text-2xl font-extrabold text-gray-900">Performance Report</h2>
+                  <p className="text-xs text-gray-500">{activeExam.examName}</p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="
-            absolute top-3 right-3 md:top-5 md:right-5
-            bg-gradient-to-br from-red-500 to-pink-600
-            text-white p-2 rounded-full
-            shadow-lg hover:scale-110 hover:shadow-xl transition-all duration-300
-          "
+                className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
               >
                 <XCircle className="w-5 h-5" />
               </button>
+            </div>
 
-              {/* HEADER */}
-              <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl">
-                  <Trophy className="w-6 h-6 md:w-8 md:h-8" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Performance Report
-                </h2>
-              </div>
+            {/* Scrollable content */}
+            <div className="relative z-10 overflow-y-auto flex-1 px-5 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
 
               {/* STUDENT INFO */}
-              <div className="mb-5 md:mb-6 p-4 md:p-6 rounded-xl md:rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50">
-                <h3 className="text-base md:text-lg font-bold text-indigo-700 flex items-center gap-2 mb-3">
-                  <User className="w-4 h-4 md:w-5 md:h-5" />
-                  Student Information
+              <div className="rounded-xl md:rounded-2xl bg-white/90 border border-gray-100 shadow-sm p-4 md:p-6">
+                <h3 className="text-sm md:text-base font-bold text-indigo-700 flex items-center gap-2 mb-3">
+                  <User className="w-4 h-4" /> Student Information
                 </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm text-gray-700">
-                  <p><strong>Name:</strong> {user?.name}</p>
-                  <p><strong>Class:</strong> {user?.class || user?.className}</p>
-                  <p><strong>Exam:</strong> {activeExam.examName}</p>
-                  <p><strong>Date:</strong> {new Date(activeExam.date).toLocaleString()}</p>
+                <div className="grid grid-cols-2 gap-2 text-xs md:text-sm text-gray-700">
+                  <p><span className="font-semibold">Name:</span> {user?.name}</p>
+                  <p><span className="font-semibold">Class:</span> {user?.class || user?.className}</p>
+                  <p><span className="font-semibold">Exam:</span> {activeExam.examName}</p>
+                  <p><span className="font-semibold">Date:</span> {new Date(activeExam.date).toLocaleDateString()}</p>
                 </div>
               </div>
 
               {/* SUBJECT & TOPIC */}
-              <div className="mb-5 md:mb-6 p-4 md:p-6 rounded-xl md:rounded-2xl bg-gradient-to-r from-blue-100 to-indigo-200 shadow-lg">
-                <h3 className="text-base md:text-lg font-bold text-blue-800 flex items-center gap-2 mb-2 md:mb-3">
-                  <BookOpen className="w-4 h-4 md:w-5 md:h-5" />
-                  Subject & Topic
+              <div className="rounded-xl md:rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-100 border border-blue-100 p-4 md:p-5">
+                <h3 className="text-sm md:text-base font-bold text-blue-800 flex items-center gap-2 mb-2">
+                  <BookOpen className="w-4 h-4" /> Subject & Topic
                 </h3>
-
-                <p className="text-xs md:text-sm text-gray-800"><strong>Subject:</strong> {activeExam.subjectName}</p>
-                <p className="text-xs md:text-sm text-gray-800"><strong>Topic:</strong> {activeExam.topicName}</p>
+                <p className="text-xs md:text-sm text-gray-800"><span className="font-semibold">Subject:</span> {activeExam.subjectName}</p>
+                <p className="text-xs md:text-sm text-gray-800 mt-1"><span className="font-semibold">Topic:</span> {activeExam.topicName}</p>
               </div>
 
               {/* SCORE TIP */}
-              <div className="mb-6 md:mb-8 p-4 md:p-6 rounded-xl md:rounded-2xl bg-gradient-to-r from-green-100 to-emerald-200 shadow-lg">
+              <div className="rounded-xl md:rounded-2xl bg-gradient-to-r from-green-50 to-emerald-100 border border-green-100 p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
-                  <h4 className="text-sm md:text-base font-bold text-emerald-700">
-                    Smart Improvement Tip
-                  </h4>
+                  <Lightbulb className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-sm font-bold text-emerald-700">Smart Improvement Tip</h4>
                 </div>
-
-                <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
-                  {getSmartTip(activeExam.percent)}
-                </p>
-                <p className="text-emerald-700 text-xs md:text-sm font-semibold mt-2">
-                  {getMotivation(activeExam.percent)}
-                </p>
+                <p className="text-gray-700 text-xs md:text-sm leading-relaxed">{getSmartTip(activeExam.percent)}</p>
+                <p className="text-emerald-700 text-xs font-semibold mt-2">{getMotivation(activeExam.percent)}</p>
               </div>
 
               {/* QUESTION BREAKDOWN */}
-              <h3 className="text-2xl font-extrabold text-purple-700 mb-4 flex items-center gap-2">
-                <BarChart3 className="w-6 h-6" />
-                Question Breakdown
-              </h3>
-
-              <div className="space-y-6">
-                {activeExam.questions.map((q, index) => {
-                  const userAns = formatAnswerText(
-                    q,
-                    q.userAnswer?.mcq,
-                    q.userAnswer?.trueFalse
-                  );
-                  const correctAns = formatAnswerText(q, q.correct);
-                  const isCorrect =
-                    q.type === "choice-matrix"
+              <div>
+                <h3 className="text-sm md:text-lg font-extrabold text-purple-700 mb-3 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 md:w-5 md:h-5" /> Question Breakdown
+                </h3>
+                <div className="space-y-3 md:space-y-4">
+                  {activeExam.questions.map((q, index) => {
+                    const userAns = formatUserAnswer(q);
+                    const correctAns = formatCorrectAnswer(q);
+                    const isCorrect = q.type === "choice-matrix"
                       ? isChoiceMatrixCorrect(q)
-                      : userAns === correctAns;
+                      : (userAns !== "—" && correctAns !== "—" && userAns === correctAns);
 
-                  return (
-                    <div
-                      key={q._id}
-                      className="
-                  p-6 rounded-2xl
-                  bg-white/90
-                  shadow-lg
-                  border border-white
-                  hover:scale-[1.02]
-                  transition-all
-                "
-                    >
-                      <p className="font-semibold text-gray-900 mb-3 flex items-start gap-2">
-                        <Sparkles className="w-5 h-5 text-yellow-500 mt-1" />
-                        {index + 1}. {q.type === "choice-matrix" ? q.choiceMatrix?.prompt : q.question}
-                      </p>
+                    const questionText =
+                      q.choiceMatrix?.prompt ||
+                      q.matchList?.prompt ||
+                      q.clozeDrag?.text ||
+                      q.clozeSelect?.text ||
+                      q.clozeText?.text ||
+                      q.prompt ||
+                      q.question ||
+                      q.plainText ||
+                      "Question text unavailable";
 
-                      {q.type === "choice-matrix" ? (
-                        <>
-                          <p className="text-green-700 text-sm font-semibold">
-                            Correct Answer:
-                            <span className="ml-2 px-2 py-0.5 rounded bg-green-100">
-                              {formatChoiceMatrixCorrect(q)}
-                            </span>
-                          </p>
-                          <p className="text-blue-700 text-sm font-semibold mt-1">
-                            Your Answer:
-                            <span className="ml-2 px-2 py-0.5 rounded bg-blue-100">
-                              {formatChoiceMatrixUser(q)}
-                            </span>
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-green-700 text-sm font-semibold">
-                            Correct Answer:
-                            <span className="ml-2 px-2 py-0.5 rounded bg-green-100">
-                              {correctAns}
-                            </span>
-                          </p>
+                    return (
+                      <div key={q._id || `q-${index}`} className="p-4 md:p-5 rounded-xl md:rounded-2xl bg-white/90 shadow-sm border border-gray-100">
+                        <p className="font-semibold text-gray-900 text-sm md:text-base mb-3 flex items-start gap-2">
+                          <Sparkles className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          {index + 1}. {questionText}
+                        </p>
 
-                          <p className="text-blue-700 text-sm font-semibold mt-1">
-                            Your Answer:
-                            <span className="ml-2 px-2 py-0.5 rounded bg-blue-100">
-                              {userAns}
-                            </span>
-                          </p>
-                        </>
-                      )}
+                        {q.type === "choice-matrix" ? (
+                          <>
+                            <p className="text-green-700 text-xs md:text-sm font-semibold">
+                              Correct: <span className="ml-1 px-2 py-0.5 rounded bg-green-100">{formatChoiceMatrixCorrect(q)}</span>
+                            </p>
+                            <p className="text-blue-700 text-xs md:text-sm font-semibold mt-1.5">
+                              Yours: <span className="ml-1 px-2 py-0.5 rounded bg-blue-100">{formatChoiceMatrixUser(q)}</span>
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-green-700 text-xs md:text-sm font-semibold">
+                              Correct: <span className="ml-1 px-2 py-0.5 rounded bg-green-100">{correctAns}</span>
+                            </p>
+                            <p className="text-blue-700 text-xs md:text-sm font-semibold mt-1.5">
+                              Yours: <span className="ml-1 px-2 py-0.5 rounded bg-blue-100">{userAns}</span>
+                            </p>
+                          </>
+                        )}
 
-                      <span
-                        className={`
-                    inline-block mt-4 px-4 py-1 rounded-full text-xs font-bold
-                    ${isCorrect
-                            ? "bg-green-200 text-green-800"
-                            : "bg-red-200 text-red-800"}
-                  `}
-                      >
-                        {isCorrect ? "🎉 Correct" : "❌ Incorrect"}
-                      </span>
-                    </div>
-                  );
-                })}
+                        <span className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold ${isCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                          {isCorrect ? "🎉 Correct" : "❌ Incorrect"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
             </div>
           </div>
         </div>
