@@ -1,0 +1,323 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Database Schema - EEC B2C</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.35; margin: 1in; }
+    h1, h2, h3 { color: #111; }
+    h1 { font-size: 20pt; text-align: center; margin-bottom: 0.2in; }
+    h2 { font-size: 14pt; margin-top: 0.24in; }
+    h3 { font-size: 12.5pt; margin-top: 0.16in; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; }
+    th, td { border: 1px solid #444; padding: 6px; vertical-align: top; font-size: 11pt; }
+    .center { text-align: center; }
+    .small { font-size: 10pt; }
+    code { font-family: Consolas, 'Courier New', monospace; font-size: 10.5pt; }
+  </style>
+</head>
+<body>
+  <h1>Database Schema<br/>EEC B2C Platform</h1>
+  <p class="center"><strong>Version:</strong> 1.0<br/>
+  <strong>Date:</strong> February 28, 2026<br/>
+  <strong>Database Type:</strong> MongoDB (Mongoose Models)</p>
+
+  <h2>1. Overview</h2>
+  <p>This schema is generated from the current backend model definitions in <code>backend/src/models</code>. The platform uses MongoDB collections mapped by Mongoose schemas with timestamps, references, enums, and selected indexes.</p>
+
+  <h2>2. Core Entity Relationships</h2>
+  <table>
+    <tr><th>From Collection</th><th>Reference Field</th><th>To Collection</th><th>Relationship</th></tr>
+    <tr><td>users</td><td>purchasedMaterials[]</td><td>studymaterials</td><td>Many-to-many (via ObjectId array on user side)</td></tr>
+    <tr><td>users</td><td>activeSubscription</td><td>subscriptions</td><td>Optional one-to-one (current active)</td></tr>
+    <tr><td>subjects</td><td>board, class, createdBy</td><td>boards, classes, users</td><td>Many-to-one</td></tr>
+    <tr><td>topics</td><td>subject, board, class, createdBy</td><td>subjects, boards, classes, users</td><td>Many-to-one</td></tr>
+    <tr><td>questions</td><td>createdBy</td><td>users</td><td>Many-to-one</td></tr>
+    <tr><td>attempts</td><td>userId, subject, topic, questions[], answers.qid</td><td>users, subjects, topics, questions</td><td>Many-to-one / array refs</td></tr>
+    <tr><td>studymaterials</td><td>createdBy</td><td>users</td><td>Many-to-one</td></tr>
+    <tr><td>payments</td><td>user, material</td><td>users, studymaterials</td><td>Many-to-one</td></tr>
+    <tr><td>purchases</td><td>user, material</td><td>users, studymaterials</td><td>Many-to-one</td></tr>
+    <tr><td>subscriptions</td><td>user, package</td><td>users, packages</td><td>Many-to-one</td></tr>
+    <tr><td>redemptions</td><td>userId</td><td>users</td><td>Many-to-one</td></tr>
+    <tr><td>giftcards</td><td>redeemedBy, redemptionId, addedBy</td><td>users, redemptions, users</td><td>Many-to-one</td></tr>
+    <tr><td>notifications</td><td>createdBy, readBy[]</td><td>users</td><td>Many-to-one / many-to-many</td></tr>
+    <tr><td>chatmessages</td><td>from, to, seenBy[]</td><td>users</td><td>Many-to-one / optional target</td></tr>
+    <tr><td>pushsubscriptions</td><td>userId</td><td>users</td><td>Many-to-one</td></tr>
+    <tr><td>selfstudyresults</td><td>user</td><td>users</td><td>Many-to-one</td></tr>
+  </table>
+
+  <h2>3. Collection Schemas</h2>
+
+  <h3>3.1 users (User)</h3>
+  <table>
+    <tr><th>Field</th><th>Type</th><th>Rules / Notes</th></tr>
+    <tr><td>name</td><td>String</td><td>required</td></tr>
+    <tr><td>email</td><td>String</td><td>required, unique</td></tr>
+    <tr><td>phone, password, role</td><td>String</td><td>password required; role default <code>student</code></td></tr>
+    <tr><td>class, className, gender, dob, address, state, department, bio, avatar, username</td><td>String</td><td>profile fields with defaults</td></tr>
+    <tr><td>language</td><td>String</td><td>default <code>en</code></td></tr>
+    <tr><td>emailNotifications, smsNotifications, pushNotifications</td><td>Boolean</td><td>defaults: true/false/true</td></tr>
+    <tr><td>fatherName, fatherOccupation, motherName, motherOccupation, fatherContact, motherContact</td><td>String</td><td>family profile fields</td></tr>
+    <tr><td>points, wallet</td><td>Number</td><td>default 0</td></tr>
+    <tr><td>purchasedMaterials[]</td><td>ObjectId[]</td><td>ref <code>StudyMaterial</code></td></tr>
+    <tr><td>board</td><td>String</td><td>enum: CBSE, ICSE, WB Board, State Board</td></tr>
+    <tr><td>registrationYear, registrationMonth, lastPromotedYear</td><td>Number</td><td>defaults null</td></tr>
+    <tr><td>initialClass</td><td>String</td><td>default empty string</td></tr>
+    <tr><td>canChangeClass</td><td>Boolean</td><td>default false</td></tr>
+    <tr><td>unlockedStages[]</td><td>Number[]</td><td>default []</td></tr>
+    <tr><td>activeSubscription</td><td>ObjectId</td><td>ref <code>Subscription</code>, default null</td></tr>
+    <tr><td>subscriptionType</td><td>String</td><td>enum: none, Basic, Intermediate, Premium</td></tr>
+    <tr><td>subscriptionEndDate</td><td>Date</td><td>default null</td></tr>
+    <tr><td>resetPasswordToken, resetPasswordExpire</td><td>String, Date</td><td>password reset workflow</td></tr>
+    <tr><td>isTeacherVerified, legalTermsAccepted, biometricVerified</td><td>Boolean</td><td>teacher verification flags</td></tr>
+    <tr><td>legalTermsAcceptedAt, biometricVerifiedAt</td><td>Date</td><td>verification timestamps</td></tr>
+    <tr><td>teacherDocuments</td><td>Object</td><td>idProof, qualificationCertificate, experienceLetter</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps enabled</td></tr>
+  </table>
+
+  <h3>3.2 boards (Board)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>name</td><td>String</td><td>required, unique</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.3 classes (Class)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>name</td><td>String</td><td>required, unique</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.4 subjects (Subject)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>name</td><td>String</td><td>required</td></tr>
+    <tr><td>board</td><td>ObjectId</td><td>required, ref Board, indexed</td></tr>
+    <tr><td>class</td><td>ObjectId</td><td>required, ref Class, indexed</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+    <tr><td>Indexes</td><td colspan="2"><code>{ board:1, class:1, name:1 }</code> unique</td></tr>
+  </table>
+
+  <h3>3.5 topics (Topic)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>name</td><td>String</td><td>required</td></tr>
+    <tr><td>subject</td><td>ObjectId</td><td>required, ref Subject, indexed</td></tr>
+    <tr><td>board</td><td>ObjectId</td><td>required, ref Board, indexed</td></tr>
+    <tr><td>class</td><td>ObjectId</td><td>required, ref Class, indexed</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+    <tr><td>Indexes</td><td colspan="2"><code>{ board:1, class:1, subject:1, name:1 }</code> unique</td></tr>
+  </table>
+
+  <h3>3.6 questions (Question)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules / Notes</th></tr>
+    <tr><td>type</td><td>String</td><td>required, enum: mcq-single, mcq-multi, choice-matrix, true-false, cloze-drag, cloze-select, cloze-text, match-list, essay-rich, essay-plain</td></tr>
+    <tr><td>subject, topic</td><td>String</td><td>required</td></tr>
+    <tr><td>class, board</td><td>String</td><td>required, board indexed</td></tr>
+    <tr><td>difficulty</td><td>String</td><td>enum: easy/moderate/hard, default easy</td></tr>
+    <tr><td>stage</td><td>Number</td><td>required, default 1, min 1</td></tr>
+    <tr><td>level</td><td>String</td><td>enum: basic/intermediate/advanced</td></tr>
+    <tr><td>question, explanation, prompt, richHtml, plainText</td><td>String</td><td>type-specific content</td></tr>
+    <tr><td>tags[]</td><td>String[]</td><td>optional</td></tr>
+    <tr><td>options[]</td><td>Object[]</td><td>key, text (for MCQ)</td></tr>
+    <tr><td>correct[]</td><td>String[]</td><td>answer keys</td></tr>
+    <tr><td>choiceMatrix, clozeDrag, clozeSelect, clozeText, matchList</td><td>Embedded Objects</td><td>structured subtype payloads</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.7 attempts (Attempt)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules / Notes</th></tr>
+    <tr><td>userId</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>attemptType</td><td>String</td><td>enum: mcq/game, default mcq</td></tr>
+    <tr><td>stage</td><td>String</td><td>default stage-1</td></tr>
+    <tr><td>score, total, percent</td><td>Number</td><td>defaults 0</td></tr>
+    <tr><td>startedAt, submittedAt</td><td>Date</td><td>attempt timing</td></tr>
+    <tr><td>subject, topic, type</td><td>ObjectId/ObjectId/String</td><td>required when attemptType=mcq</td></tr>
+    <tr><td>questions[]</td><td>ObjectId[]</td><td>ref Question</td></tr>
+    <tr><td>answers[]</td><td>Object[]</td><td>qid(ref Question), mcq[], trueFalse, matrix</td></tr>
+    <tr><td>game</td><td>Object</td><td>type=mind-training, rounds, maxScore, details[]</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.8 selfstudyresults (SelfStudyResult)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>user</td><td>ObjectId</td><td>required, ref User, indexed</td></tr>
+    <tr><td>subject, topic</td><td>String</td><td>required</td></tr>
+    <tr><td>difficulty</td><td>String</td><td>required, enum easy/moderate/hard</td></tr>
+    <tr><td>questionType</td><td>String</td><td>required, enum mcq-single/mcq-multi/true-false</td></tr>
+    <tr><td>totalQuestions, correctAnswers, score</td><td>Number</td><td>required</td></tr>
+    <tr><td>answers[]</td><td>Object[]</td><td>question, userAnswer[], correctAnswer[], isCorrect, explanation</td></tr>
+    <tr><td>pdfName, pdfPages</td><td>String, Number</td><td>source metadata</td></tr>
+    <tr><td>timeSpent</td><td>Number</td><td>seconds, default 0</td></tr>
+    <tr><td>Indexes</td><td colspan="2"><code>{ user:1, createdAt:-1 }</code>, <code>{ user:1, subject:1, topic:1 }</code></td></tr>
+  </table>
+
+  <h3>3.9 studymaterials (StudyMaterial)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>title, class, board, subject</td><td>String</td><td>required</td></tr>
+    <tr><td>category</td><td>String</td><td>enum: Notes, Reference Books, Practice Papers, Video Content, Syllabus, Other</td></tr>
+    <tr><td>pdfUrl, pdfPublicId</td><td>String</td><td>required</td></tr>
+    <tr><td>isFree</td><td>Boolean</td><td>default false</td></tr>
+    <tr><td>price</td><td>Number</td><td>default 0</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.10 payments (Payment)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>user</td><td>ObjectId</td><td>ref User</td></tr>
+    <tr><td>material</td><td>ObjectId</td><td>ref StudyMaterial</td></tr>
+    <tr><td>orderId, paymentId</td><td>String</td><td>Razorpay identifiers</td></tr>
+    <tr><td>amount</td><td>Number</td><td>transaction amount</td></tr>
+    <tr><td>status</td><td>String</td><td>enum: created, paid, failed</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.11 purchases (Purchase)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>user, material</td><td>ObjectId</td><td>required refs User/StudyMaterial</td></tr>
+    <tr><td>amount</td><td>Number</td><td>required</td></tr>
+    <tr><td>paymentMethod</td><td>String</td><td>required, enum Razorpay/Wallet</td></tr>
+    <tr><td>transactionId</td><td>String</td><td>required</td></tr>
+    <tr><td>invoiceNumber</td><td>String</td><td>required, unique</td></tr>
+    <tr><td>status</td><td>String</td><td>enum completed/failed/pending, default completed</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.12 packages (Package)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>name</td><td>String</td><td>required, enum Basic/Intermediate/Premium</td></tr>
+    <tr><td>displayName, description</td><td>String</td><td>required</td></tr>
+    <tr><td>price, duration</td><td>Number</td><td>required (duration in days)</td></tr>
+    <tr><td>features[]</td><td>String[]</td><td>default []</td></tr>
+    <tr><td>unlockedStages[]</td><td>Number[]</td><td>default [1]</td></tr>
+    <tr><td>studyMaterialsAccess</td><td>String</td><td>enum none/limited/full</td></tr>
+    <tr><td>prioritySupport, isActive</td><td>Boolean</td><td>defaults false/true</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.13 subscriptions (Subscription)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>user</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>package</td><td>ObjectId</td><td>required, ref Package</td></tr>
+    <tr><td>packageName</td><td>String</td><td>required</td></tr>
+    <tr><td>startDate, endDate</td><td>Date</td><td>required</td></tr>
+    <tr><td>status</td><td>String</td><td>enum active/expired/cancelled, default active</td></tr>
+    <tr><td>paymentMethod</td><td>String</td><td>enum razorpay/wallet/coins/free</td></tr>
+    <tr><td>amountPaid, coinsUsed</td><td>Number</td><td>default 0</td></tr>
+    <tr><td>transactionId</td><td>String</td><td>default empty</td></tr>
+    <tr><td>unlockedStages[]</td><td>Number[]</td><td>default []</td></tr>
+    <tr><td>studyMaterialsAccess</td><td>String</td><td>enum none/limited/full</td></tr>
+    <tr><td>Indexes</td><td colspan="2"><code>{ user:1, status:1 }</code>, <code>{ endDate:1 }</code></td></tr>
+  </table>
+
+  <h3>3.14 redemptions (Redemption)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>userId</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>type</td><td>String</td><td>required, enum cash/giftcard</td></tr>
+    <tr><td>amount, coinsUsed</td><td>Number</td><td>required</td></tr>
+    <tr><td>status</td><td>String</td><td>enum pending/completed/failed, default pending</td></tr>
+    <tr><td>giftCardCode, giftCardProvider, description</td><td>String</td><td>gift-card metadata</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.15 giftcards (GiftCard)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>code</td><td>String</td><td>required, unique, trimmed</td></tr>
+    <tr><td>provider</td><td>String</td><td>required, default Amazon</td></tr>
+    <tr><td>amount</td><td>Number</td><td>required, enum 100/250/500/1000</td></tr>
+    <tr><td>status</td><td>String</td><td>enum available/redeemed/expired</td></tr>
+    <tr><td>redeemedBy</td><td>ObjectId</td><td>ref User, nullable</td></tr>
+    <tr><td>redeemedAt</td><td>Date</td><td>nullable</td></tr>
+    <tr><td>redemptionId</td><td>ObjectId</td><td>ref Redemption, nullable</td></tr>
+    <tr><td>addedBy</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>expiryDate</td><td>Date</td><td>nullable</td></tr>
+    <tr><td>notes</td><td>String</td><td>default empty</td></tr>
+    <tr><td>Indexes</td><td colspan="2"><code>{ status:1, amount:1 }</code></td></tr>
+  </table>
+
+  <h3>3.16 notifications (Notification)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>title, message</td><td>String</td><td>required</td></tr>
+    <tr><td>role</td><td>String</td><td>enum student/teacher/admin/all</td></tr>
+    <tr><td>createdBy</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>readBy[]</td><td>ObjectId[]</td><td>ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.17 pushsubscriptions (PushSubscription)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>userId</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>endpoint</td><td>String</td><td>required, unique index</td></tr>
+    <tr><td>keys.p256dh, keys.auth</td><td>String</td><td>required</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.18 chatmessages (ChatMessage)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>from</td><td>ObjectId</td><td>required, ref User</td></tr>
+    <tr><td>to</td><td>ObjectId</td><td>optional, ref User, default null</td></tr>
+    <tr><td>name</td><td>String</td><td>required</td></tr>
+    <tr><td>message</td><td>String</td><td>required</td></tr>
+    <tr><td>seen</td><td>Boolean</td><td>default false</td></tr>
+    <tr><td>seenBy[]</td><td>ObjectId[]</td><td>ref User</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.19 newsletter (Newsletter)</h3>
+  <table><tr><th>Field</th><th>Type</th><th>Rules</th></tr>
+    <tr><td>email</td><td>String</td><td>required, unique</td></tr>
+    <tr><td>unsubscribed</td><td>Boolean</td><td>default false</td></tr>
+    <tr><td>createdAt, updatedAt</td><td>Date</td><td>timestamps</td></tr>
+  </table>
+
+  <h3>3.20 CMS/Content Collections</h3>
+  <table>
+    <tr><th>Collection</th><th>Purpose</th><th>Key Fields</th></tr>
+    <tr><td>aboutuspages</td><td>About page sections</td><td>sections[]: id, type, title, subtitle, description, bullets[], chips[], image</td></tr>
+    <tr><td>herosettings</td><td>Homepage hero settings</td><td>heading, paragraph, formVisible, formFields[]</td></tr>
+    <tr><td>featuresections</td><td>Feature block content</td><td>title, subtitle, visible, features[]</td></tr>
+    <tr><td>whyeecs</td><td>Why EEC section content</td><td>title, description, visible, features[]</td></tr>
+    <tr><td>careerpages</td><td>Career page content</td><td>whyJoinTitle, whyJoinItems[], introText, jobSectionTitle, jobOpenings[]</td></tr>
+    <tr><td>officepages</td><td>Office page content</td><td>hero{}, workspace{}, map URLs, address, phone, email</td></tr>
+  </table>
+
+  <h2>4. Index Summary</h2>
+  <table>
+    <tr><th>Collection</th><th>Index</th><th>Type</th></tr>
+    <tr><td>users</td><td>email</td><td>unique</td></tr>
+    <tr><td>boards</td><td>name</td><td>unique</td></tr>
+    <tr><td>classes</td><td>name</td><td>unique</td></tr>
+    <tr><td>subjects</td><td>{ board, class, name }</td><td>compound unique</td></tr>
+    <tr><td>topics</td><td>{ board, class, subject, name }</td><td>compound unique</td></tr>
+    <tr><td>questions</td><td>board</td><td>single-field index</td></tr>
+    <tr><td>giftcards</td><td>code</td><td>unique</td></tr>
+    <tr><td>giftcards</td><td>{ status, amount }</td><td>compound index</td></tr>
+    <tr><td>purchases</td><td>invoiceNumber</td><td>unique</td></tr>
+    <tr><td>pushsubscriptions</td><td>endpoint</td><td>unique</td></tr>
+    <tr><td>subscriptions</td><td>{ user, status }</td><td>compound index</td></tr>
+    <tr><td>subscriptions</td><td>endDate</td><td>single-field index</td></tr>
+    <tr><td>selfstudyresults</td><td>{ user, createdAt }</td><td>compound index</td></tr>
+    <tr><td>selfstudyresults</td><td>{ user, subject, topic }</td><td>compound index</td></tr>
+    <tr><td>newsletter</td><td>email</td><td>unique</td></tr>
+  </table>
+
+  <h2>5. Notes</h2>
+  <ul>
+    <li>Most collections enable <code>timestamps: true</code>, adding <code>createdAt</code> and <code>updatedAt</code>.</li>
+    <li>MongoDB collection naming is auto-pluralized by Mongoose unless overridden.</li>
+    <li>Question schema is polymorphic and stores multiple question subtypes in one collection.</li>
+  </ul>
+
+  <h2>6. Revision History</h2>
+  <table>
+    <tr><th>Version</th><th>Date</th><th>Description</th><th>Author</th></tr>
+    <tr><td>1.0</td><td>2026-02-28</td><td>Initial schema document generated from current backend models.</td><td>Codex</td></tr>
+  </table>
+
+  <p class="small">End of document.</p>
+</body>
+</html>

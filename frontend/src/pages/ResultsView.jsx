@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   FileText,
-  Award,
   TrendingUp,
   Download,
   Target,
@@ -21,7 +20,6 @@ import {
   User,
   Lightbulb,
   BarChart,
-  TrophyIcon,
   GitGraphIcon,
   BookPlus
 } from 'lucide-react';
@@ -33,26 +31,9 @@ const ResultsView = () => {
   const [examResults, setExamResults] = useState([]);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user._id || user.id;
-  const [classRank, setClassRank] = useState(null);
-  const [totalStudents, setTotalStudents] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [activeExam, setActiveExam] = useState(null);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-  useEffect(() => {
-    if (!userId) return;
-
-    fetch(`${API}/api/exams/class-rank/${userId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setClassRank(data.rank);
-          setTotalStudents(data.totalStudents);
-        }
-      })
-      .catch(err => console.error("Rank fetch error", err));
-  }, []);
 
   useEffect(() => {
     if (!showModal || !activeExam) return;
@@ -562,25 +543,6 @@ const ResultsView = () => {
           </div>
         </div>
 
-        {/* Rank */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Award className="w-6 h-6 text-blue-600" />
-            </div>
-            <TrophyIcon className="w-6 h-6 text-blue-400" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              #{classRank ?? "—"}
-            </h3>
-            <p className="text-xs md:text-sm text-gray-600 mt-1">Class Rank</p>
-            <p className="text-xs text-gray-500 mt-1">
-              out of {totalStudents ?? "—"} students
-            </p>
-          </div>
-        </div>
 
         {/* Overall Percentage */}
         <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl border border-gray-200/50 transform hover:-translate-y-1 transition-all duration-300 group">

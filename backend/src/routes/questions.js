@@ -30,7 +30,11 @@ router.get("/classes", async (req, res) => {
 router.get("/stages", async (req, res) => {
   try {
     const stages = await Question.distinct("stage");
-    res.json({ stages });
+    const normalizedStages = stages
+      .map((s) => Number(s))
+      .filter((s) => Number.isFinite(s) && s >= 1)
+      .sort((a, b) => a - b);
+    res.json({ stages: normalizedStages });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

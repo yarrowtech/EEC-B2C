@@ -17,7 +17,10 @@ export async function generateInvoicePdf({
   purchaseDate,
   userEmail,
   userPhone,
-  invoiceNumber
+  invoiceNumber,
+  itemTypeLabel,
+  itemTitle,
+  itemMeta,
 }) {
   return new Promise((resolve, reject) => {
     try {
@@ -132,6 +135,14 @@ export async function generateInvoicePdf({
 
       doc.y = billToY + 70;
 
+      const resolvedItemTitle = itemTitle || materialTitle || "Purchase";
+      const resolvedItemLabel = itemTypeLabel ? `${itemTypeLabel}: ` : "";
+      const subjectClassLine = [materialSubject, materialClass]
+        .filter(Boolean)
+        .join(" / ");
+      const metaLines = Array.isArray(itemMeta) ? itemMeta.filter(Boolean) : [];
+      const resolvedDetails = subjectClassLine || metaLines.join(" | ") || "-";
+
       // Table with clean design
       const tableTop = doc.y;
 
@@ -147,7 +158,7 @@ export async function generateInvoicePdf({
 
       // Column headers
       doc.text("Description", 60, tableTop + 7, { width: 220, align: "left" });
-      doc.text("Subject/Class", 290, tableTop + 7, { width: 140, align: "center" });
+      doc.text("Details", 290, tableTop + 7, { width: 140, align: "center" });
       doc.text("Amount", 440, tableTop + 7, { width: 95, align: "right" });
 
       // Table Row
@@ -159,18 +170,13 @@ export async function generateInvoicePdf({
         .font("Helvetica");
 
       // Row data
-      doc.text(materialTitle, 60, rowTop + 10, { width: 220, align: "left" });
+      doc.text(`${resolvedItemLabel}${resolvedItemTitle}`, 60, rowTop + 10, { width: 220, align: "left" });
 
       doc
         .fontSize(9)
         .fillColor("#6b7280");
 
-      doc.text(
-        `${materialSubject} / ${materialClass}`,
-        290,
-        rowTop + 10,
-        { width: 140, align: "center" }
-      );
+      doc.text(resolvedDetails, 290, rowTop + 10, { width: 140, align: "center" });
 
       doc
         .fontSize(11)

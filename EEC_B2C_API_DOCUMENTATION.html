@@ -1,0 +1,349 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>API Documentation - EEC B2C</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.35; margin: 1in; }
+    h1, h2, h3 { color: #111; }
+    h1 { font-size: 20pt; text-align: center; margin-bottom: 0.2in; }
+    h2 { font-size: 14pt; margin-top: 0.25in; }
+    h3 { font-size: 12.5pt; margin-top: 0.18in; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; }
+    th, td { border: 1px solid #444; padding: 6px; vertical-align: top; font-size: 10.5pt; }
+    .center { text-align: center; }
+    .small { font-size: 10pt; }
+    code { font-family: Consolas, 'Courier New', monospace; font-size: 10.5pt; }
+    .mono { font-family: Consolas, 'Courier New', monospace; white-space: pre-wrap; font-size: 10.5pt; border: 1px solid #aaa; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h1>API Documentation<br/>EEC B2C Platform</h1>
+  <p class="center"><strong>Version:</strong> 1.0<br/>
+  <strong>Date:</strong> February 28, 2026<br/>
+  <strong>Source:</strong> Generated from current <code>backend/src/routes</code> and server route mounts</p>
+
+  <h2>1. API Overview</h2>
+  <table>
+    <tr><th>Item</th><th>Value</th></tr>
+    <tr><td>Protocol</td><td>HTTP/HTTPS + JSON (except file uploads and invoice PDF download)</td></tr>
+    <tr><td>Main Prefix</td><td><code>/api</code></td></tr>
+    <tr><td>Health Check</td><td><code>GET /api/health</code></td></tr>
+    <tr><td>Auth Type</td><td>Bearer JWT in <code>Authorization</code> header</td></tr>
+    <tr><td>Realtime</td><td>Socket.IO (global chat room events)</td></tr>
+  </table>
+
+  <h2>2. Authentication & Authorization</h2>
+  <p>For protected routes, send:</p>
+  <div class="mono">Authorization: Bearer &lt;JWT_TOKEN&gt;</div>
+
+  <table>
+    <tr><th>Access Label</th><th>Meaning</th></tr>
+    <tr><td>Public</td><td>No login required</td></tr>
+    <tr><td>Auth</td><td>Any authenticated user</td></tr>
+    <tr><td>Admin</td><td>Admin-only by explicit route check</td></tr>
+    <tr><td>Teacher</td><td>Teacher-only by explicit route check</td></tr>
+    <tr><td>Admin/Teacher</td><td>Either admin or teacher</td></tr>
+  </table>
+
+  <h2>3. Base/System Endpoints</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/</code></td><td>Public</td><td>Backend running status message</td></tr>
+    <tr><td>GET</td><td><code>/api/health</code></td><td>Public</td><td>Health probe endpoint</td></tr>
+  </table>
+
+  <h2>4. Auth APIs</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/auth/register</code></td><td>Public</td><td>User registration</td></tr>
+    <tr><td>POST</td><td><code>/api/auth/login</code></td><td>Public</td><td>User login + JWT issue</td></tr>
+    <tr><td>GET</td><td><code>/api/auth/me</code></td><td>Auth</td><td>Current user profile from token</td></tr>
+    <tr><td>GET</td><td><code>/api/auth/admin-only</code></td><td>Admin</td><td>Role-protected test route</td></tr>
+    <tr><td>POST</td><td><code>/api/auth/forgot-password</code></td><td>Public</td><td>Create reset token + send email</td></tr>
+    <tr><td>POST</td><td><code>/api/auth/reset-password/:token</code></td><td>Public</td><td>Reset password using token</td></tr>
+  </table>
+
+  <h2>5. User APIs</h2>
+  <p class="small">Mounted as <code>/api/users/*</code> and also legacy alias <code>/users/*</code>.</p>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/users/students-count</code></td><td>Public</td><td>List/count students (basic details)</td></tr>
+    <tr><td>GET</td><td><code>/api/users/teachers-count</code></td><td>Public</td><td>List/count teachers (basic details)</td></tr>
+    <tr><td>GET</td><td><code>/api/users/students</code></td><td>Admin/Teacher</td><td>List/search students</td></tr>
+    <tr><td>GET</td><td><code>/api/users/teachers</code></td><td>Public</td><td>List/search teachers</td></tr>
+    <tr><td>POST</td><td><code>/api/users/teachers</code></td><td>Public (current code)</td><td>Create teacher account</td></tr>
+    <tr><td>PUT</td><td><code>/api/users/teachers/:id</code></td><td>Public (current code)</td><td>Update teacher</td></tr>
+    <tr><td>DELETE</td><td><code>/api/users/teachers/:id</code></td><td>Public (current code)</td><td>Delete teacher</td></tr>
+    <tr><td>GET</td><td><code>/api/users/profile</code></td><td>Auth</td><td>Get logged-in user profile</td></tr>
+    <tr><td>GET</td><td><code>/api/users/unlocked-stages</code></td><td>Auth</td><td>Get unlocked syllabus stages</td></tr>
+    <tr><td>PUT</td><td><code>/api/users/update-profile</code></td><td>Auth</td><td>Update user profile fields</td></tr>
+    <tr><td>PUT</td><td><code>/api/users/change-password</code></td><td>Auth</td><td>Change password</td></tr>
+    <tr><td>GET</td><td><code>/api/users/me/purchased</code></td><td>Auth</td><td>Get purchased study material IDs</td></tr>
+    <tr><td>POST</td><td><code>/api/users/redeem-coins</code></td><td>Auth</td><td>Redeem points to wallet or gift card</td></tr>
+    <tr><td>GET</td><td><code>/api/users/redemption-history</code></td><td>Auth</td><td>Get recent redemptions</td></tr>
+    <tr><td>GET</td><td><code>/api/users/wallet</code></td><td>Auth</td><td>Wallet and points balance</td></tr>
+    <tr><td>POST</td><td><code>/api/users/resend-gift-card-email/:redemptionId</code></td><td>Auth (owner/admin)</td><td>Resend gift card email</td></tr>
+    <tr><td>GET</td><td><code>/api/users/admin/pending-gift-cards</code></td><td>Admin</td><td>Pending gift card/email queue</td></tr>
+    <tr><td>GET</td><td><code>/api/users/gift-card-availability</code></td><td>Auth</td><td>Inventory availability by amount</td></tr>
+    <tr><td>GET</td><td><code>/api/users/teacher-verification-status</code></td><td>Teacher</td><td>Teacher verification state</td></tr>
+    <tr><td>POST</td><td><code>/api/users/teacher/accept-legal-terms</code></td><td>Teacher</td><td>Accept legal terms</td></tr>
+    <tr><td>POST</td><td><code>/api/users/teacher/biometric-verification</code></td><td>Teacher</td><td>Complete biometric verification</td></tr>
+  </table>
+
+  <h2>6. Academic Master APIs</h2>
+  <h3>6.1 Board APIs (<code>/api/boards</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/boards</code></td><td>Public</td><td>List boards</td></tr>
+    <tr><td>POST</td><td><code>/api/boards</code></td><td>Admin</td><td>Create board</td></tr>
+    <tr><td>PUT</td><td><code>/api/boards/:id</code></td><td>Admin</td><td>Update board</td></tr>
+    <tr><td>DELETE</td><td><code>/api/boards/:id</code></td><td>Admin</td><td>Delete board</td></tr>
+  </table>
+
+  <h3>6.2 Class APIs (<code>/api/classes</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/classes</code></td><td>Public</td><td>List classes</td></tr>
+    <tr><td>POST</td><td><code>/api/classes</code></td><td>Admin</td><td>Create class</td></tr>
+    <tr><td>PUT</td><td><code>/api/classes/:id</code></td><td>Admin</td><td>Update class</td></tr>
+    <tr><td>DELETE</td><td><code>/api/classes/:id</code></td><td>Admin</td><td>Delete class</td></tr>
+  </table>
+
+  <h3>6.3 Subject/Topic APIs</h3>
+  <p class="small">Mounted from <code>subjectTopicRoutes</code> on <code>/api</code> base.</p>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/subject</code></td><td>Auth</td><td>Create subject</td></tr>
+    <tr><td>GET</td><td><code>/api/subject</code></td><td>Auth</td><td>List subjects (optional board/class filter)</td></tr>
+    <tr><td>PUT</td><td><code>/api/subject/:id</code></td><td>Auth</td><td>Update subject</td></tr>
+    <tr><td>DELETE</td><td><code>/api/subject/:id</code></td><td>Auth</td><td>Delete subject (+ related topics)</td></tr>
+    <tr><td>POST</td><td><code>/api/topic</code></td><td>Auth</td><td>Create topic</td></tr>
+    <tr><td>GET</td><td><code>/api/topic/:subjectId</code></td><td>Auth</td><td>List topics by subject</td></tr>
+    <tr><td>PUT</td><td><code>/api/topic/:id</code></td><td>Auth</td><td>Update topic</td></tr>
+    <tr><td>DELETE</td><td><code>/api/topic/:id</code></td><td>Auth</td><td>Delete topic</td></tr>
+  </table>
+
+  <h3>6.4 Subject/Topic Read APIs</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/subjects</code></td><td>Public</td><td>List subjects</td></tr>
+    <tr><td>GET</td><td><code>/api/subjects/:subjectId/topics</code></td><td>Admin</td><td>Topics by subject (admin route)</td></tr>
+    <tr><td>GET</td><td><code>/api/topics</code></td><td>Admin</td><td>List topics</td></tr>
+  </table>
+
+  <h2>7. Question Bank APIs (<code>/api/questions</code>)</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/questions/classes</code></td><td>Public</td><td>Get class list metadata</td></tr>
+    <tr><td>GET</td><td><code>/api/questions/stages</code></td><td>Public</td><td>Get stage list metadata</td></tr>
+    <tr><td>GET</td><td><code>/api/questions</code></td><td>Auth</td><td>List questions with filters</td></tr>
+    <tr><td>GET</td><td><code>/api/questions/meta/stages</code></td><td>Public</td><td>Question stage metadata</td></tr>
+    <tr><td>GET</td><td><code>/api/questions/meta/subjects</code></td><td>Auth</td><td>Question subject metadata</td></tr>
+    <tr><td>GET</td><td><code>/api/questions/meta/topics</code></td><td>Auth</td><td>Question topic metadata</td></tr>
+    <tr><td>GET</td><td><code>/api/questions/types</code></td><td>Auth</td><td>Question types list</td></tr>
+    <tr><td>GET</td><td><code>/api/questions/:id</code></td><td>Auth</td><td>Get question detail</td></tr>
+    <tr><td>POST</td><td><code>/api/questions/:type</code></td><td>Auth</td><td>Create question by type</td></tr>
+    <tr><td>PUT</td><td><code>/api/questions/:id</code></td><td>Auth</td><td>Update question</td></tr>
+    <tr><td>DELETE</td><td><code>/api/questions/:id</code></td><td>Auth</td><td>Delete question</td></tr>
+  </table>
+
+  <h2>8. AI & Self-Study APIs</h2>
+  <h3>8.1 AI Question Generator (<code>/api/ai-questions</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/ai-questions/generate-from-pdf</code></td><td>Admin</td><td>Upload PDF and generate questions</td></tr>
+    <tr><td>POST</td><td><code>/api/ai-questions/save-generated</code></td><td>Admin</td><td>Persist reviewed/generated questions</td></tr>
+    <tr><td>POST</td><td><code>/api/ai-questions/test-connection</code></td><td>Admin</td><td>Test AI service connectivity</td></tr>
+  </table>
+
+  <h3>8.2 Self Study (<code>/api/self-study</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/self-study/generate</code></td><td>Auth</td><td>Upload PDF and generate self-study questions</td></tr>
+    <tr><td>POST</td><td><code>/api/self-study/submit</code></td><td>Auth</td><td>Submit answers and store result</td></tr>
+    <tr><td>GET</td><td><code>/api/self-study/results</code></td><td>Auth</td><td>List own results</td></tr>
+    <tr><td>GET</td><td><code>/api/self-study/results/:id</code></td><td>Auth</td><td>Get own result detail</td></tr>
+    <tr><td>GET</td><td><code>/api/self-study/stats</code></td><td>Auth</td><td>Aggregated self-study stats</td></tr>
+  </table>
+
+  <h2>9. Exam & Attempt APIs</h2>
+  <h3>9.1 Exam APIs (<code>/api/exams</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/exams/start</code></td><td>Auth</td><td>Start exam attempt</td></tr>
+    <tr><td>POST</td><td><code>/api/exams/submit/:attemptId</code></td><td>Auth</td><td>Submit exam attempt</td></tr>
+    <tr><td>GET</td><td><code>/api/exams/attempts</code></td><td>Auth</td><td>Get current user's attempts</td></tr>
+    <tr><td>GET</td><td><code>/api/exams/admin/attempts</code></td><td>Admin/Teacher</td><td>List attempts for monitoring</td></tr>
+    <tr><td>GET</td><td><code>/api/exams/admin/attempts/:id</code></td><td>Admin/Teacher</td><td>Attempt detail</td></tr>
+    <tr><td>GET</td><td><code>/api/exams/user-results/:userId</code></td><td>Admin/Teacher or self-student</td><td>User result view</td></tr>
+    <tr><td>GET</td><td><code>/api/exams/class-rank/:userId</code></td><td>Auth</td><td>Class rank lookup</td></tr>
+    <tr><td>GET</td><td><code>/api/exams/leaderboard</code></td><td>Auth</td><td>Leaderboard data</td></tr>
+  </table>
+
+  <h3>9.2 Attempt History (<code>/api/attempt</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/attempt/user/:userId</code></td><td>Admin/Teacher (per middleware behavior)</td><td>Detailed attempt history by user</td></tr>
+  </table>
+
+  <h3>9.3 Game API (<code>/api/games</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/games/mind-training/result</code></td><td>Auth</td><td>Save mind-training game result</td></tr>
+  </table>
+
+  <h2>10. Study Material & Purchase APIs (<code>/api/study-materials</code>)</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/study-materials/upload</code></td><td>Admin/Verified Teacher</td><td>Upload study material PDF</td></tr>
+    <tr><td>GET</td><td><code>/api/study-materials</code></td><td>Auth</td><td>List materials for user class/board (+subject filter)</td></tr>
+    <tr><td>GET</td><td><code>/api/study-materials/secure-pdf/:id</code></td><td>Auth</td><td>Secure PDF access (free/purchased check)</td></tr>
+    <tr><td>PUT</td><td><code>/api/study-materials/:id</code></td><td>Admin/Verified Teacher</td><td>Update material, optionally replace PDF</td></tr>
+    <tr><td>GET</td><td><code>/api/study-materials/admin/all</code></td><td>Admin</td><td>List all materials</td></tr>
+    <tr><td>DELETE</td><td><code>/api/study-materials/:id</code></td><td>Admin</td><td>Delete material</td></tr>
+    <tr><td>POST</td><td><code>/api/study-materials/create-order</code></td><td>Auth</td><td>Create Razorpay order for material purchase</td></tr>
+    <tr><td>POST</td><td><code>/api/study-materials/verify-payment</code></td><td>Auth</td><td>Verify Razorpay payment + complete purchase</td></tr>
+    <tr><td>POST</td><td><code>/api/study-materials/purchase-with-wallet</code></td><td>Auth</td><td>Purchase via wallet balance</td></tr>
+    <tr><td>GET</td><td><code>/api/study-materials/admin/purchases</code></td><td>Admin</td><td>Get all purchase records</td></tr>
+    <tr><td>GET</td><td><code>/api/study-materials/admin/purchases/:id/invoice</code></td><td>Admin</td><td>Download invoice PDF</td></tr>
+  </table>
+
+  <h2>11. Package & Subscription APIs</h2>
+  <h3>11.1 Packages (<code>/api/packages</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/packages</code></td><td>Public</td><td>List active packages</td></tr>
+    <tr><td>GET</td><td><code>/api/packages/:id</code></td><td>Public</td><td>Get package details</td></tr>
+    <tr><td>POST</td><td><code>/api/packages</code></td><td>Admin</td><td>Create package</td></tr>
+    <tr><td>PUT</td><td><code>/api/packages/:id</code></td><td>Admin</td><td>Update package</td></tr>
+    <tr><td>DELETE</td><td><code>/api/packages/:id</code></td><td>Admin</td><td>Delete package</td></tr>
+    <tr><td>POST</td><td><code>/api/packages/:id/purchase</code></td><td>Auth</td><td>Activate free package flow</td></tr>
+    <tr><td>POST</td><td><code>/api/packages/:id/create-order</code></td><td>Auth</td><td>Create Razorpay order for paid package</td></tr>
+    <tr><td>POST</td><td><code>/api/packages/:id/verify-payment</code></td><td>Auth</td><td>Verify payment and create subscription</td></tr>
+  </table>
+
+  <h3>11.2 Subscriptions (<code>/api/subscriptions</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/subscriptions/current</code></td><td>Auth</td><td>Get current active subscription</td></tr>
+    <tr><td>GET</td><td><code>/api/subscriptions/history</code></td><td>Auth</td><td>Get subscription history</td></tr>
+    <tr><td>POST</td><td><code>/api/subscriptions/:id/cancel</code></td><td>Auth (owner)</td><td>Cancel subscription</td></tr>
+    <tr><td>GET</td><td><code>/api/subscriptions/all</code></td><td>Admin</td><td>List all subscriptions</td></tr>
+  </table>
+
+  <h2>12. Gift Card Inventory APIs (<code>/api/gift-cards</code>)</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/gift-cards/add</code></td><td>Admin</td><td>Add single gift card</td></tr>
+    <tr><td>POST</td><td><code>/api/gift-cards/bulk-add</code></td><td>Admin</td><td>Add multiple gift cards</td></tr>
+    <tr><td>GET</td><td><code>/api/gift-cards/all</code></td><td>Admin</td><td>List all gift cards</td></tr>
+    <tr><td>GET</td><td><code>/api/gift-cards/inventory</code></td><td>Admin</td><td>Inventory summary/statistics</td></tr>
+    <tr><td>PUT</td><td><code>/api/gift-cards/:id</code></td><td>Admin</td><td>Update gift card status/details</td></tr>
+    <tr><td>DELETE</td><td><code>/api/gift-cards/:id</code></td><td>Admin</td><td>Delete gift card</td></tr>
+  </table>
+
+  <h2>13. Notifications, Push, Chat APIs</h2>
+  <h3>13.1 Notifications (<code>/api/notifications</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/notifications</code></td><td>Admin</td><td>Create notification by role target</td></tr>
+    <tr><td>GET</td><td><code>/api/notifications</code></td><td>Auth</td><td>List notifications for user/role</td></tr>
+    <tr><td>POST</td><td><code>/api/notifications/:id/read</code></td><td>Auth</td><td>Mark notification as read</td></tr>
+    <tr><td>POST</td><td><code>/api/notifications/clear-all</code></td><td>Auth</td><td>Clear read state for all</td></tr>
+    <tr><td>GET</td><td><code>/api/notifications/:id</code></td><td>Auth</td><td>Get notification detail</td></tr>
+    <tr><td>DELETE</td><td><code>/api/notifications/:id</code></td><td>Admin</td><td>Delete notification</td></tr>
+  </table>
+
+  <h3>13.2 Push Notifications (<code>/api/push</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/push/vapid-public-key</code></td><td>Public</td><td>Get VAPID key for browser subscription</td></tr>
+    <tr><td>POST</td><td><code>/api/push/subscribe</code></td><td>Auth</td><td>Save push subscription</td></tr>
+    <tr><td>POST</td><td><code>/api/push/unsubscribe</code></td><td>Auth</td><td>Remove push subscription</td></tr>
+  </table>
+
+  <h3>13.3 Chat (<code>/api/chat</code>)</h3>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/chat</code></td><td>Auth</td><td>Send/store chat message</td></tr>
+    <tr><td>GET</td><td><code>/api/chat</code></td><td>Auth</td><td>Get chat history</td></tr>
+    <tr><td>POST</td><td><code>/api/chat/read</code></td><td>Auth</td><td>Mark messages read</td></tr>
+    <tr><td>DELETE</td><td><code>/api/chat/:id</code></td><td>Admin</td><td>Delete single chat message</td></tr>
+    <tr><td>DELETE</td><td><code>/api/chat</code></td><td>Admin</td><td>Clear chat history</td></tr>
+  </table>
+
+  <h2>14. CMS / Public Content APIs</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>GET</td><td><code>/api/hero-settings</code></td><td>Public</td><td>Get hero section settings</td></tr>
+    <tr><td>PUT</td><td><code>/api/hero-settings</code></td><td>Public (current code)</td><td>Update hero section settings</td></tr>
+    <tr><td>GET</td><td><code>/api/why-eec</code></td><td>Public</td><td>Get Why EEC content</td></tr>
+    <tr><td>PUT</td><td><code>/api/why-eec</code></td><td>Public (current code)</td><td>Update Why EEC content</td></tr>
+    <tr><td>GET</td><td><code>/api/features</code></td><td>Public</td><td>Get features section</td></tr>
+    <tr><td>PUT</td><td><code>/api/features</code></td><td>Public (current code)</td><td>Update features section</td></tr>
+    <tr><td>GET</td><td><code>/api/about-us</code></td><td>Public</td><td>Get About Us content</td></tr>
+    <tr><td>PUT</td><td><code>/api/about-us</code></td><td>Public (current code)</td><td>Update About Us content</td></tr>
+    <tr><td>GET</td><td><code>/api/settings/career-page</code></td><td>Public</td><td>Get career page content</td></tr>
+    <tr><td>PUT</td><td><code>/api/settings/career-page</code></td><td>Public (current code)</td><td>Update career page content</td></tr>
+    <tr><td>GET</td><td><code>/api/office</code></td><td>Public</td><td>Get office page content</td></tr>
+    <tr><td>PUT</td><td><code>/api/office</code></td><td>Public (current code)</td><td>Update office page content</td></tr>
+  </table>
+
+  <h2>15. Newsletter & Upload APIs</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/newsletter/subscribe</code></td><td>Public</td><td>Subscribe email to newsletter</td></tr>
+    <tr><td>GET</td><td><code>/api/newsletter/unsubscribe/:id</code></td><td>Public</td><td>Unsubscribe by id link</td></tr>
+    <tr><td>POST</td><td><code>/api/upload/image</code></td><td>Public</td><td>Upload image to Cloudinary</td></tr>
+  </table>
+
+  <h2>16. Promotion APIs (<code>/api/promotion</code>)</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td><code>/api/promotion/run-promotion</code></td><td>Admin</td><td>Run global promotion process</td></tr>
+    <tr><td>POST</td><td><code>/api/promotion/promote-user/:userId</code></td><td>Admin</td><td>Promote specific user</td></tr>
+    <tr><td>GET</td><td><code>/api/promotion/stats</code></td><td>Admin</td><td>Promotion statistics</td></tr>
+    <tr><td>POST</td><td><code>/api/promotion/reset-user/:userId</code></td><td>Admin</td><td>Reset promotion state for user</td></tr>
+  </table>
+
+  <h2>17. Representative Request/Response Samples</h2>
+
+  <h3>17.1 Login</h3>
+  <div class="mono">POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "student@example.com",
+  "password": "yourPassword"
+}</div>
+
+  <h3>17.2 Create Study Material Order</h3>
+  <div class="mono">POST /api/study-materials/create-order
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{
+  "materialId": "65f..."
+}</div>
+
+  <h3>17.3 Save Notification Read State</h3>
+  <div class="mono">POST /api/notifications/:id/read
+Authorization: Bearer &lt;token&gt;</div>
+
+  <h2>18. Notes</h2>
+  <ul>
+    <li>Several CMS and teacher CRUD routes are currently public in code; tighten with admin guards for production.</li>
+    <li><code>requireAdmin</code> middleware currently allows both admin and teacher by implementation; verify intended policy.</li>
+    <li>Webhook route file exists (<code>razorpayWebhook.js</code>), but explicit router mount is not visible in current server routing.</li>
+  </ul>
+
+  <h2>19. Revision History</h2>
+  <table>
+    <tr><th>Version</th><th>Date</th><th>Description</th><th>Author</th></tr>
+    <tr><td>1.0</td><td>2026-02-28</td><td>Initial API documentation from current route implementation.</td><td>Codex</td></tr>
+  </table>
+
+  <p class="small">End of document.</p>
+</body>
+</html>

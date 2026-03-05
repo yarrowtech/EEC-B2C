@@ -141,9 +141,9 @@ const QuestionSchema = new mongoose.Schema(
     plainText: { type: String, trim: true }, // essay-plain
     stage: {
       type: Number,
-      enum: [1, 2, 3],
       required: true,
       default: 1,
+      min: 1,
     },
     level: {
       type: String,

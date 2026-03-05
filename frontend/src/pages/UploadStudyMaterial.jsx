@@ -15,6 +15,7 @@ export default function UploadStudyMaterial() {
         class: "",
         board: "CBSE",
         subject: "Maths",
+        category: "Notes",
         isFree: true,
         price: 0,
     };
@@ -215,6 +216,7 @@ export default function UploadStudyMaterial() {
             class: m.class,
             board: m.board,
             subject: m.subject,
+            category: m.category || "Notes",
             isFree: m.isFree,
             price: m.price || 0,
         });
@@ -409,6 +411,27 @@ export default function UploadStudyMaterial() {
                                 </select>
                             </div>
 
+                        </div>
+
+                        {/* CATEGORY */}
+                        <div>
+                            <label className="text-sm font-semibold text-slate-700">
+                                Material Category
+                            </label>
+                            <select
+                                name="category"
+                                value={form.category}
+                                onChange={handleChange}
+                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 bg-white/80 focus:ring-2 focus:ring-indigo-500"
+                                required
+                            >
+                                <option value="Notes">Notes</option>
+                                <option value="Reference Books">Reference Books</option>
+                                <option value="Practice Papers">Practice Papers</option>
+                                <option value="Video Content">Video Content</option>
+                                <option value="Syllabus">Syllabus</option>
+                                <option value="Other">Other</option>
+                            </select>
                         </div>
 
                         {/* FREE / PAID */}

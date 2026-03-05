@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Software Requirements Specification - EEC B2C</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.35; margin: 1in; }
+    h1, h2, h3 { color: #111; }
+    h1 { font-size: 20pt; text-align: center; margin-bottom: 0.2in; }
+    h2 { font-size: 14pt; margin-top: 0.25in; }
+    h3 { font-size: 12.5pt; margin-top: 0.18in; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #444; padding: 6px; vertical-align: top; }
+    .center { text-align: center; }
+    .small { font-size: 10pt; }
+  </style>
+</head>
+<body>
+  <h1>Software Requirements Specification (SRS)<br/>EEC B2C Platform</h1>
+  <p class="center"><strong>Version:</strong> 1.0<br/>
+  <strong>Date:</strong> February 28, 2026<br/>
+  <strong>Document Type:</strong> Software Requirements Specification</p>
+
+  <h2>1. Introduction</h2>
+  <h3>1.1 Purpose</h3>
+  <p>This SRS defines the functional and non-functional requirements of the EEC B2C platform, a role-based EdTech web application for students, teachers, administrators, and public users. It serves as a baseline for development, testing, and maintenance.</p>
+
+  <h3>1.2 Scope</h3>
+  <p>EEC B2C provides authentication, academic content management, question bank operations, exam and attempt flows, AI-powered question generation, self-study, paid study materials, subscriptions, wallet and redemption capabilities, notifications, real-time chat, and admin-level CMS and promotion management.</p>
+
+  <h3>1.3 Intended Audience</h3>
+  <p>Product owners, project managers, developers, testers, DevOps engineers, academic operations stakeholders, and support teams.</p>
+
+  <h3>1.4 Definitions</h3>
+  <table>
+    <tr><th>Term</th><th>Definition</th></tr>
+    <tr><td>EEC B2C</td><td>Business-to-consumer educational platform for learning, assessments, and digital product sales.</td></tr>
+    <tr><td>RBAC</td><td>Role-Based Access Control across Public, Student, Teacher, and Admin.</td></tr>
+    <tr><td>Stage</td><td>Learning progression level unlocked based on purchases/subscriptions.</td></tr>
+    <tr><td>Self Study</td><td>AI-generated question practice flow from user-uploaded PDFs.</td></tr>
+  </table>
+
+  <h2>2. Overall Description</h2>
+  <h3>2.1 Product Perspective</h3>
+  <p>The system is a MERN-style web platform with React frontend, Node.js/Express backend, MongoDB database, Socket.IO for realtime communication, and external integrations for payment, media storage, push notifications, and AI services.</p>
+
+  <h3>2.2 User Classes and Characteristics</h3>
+  <table>
+    <tr><th>User Class</th><th>Description</th><th>Privileges</th></tr>
+    <tr><td>Public</td><td>Unauthenticated visitor</td><td>View marketing content, browse packages, subscribe to newsletter</td></tr>
+    <tr><td>Student</td><td>Learner account</td><td>Take exams, buy materials/packages, use self-study, view results, chat</td></tr>
+    <tr><td>Teacher</td><td>Academic contributor account</td><td>Student views, subject/topic operations, verified material upload, chat</td></tr>
+    <tr><td>Admin</td><td>Platform operator</td><td>Full CRUD and governance across all modules</td></tr>
+  </table>
+
+  <h3>2.3 Operating Environment</h3>
+  <ul>
+    <li>Frontend: React, Vite, TailwindCSS, Axios, React Router</li>
+    <li>Backend: Node.js, Express, Mongoose, JWT, Socket.IO</li>
+    <li>Database: MongoDB</li>
+    <li>Integrations: Razorpay, Cloudinary, Web Push (VAPID), Email, AI service</li>
+    <li>Deployment profile: browser clients + HTTP API server + WebSocket server</li>
+  </ul>
+
+  <h3>2.4 Constraints</h3>
+  <ul>
+    <li>JWT-based authenticated APIs must enforce role-specific authorization.</li>
+    <li>Payment verification must use Razorpay signature validation.</li>
+    <li>Sensitive routes (auth) are rate-limited and protected with security middleware.</li>
+    <li>CORS restrictions must permit only configured origins.</li>
+  </ul>
+
+  <h2>3. External Interface Requirements</h2>
+  <h3>3.1 User Interface</h3>
+  <ul>
+    <li>Public pages: home, feature pages, package browsing, static informational content.</li>
+    <li>Authenticated dashboard: role-sensitive navigation and module access.</li>
+    <li>Question management UIs for multiple question types (MCQ, essay, cloze, matrix, etc.).</li>
+    <li>Material browsing, purchase, and secure PDF viewing interfaces.</li>
+  </ul>
+
+  <h3>3.2 Software Interfaces</h3>
+  <ul>
+    <li>Payment API: Razorpay order creation and signature verification.</li>
+    <li>Storage API: Cloudinary media uploads.</li>
+    <li>Push API: Web Push subscription lifecycle and dispatch.</li>
+    <li>AI Service API: PDF text-based question generation.</li>
+    <li>Email API: transactional emails for key user flows.</li>
+  </ul>
+
+  <h3>3.3 Communication Interfaces</h3>
+  <ul>
+    <li>HTTPS REST APIs under <code>/api/*</code>.</li>
+    <li>Socket.IO channel for global chat and read-status events.</li>
+    <li>Webhook endpoint for Razorpay event processing.</li>
+  </ul>
+
+  <h2>4. System Features and Functional Requirements</h2>
+
+  <h3>4.1 Authentication and Account Management</h3>
+  <ul>
+    <li>FR-1: The system shall allow user registration and login with secure password handling.</li>
+    <li>FR-2: The system shall provide JWT-based session validation and current-user retrieval.</li>
+    <li>FR-3: The system shall support forgot-password and tokenized password reset.</li>
+    <li>FR-4: The system shall enforce route guards for authenticated and role-specific access.</li>
+  </ul>
+
+  <h3>4.2 Academic Master Data</h3>
+  <ul>
+    <li>FR-5: The system shall support admin CRUD for boards and classes.</li>
+    <li>FR-6: The system shall support subject/topic management with board/class mapping.</li>
+  </ul>
+
+  <h3>4.3 Question Bank and AI Questioning</h3>
+  <ul>
+    <li>FR-7: The system shall support CRUD for multiple question types.</li>
+    <li>FR-8: The system shall provide metadata APIs for class, stage, subject, and topic filtering.</li>
+    <li>FR-9: The system shall allow admin to upload PDF and generate questions via AI service.</li>
+    <li>FR-10: The system shall allow generated questions to be reviewed and optionally persisted.</li>
+  </ul>
+
+  <h3>4.4 Exams, Attempts, and Results</h3>
+  <ul>
+    <li>FR-11: Students shall be able to start and submit exams.</li>
+    <li>FR-12: The system shall persist attempts and provide user-wise result retrieval.</li>
+    <li>FR-13: Teachers/admins shall be able to view attempt analytics and detailed results.</li>
+    <li>FR-14: The system shall expose class rank and leaderboard views.</li>
+  </ul>
+
+  <h3>4.5 Syllabus and Stage Unlocking</h3>
+  <ul>
+    <li>FR-15: Stage 1 shall be unlocked by default for students.</li>
+    <li>FR-16: Additional stages shall be unlocked based on active package/subscription conditions.</li>
+  </ul>
+
+  <h3>4.6 Study Materials and Commerce</h3>
+  <ul>
+    <li>FR-17: Teachers/admin shall upload and manage paid/free study materials.</li>
+    <li>FR-18: Students shall browse materials filtered by class and board.</li>
+    <li>FR-19: The system shall enforce secure material access based on free/purchased status.</li>
+    <li>FR-20: The system shall support Razorpay and wallet-based purchase flows.</li>
+    <li>FR-21: The system shall generate and store purchase/invoice records.</li>
+  </ul>
+
+  <h3>4.7 Packages and Subscriptions</h3>
+  <ul>
+    <li>FR-22: Admin shall manage package catalog (CRUD and activation).</li>
+    <li>FR-23: Users shall subscribe via free or paid flows.</li>
+    <li>FR-24: The system shall track subscription lifecycle and allow cancellation.</li>
+    <li>FR-25: Admin shall view all subscription reports.</li>
+  </ul>
+
+  <h3>4.8 Wallet, Coins, and Gift Cards</h3>
+  <ul>
+    <li>FR-26: The system shall maintain wallet/points balances per user.</li>
+    <li>FR-27: Users shall redeem points to wallet or gift card where eligible.</li>
+    <li>FR-28: Admin shall manage gift card inventory and redemption statuses.</li>
+  </ul>
+
+  <h3>4.9 Notifications, Push, and Chat</h3>
+  <ul>
+    <li>FR-29: Admin shall create role-targeted notifications.</li>
+    <li>FR-30: Users shall fetch, read, and clear notifications.</li>
+    <li>FR-31: The system shall support push subscribe/unsubscribe and payload dispatch.</li>
+    <li>FR-32: The system shall support global chat with message persistence and admin moderation.</li>
+  </ul>
+
+  <h3>4.10 Self Study and Mind Training</h3>
+  <ul>
+    <li>FR-33: The system shall generate self-study questions from uploaded PDF content.</li>
+    <li>FR-34: The system shall evaluate self-study submissions and store scores/statistics.</li>
+    <li>FR-35: The system shall store mind-training game result submissions.</li>
+  </ul>
+
+  <h3>4.11 CMS and Promotion Engine</h3>
+  <ul>
+    <li>FR-36: Admin shall manage public site content sections (hero, features, about, office, etc.).</li>
+    <li>FR-37: The system shall run scheduled auto-promotion and support manual admin promotion operations.</li>
+  </ul>
+
+  <h2>5. Non-Functional Requirements</h2>
+  <h3>5.1 Security</h3>
+  <ul>
+    <li>NFR-1: Passwords shall be stored as salted hashes.</li>
+    <li>NFR-2: Protected APIs shall require valid JWT and role checks.</li>
+    <li>NFR-3: Security middleware (Helmet), CORS policy, and auth rate limits shall be enabled.</li>
+    <li>NFR-4: Payment confirmation shall require cryptographic signature validation.</li>
+  </ul>
+
+  <h3>5.2 Performance</h3>
+  <ul>
+    <li>NFR-5: Common API operations should return within acceptable interactive latency under normal load.</li>
+    <li>NFR-6: Chat event propagation should provide near real-time delivery for active users.</li>
+  </ul>
+
+  <h3>5.3 Reliability and Availability</h3>
+  <ul>
+    <li>NFR-7: Service health endpoint shall expose runtime availability state.</li>
+    <li>NFR-8: Scheduled promotion and keep-alive routines shall execute reliably after server startup.</li>
+  </ul>
+
+  <h3>5.4 Scalability</h3>
+  <ul>
+    <li>NFR-9: Modular route architecture shall support independent extension of functional domains.</li>
+    <li>NFR-10: Database schema shall support growth across users, attempts, purchases, and notifications.</li>
+  </ul>
+
+  <h3>5.5 Maintainability</h3>
+  <ul>
+    <li>NFR-11: The codebase shall keep domain separation through dedicated route/service/model modules.</li>
+    <li>NFR-12: Configuration shall remain environment-driven for deployability across environments.</li>
+  </ul>
+
+  <h2>6. Data Requirements (High Level)</h2>
+  <table>
+    <tr><th>Entity Group</th><th>Examples</th><th>Purpose</th></tr>
+    <tr><td>Identity</td><td>User, Role, Verification</td><td>Authentication, authorization, profile</td></tr>
+    <tr><td>Academic</td><td>Board, Class, Subject, Topic, Question</td><td>Learning taxonomy and question bank</td></tr>
+    <tr><td>Assessment</td><td>Exam, Attempt, Result, Leaderboard</td><td>Evaluation and analytics</td></tr>
+    <tr><td>Commerce</td><td>Material, Package, Subscription, Wallet, Transaction</td><td>Monetization and access control</td></tr>
+    <tr><td>Engagement</td><td>Notification, Push Subscription, Chat Message, Game Result</td><td>Retention and communication</td></tr>
+    <tr><td>Operations</td><td>Promotion Records, CMS Settings</td><td>Administrative controls and lifecycle</td></tr>
+  </table>
+
+  <h2>7. Assumptions and Dependencies</h2>
+  <ul>
+    <li>MongoDB instance and connection credentials are available at runtime.</li>
+    <li>Razorpay, Cloudinary, push keys, mail, and AI service credentials are configured in environment variables.</li>
+    <li>Client origins in CORS settings are kept in sync with deployment domains.</li>
+  </ul>
+
+  <h2>8. Acceptance Criteria (Summary)</h2>
+  <ul>
+    <li>All core role-based user journeys (Public, Student, Teacher, Admin) are executable end-to-end.</li>
+    <li>Payment and access control logic correctly gates premium materials and stages.</li>
+    <li>AI question generation, self-study scoring, and attempts/results flows operate correctly.</li>
+    <li>Notification/chat features deliver and persist expected communication records.</li>
+    <li>Admin can manage academic masters, content settings, subscriptions, and promotions.</li>
+  </ul>
+
+  <h2>9. Traceability Baseline</h2>
+  <p class="small">The requirements above map to implemented backend route groups including (non-exhaustive): <code>/api/auth</code>, <code>/api/users</code>, <code>/api/questions</code>, <code>/api/exams</code>, <code>/api/attempt</code>, <code>/api/study-materials</code>, <code>/api/packages</code>, <code>/api/subscriptions</code>, <code>/api/gift-cards</code>, <code>/api/notifications</code>, <code>/api/push</code>, <code>/api/chat</code>, <code>/api/ai-questions</code>, <code>/api/self-study</code>, and <code>/api/promotion</code>.</p>
+
+  <h2>10. Revision History</h2>
+  <table>
+    <tr><th>Version</th><th>Date</th><th>Description</th><th>Author</th></tr>
+    <tr><td>1.0</td><td>2026-02-28</td><td>Initial SRS draft prepared from current project implementation.</td><td>Codex</td></tr>
+  </table>
+</body>
+</html>

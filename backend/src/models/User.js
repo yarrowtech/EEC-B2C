@@ -67,8 +67,54 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Students cannot manually change class after registration
     },
+    unlockedStages: {
+      type: [Number],
+      default: [], // Array of unlocked stage numbers (Stage 1 is always free)
+    },
+    // Subscription information
+    activeSubscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription",
+      default: null,
+    },
+    subscriptionType: {
+      type: String,
+      enum: ["none", "Basic", "Intermediate", "Premium"],
+      default: "none",
+    },
+    subscriptionEndDate: {
+      type: Date,
+      default: null,
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+
+    // Teacher verification fields
+    isTeacherVerified: {
+      type: Boolean,
+      default: false,
+    },
+    legalTermsAccepted: {
+      type: Boolean,
+      default: false,
+    },
+    legalTermsAcceptedAt: {
+      type: Date,
+      default: null,
+    },
+    biometricVerified: {
+      type: Boolean,
+      default: false,
+    },
+    biometricVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    teacherDocuments: {
+      idProof: { type: String, default: "" },
+      qualificationCertificate: { type: String, default: "" },
+      experienceLetter: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );

@@ -480,6 +480,23 @@ const Hero = () => {
             >
               Login
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                const user = JSON.parse(localStorage.getItem("user") || "null");
+                if (user && localStorage.getItem("jwt")) {
+                  // User is logged in, go to syllabus page
+                  window.location.href = "/dashboard/syllabus";
+                } else {
+                  // User not logged in, store intended redirect and show login modal
+                  sessionStorage.setItem("redirectAfterLogin", "/dashboard/syllabus");
+                  window.dispatchEvent(new Event("eec:open-login"));
+                }
+              }}
+              className="rounded-2xl border border-white/40 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20 active:scale-[.98]"
+            >
+              Try Outs
+            </button>
             {/* <a
               href="#signup"
               className="rounded-2xl border border-white/40 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"

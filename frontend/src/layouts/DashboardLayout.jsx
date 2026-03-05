@@ -221,7 +221,8 @@ import {
     LogOut,
     LayoutGrid,
     Gift,
-    ShoppingCart
+    ShoppingCart,
+    CreditCard
 } from "lucide-react";
 
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
@@ -229,6 +230,7 @@ import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
 import Header from "../components/Header";
+import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
 
 /* ---- auth helpers (UNCHANGED) ---- */
@@ -259,6 +261,7 @@ export default function DashboardLayout() {
     const location = useLocation();
     const [open, setOpen] = useState(false);
     const [online, setOnline] = useState(true);
+    const [showTeacherVerification, setShowTeacherVerification] = useState(false);
 
     useEffect(() => {
         const handleVisibility = () => {
@@ -268,6 +271,12 @@ export default function DashboardLayout() {
         return () => document.removeEventListener("visibilitychange", handleVisibility);
     }, []);
 
+    // Check if teacher needs verification
+    useEffect(() => {
+        if (user?.role === "teacher" && !user?.isTeacherVerified) {
+            setShowTeacherVerification(true);
+        }
+    }, [user]);
 
     /* ---- auth guard (UNCHANGED) ---- */
     if (!isTokenValid(token) || !user?.role) {
@@ -298,7 +307,15 @@ export default function DashboardLayout() {
                 { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },
                 { to: "/dashboard/notifications/create", label: "Create Notification", icon: <LayoutGrid size={18} /> },
                 { to : "/dashboard/gift-cards", label: "Gift Cards", icon: <Gift size={18} /> },
-                { to : "/dashboard/purchases", label: "Purchases", icon: <ShoppingCart size={18} /> }
+                { to : "/dashboard/purchases", label: "Purchases", icon: <ShoppingCart size={18} /> },
+                { to: "/dashboard/subscriptions", label: "Subscriptions", icon: <CreditCard size={18} /> },
+                { to: "/dashboard/packages/manage", label: "Manage Packages", icon: <CreditCard size={18} /> }
+            );
+        }
+
+        if (role === "student") {
+            base.push(
+                { to: "/dashboard/packages", label: "Packages", icon: <CreditCard size={18} /> }
             );
         }
 
@@ -448,6 +465,19 @@ export default function DashboardLayout() {
                     </div>
                 </main>
             </div>
+
+            {/* Teacher Verification Modal */}
+            {showTeacherVerification && user?.role === "teacher" && (
+                <TeacherVerification
+                    onComplete={() => {
+                        setShowTeacherVerification(false);
+                        // Refresh user data
+                        const updatedUser = { ...user, isTeacherVerified: true };
+                        localStorage.setItem("user", JSON.stringify(updatedUser));
+                        window.location.reload();
+                    }}
+                />
+            )}
         </div>
     );
 }

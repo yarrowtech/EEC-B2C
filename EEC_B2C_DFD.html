@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Data Flow Diagram (DFD) - EEC B2C</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.35; margin: 1in; }
+    h1, h2, h3 { color: #111; }
+    h1 { font-size: 20pt; text-align: center; margin-bottom: 0.2in; }
+    h2 { font-size: 14pt; margin-top: 0.25in; }
+    h3 { font-size: 12.5pt; margin-top: 0.18in; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #444; padding: 6px; vertical-align: top; }
+    .center { text-align: center; }
+    .mono { font-family: Consolas, 'Courier New', monospace; white-space: pre-wrap; font-size: 10.5pt; }
+    .small { font-size: 10pt; }
+  </style>
+</head>
+<body>
+  <h1>Data Flow Diagram (DFD)<br/>EEC B2C Platform</h1>
+  <p class="center"><strong>Version:</strong> 1.0<br/>
+  <strong>Date:</strong> February 28, 2026<br/>
+  <strong>Prepared For:</strong> Current EEC B2C Project</p>
+
+  <h2>1. DFD Overview</h2>
+  <p>This document defines the Data Flow Diagram for EEC B2C at Context (Level 0) and Level 1. It represents how external entities interact with the platform processes, data stores, and integrated third-party services.</p>
+
+  <h2>2. External Entities</h2>
+  <table>
+    <tr><th>Entity ID</th><th>External Entity</th><th>Description</th></tr>
+    <tr><td>E1</td><td>Public User</td><td>Unauthenticated visitor browsing public pages and newsletter.</td></tr>
+    <tr><td>E2</td><td>Student</td><td>Authenticated learner using exams, materials, subscriptions, self-study.</td></tr>
+    <tr><td>E3</td><td>Teacher</td><td>Academic user managing select content and student views.</td></tr>
+    <tr><td>E4</td><td>Admin</td><td>System operator managing full platform lifecycle.</td></tr>
+    <tr><td>E5</td><td>Razorpay</td><td>Payment gateway for orders, verification, and webhook events.</td></tr>
+    <tr><td>E6</td><td>Cloudinary</td><td>Storage service for uploaded files/media.</td></tr>
+    <tr><td>E7</td><td>AI Service</td><td>Question generation service from PDF text/content.</td></tr>
+    <tr><td>E8</td><td>Email Service</td><td>Transactional email delivery service.</td></tr>
+    <tr><td>E9</td><td>Web Push Service</td><td>Push subscription and browser notification delivery.</td></tr>
+  </table>
+
+  <h2>3. Context Diagram (Level 0)</h2>
+  <p class="mono">                          +--------------------------------+
+E1 Public User ----------->|                                |
+E2 Student --------------->|                                |
+E3 Teacher --------------->|         EEC B2C System         |<----------> E5 Razorpay
+E4 Admin ----------------->|                                |<----------> E6 Cloudinary
+                           |                                |<----------> E7 AI Service
+                           +--------------------------------+<----------> E8 Email Service
+                                      |                                  <----------> E9 Web Push
+                                      v
+                                Internal Database</p>
+
+  <h3>3.1 Level 0 Data Flows</h3>
+  <table>
+    <tr><th>Flow ID</th><th>Source</th><th>Destination</th><th>Data</th></tr>
+    <tr><td>F1</td><td>Public User</td><td>EEC B2C</td><td>Page requests, newsletter subscription input</td></tr>
+    <tr><td>F2</td><td>Student</td><td>EEC B2C</td><td>Login, exam attempts, purchase requests, self-study uploads</td></tr>
+    <tr><td>F3</td><td>Teacher</td><td>EEC B2C</td><td>Academic updates, study material uploads, chat messages</td></tr>
+    <tr><td>F4</td><td>Admin</td><td>EEC B2C</td><td>User/content/configuration management actions</td></tr>
+    <tr><td>F5</td><td>EEC B2C</td><td>Razorpay</td><td>Order creation and payment verification requests</td></tr>
+    <tr><td>F6</td><td>Razorpay</td><td>EEC B2C</td><td>Payment response, signatures, webhook events</td></tr>
+    <tr><td>F7</td><td>EEC B2C</td><td>Cloudinary</td><td>PDF/media upload payloads</td></tr>
+    <tr><td>F8</td><td>EEC B2C</td><td>AI Service</td><td>Extracted text and generation prompt payloads</td></tr>
+    <tr><td>F9</td><td>EEC B2C</td><td>Email Service</td><td>Password reset, purchase, and notification mail payloads</td></tr>
+    <tr><td>F10</td><td>EEC B2C</td><td>Web Push Service</td><td>Push subscription and notification dispatch data</td></tr>
+  </table>
+
+  <h2>4. Level 1 DFD</h2>
+  <h3>4.1 Major Processes</h3>
+  <table>
+    <tr><th>Process ID</th><th>Process Name</th><th>Description</th></tr>
+    <tr><td>P1</td><td>Authentication & Profile</td><td>Registration, login, JWT verification, password reset, profile management.</td></tr>
+    <tr><td>P2</td><td>Academic Master Management</td><td>Boards, classes, subjects, topics, and related mappings.</td></tr>
+    <tr><td>P3</td><td>Question Bank, Exams & Results</td><td>Question CRUD, exam attempts, scoring, result and leaderboard retrieval.</td></tr>
+    <tr><td>P4</td><td>Study Materials & Purchases</td><td>Upload/list materials, payment flow, secure content access, invoice data.</td></tr>
+    <tr><td>P5</td><td>Packages, Subscriptions, Wallet & Gift Cards</td><td>Package lifecycle, subscriptions, wallet/points, redemption and inventory.</td></tr>
+    <tr><td>P6</td><td>Notifications & Realtime Chat</td><td>Notification create/read/clear and global chat messaging/moderation.</td></tr>
+    <tr><td>P7</td><td>AI Question Generation & Self Study</td><td>PDF text processing, generated questions, self-study submission and stats.</td></tr>
+    <tr><td>P8</td><td>CMS & Promotion Engine</td><td>Public content settings and scheduled/manual promotions.</td></tr>
+  </table>
+
+  <h3>4.2 Data Stores</h3>
+  <table>
+    <tr><th>Store ID</th><th>Data Store</th><th>Content</th></tr>
+    <tr><td>D1</td><td>Users Store</td><td>Accounts, roles, profile, verification, auth-related data</td></tr>
+    <tr><td>D2</td><td>Academic Store</td><td>Boards, classes, subjects, topics</td></tr>
+    <tr><td>D3</td><td>Assessment Store</td><td>Questions, exams, attempts, results, rankings</td></tr>
+    <tr><td>D4</td><td>Material & Transaction Store</td><td>Study materials, purchases, invoices, access rules</td></tr>
+    <tr><td>D5</td><td>Commerce Store</td><td>Packages, subscriptions, wallet balances, points, gift cards</td></tr>
+    <tr><td>D6</td><td>Engagement Store</td><td>Notifications, chat messages, push subscriptions</td></tr>
+    <tr><td>D7</td><td>AI Practice Store</td><td>Self-study sessions, answers, results, statistics</td></tr>
+    <tr><td>D8</td><td>Operations Store</td><td>CMS settings and promotion records</td></tr>
+  </table>
+
+  <h3>4.3 Level 1 Process Flow (Textual View)</h3>
+  <p class="mono">E2 Student ---> P1 ---> D1
+E2 Student ---> P3 ---> D3
+E2 Student ---> P4 ---> D4 <--> E5 Razorpay
+E2 Student ---> P5 ---> D5
+E2 Student ---> P6 ---> D6
+E2 Student ---> P7 ---> D7 <--> E7 AI Service
+
+E3 Teacher ---> P2 ---> D2
+E3 Teacher ---> P4 ---> D4 <--> E6 Cloudinary
+E3 Teacher ---> P6 ---> D6
+
+E4 Admin ---> P2/P3/P4/P5/P6/P7/P8 ---> D2/D3/D4/D5/D6/D7/D8
+P1 <--> E8 Email Service
+P6 <--> E9 Web Push</p>
+
+  <h2>5. Data Dictionary (High-Level)</h2>
+  <table>
+    <tr><th>Data Group</th><th>Sample Attributes</th></tr>
+    <tr><td>User Credentials</td><td>email, password hash, role, token metadata</td></tr>
+    <tr><td>Academic Metadata</td><td>boardId, classId, subjectId, topicId, stage</td></tr>
+    <tr><td>Question Payload</td><td>type, prompt, options, answer key, difficulty, tags</td></tr>
+    <tr><td>Exam Attempt</td><td>userId, examId, submittedAnswers, score, timestamps</td></tr>
+    <tr><td>Material Purchase</td><td>materialId, userId, amount, paymentMode, paymentStatus</td></tr>
+    <tr><td>Subscription Record</td><td>packageId, startDate, endDate, activeFlag, unlockData</td></tr>
+    <tr><td>Wallet/Redemption</td><td>balance, points, redemptionType, giftCardCode, status</td></tr>
+    <tr><td>Notification/Chat</td><td>targetRole, message, readStatus, senderId, createdAt</td></tr>
+  </table>
+
+  <h2>6. Balancing Note</h2>
+  <p>The Level 1 decomposition preserves the primary external flows from Level 0 by routing user/system interactions through specialized processes P1-P8 while maintaining integrated services (payment, storage, AI, email, push) and centralized persistence via MongoDB-backed stores.</p>
+
+  <h2>7. Revision History</h2>
+  <table>
+    <tr><th>Version</th><th>Date</th><th>Description</th><th>Author</th></tr>
+    <tr><td>1.0</td><td>2026-02-28</td><td>Initial DFD document for EEC B2C current implementation.</td><td>Codex</td></tr>
+  </table>
+
+  <p class="small">End of document.</p>
+</body>
+</html>

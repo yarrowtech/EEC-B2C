@@ -303,36 +303,42 @@ const AchievementsView = () => {
           })}
       </div>
 
-      {/* PAGINATION */}
+      {/* PAGINATION - Simplified with Current Page Only */}
       {activeTab === "history" && totalHistoryPages > 1 && (
         <div className="relative z-10 flex justify-center items-center gap-2 md:gap-3 mt-6">
           <button
             disabled={historyPage === 1}
             onClick={() => setHistoryPage(historyPage - 1)}
-            className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
+            className="px-4 md:px-5 py-2.5 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-semibold text-sm md:text-base hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
           >
             Prev
           </button>
 
-          {[...Array(totalHistoryPages)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setHistoryPage(i + 1)}
-              className={`
-                px-3 md:px-4 py-2 rounded-lg md:rounded-xl font-bold text-sm md:text-base transition-all duration-300
-                ${historyPage === i + 1
-                  ? "bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white shadow-lg scale-110"
-                  : "bg-white/80 backdrop-blur-sm text-gray-700 border border-gray-200/50 hover:border-orange-300 hover:bg-orange-50 shadow-md hover:shadow-lg"}
-              `}
-            >
-              {i + 1}
-            </button>
-          ))}
+          {/* Show first page if not current */}
+          {historyPage !== 1 && (
+            <span className="px-2 py-2 text-gray-500 font-bold text-sm md:text-base">
+              ...
+            </span>
+          )}
+
+          {/* Current page */}
+          <button
+            className="px-3.5 md:px-4 py-2.5 rounded-lg md:rounded-xl font-bold text-sm md:text-base transition-all duration-300 bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white shadow-lg scale-110"
+          >
+            {historyPage}
+          </button>
+
+          {/* Show last page if not current */}
+          {historyPage !== totalHistoryPages && (
+            <span className="px-2 py-2 text-gray-500 font-bold text-sm md:text-base">
+              ...
+            </span>
+          )}
 
           <button
             disabled={historyPage === totalHistoryPages}
             onClick={() => setHistoryPage(historyPage + 1)}
-            className="px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-medium text-sm md:text-base hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
+            className="px-4 md:px-5 py-2.5 rounded-lg md:rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 font-semibold text-sm md:text-base hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
           >
             Next
           </button>

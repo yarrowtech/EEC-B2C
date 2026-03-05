@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
+import { buildQuestionStagePayload } from "../../lib/stage";
 import { FiFileText, FiList, FiUpload, FiSettings, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -38,26 +39,13 @@ export default function QuestionsClozeSelect() {
 
     setBusy(true);
     try {
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
-
       const payload = {
         board: scope.board,
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
         explanation: form.explanation,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...buildQuestionStagePayload(scope.stage),
         difficulty: scope.difficulty.toLowerCase(),
         questionType: scope.questionType,
         clozeSelect: {

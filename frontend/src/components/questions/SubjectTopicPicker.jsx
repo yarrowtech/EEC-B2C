@@ -3,15 +3,19 @@ import axios from "axios";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { FiRefreshCw } from "react-icons/fi";
 import { Book } from "lucide-react";
+import { buildStageOptions, formatStageLabel, normalizeStageNumber } from "../../lib/stage";
 
-const STAGES = ["Foundation", "Intermediate", "Advanced"];
 const DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"];
 const QUESTION_TYPES = [
   "MCQ — Single Correct",
   "MCQ — Multiple Correct",
+  "True / False",
   "Choice Matrix",
   "Cloze — Drag & Drop",
   "Cloze — Drop-Down",
+  "Cloze — Free Text",
+  "Match List",
+  "Essay — Rich Text",
   "Essay — Plain Text"
 ];
 
@@ -32,11 +36,14 @@ export default function SubjectTopicPicker() {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [topics, setTopics] = useState([]);
+  const [stages, setStages] = useState([1, 2, 3]);
+  const [customStage, setCustomStage] = useState("");
 
   // Load boards and classes on mount
   useEffect(() => {
     loadBoards();
     loadClasses();
+    loadStages();
   }, []);
 
   // Load subjects when board and class are selected
@@ -107,6 +114,26 @@ export default function SubjectTopicPicker() {
     }
   };
 
+  const loadStages = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/questions/stages`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
+      });
+      setStages(buildStageOptions(res.data?.stages || []));
+    } catch (err) {
+      console.error("Error loading stages:", err);
+      setStages([1, 2, 3]);
+    }
+  };
+
+  const addCustomStage = () => {
+    const parsed = normalizeStageNumber(customStage);
+    const nextStages = buildStageOptions([...stages, parsed], false);
+    setStages(nextStages);
+    setStage(String(parsed));
+    setCustomStage("");
+  };
+
   const isComplete = scope.board && scope.class && scope.subject && scope.topic &&
                      scope.stage && scope.difficulty && scope.questionType;
 
@@ -129,7 +156,10 @@ export default function SubjectTopicPicker() {
 
         <button
           type="button"
-          onClick={clear}
+          onClick={() => {
+            clear();
+            setCustomStage("");
+          }}
           className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-red-400 to-pink-500 text-white px-6 py-3 font-bold shadow-lg hover:scale-105 transition-all"
         >
           <FiRefreshCw /> Clear All
@@ -153,6 +183,7 @@ export default function SubjectTopicPicker() {
               setSubject("");
               setTopic("");
               setStage("");
+              setCustomStage("");
               setDifficulty("");
               setQuestionType("");
             }}
@@ -181,6 +212,7 @@ export default function SubjectTopicPicker() {
               setSubject("");
               setTopic("");
               setStage("");
+              setCustomStage("");
               setDifficulty("");
               setQuestionType("");
             }}
@@ -209,6 +241,7 @@ export default function SubjectTopicPicker() {
               setSubject(e.target.value);
               setTopic("");
               setStage("");
+              setCustomStage("");
               setDifficulty("");
               setQuestionType("");
             }}
@@ -236,6 +269,7 @@ export default function SubjectTopicPicker() {
             onChange={(e) => {
               setTopic(e.target.value);
               setStage("");
+              setCustomStage("");
               setDifficulty("");
               setQuestionType("");
             }}
@@ -255,25 +289,49 @@ export default function SubjectTopicPicker() {
           <label className="font-bold text-slate-700 mb-2 block text-sm">
             5. Stage
           </label>
-          <select
-            className={`w-full rounded-xl px-4 py-3 shadow-md focus:ring-2 focus:ring-indigo-500 border border-slate-200 ${
-              !scope.topic ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'
-            }`}
-            value={scope.stage}
-            onChange={(e) => {
-              setStage(e.target.value);
-              setDifficulty("");
-              setQuestionType("");
-            }}
-            disabled={!scope.topic}
-          >
-            <option value="">Select Stage</option>
-            {STAGES.map((stage) => (
-              <option key={stage} value={stage}>
-                {stage}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-2">
+            <select
+              className={`w-full rounded-xl px-4 py-3 shadow-md focus:ring-2 focus:ring-indigo-500 border border-slate-200 ${
+                !scope.topic ? "bg-slate-100 cursor-not-allowed" : "bg-white"
+              }`}
+              value={scope.stage}
+              onChange={(e) => {
+                setStage(e.target.value);
+                setDifficulty("");
+                setQuestionType("");
+              }}
+              disabled={!scope.topic}
+            >
+              <option value="">Select Stage</option>
+              {stages.map((stage) => (
+                <option key={stage} value={String(stage)}>
+                  {formatStageLabel(stage)}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="1"
+                className={`w-full rounded-xl px-3 py-2 shadow-sm border border-slate-200 focus:ring-2 focus:ring-indigo-500 ${
+                  !scope.topic ? "bg-slate-100 cursor-not-allowed" : "bg-white"
+                }`}
+                placeholder="Add Stage (e.g. 4)"
+                value={customStage}
+                onChange={(e) => setCustomStage(e.target.value)}
+                disabled={!scope.topic}
+              />
+              <button
+                type="button"
+                onClick={addCustomStage}
+                disabled={!scope.topic || !customStage}
+                className="rounded-xl px-3 py-2 bg-indigo-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* 6. Difficulty */}

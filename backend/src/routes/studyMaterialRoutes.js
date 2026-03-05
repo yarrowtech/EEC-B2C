@@ -12,12 +12,25 @@ import { sendPurchaseConfirmationEmail } from "../utils/sendMail.js";
 const router = express.Router();
 
 /**
- * ADMIN → Upload Study Material PDF
+ * ADMIN & TEACHER → Upload Study Material PDF
  */
 router.post(
   "/upload",
   requireAuth,
-  requireAdmin,
+  async (req, res, next) => {
+    // Allow both admin and teacher roles
+    const user = req.user;
+    if (user.role !== "admin" && user.role !== "teacher") {
+      return res.status(403).json({ message: "Access denied. Only admins and teachers can upload materials." });
+    }
+
+    // Check if teacher is verified
+    if (user.role === "teacher" && !user.isTeacherVerified) {
+      return res.status(403).json({ message: "Teacher verification required. Please complete verification to upload materials." });
+    }
+
+    next();
+  },
   uploadPdf.single("pdf"),
   async (req, res) => {
     try {
@@ -30,6 +43,7 @@ router.post(
         class: req.body.class,
         board: req.body.board,
         subject: req.body.subject,
+        category: req.body.category || "Notes",
         isFree: req.body.isFree === "true",
         price: req.body.price || 0,
 
@@ -126,7 +140,20 @@ router.get("/secure-pdf/:id", requireAuth, async (req, res) => {
 router.put(
   "/:id",
   requireAuth,
-  requireAdmin,
+  async (req, res, next) => {
+    // Allow both admin and teacher roles
+    const user = req.user;
+    if (user.role !== "admin" && user.role !== "teacher") {
+      return res.status(403).json({ message: "Access denied." });
+    }
+
+    // Check if teacher is verified
+    if (user.role === "teacher" && !user.isTeacherVerified) {
+      return res.status(403).json({ message: "Teacher verification required." });
+    }
+
+    next();
+  },
   uploadPdf.single("pdf"),
   async (req, res) => {
     try {
@@ -140,6 +167,7 @@ router.put(
       material.class = req.body.class;
       material.board = req.body.board;
       material.subject = req.body.subject;
+      material.category = req.body.category || material.category;
       material.isFree = req.body.isFree === "true";
       material.price = req.body.price || 0;
 

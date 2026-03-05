@@ -266,6 +266,22 @@ router.get("/profile", requireAuth, async (req, res) => {
   }
 });
 
+// Get unlocked stages for current user
+router.get("/unlocked-stages", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("unlockedStages");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Stage 1 is always unlocked, merge with user's purchased stages
+    const unlockedStages = [1, ...(user.unlockedStages || [])];
+    const uniqueStages = [...new Set(unlockedStages)].sort((a, b) => a - b);
+
+    res.json({ unlockedStages: uniqueStages });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ============================
 //   UPDATE USER PROFILE OLD
 // ============================
@@ -775,6 +791,99 @@ router.get("/gift-card-availability", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Check gift card availability error:", err);
     res.status(500).json({ message: "Failed to check availability" });
+  }
+});
+
+// ============================
+//   TEACHER VERIFICATION ENDPOINTS
+// ============================
+
+// Get teacher verification status
+router.get("/teacher-verification-status", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(
+      "isTeacherVerified legalTermsAccepted biometricVerified"
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "teacher") {
+      return res.status(400).json({ message: "Only teachers can check verification status" });
+    }
+
+    res.json({
+      isTeacherVerified: user.isTeacherVerified || false,
+      legalTermsAccepted: user.legalTermsAccepted || false,
+      biometricVerified: user.biometricVerified || false,
+    });
+  } catch (err) {
+    console.error("Get teacher verification status error:", err);
+    res.status(500).json({ message: "Failed to get verification status" });
+  }
+});
+
+// Accept legal terms
+router.post("/teacher/accept-legal-terms", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "teacher") {
+      return res.status(400).json({ message: "Only teachers can accept legal terms" });
+    }
+
+    user.legalTermsAccepted = true;
+    user.legalTermsAcceptedAt = new Date();
+    await user.save();
+
+    res.json({
+      message: "Legal terms accepted successfully",
+      legalTermsAccepted: true,
+    });
+  } catch (err) {
+    console.error("Accept legal terms error:", err);
+    res.status(500).json({ message: "Failed to accept legal terms" });
+  }
+});
+
+// Complete biometric verification
+router.post("/teacher/biometric-verification", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "teacher") {
+      return res.status(400).json({ message: "Only teachers can complete biometric verification" });
+    }
+
+    if (!user.legalTermsAccepted) {
+      return res.status(400).json({ message: "Please accept legal terms first" });
+    }
+
+    user.biometricVerified = true;
+    user.biometricVerifiedAt = new Date();
+
+    // Mark teacher as fully verified once both steps are complete
+    user.isTeacherVerified = true;
+
+    await user.save();
+
+    res.json({
+      message: "Biometric verification completed successfully",
+      biometricVerified: true,
+      isTeacherVerified: true,
+    });
+  } catch (err) {
+    console.error("Biometric verification error:", err);
+    res.status(500).json({ message: "Failed to complete biometric verification" });
   }
 });
 

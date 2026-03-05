@@ -15,6 +15,37 @@ function requireAdminOrTeacher(req, res) {
   return true;
 }
 
+function normalizeStageValue(stageValue) {
+  if (stageValue === null || stageValue === undefined || stageValue === "") {
+    return 1;
+  }
+
+  if (typeof stageValue === "number" && Number.isFinite(stageValue)) {
+    return Math.max(1, Math.trunc(stageValue));
+  }
+
+  const raw = String(stageValue).trim().toLowerCase();
+  if (!raw) return 1;
+
+  if (/^\d+$/.test(raw)) return Math.max(1, Number(raw));
+
+  const stageMatch = raw.match(/^stage[-\s]*(\d+)$/);
+  if (stageMatch) return Math.max(1, Number(stageMatch[1]));
+
+  if (raw === "foundation") return 1;
+  if (raw === "intermediate") return 2;
+  if (raw === "advanced") return 3;
+
+  return 1;
+}
+
+function getLevelFromStage(stageValue) {
+  const stage = normalizeStageValue(stageValue);
+  if (stage <= 1) return "basic";
+  if (stage === 2) return "intermediate";
+  return "advanced";
+}
+
 /**
  * Validate and normalize payload by type.
  * Returns: { ok: true, doc } OR { ok: false, message }
@@ -30,8 +61,8 @@ function shapeByType(type, body, userId) {
       .map((s) => s.trim())
       .filter(Boolean),
     explanation: body.explanation || "",
-    stage: Number(body.stage || 1),
-    level: String(body.level || "basic"),
+    stage: normalizeStageValue(body.stage),
+    level: String(body.level || getLevelFromStage(body.stage)),
     createdBy: userId,
   };
 
@@ -280,7 +311,7 @@ export const list = async (req, res) => {
     if (type) filter.type = type;
     if (subject) filter.subject = subject;
     if (topic) filter.topic = topic;
-    if (stage) filter.stage = Number(stage);
+    if (stage) filter.stage = normalizeStageValue(stage);
     if (level) filter.level = level;
     if (q) {
       filter.$or = [
@@ -468,14 +499,52 @@ export const metaTopics = async (req, res) => {
   }
 };
 
-export const metaStages = async (_req, res) => {
+export const metaStages = async (req, res) => {
   try {
+    const { class: userClass, board } = req.query;
+
+    // Build filter for stages
+    const filter = {};
+
+    // Handle board parameter (could be ObjectId or name)
+    if (board) {
+      const mongoose = await import("mongoose");
+      if (mongoose.default.Types.ObjectId.isValid(board) && /^[0-9a-fA-F]{24}$/.test(board)) {
+        filter.board = board;
+      } else {
+        const Board = (await import("../models/Board.js")).default;
+        const boardDoc = await Board.findOne({ name: board });
+        if (boardDoc) {
+          filter.board = boardDoc._id;
+        } else {
+          return res.json({ stages: [] });
+        }
+      }
+    }
+
+    // Handle class parameter (could be ObjectId or name)
+    if (userClass) {
+      const mongoose = await import("mongoose");
+      if (mongoose.default.Types.ObjectId.isValid(userClass) && /^[0-9a-fA-F]{24}$/.test(userClass)) {
+        filter.class = userClass;
+      } else {
+        const Class = (await import("../models/Class.js")).default;
+        const classDoc = await Class.findOne({ name: userClass });
+        if (classDoc) {
+          filter.class = classDoc._id;
+        } else {
+          return res.json({ stages: [] });
+        }
+      }
+    }
+
     const rows = await Question.aggregate([
+      ...(Object.keys(filter).length > 0 ? [{ $match: filter }] : []),
       { $group: { _id: "$stage", count: { $sum: 1 } } },
       { $sort: { _id: 1 } },
     ]);
 
-    const stages = rows.map((r) => Number(r._id));
+    const stages = [...new Set(rows.map((r) => Number(r._id)).filter((s) => Number.isFinite(s) && s >= 1))].sort((a, b) => a - b);
 
     res.json({ stages });
   } catch (e) {
@@ -487,12 +556,13 @@ export const metaStages = async (_req, res) => {
 // Get available question types with counts for a specific subject/topic
 export const getQuestionTypes = async (req, res) => {
   try {
-    const { subject, topic, class: userClass, board } = req.query;
+    const { subject, topic, class: userClass, board, stage } = req.query;
 
     // Build filter
     const filter = {};
     if (subject) filter.subject = subject;
     if (topic) filter.topic = topic;
+    if (stage) filter.stage = normalizeStageValue(stage);
 
     // Handle board parameter (could be ObjectId or name)
     if (board) {

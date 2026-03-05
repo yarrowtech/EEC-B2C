@@ -305,6 +305,25 @@ export const startExam = async (req, res) => {
     let qType = type;
     if (type === "cloze-dnd") qType = "cloze-drag";
 
+    const normalizeStage = (stageValue) => {
+      if (stageValue === null || stageValue === undefined || stageValue === "") {
+        return null;
+      }
+
+      const stageStr = String(stageValue).trim().toLowerCase();
+      if (/^\d+$/.test(stageStr)) return Number(stageStr);
+
+      const stagePattern = stageStr.match(/^stage[-\s]*(\d+)$/);
+      if (stagePattern) return Number(stagePattern[1]);
+
+      const stageNameMap = {
+        foundation: 1,
+        intermediate: 2,
+        advanced: 3,
+      };
+      return stageNameMap[stageStr] || null;
+    };
+
     async function buildMatchValue(value, modelPath) {
       if (!value) return null;
 
@@ -328,6 +347,11 @@ export const startExam = async (req, res) => {
       subject: await buildMatchValue(subject),
       topic: await buildMatchValue(topic),
     };
+
+    const stageNumber = normalizeStage(stage);
+    if (stageNumber !== null) {
+      match.stage = stageNumber;
+    }
 
     const userClassRaw =
       req.body.class || req.user?.className || req.user?.class || "";

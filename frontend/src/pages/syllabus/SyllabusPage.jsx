@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, ChevronRight, Loader2, X, FileText, Clock, ListChecks } from "lucide-react";
 import { getJSON, startExam } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
 
 export default function SyllabusPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState([]);
@@ -17,10 +18,48 @@ export default function SyllabusPage() {
   const [selectedType, setSelectedType] = useState(null);
   const [questionTypes, setQuestionTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
+  const [currentStage, setCurrentStage] = useState(1);
+  const [unlockedStages, setUnlockedStages] = useState([1]);
 
   useEffect(() => {
-    loadSyllabus();
+    // Fetch unlocked stages first
+    fetchUnlockedStages();
   }, []);
+
+  useEffect(() => {
+    // Get stage from URL query parameter, default to 1
+    const stageParam = searchParams.get("stage");
+    const stage = stageParam ? parseInt(stageParam, 10) : 1;
+
+    // Check if stage is unlocked
+    if (!unlockedStages.includes(stage)) {
+      toast.error(`Stage ${stage} is locked! Redirecting to Stage 1.`);
+      navigate("/dashboard/syllabus?stage=1");
+      return;
+    }
+
+    setCurrentStage(stage);
+    loadSyllabus(stage);
+  }, [searchParams, unlockedStages]);
+
+  async function fetchUnlockedStages() {
+    try {
+      const token = localStorage.getItem("jwt");
+      const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+      const res = await fetch(`${API}/api/users/unlocked-stages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUnlockedStages(data.unlockedStages || [1]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch unlocked stages", err);
+      setUnlockedStages([1]); // Default to Stage 1 only
+    }
+  }
 
   function getStoredUser() {
     try {
@@ -49,7 +88,7 @@ export default function SyllabusPage() {
     return getStoredUser();
   }
 
-  async function loadSyllabus() {
+  async function loadSyllabus(stage = 1) {
     try {
       setLoading(true);
 
@@ -68,6 +107,7 @@ export default function SyllabusPage() {
 
       console.log("userBoard:", userBoard);
       console.log("userClass:", userClass);
+      console.log("currentStage:", stage);
 
       // Validate that user has board and class
       if (!userBoard || !userClass) {
@@ -78,8 +118,8 @@ export default function SyllabusPage() {
         return;
       }
 
-      // Fetch subjects filtered by user's board and class
-      const url = `/api/subject?board=${userBoard}&class=${userClass}`;
+      // Fetch subjects filtered by user's board, class, and stage
+      const url = `/api/subject?board=${userBoard}&class=${userClass}&stage=${stage}`;
       console.log("Fetching subjects from:", url);
 
       const subjectsRes = await getJSON(url);
@@ -93,12 +133,12 @@ export default function SyllabusPage() {
         return;
       }
 
-      // Fetch topics for each subject (also filtered by board and class)
+      // Fetch topics for each subject (also filtered by board, class, and stage)
       const subjectsWithTopics = await Promise.all(
         subjectsRes.map(async (subject) => {
           try {
             const topics = await getJSON(
-              `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}`
+              `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}&stage=${stage}`
             );
             console.log(`Topics for ${subject.name}:`, topics);
             return { ...subject, topics: topics || [] };
@@ -131,7 +171,7 @@ export default function SyllabusPage() {
       const userBoard = user.boardId || user.board || user.boardName || "";
       const userClass = user.classId || user.class || user.className || "";
       const response = await getJSON(
-        `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}`
+        `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${currentStage}`
       );
 
       // Response format: [{ type: "mcq-single", count: 15, label: "MCQ - Single Choice" }, ...]
@@ -170,13 +210,13 @@ export default function SyllabusPage() {
       setStartingExam(`${subject._id}-${topic._id}`);
       setShowConfirmDialog(false);
 
-      // Start exam with the selected subject, topic, and type
+      // Start exam with the selected subject, topic, type, and current stage
       const data = await startExam({
         subject: subject._id,
         topic: topic._id,
         type: selectedType.type === "all" ? "mcq-single" : selectedType.type,
         limit: 10,
-        stage: 1,
+        stage: currentStage,
         class: userClass,
         board: userBoard
       });
@@ -234,10 +274,10 @@ export default function SyllabusPage() {
                 <div className="p-3 bg-white rounded-xl shadow-md">
                   <BookOpen className="w-8 h-8 text-orange-500" />
                 </div>
-                Syllabus Overview
+                Syllabus Overview - Stage {currentStage}
               </h1>
               <p className="text-gray-600 text-lg">
-                Browse subjects and topics. Click on any topic to start an exam.
+                Browse subjects and topics for Stage {currentStage}. Click on any topic to start an exam. {currentStage === 1 ? "✨ Stage 1 is completely free!" : ""}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -251,6 +291,12 @@ export default function SyllabusPage() {
                 <div className="text-xs text-gray-500 font-medium">Class</div>
                 <div className="text-sm font-bold text-yellow-700 flex items-center gap-1">
                   🎓 {userClassName}
+                </div>
+              </div>
+              <div className="px-4 py-2 bg-white shadow-sm rounded-xl border-2 border-purple-200">
+                <div className="text-xs text-gray-500 font-medium">Current Stage</div>
+                <div className="text-sm font-bold text-purple-700 flex items-center gap-1">
+                  🎯 Stage {currentStage}
                 </div>
               </div>
             </div>
@@ -491,7 +537,7 @@ export default function SyllabusPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">Subject: {selectedTopic.subject.name}</p>
-                  <p className="text-sm text-gray-500">Stage 1 - Basic Level</p>
+                  <p className="text-sm text-gray-500">Stage {currentStage} {currentStage === 1 ? "- Free" : ""}</p>
                 </div>
               </div>
 

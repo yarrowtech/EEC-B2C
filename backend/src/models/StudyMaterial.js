@@ -8,6 +8,13 @@ const studyMaterialSchema = new mongoose.Schema(
     board: { type: String, required: true },
     subject: { type: String, required: true },
 
+    // Category for study material organization
+    category: {
+      type: String,
+      enum: ["Notes", "Reference Books", "Practice Papers", "Video Content", "Syllabus", "Other"],
+      default: "Notes",
+    },
+
     pdfUrl: { type: String, required: true },     // Cloudinary secure_url
     pdfPublicId: { type: String, required: true },// for delete later
 

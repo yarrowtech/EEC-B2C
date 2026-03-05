@@ -829,3 +829,202 @@ export async function sendPurchaseConfirmationEmail({
     throw error;
   }
 }
+
+export async function sendSubscriptionInvoiceEmail({
+  to,
+  name,
+  packageName,
+  packageDisplayName,
+  duration,
+  unlockedStages,
+  studyMaterialsAccess,
+  amount,
+  paymentMethod,
+  transactionId,
+  purchaseDate,
+  userEmail,
+  userPhone,
+  startDate,
+  endDate,
+}) {
+  let invoicePath = null;
+
+  try {
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    const displayName = packageDisplayName || packageName || "Subscription";
+    const stagesLabel = Array.isArray(unlockedStages) && unlockedStages.length
+      ? unlockedStages.join(", ")
+      : "N/A";
+    const materialsLabel = studyMaterialsAccess || "none";
+    const endDateLabel = endDate
+      ? new Date(endDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
+      : "N/A";
+    const startDateLabel = startDate
+      ? new Date(startDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
+      : "N/A";
+    const daysLeft = endDate
+      ? Math.max(
+          0,
+          Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        )
+      : null;
+
+    invoicePath = await generateInvoicePdf({
+      name,
+      amount,
+      paymentMethod,
+      transactionId,
+      purchaseDate,
+      userEmail,
+      userPhone,
+      invoiceNumber,
+      itemTypeLabel: "Subscription",
+      itemTitle: displayName,
+      itemMeta: [
+        `Duration: ${duration || "N/A"} days`,
+        `Stages: ${stagesLabel}`,
+        `Materials: ${materialsLabel}`,
+      ],
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription Confirmation</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;">
+    <tr>
+      <td align="center" style="padding:40px 15px;">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:16px;overflow:hidden;
+          box-shadow:0 4px 6px rgba(0,0,0,0.1);border:1px solid #e5e7eb;">
+          <tr>
+            <td style="background:linear-gradient(135deg, #f59e0b 0%, #fb923c 100%);
+              padding:40px 30px;text-align:center;">
+              <h1 style="margin:0;font-size:26px;line-height:34px;font-weight:700;color:#ffffff;">
+                Subscription Activated
+              </h1>
+              <p style="margin:8px 0 0 0;font-size:14px;color:#fff7ed;">
+                Thank you for choosing EEC
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:36px 30px;">
+              <p style="margin:0 0 16px 0;font-size:16px;line-height:24px;color:#374151;">
+                Hi <strong>${name}</strong>,
+              </p>
+              <p style="margin:0 0 20px 0;font-size:16px;line-height:24px;color:#374151;">
+                Your subscription is active. Your invoice is attached to this email.
+              </p>
+
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;margin:24px 0;">
+                <tr>
+                  <td style="padding:20px;">
+                    <h2 style="margin:0 0 14px 0;font-size:18px;color:#111827;">
+                      Subscription Details
+                    </h2>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Plan:</td>
+                        <td style="font-size:14px;color:#111827;font-weight:600;text-align:right;padding:4px 0;">${displayName}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Start:</td>
+                        <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${startDateLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Ends:</td>
+                        <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${endDateLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Expires in:</td>
+                        <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${daysLeft !== null ? `${daysLeft} days` : "N/A"}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Stages:</td>
+                        <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${stagesLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Materials:</td>
+                        <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${materialsLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Amount:</td>
+                        <td style="font-size:14px;color:#111827;font-weight:700;text-align:right;padding:4px 0;">₹${amount}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Payment Method:</td>
+                        <td style="font-size:14px;color:#111827;text-align:right;padding:4px 0;">${paymentMethod}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px;color:#6b7280;padding:4px 0;">Transaction ID:</td>
+                        <td style="font-size:12px;color:#111827;text-align:right;padding:4px 0;font-family:monospace;">${transactionId}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:24px 0;">
+                    <a href="${CLIENT_ORIGIN}/dashboard/packages"
+                      style="display:inline-block;background:#f59e0b;color:#ffffff;
+                      padding:12px 26px;border-radius:8px;text-decoration:none;
+                      font-weight:700;font-size:15px;">
+                      View Subscription →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:10px 0 0 0;font-size:13px;color:#6b7280;">
+                This is an automated email. Please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    await sendMail({
+      to,
+      subject: `Subscription Invoice - ${displayName}`,
+      html,
+      attachments: [
+        {
+          filename: `Invoice_${invoiceNumber}.pdf`,
+          path: invoicePath,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    deleteInvoicePdf(invoicePath);
+  } catch (error) {
+    if (invoicePath) {
+      deleteInvoicePdf(invoicePath);
+    }
+    console.error("Error sending subscription invoice email:", error);
+    throw error;
+  }
+}

@@ -35,6 +35,8 @@ import pushNotificationRoutes from "./routes/pushNotificationRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
 import aiQuestionRoutes from "./routes/aiQuestionRoutes.js";
 import selfStudyRoutes from "./routes/selfStudyRoutes.js";
+import packageRoutes from "./routes/packages.js";
+import subscriptionRoutes from "./routes/subscriptions.js";
 
 const app = express();
 
@@ -103,6 +105,8 @@ app.use("/api/push", pushNotificationRoutes);
 app.use("/api/promotion", promotionRoutes);
 app.use("/api/ai-questions", aiQuestionRoutes);
 app.use("/api/self-study", selfStudyRoutes);
+app.use("/api/packages", packageRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;

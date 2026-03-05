@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { getJSON, deleteQuestion } from "../../lib/api";
+import { normalizeStageNumber } from "../../lib/stage";
 import { FiFilter, FiSearch, FiTrash2, FiEdit3, FiList } from "react-icons/fi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
@@ -88,15 +89,8 @@ export default function QuestionsList() {
       if (scope.subject) qs.set("subject", scope.subject);
       if (scope.topic) qs.set("topic", scope.topic);
 
-      // Map stage names to numbers if needed
       if (scope.stage) {
-        const stageMap = {
-          "Foundation": "1",
-          "Intermediate": "2",
-          "Advanced": "3"
-        };
-        const stageValue = stageMap[scope.stage] || scope.stage;
-        qs.set("stage", stageValue);
+        qs.set("stage", String(normalizeStageNumber(scope.stage)));
       }
 
       // Ensure difficulty is lowercase
@@ -192,9 +186,6 @@ export default function QuestionsList() {
   }
 
   const pages = Math.max(1, Math.ceil(total / limit));
-
-  // Map stage numbers to names
-  const stageNames = { 1: "Foundation", 2: "Intermediate", 3: "Advanced" };
 
   return (
     <>

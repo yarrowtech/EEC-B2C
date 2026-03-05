@@ -70,15 +70,17 @@ import NotificationDetails from "./pages/NotificationDetails";
 import AddClass from "./pages/questions/AddClass";
 import AddBoard from "./pages/questions/AddBoard";
 import Swal from "sweetalert2";
-import Leaderboard from "./pages/Leaderboard";
 import MindTrainingGames from "./games/MindTrainingGames";
 import AdminGiftCardsPage from './pages/AdminGiftCardsPage';
 import AdminPurchasesPage from './pages/AdminPurchasesPage';
+import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
 import AIQuestionGenerator from "./pages/AIQuestionGenerator";
 import SelfStudy from "./pages/SelfStudy";
 import SelfStudyResults from "./pages/SelfStudyResults";
 import SelfStudyResultDetail from "./pages/SelfStudyResultDetail";
 import SyllabusPage from "./pages/syllabus/SyllabusPage";
+import ManagePackages from "./pages/admin/ManagePackages";
+import Packages from "./pages/Packages";
 
 
 function getToken() {
@@ -429,10 +431,12 @@ export default function App() {
             <Route path="teachers" element={<RequireAdmin><TeachersList /></RequireAdmin>} />
             <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
             <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
-            <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
             <Route path="games/mind-training" element={<MindTrainingGames />} />
             <Route path="gift-cards" element={<AdminGiftCardsPage />} />
             <Route path="purchases" element={<RequireAdmin><AdminPurchasesPage /></RequireAdmin>} />
+            <Route path="subscriptions" element={<RequireAdmin><AdminSubscriptionsPage /></RequireAdmin>} />
+            <Route path="packages" element={<Packages />} />
+            <Route path="packages/manage" element={<RequireAdmin><ManagePackages /></RequireAdmin>} />
             <Route path="self-study" element={<SelfStudy />} />
             <Route path="self-study/results" element={<SelfStudyResults />} />
             <Route path="self-study/results/:id" element={<SelfStudyResultDetail />} />
@@ -495,10 +499,6 @@ export default function App() {
             <Route path="settings/contact-career" element={<RequireAdmin><CareerSettings /></RequireAdmin>} />
             <Route path="settings/contact-office" element={<RequireAdmin><OfficeSettings /></RequireAdmin>} />
 
-            {/* You can add these placeholders now (static pages later) */}
-            <Route path="questions/mcq-multi" element={<div>MCQ — Multiple Correct (static)</div>} />
-            <Route path="questions/true-false" element={<div>True/False (static)</div>} />
-            <Route path="questions/import" element={<div>Import Question Bank (static)</div>} />
             <Route path="exams" element={<ExamsIndex />} />
             <Route path="exams/take/:attemptId" element={<ExamTake />} />
 

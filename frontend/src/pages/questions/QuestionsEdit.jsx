@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { FiSave, FiEdit3, FiChevronLeft } from "react-icons/fi";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { getJSON, updateQuestion } from "../../lib/api";
+import { buildQuestionStagePayload, buildStageOptions, formatStageLabel, normalizeStageNumber } from "../../lib/stage";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -33,9 +34,7 @@ export default function QuestionsEdit() {
         setSubject(d.subject || "");
         setTopic(d.topic || "");
 
-        // Map stage number to name
-        const stageNames = { 1: "Foundation", 2: "Intermediate", 3: "Advanced" };
-        setStage(stageNames[d.stage] || "");
+        setStage(String(normalizeStageNumber(d.stage || 1)));
 
         // Capitalize difficulty
         setDifficulty(d.difficulty ? d.difficulty.charAt(0).toUpperCase() + d.difficulty.slice(1) : "");
@@ -107,13 +106,14 @@ function HierarchyEditor({ doc, scope }) {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [topics, setTopics] = useState([]);
+  const [stages, setStages] = useState([1, 2, 3]);
 
-  const STAGES = ["Foundation", "Intermediate", "Advanced"];
   const DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"];
 
   useEffect(() => {
     loadBoards();
     loadClasses();
+    loadStages();
   }, []);
 
   useEffect(() => {
@@ -175,6 +175,18 @@ function HierarchyEditor({ doc, scope }) {
       setTopics(res.data);
     } catch (err) {
       console.error("Failed to load topics:", err);
+    }
+  };
+
+  const loadStages = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/questions/stages`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
+      });
+      setStages(buildStageOptions([scope.stage, ...(res.data?.stages || [])]));
+    } catch (err) {
+      console.error("Failed to load stages:", err);
+      setStages(buildStageOptions([scope.stage]));
     }
   };
 
@@ -267,9 +279,9 @@ function HierarchyEditor({ doc, scope }) {
             onChange={(e) => setStage(e.target.value)}
           >
             <option value="">Select Stage</option>
-            {STAGES.map((stage) => (
-              <option key={stage} value={stage}>
-                {stage}
+            {stages.map((stage) => (
+              <option key={stage} value={String(stage)}>
+                {formatStageLabel(stage)}
               </option>
             ))}
           </select>
@@ -341,19 +353,7 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
     e.preventDefault();
     setBusy(true);
     try {
-      // Map stage names to numbers
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      // Map stage to level
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "mcq-single",
@@ -361,8 +361,7 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         question: form.question,
         options: form.options,
@@ -497,17 +496,7 @@ function EditMCQMulti({ doc, scope, busy, setBusy }) {
         .filter(([, v]) => v)
         .map(([k]) => k);
 
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "mcq-multi",
@@ -515,8 +504,7 @@ function EditMCQMulti({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         question: form.question,
         options: form.options,
@@ -652,17 +640,7 @@ function EditChoiceMatrix({ doc, scope, busy, setBusy }) {
         .filter(([, v]) => v)
         .map(([k]) => k);
 
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "choice-matrix",
@@ -670,8 +648,7 @@ function EditChoiceMatrix({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         choiceMatrix: {
           prompt: form.prompt,
@@ -815,17 +792,7 @@ function EditClozeDrag({ doc, scope, busy, setBusy }) {
 
     setBusy(true);
     try {
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "cloze-drag",
@@ -833,8 +800,7 @@ function EditClozeDrag({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         explanation: form.explanation,
         clozeDrag: {
@@ -975,17 +941,7 @@ function EditClozeSelect({ doc, scope, busy, setBusy }) {
 
     setBusy(true);
     try {
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "cloze-select",
@@ -993,8 +949,7 @@ function EditClozeSelect({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         explanation: form.explanation,
         clozeSelect: {
@@ -1133,17 +1088,7 @@ function EditClozeText({ doc, scope, busy, setBusy }) {
 
     setBusy(true);
     try {
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "cloze-text",
@@ -1151,8 +1096,7 @@ function EditClozeText({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         explanation: form.explanation,
         clozeText: {
@@ -1252,17 +1196,7 @@ function EditEssayPlain({ doc, scope, busy, setBusy }) {
 
     setBusy(true);
     try {
-      const stageMap = {
-        "Foundation": 1,
-        "Intermediate": 2,
-        "Advanced": 3
-      };
-
-      const levelMap = {
-        "Foundation": "basic",
-        "Intermediate": "intermediate",
-        "Advanced": "advanced"
-      };
+      const stagePayload = buildQuestionStagePayload(scope.stage);
 
       await updateQuestion(doc._id, {
         type: "essay-plain",
@@ -1270,8 +1204,7 @@ function EditEssayPlain({ doc, scope, busy, setBusy }) {
         class: scope.class,
         subject: scope.subject,
         topic: scope.topic,
-        stage: stageMap[scope.stage] || 1,
-        level: levelMap[scope.stage] || "basic",
+        ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
         prompt: form.prompt,
         plainText: form.plainText,

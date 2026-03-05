@@ -106,7 +106,15 @@ export default function GlobalLoginModal() {
                   toast.success(`Welcome back, ${data.user.name}!`);
 
                   setShowLogin(false);
-                  navigate("/dashboard", { replace: true });
+
+                  // Check if there's a redirect path stored
+                  const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+                  if (redirectPath) {
+                    sessionStorage.removeItem("redirectAfterLogin");
+                    navigate(redirectPath, { replace: true });
+                  } else {
+                    navigate("/dashboard", { replace: true });
+                  }
 
                   window.dispatchEvent(
                     new CustomEvent("eec:auth", {

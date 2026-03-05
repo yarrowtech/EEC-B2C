@@ -213,7 +213,22 @@ export default function ExamTake() {
 
       const res = await submitExam(attemptId, arr);
       setResult(res); // {score,total,percent}
-      toast.success("Exam submitted successfully!");
+
+      // Show feedback message based on score
+      const percentage = res.percent || 0;
+      if (percentage >= 80) {
+        toast.success("🎉 Excellent work! You aced this exam!");
+      } else if (percentage >= 60) {
+        toast.success("✅ Good job! Keep practicing to improve further!");
+      } else if (percentage >= 40) {
+        toast.info("📚 You're very close to the answer! We recommend revising the study materials to improve your understanding.", {
+          autoClose: 6000,
+        });
+      } else {
+        toast.info("📖 Don't worry! Please revise the study materials and try again. You can do it!", {
+          autoClose: 6000,
+        });
+      }
     } catch (err) {
       toast.error(err.message || "Failed to submit exam. Please try again.");
     } finally {

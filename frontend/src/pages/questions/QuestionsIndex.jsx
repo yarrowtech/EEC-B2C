@@ -13,9 +13,13 @@ import {
 const BASIC_TYPES = [
   "MCQ — Single Correct",
   "MCQ — Multiple Correct",
+  "True / False",
   "Choice Matrix",
   "Cloze — Drag & Drop",
   "Cloze — Drop-Down",
+  "Cloze — Free Text",
+  "Match List",
+  "Essay — Rich Text",
   "Essay — Plain Text",
 ];
 
@@ -25,15 +29,15 @@ const TYPES = [
   { to: "/dashboard/questions/mcq-single", label: "MCQ — Single Correct", icon: <FiCheckSquare /> },
   { to: "/dashboard/questions/mcq-multi", label: "MCQ — Multiple Correct", icon: <FiLayers /> },
   { to: "/dashboard/questions/choice-matrix", label: "Choice Matrix", icon: <FiGrid /> },
+  { to: "/dashboard/questions/true-false", label: "True / False", icon: <FiList /> },
   { to: "/dashboard/questions/cloze-drag", label: "Cloze — Drag & Drop", icon: <FiFileText /> },
   { to: "/dashboard/questions/cloze-select", label: "Cloze — Drop-Down", icon: <FiFileText /> },
+  { to: "/dashboard/questions/cloze-text", label: "Cloze — Free Text", icon: <FiFileText /> },
+  { to: "/dashboard/questions/match-list", label: "Match List", icon: <FiList /> },
+  { to: "/dashboard/questions/essay-rich", label: "Essay — Rich Text", icon: <FiEdit3 /> },
   { to: "/dashboard/questions/essay-plain", label: "Essay — Plain Text", icon: <FiEdit3 /> },
 
   // ❌ Disabled items
-  { label: "True / False", icon: <FiList />, disabled: true },
-  { label: "Cloze — Free Text", icon: <FiFileText />, disabled: true },
-  { label: "Match List", icon: <FiList />, disabled: true },
-  { label: "Essay — Rich Text", icon: <FiEdit3 />, disabled: true },
 ];
 
 export default function QuestionsIndex() {

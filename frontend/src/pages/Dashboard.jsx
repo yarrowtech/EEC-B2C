@@ -253,70 +253,130 @@ function AdminContent() {
 
       {/* <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`} icon={<Sparkles size={18} />}> */}
       <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`}>
-        <div className="overflow-auto bg-white/70 backdrop-blur">
-          <table className="min-w-[900px] w-full text-sm">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="text-left p-3">Student</th>
-                <th className="text-left p-3">Exam (Subject • Topic • Type)</th>
-                <th className="text-left p-3">Score</th>
-                <th className="text-left p-3">Attempts by Student</th>
-                <th className="text-left p-3">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedRows.map(r => (
-                <tr key={r._id} className="border-t">
-                  <td className="p-3">
-                    <div className="font-medium">{r.user?.name || "—"}</div>
-                    <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
-                  </td>
-                  <td className="p-3">
-                    {subjectMap[r.subject] || r.subjectName || "—"} • {topicMap[r.topic] || r.topicName || "—"} •
-                    <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">{r.type}</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-semibold">{r.score}</span> / {r.total}
-                    <span className="ml-2 text-xs text-slate-500">({r.percent}%)</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs">
-                      {r.attemptsForUser} attempts
-                    </span>
-                  </td>
-                  <td className="p-3 text-slate-600">{new Date(r.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
-              {!rows.length && !busy && (
+        <div className="rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-[900px] w-full text-sm">
+              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                 <tr>
-                  <td colSpan={5} className="p-6 text-center text-slate-500">
-                    No attempts yet.
-                  </td>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Student</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Exam (Subject • Topic • Type)</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Score</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Attempts by Student</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Date</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="flex justify-center items-center gap-3 py-4 bg-gray-200 cursor-not-allowed border-t">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 bg-white rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
-
-            <span className="text-sm text-slate-700">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-white rounded disabled:opacity-50"
-            >
-              Next
-            </button>
+              </thead>
+              <tbody>
+                {paginatedRows.map((r, index) => (
+                  <tr key={r._id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-sm font-bold flex items-center justify-center shadow">
+                          {indexOfFirst + index + 1}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-800">{r.user?.name || "—"}</div>
+                          <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="font-medium text-gray-800">
+                          {subjectMap[r.subject] || r.subjectName || "—"}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          {topicMap[r.topic] || r.topicName || "—"}
+                        </div>
+                        <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{r.type}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="font-bold text-gray-800 text-base">
+                        {r.score} / {r.total}
+                      </div>
+                      <div className="mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                          r.percent >= 90 ? "bg-green-100 text-green-700" :
+                          r.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                          r.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        }`}>
+                          {r.percent}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-xs font-semibold">
+                        {r.attemptsForUser} attempt{r.attemptsForUser !== 1 ? 's' : ''}
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-600 text-xs">
+                      {new Date(r.createdAt).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "2-digit",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+                {!rows.length && !busy && (
+                  <tr>
+                    <td colSpan={5} className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="text-6xl">📋</div>
+                        <p className="text-gray-500 font-medium">No attempts yet</p>
+                        <p className="text-sm text-gray-400">Student exam attempts will appear here</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+
+          {/* Enhanced Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-3 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+                  currentPage === 1
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+                }`}
+              >
+                ← Prev
+              </button>
+
+              {currentPage !== 1 && (
+                <span className="px-2 text-gray-500 font-bold">...</span>
+              )}
+
+              <button className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-white shadow-lg scale-110">
+                {currentPage}
+              </button>
+
+              {currentPage !== totalPages && (
+                <span className="px-2 text-gray-500 font-bold">...</span>
+              )}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+                  currentPage === totalPages
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+                }`}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </Section>
     </>
@@ -415,70 +475,130 @@ function TeacherContent() {
         </div>
       </Section>
       <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`}>
-        <div className="overflow-auto bg-white/70 backdrop-blur">
-          <table className="min-w-[900px] w-full text-sm">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="text-left p-3">Student</th>
-                <th className="text-left p-3">Exam (Subject • Topic • Type)</th>
-                <th className="text-left p-3">Score</th>
-                <th className="text-left p-3">Attempts by Student</th>
-                <th className="text-left p-3">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedRows.map(r => (
-                <tr key={r._id} className="border-t">
-                  <td className="p-3">
-                    <div className="font-medium">{r.user?.name || "—"}</div>
-                    <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
-                  </td>
-                  <td className="p-3">
-                    {subjectMap[r.subject] || r.subjectName || "—"} • {topicMap[r.topic] || r.topicName || "—"} •
-                    <span className="uppercase text-xs bg-slate-100 px-1.5 py-0.5 rounded">{r.type}</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-semibold">{r.score}</span> / {r.total}
-                    <span className="ml-2 text-xs text-slate-500">({r.percent}%)</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs">
-                      {r.attemptsForUser} attempts
-                    </span>
-                  </td>
-                  <td className="p-3 text-slate-600">{new Date(r.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
-              {!rows.length && !busy && (
+        <div className="rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-[900px] w-full text-sm">
+              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                 <tr>
-                  <td colSpan={5} className="p-6 text-center text-slate-500">
-                    No attempts yet.
-                  </td>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Student</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Exam (Subject • Topic • Type)</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Score</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Attempts by Student</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Date</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="flex justify-center items-center gap-3 py-4 bg-gray-200 cursor-not-allowed border-t">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 bg-white rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
-
-            <span className="text-sm text-slate-700">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-white rounded disabled:opacity-50"
-            >
-              Next
-            </button>
+              </thead>
+              <tbody>
+                {paginatedRows.map((r, index) => (
+                  <tr key={r._id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-sm font-bold flex items-center justify-center shadow">
+                          {indexOfFirst + index + 1}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-800">{r.user?.name || "—"}</div>
+                          <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="font-medium text-gray-800">
+                          {subjectMap[r.subject] || r.subjectName || "—"}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          {topicMap[r.topic] || r.topicName || "—"}
+                        </div>
+                        <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{r.type}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="font-bold text-gray-800 text-base">
+                        {r.score} / {r.total}
+                      </div>
+                      <div className="mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                          r.percent >= 90 ? "bg-green-100 text-green-700" :
+                          r.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                          r.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        }`}>
+                          {r.percent}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-xs font-semibold">
+                        {r.attemptsForUser} attempt{r.attemptsForUser !== 1 ? 's' : ''}
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-600 text-xs">
+                      {new Date(r.createdAt).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "2-digit",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+                {!rows.length && !busy && (
+                  <tr>
+                    <td colSpan={5} className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="text-6xl">📋</div>
+                        <p className="text-gray-500 font-medium">No attempts yet</p>
+                        <p className="text-sm text-gray-400">Student exam attempts will appear here</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+
+          {/* Enhanced Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-3 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+                  currentPage === 1
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+                }`}
+              >
+                ← Prev
+              </button>
+
+              {currentPage !== 1 && (
+                <span className="px-2 text-gray-500 font-bold">...</span>
+              )}
+
+              <button className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-white shadow-lg scale-110">
+                {currentPage}
+              </button>
+
+              {currentPage !== totalPages && (
+                <span className="px-2 text-gray-500 font-bold">...</span>
+              )}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+                  currentPage === totalPages
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+                }`}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </Section>
 
@@ -500,6 +620,14 @@ function StudentContent() {
   const [attempts, setAttempts] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [packages, setPackages] = useState([]);
+  const [packagesBusy, setPackagesBusy] = useState(false);
+  const [packagesErr, setPackagesErr] = useState("");
+  const [subscriptionInfo, setSubscriptionInfo] = useState(null);
+  const [subscriptionType, setSubscriptionType] = useState("");
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState(null);
+  const [subscriptionBusy, setSubscriptionBusy] = useState(false);
+  const [subscriptionErr, setSubscriptionErr] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -514,6 +642,101 @@ function StudentContent() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+    (async () => {
+      setPackagesBusy(true);
+      setPackagesErr("");
+      try {
+        const res = await fetch(`${API}/api/packages`);
+        const data = await res.json();
+        setPackages(data.packages || []);
+      } catch (e) {
+        setPackagesErr(e.message || "Failed to load packages");
+      } finally {
+        setPackagesBusy(false);
+      }
+    })();
+
+    (async () => {
+      setSubscriptionBusy(true);
+      setSubscriptionErr("");
+      try {
+        const res = await fetch(`${API}/api/subscriptions/current`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data = await res.json();
+        if (res.ok && data?.hasActiveSubscription) {
+          setSubscriptionInfo(data.subscription || null);
+          setSubscriptionType(
+            data.subscriptionType ||
+            data.subscription?.package?.name ||
+            data.subscription?.packageName ||
+            "none"
+          );
+          setSubscriptionEndDate(
+            data.endDate || data.subscription?.endDate || null
+          );
+        } else {
+          setSubscriptionInfo(null);
+          setSubscriptionType("none");
+          setSubscriptionEndDate(null);
+        }
+      } catch (e) {
+        setSubscriptionErr(e.message || "Failed to load subscription");
+      } finally {
+        setSubscriptionBusy(false);
+      }
+    })();
+  }, []);
+
+  const storedUser = getUser();
+  const resolvedType = String(
+    subscriptionType ||
+    storedUser?.subscriptionType ||
+    "none"
+  ).toLowerCase();
+  const typeLabel =
+    resolvedType === "none"
+      ? "Free"
+      : `${resolvedType.charAt(0).toUpperCase()}${resolvedType.slice(1)}`;
+
+  const fallbackAccessByType = {
+    basic: { unlockedStages: [1, 2], studyMaterialsAccess: "none" },
+    intermediate: { unlockedStages: [1, 2], studyMaterialsAccess: "limited" },
+    premium: { unlockedStages: "all", studyMaterialsAccess: "full" },
+    none: { unlockedStages: [1], studyMaterialsAccess: "none" },
+  };
+
+  const activePackage =
+    subscriptionInfo?.package ||
+    packages.find(
+      (pkg) => String(pkg.name || "").toLowerCase() === resolvedType
+    ) ||
+    null;
+  const fallbackAccess = fallbackAccessByType[resolvedType] || fallbackAccessByType.none;
+  const access = activePackage
+    ? {
+        unlockedStages: activePackage.unlockedStages || [1],
+        studyMaterialsAccess: activePackage.studyMaterialsAccess || "none",
+      }
+    : fallbackAccess;
+  const hasPremium = resolvedType === "premium";
+  const allStagesUnlocked = hasPremium || access.unlockedStages === "all";
+  const stage2Unlocked =
+    allStagesUnlocked ||
+    (Array.isArray(access.unlockedStages) && access.unlockedStages.includes(2));
+  const studyMaterialsAccess = hasPremium ? "full" : access.studyMaterialsAccess;
+  const subscriptionDaysLeft = subscriptionEndDate
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(subscriptionEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        )
+      )
+    : null;
 
   const totalAttempts = attempts.length;
   const totalScore = attempts.reduce((acc, a) => acc + (a.score || 0), 0);
@@ -568,82 +791,78 @@ function StudentContent() {
       </Section>
 
       <Section title="Recent Exams" subtitle={busy ? "Loading…" : `${attempts.length} attempts`}>
-        <div className="rounded-2xl border bg-white/70 backdrop-blur shadow-md overflow-hidden">
+        <div className="rounded `-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
 
-          {/* Table Header */}
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-b">
-            <table className="min-w-[720px] w-full text-sm">
-              <thead>
-                <tr className="text-slate-700">
-                  <th className="p-4 text-left font-semibold">Exam</th>
-                  <th className="p-4 text-left font-semibold">Score</th>
-                  <th className="p-4 text-left font-semibold">When</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-
-          {/* Table Body */}
+          {/* Table Header - Enhanced */}
           <div className="overflow-x-auto">
             <table className="min-w-[720px] w-full text-sm">
-              <tbody className="divide-y divide-slate-200">
+              <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
+                <tr>
+                  <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Exam Details</th>
+                  <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Score</th>
+                  <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Date & Time</th>
+                </tr>
+              </thead>
 
+              {/* Table Body - Enhanced */}
+              <tbody className="divide-y divide-gray-100">
                 {attempts
                   .slice()
                   .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
                   .slice(0, 5)
-                  .map(a => (
+                  .map((a, index) => (
                     <tr
                       key={a._id}
-                      className="hover:bg-yellow-50/60 transition-all duration-200"
+                      className="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-200"
                     >
-                      {/* EXAM NAME */}
+                      {/* EXAM NAME - Enhanced */}
                       <td className="p-4">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-800">
-                            {a.subject?.name || a.subjectName || "—"}
-                          </span>
-
-                          <span className="text-xs text-slate-500">
-                            {a.topic?.name || a.topicName || "—"}
-                          </span>
-
-                          <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
-                            {a.type}
-                          </span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-sm font-bold flex items-center justify-center shadow flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-800">
+                              {a.subject?.name || a.subjectName || "—"}
+                            </span>
+                            <span className="text-xs text-slate-600">
+                              {a.topic?.name || a.topicName || "—"}
+                            </span>
+                            <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">
+                              {a.type}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
-                      {/* SCORE */}
+                      {/* SCORE - Enhanced */}
                       <td className="p-4">
-                        <div className="font-semibold text-slate-800">
-                          {a.score}/{a.total}
+                        <div className="font-bold text-gray-800 text-base">
+                          {a.score} / {a.total}
                         </div>
-
-                        <div className="text-xs mt-1">
+                        <div className="mt-1">
                           <span
-                            className={`
-                      px-2 py-0.5 rounded-full 
-                      ${a.percent >= 90 ? "bg-green-100 text-green-700" :
-                                a.percent >= 75 ? "bg-blue-100 text-blue-700" :
-                                  a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
-                                    "bg-red-100 text-red-700"}
-                    `}
+                            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                              a.percent >= 90 ? "bg-green-100 text-green-700" :
+                              a.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                              a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                              "bg-red-100 text-red-700"
+                            }`}
                           >
                             {a.percent}%
                           </span>
                         </div>
                       </td>
 
-                      {/* DATE */}
-                      <td className="p-4 text-slate-600">
+                      {/* DATE - Enhanced */}
+                      <td className="p-4 text-slate-600 text-xs">
                         {a.submittedAt
                           ? new Date(a.submittedAt).toLocaleString("en-US", {
-                            weekday: "short",
+                            year: "numeric",
                             month: "short",
-                            day: "numeric",
+                            day: "2-digit",
                             hour: "numeric",
-                            minute: "numeric",
+                            minute: "2-digit",
                             hour12: true
                           })
                           : "-"}
@@ -651,18 +870,118 @@ function StudentContent() {
                     </tr>
                   ))}
 
-                {/* NO DATA */}
+                {/* NO DATA - Enhanced */}
                 {!attempts.length && !busy && (
                   <tr>
-                    <td colSpan={3} className="p-6 text-center text-slate-500">
-                      No attempts yet.
+                    <td colSpan={3} className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="text-6xl">📝</div>
+                        <p className="text-gray-500 font-medium">No exam attempts yet</p>
+                        <p className="text-sm text-gray-400">Your exam history will appear here</p>
+                      </div>
                     </td>
                   </tr>
                 )}
-
               </tbody>
             </table>
           </div>
+        </div>
+      </Section>
+
+      <Section
+        title="Subscription & Access"
+        subtitle={subscriptionBusy ? "Loading…" : typeLabel}
+        icon={<CreditCard size={18} />}
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card title="Current Plan" icon={<GraduationCap size={18} />} bubble={["from-emerald-600", "to-teal-600"]}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-slate-800">{typeLabel}</span>
+              {resolvedType !== "none" && (
+                <Badge tone="emerald">Active</Badge>
+              )}
+              {resolvedType === "none" && <Badge tone="slate">Free</Badge>}
+            </div>
+            {subscriptionEndDate && (
+              <div className="mt-2 text-xs text-slate-500">
+                Ends on {new Date(subscriptionEndDate).toLocaleDateString()}
+                {subscriptionDaysLeft !== null && (
+                  <span className="ml-1">({subscriptionDaysLeft} days left)</span>
+                )}
+              </div>
+            )}
+            {subscriptionErr && (
+              <div className="mt-2 text-xs text-rose-600">{subscriptionErr}</div>
+            )}
+          </Card>
+
+          <Card title="Stage Access" icon={<CheckCircle2 size={18} />} bubble={["from-blue-600", "to-indigo-600"]}>
+            <div className="flex items-center gap-2 text-sm">
+              <span>Stage 1</span>
+              <Badge tone="emerald">Free</Badge>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm">
+              <span>Stage 2</span>
+              <Badge tone={stage2Unlocked ? "emerald" : "rose"}>
+                {stage2Unlocked ? "Unlocked" : "Locked"}
+              </Badge>
+            </div>
+            <div className="mt-2 text-xs text-slate-500">
+              Premium unlocks all stages and full study materials.
+            </div>
+          </Card>
+
+          <Card title="Study Materials" icon={<FileText size={18} />} bubble={["from-amber-600", "to-orange-600"]}>
+            <div className="flex items-center gap-2 text-sm">
+              <span>Access</span>
+              <Badge tone={studyMaterialsAccess === "full" ? "emerald" : studyMaterialsAccess === "limited" ? "amber" : "slate"}>
+                {studyMaterialsAccess === "full"
+                  ? "Full"
+                  : studyMaterialsAccess === "limited"
+                  ? "Limited"
+                  : "None"}
+              </Badge>
+            </div>
+            {packagesErr && (
+              <div className="mt-2 text-xs text-rose-600">{packagesErr}</div>
+            )}
+          </Card>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          {packagesBusy ? (
+            <Card title="Packages" icon={<CreditCard size={18} />} bubble={["from-slate-700", "to-slate-900"]}>
+              <div className="text-sm text-slate-500">Loading packages…</div>
+            </Card>
+          ) : packages.length === 0 ? (
+            <Card title="Packages" icon={<CreditCard size={18} />} bubble={["from-slate-700", "to-slate-900"]}>
+              <div className="text-sm text-slate-500">No packages available yet.</div>
+            </Card>
+          ) : (
+            packages.map((pkg) => {
+              const isCurrent = String(pkg.name || "").toLowerCase() === resolvedType;
+              return (
+                <Card
+                  key={pkg._id || pkg.name}
+                  title={pkg.displayName || pkg.name}
+                  icon={<CreditCard size={18} />}
+                  bubble={["from-slate-700", "to-slate-900"]}
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-slate-800">{pkg.name}</span>
+                    {pkg.price === 0 ? <Badge tone="emerald">Free</Badge> : <Badge tone="slate">₹{pkg.price}</Badge>}
+                    {isCurrent && <Badge tone="emerald">Current</Badge>}
+                  </div>
+                  <div className="mt-2 text-xs text-slate-600">
+                    {pkg.duration} days • Stages {Array.isArray(pkg.unlockedStages) ? pkg.unlockedStages.join(", ") : "—"}
+                  </div>
+                  <div className="mt-2 text-xs text-slate-600">
+                    Study materials: {pkg.studyMaterialsAccess || "none"}
+                  </div>
+                </Card>
+              );
+            })
+          )}
         </div>
       </Section>
 
