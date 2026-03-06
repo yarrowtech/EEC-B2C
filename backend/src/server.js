@@ -150,8 +150,16 @@ connectDB(process.env.MONGO_URI).then(() => {
     // Start auto-promotion scheduler
     scheduleAutoPromotion();
 
-    const keepAliveUrl = process.env.KEEP_ALIVE_URL;
-    if (keepAliveUrl) {
+    const keepAliveSource =
+      process.env.KEEP_ALIVE_URL || process.env.RENDER_EXTERNAL_URL || "";
+    const keepAliveEnabled = String(process.env.KEEP_ALIVE_ENABLED || "true").toLowerCase() !== "false";
+
+    if (keepAliveEnabled && keepAliveSource && process.env.NODE_ENV === "production") {
+      const keepAliveUrl = keepAliveSource.includes("/")
+        ? keepAliveSource
+        : `${keepAliveSource}/api/health`;
+      const intervalMs = Number(process.env.KEEP_ALIVE_INTERVAL_MS || 60_000);
+
       const ping = async () => {
         try {
           const res = await fetch(keepAliveUrl, { method: "GET" });
@@ -164,7 +172,10 @@ connectDB(process.env.MONGO_URI).then(() => {
       };
 
       ping();
-      setInterval(ping, 60 * 1000);
+      setInterval(ping, intervalMs);
+      console.log(`⏱ Keep-alive enabled: ${keepAliveUrl} every ${Math.round(intervalMs / 1000)}s`);
+    } else {
+      console.log("⏱ Keep-alive disabled (set KEEP_ALIVE_URL or RENDER_EXTERNAL_URL for production).");
     }
   });
 });
