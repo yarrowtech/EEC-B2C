@@ -1,11 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 import pdfWorker from "pdfjs-dist/legacy/build/pdf.worker?url";
 import { FileText, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize, Minimize } from "lucide-react";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
+export default function SecurePdfViewer({
+  pdfUrl,
+  subject,
+  title,
+  userName = "",
+  userEmail = "",
+  userId = "",
+  onClose,
+}) {
   const containerRef = useRef(null);
   const canvasRefs = useRef([]);
   const visibleRatios = useRef({});
@@ -18,10 +26,29 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
   const [fitMode, setFitMode] = useState("width"); // width | height | free
   const [ready, setReady] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState("Protected Content");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pageInput, setPageInput] = useState("");
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 4;
+  const watermarkIdentity = useMemo(() => {
+    if (userName && userEmail) return `${userName} • ${userEmail}`;
+    if (userName) return userName;
+    if (userEmail) return userEmail;
+    return userId || "EEC Protected User";
+  }, [userName, userEmail, userId]);
+
+  const [watermarkStamp, setWatermarkStamp] = useState(() =>
+    new Date().toLocaleString("en-IN")
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWatermarkStamp(new Date().toLocaleString("en-IN"));
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   /* ---------------- LOAD PDF ---------------- */
   useEffect(() => {
@@ -159,8 +186,14 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
 
   /* ---------------- SCREENSHOT / SCREEN RECORD BLOCK ---------------- */
   useEffect(() => {
-    const hideContent = () => setBlocked(true);
-    const showContent = () => setBlocked(false);
+    const hideContent = (reason = "Protected Content") => {
+      setBlockedReason(reason);
+      setBlocked(true);
+    };
+    const showContent = () => {
+      setBlocked(false);
+      setBlockedReason("Protected Content");
+    };
 
     // Desktop: PrintScreen, DevTools, etc.
     const keyHandler = (e) => {
@@ -168,16 +201,22 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
         e.key === "PrintScreen" ||
         (e.ctrlKey && e.shiftKey && ["i", "c", "j"].includes(e.key.toLowerCase()))
       ) {
-        hideContent();
+        hideContent("Screen capture blocked");
         setTimeout(showContent, 1500);
       }
     };
 
     // Mobile + Desktop: App switch / screenshot
     const visibilityHandler = () => {
-      if (document.hidden) hideContent();
+      if (document.hidden) hideContent("Screen hidden for security");
       else showContent();
     };
+
+    const blurHandler = () => hideContent("Screen hidden for security");
+    const focusHandler = () => showContent();
+
+    const beforePrintHandler = () => hideContent("Printing is disabled");
+    const afterPrintHandler = () => showContent();
 
     // Mobile screenshot often triggers resize
     let lastWidth = window.innerWidth;
@@ -187,7 +226,7 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
         Math.abs(window.innerWidth - lastWidth) > 50 ||
         Math.abs(window.innerHeight - lastHeight) > 50
       ) {
-        hideContent();
+        hideContent("Capture attempt detected");
         setTimeout(showContent, 1500);
       }
       lastWidth = window.innerWidth;
@@ -197,11 +236,19 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
     window.addEventListener("keydown", keyHandler);
     document.addEventListener("visibilitychange", visibilityHandler);
     window.addEventListener("resize", resizeHandler);
+    window.addEventListener("blur", blurHandler);
+    window.addEventListener("focus", focusHandler);
+    window.addEventListener("beforeprint", beforePrintHandler);
+    window.addEventListener("afterprint", afterPrintHandler);
 
     return () => {
       window.removeEventListener("keydown", keyHandler);
       document.removeEventListener("visibilitychange", visibilityHandler);
       window.removeEventListener("resize", resizeHandler);
+      window.removeEventListener("blur", blurHandler);
+      window.removeEventListener("focus", focusHandler);
+      window.removeEventListener("beforeprint", beforePrintHandler);
+      window.removeEventListener("afterprint", afterPrintHandler);
     };
   }, []);
 
@@ -275,7 +322,14 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="fixed inset-0 z-50 bg-[#2a2a2e] flex flex-col select-none">
+    <div
+      className="fixed inset-0 z-50 bg-[#2a2a2e] flex flex-col select-none"
+      style={{
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        userSelect: "none",
+      }}
+    >
       {/* HEADER */}
       <div className="relative flex flex-wrap items-center justify-between gap-2 px-3 md:px-5 py-2 md:py-3 bg-[#38383d] text-white shadow-lg">
         {/* LEFT */}
@@ -387,18 +441,24 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
               ref={(el) => (canvasRefs.current[i] = el)}
               className="bg-white shadow-xl select-none"
             />
-            {/* Watermark Overlay */}
-            {/* <div className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-lg">
-              <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-x-32 gap-y-24 p-8" style={{ transform: 'rotate(-45deg)', transformOrigin: 'center' }}>
-                {Array.from({ length: 20 }).map((_, idx) => (
-                  <div key={idx} className="text-gray-400/20 font-bold text-2xl md:text-3xl whitespace-nowrap text-center">
-                    {userName && <div>{userName}</div>}
-                    {board && <div>{board}</div>}
-                    {className && <div>{className}</div>}
-                  </div>
-                ))}
+            <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
+              <div
+                className="absolute inset-0 grid place-items-center"
+                style={{ transform: "rotate(-28deg)" }}
+              >
+                <div className="grid grid-cols-2 gap-x-16 gap-y-10 px-8">
+                  {Array.from({ length: 10 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="text-[11px] md:text-sm font-semibold text-gray-700/22 whitespace-nowrap leading-snug"
+                    >
+                      <div>{watermarkIdentity}</div>
+                      <div>{watermarkStamp}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div> */}
+            </div>
           </div>
         ))}
       </div>
@@ -440,7 +500,7 @@ export default function SecurePdfViewer({ pdfUrl, subject, title, onClose }) {
       {blocked && (
         <div className="absolute inset-0 z-[999] bg-black flex items-center justify-center">
           <p className="text-white text-lg font-semibold tracking-wide">
-            🔒 Protected Content
+            🔒 {blockedReason}
           </p>
         </div>
       )}

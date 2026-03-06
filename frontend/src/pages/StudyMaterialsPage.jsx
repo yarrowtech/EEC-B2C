@@ -760,9 +760,9 @@ export default function StudyMaterialsPage() {
                     pdfUrl={openPdf.pdfUrl}
                     subject={openPdf.subject}
                     title={openPdf.title}
-                    // board={openPdf.board}
-                    // className={openPdf.class}
-                    // userName={user.name}
+                    userName={user?.name || user?.fullName || "EEC User"}
+                    userEmail={user?.email || ""}
+                    userId={user?._id || user?.id || ""}
                     onClose={() => setOpenPdf(null)}
                 />
             )}
