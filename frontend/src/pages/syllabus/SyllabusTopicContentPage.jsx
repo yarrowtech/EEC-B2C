@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { BookOpen, ChevronRight, Clock, FileText, ListChecks, Loader2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Clock, FileText, ListChecks, Loader2, Sparkles, Trophy, X, Zap } from "lucide-react";
 import { getJSON, startExam } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
 
@@ -33,6 +33,9 @@ export default function SyllabusTopicContentPage() {
       subtitle: "Start simple and build confidence",
       icon: "🌱",
       tone: "from-emerald-500 to-green-500",
+      bg: "bg-emerald-50",
+      border: "border-emerald-200",
+      text: "text-emerald-700",
     },
     {
       key: "intermediate",
@@ -40,6 +43,9 @@ export default function SyllabusTopicContentPage() {
       subtitle: "A bit challenging for practice",
       icon: "🚀",
       tone: "from-orange-500 to-amber-500",
+      bg: "bg-orange-50",
+      border: "border-orange-200",
+      text: "text-orange-700",
     },
     {
       key: "advanced",
@@ -47,6 +53,9 @@ export default function SyllabusTopicContentPage() {
       subtitle: "Hard questions for top preparation",
       icon: "🏆",
       tone: "from-purple-500 to-indigo-500",
+      bg: "bg-purple-50",
+      border: "border-purple-200",
+      text: "text-purple-700",
     },
   ];
 
@@ -105,7 +114,7 @@ export default function SyllabusTopicContentPage() {
         return;
       }
 
-      const subjects = await getJSON(`/api/subject?board=${userBoard}&class=${userClass}&stage=${stage}`);
+      const subjects = await getJSON(`/api/subject?board=${userBoard}&class=${userClass}`);
       const foundSubject = (subjects || []).find((s) => String(s._id) === String(subjectId));
 
       if (!foundSubject) {
@@ -115,7 +124,7 @@ export default function SyllabusTopicContentPage() {
       }
 
       const topics = await getJSON(
-        `/api/topic/${foundSubject._id}?board=${userBoard}&class=${userClass}&stage=${stage}`
+        `/api/topic/${foundSubject._id}?board=${userBoard}&class=${userClass}`
       );
       const foundTopic = (topics || []).find((t) => String(t._id) === String(topicId));
 
@@ -152,7 +161,7 @@ export default function SyllabusTopicContentPage() {
       const response = await getJSON(
         `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${stage}&level=${encodeURIComponent(level)}`
       );
-      setQuestionTypes(response.types || []);
+      setQuestionTypes((response.types || []).filter((t) => t?.type !== "all"));
     } catch (err) {
       console.error("Failed to fetch question types", err);
       setQuestionTypes([]);
@@ -226,14 +235,24 @@ export default function SyllabusTopicContentPage() {
   }
 
   function getHtmlOrFallback(html, fallback) {
-    const clean = String(html || "").trim();
-    return clean ? clean : `<p class="text-gray-500">${fallback}</p>`;
+    const clean = decodeEntityTags(String(html || "").trim());
+    return clean ? clean : `<p class="text-gray-400 italic">${fallback}</p>`;
+  }
+
+  function decodeEntityTags(value) {
+    return String(value || "")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, "&");
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
+        <Loader2 className="h-9 w-9 animate-spin text-amber-500" />
+        <p className="text-sm text-gray-500">Loading topic content…</p>
       </div>
     );
   }
@@ -242,94 +261,182 @@ export default function SyllabusTopicContentPage() {
     <>
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-6 shadow-sm">
+      {/* ── Hero Banner ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500">
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 left-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+
+        <div className="relative mx-auto max-w-5xl px-4 py-8 md:py-10">
+          {/* Back button */}
           <button
             onClick={() => navigate(`/dashboard/syllabus?stage=${stage}`)}
-            className="mb-4 text-sm font-semibold text-orange-600 hover:text-orange-700"
+            className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/15 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/25"
           >
-            ← Back to Stage {stage} Syllabus
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Stage {stage} Syllabus
           </button>
 
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">
-                Stage {stage} • {subject?.name || "-"}
-              </p>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{topic?.name || "Topic"}</h1>
-            </div>
-            <div className="px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">
-              Content Page
-            </div>
+          {/* Breadcrumb chips */}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <Zap className="h-3 w-3" />
+              Stage {stage}
+            </span>
+            <ChevronRight className="h-3.5 w-3.5 text-white/60" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <BookOpen className="h-3 w-3" />
+              {subject?.name || "Subject"}
+            </span>
           </div>
-        </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-6 shadow-sm">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-3">Topic Summary</h2>
-          <div
-            className="prose prose-sm max-w-none text-gray-800"
-            dangerouslySetInnerHTML={{
-              __html: getHtmlOrFallback(topic?.topicSummary, "Summary is not available yet."),
-            }}
-          />
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-6 shadow-sm">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-3">Learning Outcomes</h2>
-          <div
-            className="prose prose-sm max-w-none text-gray-800"
-            dangerouslySetInnerHTML={{
-              __html: getHtmlOrFallback(topic?.learningOutcome, "Learning outcomes are not available yet."),
-            }}
-          />
-        </div>
-
-        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-100 rounded-2xl p-4 md:p-6">
-          <h3 className="text-lg font-bold text-gray-900">Practice Now</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Ready to practice this topic? Choose your level and question type.
-          </p>
-          <button
-            onClick={() => setShowLevelSelector(true)}
-            disabled={startingExam}
-            className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold hover:from-orange-600 hover:to-yellow-600 disabled:opacity-60"
-          >
-            {startingExam ? "Starting..." : "Practice Now"}
-          </button>
+          {/* Topic title */}
+          <h1 className="text-2xl font-extrabold leading-tight text-white md:text-4xl">
+            {topic?.name || "Topic"}
+          </h1>
+          <p className="mt-1.5 text-sm text-white/75">Study materials and practice questions</p>
         </div>
       </div>
 
-      {showLevelSelector && selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full md:max-w-2xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden" style={{ maxHeight: "90vh" }}>
-            <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
+      {/* ── Main Content ── */}
+      <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 md:px-6 md:py-8">
+
+        {/* Topic Summary */}
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/60 px-5 py-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100">
+              <FileText className="h-4.5 w-4.5 text-blue-600" />
             </div>
-            <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-5 md:p-6 text-white flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl md:text-2xl font-bold">Choose Level</h3>
-                <button onClick={resetFlow} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                  <X className="w-5 h-5" />
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Topic Summary</h2>
+              <p className="text-xs text-gray-500">Core concepts and key ideas</p>
+            </div>
+          </div>
+          <div className="px-5 py-5">
+            <div
+              className="prose prose-sm max-w-none text-gray-700 prose-headings:text-gray-900 prose-strong:text-gray-900 prose-li:text-gray-700"
+              dangerouslySetInnerHTML={{
+                __html: getHtmlOrFallback(topic?.topicSummary, "Summary is not available yet."),
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Learning Outcomes */}
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/60 px-5 py-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
+              <ListChecks className="h-4.5 w-4.5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Learning Outcomes</h2>
+              <p className="text-xs text-gray-500">What you will achieve after this topic</p>
+            </div>
+          </div>
+          <div className="px-5 py-5">
+            <div
+              className="prose prose-sm max-w-none text-gray-700 prose-headings:text-gray-900 prose-strong:text-gray-900 prose-li:text-gray-700"
+              dangerouslySetInnerHTML={{
+                __html: getHtmlOrFallback(topic?.learningOutcome, "Learning outcomes are not available yet."),
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Practice Now CTA */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 shadow-lg md:p-8">
+          {/* Background decoration */}
+          <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-10 h-32 w-32 rounded-full bg-orange-500/10 blur-2xl" />
+
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-[11px] font-bold text-amber-400">
+                <Sparkles className="h-3 w-3" />
+                Ready to Test?
+              </div>
+              <h3 className="text-xl font-bold text-white md:text-2xl">Practice Now</h3>
+              <p className="mt-1 max-w-sm text-sm text-gray-400">
+                Choose your difficulty level and start practising {topic?.name || "this topic"}.
+              </p>
+
+              {/* Level preview chips */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {levelOptions.map((lvl) => (
+                  <span key={lvl.key} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-gray-300">
+                    {lvl.icon} {lvl.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowLevelSelector(true)}
+              disabled={startingExam}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-amber-500/30 transition hover:from-amber-600 hover:to-orange-600 hover:shadow-amber-500/40 active:scale-[.98] disabled:opacity-60"
+            >
+              {startingExam ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Starting…
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4" />
+                  Start Practice
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ LEVEL SELECTOR MODAL ══ */}
+      {showLevelSelector && selectedTopic && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-4">
+          <div
+            className="flex w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-w-2xl md:rounded-3xl"
+            style={{ maxHeight: "92vh" }}
+          >
+            {/* Mobile handle */}
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
+              <div className="h-1 w-10 rounded-full bg-gray-300" />
+            </div>
+
+            {/* Modal header */}
+            <div className="relative flex-shrink-0 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-5 md:px-6 md:py-6">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-bold text-white md:text-2xl">Choose Your Level</h3>
+                  <p className="mt-1 text-sm text-orange-100">
+                    {selectedTopic.subject.name} — {selectedTopic.topic.name}
+                  </p>
+                </div>
+                <button
+                  onClick={resetFlow}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              <p className="mt-1.5 text-orange-100 text-sm">
-                {selectedTopic.subject.name} — {selectedTopic.topic.name}
-              </p>
             </div>
-            <div className="px-4 pt-4 pb-24 md:p-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+
+            {/* Level cards */}
+            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {levelOptions.map((level) => (
                   <button
                     key={level.key}
                     onClick={() => handleLevelSelection(level.key)}
-                    className="rounded-2xl border-2 border-slate-200 hover:border-orange-400 hover:shadow-lg active:scale-[0.98] transition-all p-4 md:p-5 text-left flex items-center gap-3 sm:flex-col sm:items-start group"
+                    className={`group flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition hover:shadow-md active:scale-[.98] sm:flex-col sm:items-start md:p-5 ${level.border} hover:border-orange-400`}
                   >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${level.tone} flex items-center justify-center text-2xl shadow-md flex-shrink-0`}>
+                    <div className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-2xl shadow-md ${level.tone}`}>
                       {level.icon}
                     </div>
                     <div>
-                      <h4 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-orange-700">{level.label}</h4>
-                      <p className="mt-0.5 text-xs md:text-sm text-slate-600">{level.subtitle}</p>
+                      <p className="text-base font-bold text-gray-900 group-hover:text-orange-700">{level.label}</p>
+                      <p className="mt-0.5 text-xs text-gray-500">{level.subtitle}</p>
                     </div>
                   </button>
                 ))}
@@ -339,69 +446,81 @@ export default function SyllabusTopicContentPage() {
         </div>
       )}
 
+      {/* ══ QUESTION TYPE SELECTOR MODAL ══ */}
       {showTypeSelector && selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full md:max-w-lg bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden" style={{ maxHeight: "90vh" }}>
-            <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-4">
+          <div
+            className="flex w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-w-lg md:rounded-3xl"
+            style={{ maxHeight: "92vh" }}
+          >
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
+              <div className="h-1 w-10 rounded-full bg-gray-300" />
             </div>
-            <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-5 md:p-6 text-white flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl md:text-2xl font-bold">Question Type</h3>
-                <button onClick={cancelTypeSelector} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                  <X className="w-5 h-5" />
+
+            <div className="relative flex-shrink-0 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-5 md:px-6">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-bold text-white md:text-2xl">Question Type</h3>
+                  <p className="mt-1 text-sm text-orange-100">
+                    {selectedTopic.subject.name} — {selectedTopic.topic.name}
+                  </p>
+                  {selectedLevel && (
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                      {levelOptions.find(l => l.key === selectedLevel)?.icon} {selectedLevel}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={cancelTypeSelector}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              <p className="mt-1.5 text-orange-100 text-sm">
-                {selectedTopic.subject.name} — {selectedTopic.topic.name}
-              </p>
-              {selectedLevel && (
-                <p className="mt-1 text-xs text-orange-200 uppercase tracking-wide">
-                  Level: {selectedLevel}
-                </p>
-              )}
             </div>
-            <div className="px-4 pt-4 pb-24 md:p-6 overflow-y-auto flex-1">
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5">
               {loadingTypes ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                  <span className="ml-3 text-gray-600">Loading question types...</span>
+                <div className="flex flex-col items-center justify-center gap-3 py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+                  <p className="text-sm text-gray-500">Loading question types…</p>
                 </div>
               ) : questionTypes.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <div className="text-6xl mb-4">🤔</div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">No Questions Yet</h4>
-                  <p className="text-gray-600 mb-6">
-                    There are no questions available for this topic right now.
+                <div className="flex flex-col items-center px-4 py-14 text-center">
+                  <div className="mb-3 text-5xl">🤔</div>
+                  <h4 className="text-lg font-bold text-gray-900">No Questions Yet</h4>
+                  <p className="mt-1 text-sm text-gray-500">
+                    There are no questions available for this topic at this level.
                   </p>
                   <button
                     onClick={cancelTypeSelector}
-                    className="px-6 py-2 rounded-xl border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="mt-5 rounded-xl border-2 border-gray-200 px-6 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                   >
-                    Choose Another Level
+                    Try Another Level
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {questionTypes.map((qType, index) => (
                     <button
                       key={index}
                       onClick={() => handleTypeSelection(qType)}
                       disabled={qType.count === 0}
-                      className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 active:scale-[0.98] transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="group flex w-full items-center justify-between rounded-xl border-2 border-gray-100 p-4 text-left transition hover:border-amber-300 hover:bg-amber-50/60 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{qType.icon || "📝"}</span>
+                        <span className="text-2xl leading-none">{qType.icon || "📝"}</span>
                         <div>
-                          <p className="font-semibold text-gray-900">{qType.label}</p>
+                          <p className="font-semibold text-gray-900 group-hover:text-amber-800">{qType.label}</p>
                           {qType.count !== null && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-400">
                               {qType.count} question{qType.count !== 1 ? "s" : ""} available
                             </p>
                           )}
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="h-5 w-5 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-amber-500" />
                     </button>
                   ))}
                 </div>
@@ -411,74 +530,92 @@ export default function SyllabusTopicContentPage() {
         </div>
       )}
 
+      {/* ══ CONFIRM START DIALOG ══ */}
       {showConfirmDialog && selectedTopic && selectedType && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden">
-            <div className="md:hidden flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-4">
+          <div className="w-full overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-w-md md:rounded-3xl">
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
+              <div className="h-1 w-10 rounded-full bg-gray-300" />
             </div>
-            <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-5 md:p-6 text-white">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl md:text-2xl font-bold">Start Exam?</h3>
-                <button onClick={resetFlow} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                  <X className="w-5 h-5" />
+
+            <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-5 md:px-6">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-bold text-white md:text-2xl">Ready to Start?</h3>
+                  <p className="mt-1 text-sm text-orange-100">{selectedTopic.topic.name}</p>
+                </div>
+                <button
+                  onClick={resetFlow}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              <p className="mt-1.5 text-orange-100 text-sm">{selectedTopic.topic.name}</p>
             </div>
-            <div className="px-5 pt-5 pb-6 md:p-6 space-y-3.5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <FileText className="w-5 h-5 text-blue-600" />
+
+            {/* Summary info */}
+            <div className="space-y-3 px-5 py-5 md:px-6">
+              <div className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                  <FileText className="h-4.5 w-4.5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-gray-900">
                     {selectedType.count || 10} Question{(selectedType.count || 10) !== 1 ? "s" : ""}
                   </p>
-                  <p className="text-sm text-gray-500">{selectedType.label}</p>
+                  <p className="text-xs text-gray-500">{selectedType.label}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                  <Clock className="w-5 h-5 text-green-600" />
+
+              <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100">
+                  <Clock className="h-4.5 w-4.5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">No Time Limit</p>
-                  <p className="text-sm text-gray-500">Take your time to answer</p>
+                  <p className="text-sm font-semibold text-gray-900">No Time Limit</p>
+                  <p className="text-xs text-gray-500">Take your time to answer</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <ListChecks className="w-5 h-5 text-purple-600" />
+
+              <div className="flex items-center gap-3 rounded-xl bg-purple-50 px-4 py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100">
+                  <Trophy className="h-4.5 w-4.5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Subject: {selectedTopic.subject.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Stage {stage}
-                    {selectedLevel ? ` · Level ${selectedLevel}` : ""}
+                  <p className="text-sm font-semibold text-gray-900">{selectedTopic.subject.name}</p>
+                  <p className="text-xs text-gray-500">
+                    Stage {stage}{selectedLevel ? ` · ${selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} level` : ""}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="px-5 pt-2 pb-24 md:px-6 md:pb-6 bg-gray-50 flex gap-3">
+
+            {/* Action buttons */}
+            <div className="flex gap-2.5 bg-gray-50 px-5 pb-8 pt-3 md:px-6 md:pb-6">
               <button
                 onClick={goBackToTypeSelector}
-                className="px-4 py-3 rounded-xl border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                className="flex items-center gap-1.5 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
               >
-                ← Back
+                <ArrowLeft className="h-4 w-4" />
+                Back
               </button>
               <button
                 onClick={resetFlow}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmStartExam}
                 disabled={startingExam}
-                className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-yellow-500 font-semibold text-white hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md hover:shadow-lg text-sm disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-sm font-bold text-white shadow-md shadow-amber-500/25 transition hover:from-amber-600 hover:to-orange-600 active:scale-[.98] disabled:opacity-60"
               >
-                {startingExam ? "Starting..." : "Start"}
+                {startingExam ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Starting…</>
+                ) : (
+                  <><Zap className="h-4 w-4" /> Start</>
+                )}
               </button>
             </div>
           </div>

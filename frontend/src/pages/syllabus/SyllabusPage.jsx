@@ -163,8 +163,8 @@ export default function SyllabusPage() {
         return;
       }
 
-      // Fetch subjects filtered by user's board, class, and stage
-      const url = `/api/subject?board=${userBoard}&class=${userClass}&stage=${stage}`;
+      // Fetch all uploaded subjects for user's board/class (do not filter by question availability)
+      const url = `/api/subject?board=${userBoard}&class=${userClass}`;
       console.log("Fetching subjects from:", url);
 
       const subjectsRes = await getJSON(url);
@@ -178,12 +178,12 @@ export default function SyllabusPage() {
         return;
       }
 
-      // Fetch topics for each subject (also filtered by board, class, and stage)
+      // Fetch all uploaded topics for each subject (do not filter by question availability)
       const subjectsWithTopics = await Promise.all(
         subjectsRes.map(async (subject) => {
           try {
             const topics = await getJSON(
-              `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}&stage=${stage}`
+              `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}`
             );
             console.log(`Topics for ${subject.name}:`, topics);
             return { ...subject, topics: topics || [] };
@@ -214,7 +214,7 @@ export default function SyllabusPage() {
       const response = await getJSON(
         `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${currentStage}&level=${encodeURIComponent(level)}`
       );
-      setQuestionTypes(response.types || []);
+      setQuestionTypes((response.types || []).filter((t) => t?.type !== "all"));
     } catch (err) {
       console.error("Failed to fetch question types", err);
       setQuestionTypes([]);
@@ -510,27 +510,49 @@ export default function SyllabusPage() {
                           <p className="text-gray-500 text-sm">Topics will appear here once they're added by your instructor.</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
                           {subject.topics.map((topic, topicIndex) => (
                             <button
                               key={topic._id}
                               onClick={() => handleTopicClick(subject, topic)}
                               disabled={startingExam === `${subject._id}-${topic._id}`}
-                              className="flex items-center justify-between p-3 md:p-5 rounded-xl bg-white border-2 border-gray-100 hover:border-orange-400 hover:shadow-md active:scale-[0.98] transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="rounded-2xl bg-white border-2 border-gray-100 hover:border-orange-400 hover:shadow-lg active:scale-[0.98] transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
                             >
-                              <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-orange-400 to-yellow-500 text-white text-xs font-bold flex items-center justify-center shadow">
-                                  {subjectIndex + 1}.{topicIndex + 1}
+                              <div className="relative h-36 w-full bg-gray-100">
+                                {topic.topicImage ? (
+                                  <img
+                                    src={topic.topicImage}
+                                    alt={topic.name}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center">
+                                    <BookOpen className="w-10 h-10 text-orange-400" />
+                                  </div>
+                                )}
+                                <div className="absolute top-2 left-2">
+                                  {/* <span className="inline-flex items-center justify-center px-2 py-1 rounded-md bg-black/60 text-white text-[11px] font-semibold">
+                                    {subjectIndex + 1}.{topicIndex + 1}
+                                  </span> */}
                                 </div>
-                                <span className="text-sm font-medium md:font-semibold text-gray-800 group-hover:text-orange-700 truncate">
-                                  {topic.name}
-                                </span>
                               </div>
-                              {startingExam === `${subject._id}-${topic._id}` ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-orange-500 ml-2 flex-shrink-0" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 ml-2 flex-shrink-0" />
-                              )}
+
+                              <div className="p-4">
+                                <div className="flex items-start justify-between gap-2">
+                                  <h3 className="text-sm md:text-base font-semibold text-gray-900 group-hover:text-orange-700 line-clamp-2">
+                                    {topic.name}
+                                  </h3>
+                                  {startingExam === `${subject._id}-${topic._id}` ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-orange-500 mt-0.5 flex-shrink-0" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 mt-0.5 flex-shrink-0" />
+                                  )}
+                                </div>
+                                <p className="mt-2 text-xs md:text-sm text-gray-600 line-clamp-3 min-h-[3.25rem]">
+                                  {topic.shortDescription?.trim() || "No description available for this topic yet."}
+                                </p>
+                              </div>
                             </button>
                           ))}
                         </div>

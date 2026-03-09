@@ -126,6 +126,8 @@ router.post("/topic", requireAuth, async (req, res) => {
       subject,
       board,
       class: className,
+      topicImage = "",
+      shortDescription = "",
       topicSummary = "",
       learningOutcome = "",
     } = req.body;
@@ -139,6 +141,8 @@ router.post("/topic", requireAuth, async (req, res) => {
       subject,
       board,
       class: className,
+      topicImage,
+      shortDescription,
       topicSummary,
       learningOutcome,
       createdBy: req.user.id,
@@ -272,6 +276,8 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
       subject,
       board,
       class: className,
+      topicImage,
+      shortDescription,
       topicSummary,
       learningOutcome,
     } = req.body;
@@ -280,6 +286,8 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
     if (subject) updateData.subject = subject;
     if (board) updateData.board = board;
     if (className) updateData.class = className;
+    if (typeof topicImage === "string") updateData.topicImage = topicImage;
+    if (typeof shortDescription === "string") updateData.shortDescription = shortDescription;
     if (typeof topicSummary === "string") updateData.topicSummary = topicSummary;
     if (typeof learningOutcome === "string") updateData.learningOutcome = learningOutcome;
 

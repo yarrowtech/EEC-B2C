@@ -10,13 +10,21 @@ export default function AddTopic() {
     const [classId, setClassId] = useState("");
     const [subject, setSubject] = useState("");
     const [name, setName] = useState("");
+    const [shortDescription, setShortDescription] = useState("");
+    const [topicImage, setTopicImage] = useState("");
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [data, setData] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
     const [editSubject, setEditSubject] = useState("");
     const [editBoard, setEditBoard] = useState("");
     const [editClass, setEditClass] = useState("");
+    const [editShortDescription, setEditShortDescription] = useState("");
+    const [editTopicImage, setEditTopicImage] = useState("");
+    const [editUploadingImage, setEditUploadingImage] = useState(false);
     const user = JSON.parse(localStorage.getItem("user"));
+    const API = import.meta.env.VITE_API_URL;
+    const headers = { Authorization: `Bearer ${localStorage.getItem("jwt")}` };
 
     useEffect(() => {
         loadBoards();
@@ -37,9 +45,7 @@ export default function AddTopic() {
 
     const loadBoards = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/boards`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-            });
+            const res = await axios.get(`${API}/api/boards`, { headers });
             setBoards(res.data);
         } catch (err) {
             console.error("Failed to load boards:", err);
@@ -49,9 +55,7 @@ export default function AddTopic() {
 
     const loadClasses = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-            });
+            const res = await axios.get(`${API}/api/classes`, { headers });
             setClasses(res.data);
         } catch (err) {
             console.error("Failed to load classes:", err);
@@ -61,15 +65,13 @@ export default function AddTopic() {
 
     const loadSubjects = async (boardId = "", classId = "") => {
         try {
-            let url = `${import.meta.env.VITE_API_URL}/api/subject`;
+            let url = `${API}/api/subject`;
             const params = [];
             if (boardId) params.push(`board=${boardId}`);
             if (classId) params.push(`class=${classId}`);
             if (params.length > 0) url += `?${params.join("&")}`;
 
-            const res = await axios.get(url, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-            });
+            const res = await axios.get(url, { headers });
             setSubjects(res.data);
         } catch (err) {
             console.error("Failed to load subjects:", err);
@@ -78,19 +80,15 @@ export default function AddTopic() {
 
     const loadTopics = async () => {
         try {
-            const subRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/subject`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-            });
+            const subRes = await axios.get(`${API}/api/subject`, { headers });
 
             const subjects = subRes.data;
             const final = [];
 
             for (const s of subjects) {
                 const tRes = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/topic/${s._id}`,
-                    {
-                        headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-                    }
+                    `${API}/api/topic/${s._id}`,
+                    { headers }
                 );
 
                 final.push({
@@ -108,6 +106,60 @@ export default function AddTopic() {
         }
     };
 
+    const uploadTopicImage = async (file) => {
+        if (!file) return "";
+        if (!file.type?.startsWith("image/")) {
+            throw new Error("Please select a valid image file");
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const res = await fetch(`${API}/api/upload/image`, {
+            method: "POST",
+            body: formData,
+        });
+        const result = await res.json();
+        if (!res.ok || !result?.url) {
+            throw new Error(result?.message || "Image upload failed");
+        }
+        return result.url;
+    };
+
+    const handleAddTopicImage = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        try {
+            const url = await uploadTopicImage(file);
+            setTopicImage(url);
+            toast.success("Topic image uploaded");
+        } catch (err) {
+            toast.error(err?.message || "Failed to upload image");
+        } finally {
+            setUploadingImage(false);
+            e.target.value = "";
+        }
+    };
+
+    const handleEditTopicImage = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setEditUploadingImage(true);
+        try {
+            const url = await uploadTopicImage(file);
+            setEditTopicImage(url);
+            toast.success("Topic image uploaded");
+        } catch (err) {
+            toast.error(err?.message || "Failed to upload image");
+        } finally {
+            setEditUploadingImage(false);
+            e.target.value = "";
+        }
+    };
+
     const submit = async () => {
         if (!name || !subject || !board || !classId) {
             toast.error("Please fill all fields");
@@ -116,11 +168,16 @@ export default function AddTopic() {
 
         try {
             await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/topic`,
-                { name, subject, board, class: classId },
+                `${API}/api/topic`,
                 {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-                }
+                    name,
+                    subject,
+                    board,
+                    class: classId,
+                    shortDescription: shortDescription.trim(),
+                    topicImage,
+                },
+                { headers }
             );
 
             toast.success("Topic Added");
@@ -128,6 +185,8 @@ export default function AddTopic() {
             setSubject("");
             setBoard("");
             setClassId("");
+            setShortDescription("");
+            setTopicImage("");
             loadTopics();
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to add topic");
@@ -140,6 +199,8 @@ export default function AddTopic() {
         setEditSubject(subjectData.subjectId);
         setEditBoard(t.board?._id || "");
         setEditClass(t.class?._id || "");
+        setEditShortDescription(t.shortDescription || "");
+        setEditTopicImage(t.topicImage || "");
     };
 
     const saveEdit = async () => {
@@ -150,11 +211,16 @@ export default function AddTopic() {
 
         try {
             await axios.put(
-                `${import.meta.env.VITE_API_URL}/api/topic/${editingId}`,
-                { name: editName, subject: editSubject, board: editBoard, class: editClass },
+                `${API}/api/topic/${editingId}`,
                 {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-                }
+                    name: editName,
+                    subject: editSubject,
+                    board: editBoard,
+                    class: editClass,
+                    shortDescription: editShortDescription.trim(),
+                    topicImage: editTopicImage,
+                },
+                { headers }
             );
             toast.success("Topic Updated");
             setEditingId(null);
@@ -167,9 +233,7 @@ export default function AddTopic() {
     const deleteTopic = async (id) => {
         if (!confirm("Delete this topic?")) return;
 
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/topic/${id}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
-        });
+        await axios.delete(`${API}/api/topic/${id}`, { headers });
 
         loadTopics();
     };
@@ -270,6 +334,38 @@ export default function AddTopic() {
                         Save Topic
                     </button>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <textarea
+                        value={shortDescription}
+                        onChange={(e) => setShortDescription(e.target.value)}
+                        disabled={!subject}
+                        rows={3}
+                        className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all resize-none ${!subject ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                        placeholder="Short description of topic"
+                    />
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-3">
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleAddTopicImage}
+                                disabled={!subject || uploadingImage}
+                                className="w-full text-sm"
+                            />
+                            {uploadingImage && (
+                                <span className="text-xs text-purple-600 font-semibold">Uploading...</span>
+                            )}
+                        </div>
+                        {topicImage ? (
+                            <img
+                                src={topicImage}
+                                alt="Topic"
+                                className="mt-3 h-20 w-20 rounded-lg object-cover border border-gray-200"
+                            />
+                        ) : null}
+                    </div>
+                </div>
             </div>
 
             {/* ---------- Topic List (Grouped by Subject) - Enhanced ---------- */}
@@ -313,6 +409,8 @@ export default function AddTopic() {
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Board</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Class</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Topic</th>
+            <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Image</th>
+            <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Short Description</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Added By</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Time</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200 w-48 text-center">Actions</th>
@@ -381,6 +479,56 @@ export default function AddTopic() {
                     )}
                 </td>
 
+                <td className="p-4">
+                    {editingId === topic._id ? (
+                        <div className="space-y-2">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleEditTopicImage}
+                                disabled={editUploadingImage}
+                                className="w-full text-xs"
+                            />
+                            {editUploadingImage ? (
+                                <p className="text-xs text-purple-600 font-semibold">Uploading...</p>
+                            ) : null}
+                            {editTopicImage ? (
+                                <img
+                                    src={editTopicImage}
+                                    alt="Topic"
+                                    className="h-14 w-14 rounded-lg object-cover border border-gray-200"
+                                />
+                            ) : (
+                                <span className="text-xs text-gray-400">No image</span>
+                            )}
+                        </div>
+                    ) : topic.topicImage ? (
+                        <img
+                            src={topic.topicImage}
+                            alt={topic.name}
+                            className="h-12 w-12 rounded-lg object-cover border border-gray-200"
+                        />
+                    ) : (
+                        <span className="text-xs text-gray-400">No image</span>
+                    )}
+                </td>
+
+                <td className="p-4 max-w-[220px]">
+                    {editingId === topic._id ? (
+                        <textarea
+                            value={editShortDescription}
+                            onChange={(e) => setEditShortDescription(e.target.value)}
+                            rows={2}
+                            className="border-2 border-gray-300 p-2 rounded-lg w-full text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none resize-none"
+                            placeholder="Short description"
+                        />
+                    ) : (
+                        <p className="text-xs text-gray-700 line-clamp-2">
+                            {topic.shortDescription || "No description"}
+                        </p>
+                    )}
+                </td>
+
                 {/* Added By */}
                 <td className="p-4 text-gray-700">
                     {topic.createdBy?.name || "Unknown"}
@@ -446,8 +594,8 @@ export default function AddTopic() {
         {/* Empty State */}
         {row.topics.length === 0 && (
             <tr>
-                <td
-                    colSpan={7}
+                        <td
+                    colSpan={9}
                     className="p-12 text-center"
                 >
                     <div className="flex flex-col items-center gap-3">

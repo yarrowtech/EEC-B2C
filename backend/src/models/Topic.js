@@ -6,6 +6,8 @@ const topicSchema = new mongoose.Schema(
     subject: { type: mongoose.Schema.Types.ObjectId, ref: "Subject", required: true, index: true },
     board: { type: mongoose.Schema.Types.ObjectId, ref: "Board", required: true, index: true },
     class: { type: mongoose.Schema.Types.ObjectId, ref: "Class", required: true, index: true },
+    topicImage: { type: String, default: "" },
+    shortDescription: { type: String, default: "" },
     topicSummary: { type: String, default: "" },
     learningOutcome: { type: String, default: "" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

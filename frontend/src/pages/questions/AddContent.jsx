@@ -21,6 +21,7 @@ export default function AddContent() {
   const [learningOutcome, setLearningOutcome] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState("");
+  const [insertingImage, setInsertingImage] = useState(false);
 
   const token = localStorage.getItem("jwt");
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
@@ -39,13 +40,13 @@ export default function AddContent() {
   const editorConfig = useMemo(
     () => ({
       readonly: !topicId,
-      placeholder: "Start writing...",
+      placeholder: "Write your article content...",
       minHeight: 260,
       toolbarAdaptive: false,
       askBeforePasteHTML: false,
       askBeforePasteFromWord: false,
       buttons:
-        "bold,italic,underline,strikethrough,|,ul,ol,|,font,fontsize,brush,paragraph,|,align,|,outdent,indent,|,link,table,|,undo,redo,|,hr,eraser,fullsize",
+        "bold,italic,underline,strikethrough,|,ul,ol,|,font,fontsize,brush,paragraph,|,align,|,outdent,indent,|,link,image,table,|,undo,redo,|,hr,eraser,fullsize",
     }),
     [topicId]
   );
@@ -84,12 +85,32 @@ export default function AddContent() {
   function handleTopicChange(nextTopicId) {
     setTopicId(nextTopicId);
     const selectedTopic = topics.find((t) => t._id === nextTopicId);
-    setTopicSummary(selectedTopic?.topicSummary || "");
-    setLearningOutcome(selectedTopic?.learningOutcome || "");
+    setTopicSummary(normalizeRichContent(selectedTopic?.topicSummary || ""));
+    setLearningOutcome(normalizeRichContent(selectedTopic?.learningOutcome || ""));
   }
 
   function getPlainText(html) {
-    return String(html || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+    const normalized = normalizeRichContent(html);
+    return String(normalized || "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function decodeEntityTags(value) {
+    return String(value || "")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, "&");
+  }
+
+  function normalizeRichContent(value) {
+    const raw = String(value || "");
+    const looksEncodedHtml = /&lt;\/?[a-z][^&]*&gt;/i.test(raw);
+    return looksEncodedHtml ? decodeEntityTags(raw) : raw;
   }
 
   function hasContent(topic) {
@@ -144,14 +165,51 @@ export default function AddContent() {
     }
   }
 
+  async function uploadImage(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`${API}/api/upload/image`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.url) {
+      throw new Error(data?.message || "Image upload failed");
+    }
+    return data.url;
+  }
+
+  async function insertImageIntoContent(file) {
+    if (!file) return;
+    if (!file.type?.startsWith("image/")) {
+      toast.warn("Please select an image file");
+      return;
+    }
+
+    setInsertingImage(true);
+    try {
+      const url = await uploadImage(file);
+      const block = `<p><img src="${url}" alt="content" style="max-width:100%;height:auto;border-radius:8px;" /></p>`;
+      setTopicSummary((prev) => `${prev || ""}${block}`);
+      toast.success("Image inserted into content");
+    } catch (err) {
+      toast.error(err?.message || "Failed to upload image");
+    } finally {
+      setInsertingImage(false);
+    }
+  }
+
   async function saveContent() {
     if (!board || !classId || !subject || !topicId) {
       toast.warn("Please select board, class, subject, and topic");
       return;
     }
 
-    if (!getPlainText(topicSummary) || !getPlainText(learningOutcome)) {
-      toast.warn("Summary and learning outcome are required");
+    const normalizedSummary = normalizeRichContent(topicSummary);
+    const normalizedOutcome = normalizeRichContent(learningOutcome);
+
+    if (!getPlainText(normalizedSummary) || !getPlainText(normalizedOutcome)) {
+      toast.warn("Topic content and learning outcome are required");
       return;
     }
 
@@ -160,12 +218,14 @@ export default function AddContent() {
       await axios.put(
         `${API}/api/topic/${topicId}`,
         {
-          topicSummary,
-          learningOutcome,
+          topicSummary: normalizedSummary,
+          learningOutcome: normalizedOutcome,
         },
         { headers }
       );
       toast.success("Topic content saved");
+      setTopicSummary(normalizedSummary);
+      setLearningOutcome(normalizedOutcome);
       await loadTopics(subject, board, classId);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save topic content");
@@ -212,7 +272,7 @@ export default function AddContent() {
           Add Content
         </h1>
         <p className="text-gray-600 mt-2 text-lg">
-          Select Board → Class → Subject → Topic, then add summary and learning outcome
+          Select Board → Class → Subject → Topic, then add content and learning outcomes
         </p>
       </div>
 
@@ -283,8 +343,26 @@ export default function AddContent() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Topic Summary
+              Topic Content
             </label>
+            <div className="mb-2">
+              <label
+                className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold ${
+                  !topicId || insertingImage
+                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+                }`}
+              >
+                {insertingImage ? "Uploading image..." : "Add Image to Content"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={!topicId || insertingImage}
+                  className="hidden"
+                  onChange={(e) => insertImageIntoContent(e.target.files?.[0])}
+                />
+              </label>
+            </div>
             <div className={`${!topicId ? "opacity-70 pointer-events-none" : ""}`}>
               <JoditEditor
                 value={topicSummary}
@@ -295,7 +373,7 @@ export default function AddContent() {
             </div>
             {!topicId && (
               <p className="text-xs text-gray-500 mt-2">
-                Select a topic to enable editing.
+                Select a topic to enable content editing.
               </p>
             )}
           </div>
@@ -329,7 +407,7 @@ export default function AddContent() {
               !getPlainText(learningOutcome)
             }
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-              saving || !topicId || !topicSummary.trim() || !learningOutcome.trim()
+              saving || !topicId || !getPlainText(topicSummary) || !getPlainText(learningOutcome)
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700"
             }`}

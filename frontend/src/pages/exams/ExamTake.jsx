@@ -42,6 +42,7 @@ export default function ExamTake() {
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [isTranslating, setIsTranslating] = useState(false);
   const [matchTokenSelection, setMatchTokenSelection] = useState({});
+  const [hintOpen, setHintOpen] = useState({});
 
   // Save meta to localStorage when it changes
   useEffect(() => {
@@ -398,6 +399,46 @@ export default function ExamTake() {
     });
   }
 
+  function extractKeywords(text, limit = 3) {
+    const stop = new Set([
+      "the", "is", "are", "was", "were", "and", "or", "to", "of", "in", "on", "for", "with",
+      "a", "an", "by", "from", "at", "this", "that", "these", "those", "be", "as", "it",
+      "which", "what", "when", "where", "who", "why", "how"
+    ]);
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !stop.has(w))
+      .slice(0, limit);
+  }
+
+  function getAutoHint(q, questionText) {
+    const qType = q?.type || type;
+    const keywords = extractKeywords(questionText, 3);
+    const keyLine = keywords.length ? ` Focus on: ${keywords.join(", ")}.` : "";
+
+    if (qType === "mcq-single" || qType === "mcq-multi") {
+      return `Eliminate clearly wrong options first, then compare the remaining choices with the core concept.${keyLine}`;
+    }
+    if (qType === "true-false") {
+      return `Check for absolute words like "always", "never", or "only" before deciding.${keyLine}`;
+    }
+    if (qType === "choice-matrix") {
+      return `Match each row with one column carefully; solve one row at a time.${keyLine}`;
+    }
+    if (qType === "cloze-drag" || qType === "cloze-select" || qType === "cloze-text") {
+      return `Read the full sentence first, then fill each blank using grammar and context clues.${keyLine}`;
+    }
+    if (qType === "match-list") {
+      return `Start with pairs you are most confident about, then complete the remaining matches.${keyLine}`;
+    }
+    if (qType === "essay-rich" || qType === "essay-plain") {
+      return `Answer in a clear structure: intro, key points, and conclusion.${keyLine}`;
+    }
+    return `Re-read the question and identify what exactly is being asked.${keyLine}`;
+  }
+
 
   return (
     <>
@@ -502,17 +543,54 @@ export default function ExamTake() {
                   q.clozeText?.text ||
                   q.clozeSelect?.text);
             return (
-              <div key={q._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-slate-100">
-              {/* Question Number Badge */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md">
-                  Question {idx + 1} of {total}
-                </span>
+              <div key={q._id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-md">
+              {/* ── Question Header Bar ── */}
+              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-sm">
+                    {idx + 1}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500">
+                    Question {idx + 1} <span className="text-slate-300">/</span> {total}
+                  </span>
+                </div>
+                {/* Answered / Unanswered badge */}
+                {answers[q._id] ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                    ✓ Answered
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-400">
+                    Unanswered
+                  </span>
+                )}
               </div>
 
-              {/* Display Question Text */}
-              <div className="font-semibold text-lg text-slate-800 mb-4 leading-relaxed">
+              {/* ── Question Body ── */}
+              <div className="px-5 pt-5 pb-4">
+
+              {/* Question Text */}
+              <p className="text-base font-semibold leading-relaxed text-slate-800 md:text-lg">
                 {displayQuestionText}
+              </p>
+
+              {/* Hint */}
+              <div className="mt-4 mb-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setHintOpen((prev) => ({ ...prev, [q._id]: !prev[q._id] }))
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+                >
+                  💡 {hintOpen[q._id] ? "Hide Hint" : "Show Hint"}
+                </button>
+                {hintOpen[q._id] && (
+                  <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <span className="mt-0.5 shrink-0 text-base leading-none">💡</span>
+                    <span className="leading-relaxed">{getAutoHint(q, displayQuestionText)}</span>
+                  </div>
+                )}
               </div>
 
 
@@ -537,6 +615,15 @@ export default function ExamTake() {
               <div className="space-y-3">
                 {(translatedQuestions[q._id]?.options || q.options).map((o) => {
                   const checked = (answers[q._id]?.mcq || "") === o.key;
+                  const submitted = Boolean(result);
+                  const questionStatus = result?.detail?.[q._id];
+                  const normalizeKey = (v) => String(v || "").trim().toLowerCase();
+                  const correctKeys = Array.isArray(q.correct)
+                    ? q.correct.map((k) => normalizeKey(k))
+                    : [];
+                  const isCorrectOption = submitted && correctKeys.includes(normalizeKey(o.key));
+                  const isCorrectSelected = submitted && checked && questionStatus === "correct";
+                  const isWrongSelected = submitted && checked && questionStatus === "wrong";
                   return (
                     <label
                       key={o.key}
@@ -545,14 +632,32 @@ export default function ExamTake() {
             px-5 py-4 cursor-pointer
             rounded-xl border-2
             transition-all duration-200
-            ${checked
-              ? "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-400 shadow-md scale-[1.02]"
-              : "bg-slate-50 border-slate-200 hover:border-indigo-300 hover:bg-white hover:shadow-sm"}
+            ${
+              isCorrectSelected
+                ? "bg-green-50 border-green-500 shadow-md scale-[1.02]"
+                : isWrongSelected
+                ? "bg-red-50 border-red-500 shadow-md scale-[1.02]"
+                : isCorrectOption
+                ? "bg-green-50 border-green-400 shadow-sm"
+                : checked
+                ? "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-400 shadow-md scale-[1.02]"
+                : "bg-slate-50 border-slate-200 hover:border-indigo-300 hover:bg-white hover:shadow-sm"
+            }
           `}
                     >
                       <span className={`
                           text-sm font-semibold px-2.5 py-1 rounded-lg
-                          ${checked ? "bg-indigo-500 text-white" : "bg-slate-200 text-slate-700"}
+                          ${
+                            isCorrectSelected
+                              ? "bg-green-600 text-white"
+                              : isWrongSelected
+                              ? "bg-red-600 text-white"
+                              : isCorrectOption
+                              ? "bg-green-500 text-white"
+                              : checked
+                              ? "bg-indigo-500 text-white"
+                              : "bg-slate-200 text-slate-700"
+                          }
                         `}>
                           {o.key}
                         </span>
@@ -570,7 +675,19 @@ export default function ExamTake() {
                         `}>
                           {o.key}
                         </span> */}
-                        <span className={`text-base ${checked ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                        <span
+                          className={`text-base ${
+                            isCorrectSelected
+                              ? "font-semibold text-green-800"
+                              : isWrongSelected
+                              ? "font-semibold text-red-800"
+                              : isCorrectOption
+                              ? "font-semibold text-green-700"
+                              : checked
+                              ? "font-semibold text-slate-900"
+                              : "text-slate-700"
+                          }`}
+                        >
                           {o.text}
                         </span>
                       </div>
@@ -1517,17 +1634,18 @@ export default function ExamTake() {
 
 
           </div>
+          </div>
             );
           })}
       </div>
 
         {/* Submit Button Section */}
-        <div className="flex items-center justify-center gap-4 mt-8">
+        <div className="mt-8 flex items-center justify-center gap-4 pb-10">
           <button
             disabled={busy || !!result}
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-10 py-3.5 text-base font-bold text-white shadow-lg transition-all duration-200 hover:from-emerald-600 hover:to-teal-600 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? "Submitting..." : "Submit Exam"}
+            {busy ? "Submitting…" : result ? "✓ Submitted" : "Submit Exam"}
           </button>
           {/* {result && (
             <button
