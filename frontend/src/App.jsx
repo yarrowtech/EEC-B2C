@@ -81,6 +81,7 @@ import SelfStudy from "./pages/SelfStudy";
 import SelfStudyResults from "./pages/SelfStudyResults";
 import SelfStudyResultDetail from "./pages/SelfStudyResultDetail";
 import SyllabusPage from "./pages/syllabus/SyllabusPage";
+import SyllabusTopicContentPage from "./pages/syllabus/SyllabusTopicContentPage";
 import ManagePackages from "./pages/admin/ManagePackages";
 import Packages from "./pages/Packages";
 
@@ -445,6 +446,7 @@ export default function App() {
             <Route path="self-study/results" element={<SelfStudyResults />} />
             <Route path="self-study/results/:id" element={<SelfStudyResultDetail />} />
             <Route path="syllabus" element={<SyllabusPage />} />
+            <Route path="syllabus/topic/:subjectId/:topicId" element={<SyllabusTopicContentPage />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

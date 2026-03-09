@@ -224,13 +224,9 @@ export default function SyllabusPage() {
   }
 
   function handleTopicClick(subject, topic) {
-    setSelectedTopic({ subject, topic });
-    setSelectedLevel(null);
-    setSelectedType(null);
-    setQuestionTypes([]);
-    setShowConfirmDialog(false);
-    setShowTypeSelector(false);
-    setShowLevelSelector(true);
+    navigate(`/dashboard/syllabus/topic/${subject._id}/${topic._id}?stage=${currentStage}`, {
+      state: { subject, topic },
+    });
   }
 
   async function handleLevelSelection(level) {

@@ -206,29 +206,15 @@ export default function Navbar() {
             About Us
           </RouterLink>
 
-          <Dropdown label="EEC">
-            <DropItem to="/analytics">Unlock precise analytics</DropItem>
-            <DropItem to="/ai">AI Engine guides</DropItem>
-            <DropItem to="/product-advantages">Product Advantages</DropItem>
-            <DropItem to="/tollered">Tailored Content</DropItem>
-            <DropItem to="/e-learn-well">Enhance learning</DropItem>
-            <DropItem to="/aim">Best Solutions</DropItem>
+          <Dropdown label="Study Tools">
+            <DropItem to="/dashboard/syllabus?stage=1">Tryouts</DropItem>
           </Dropdown>
 
           <Dropdown label="Contact Us">
+            <DropItem to="/support">Support Center</DropItem>
             <DropItem to="/careers">Career</DropItem>
             <DropItem to="/office">Office</DropItem>
           </Dropdown>
-
-          {/* <RouterLink to="/boards" active={isActive("/boards")}>
-            Boards
-          </RouterLink> */}
-          <RouterLink to="/support" active={isActive("/support")}>
-            Support
-          </RouterLink>
-          <RouterLink to="/marketing" active={isActive("/marketing")}>
-            Marketing
-          </RouterLink>
 
           {/* <button
             type="button"
@@ -387,30 +373,23 @@ export default function Navbar() {
           <RouterLink to="/" className="!block !px-2" onClick={closeMobile} active={isActive("/")}>
             Home
           </RouterLink>
+          <RouterLink
+            to="/about"
+            className="!block !px-2"
+            onClick={closeMobile}
+            active={isActive("/about")}
+          >
+            About Us
+          </RouterLink>
 
-          {/* EEC group */}
+          {/* Study Tools group */}
           <details className="rounded-xl p-1 open:bg-blue-50/70">
             <summary className="cursor-pointer rounded-xl px-2 py-2 text-sm font-medium text-blue-900">
-              EEC
+              Study Tools
             </summary>
             <div className="mt-1 grid gap-1 rounded-xl bg-white/90 p-1 backdrop-blur-sm">
-              <DropItem to="/analytics" onClick={closeMobile}>
-                Unlock precise analytics
-              </DropItem>
-              <DropItem to="/ai" onClick={closeMobile}>
-                AI Engine guides
-              </DropItem>
-              <DropItem to="/product-advantages" onClick={closeMobile}>
-                Product Advantages
-              </DropItem>
-              <DropItem to="/tollered" onClick={closeMobile}>
-                Tailored Content
-              </DropItem>
-              <DropItem to="/e-learn-well" onClick={closeMobile}>
-                Enhance learning
-              </DropItem>
-              <DropItem to="/aim" onClick={closeMobile}>
-                Best Solutions
+              <DropItem to="/dashboard/syllabus?stage=1" onClick={closeMobile}>
+                Tryouts
               </DropItem>
             </div>
           </details>
@@ -421,6 +400,9 @@ export default function Navbar() {
               Contact Us
             </summary>
             <div className="mt-1 grid gap-1 rounded-xl bg-white/90 p-1 backdrop-blur-sm">
+              <DropItem to="/support" onClick={closeMobile}>
+                Support Center
+              </DropItem>
               <DropItem to="/careers" onClick={closeMobile}>
                 Career
               </DropItem>
@@ -429,39 +411,6 @@ export default function Navbar() {
               </DropItem>
             </div>
           </details>
-
-          <RouterLink
-            to="/boards"
-            className="!block !px-2"
-            onClick={closeMobile}
-            active={isActive("/boards")}
-          >
-            Boards
-          </RouterLink>
-          <RouterLink
-            to="/support"
-            className="!block !px-2"
-            onClick={closeMobile}
-            active={isActive("/support")}
-          >
-            Support
-          </RouterLink>
-          <RouterLink
-            to="/about"
-            className="!block !px-2"
-            onClick={closeMobile}
-            active={isActive("/about")}
-          >
-            About Us
-          </RouterLink>
-          <RouterLink
-            to="/marketing"
-            className="!block !px-2"
-            onClick={closeMobile}
-            active={isActive("/marketing")}
-          >
-            Marketing
-          </RouterLink>
 
           {/* <button
             type="button"

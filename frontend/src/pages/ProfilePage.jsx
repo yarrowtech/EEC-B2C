@@ -472,6 +472,7 @@ export default function ProfilePage() {
   const [redeemAmount, setRedeemAmount] = useState("");
   const [redemptionHistory, setRedemptionHistory] = useState([]);
   const [giftCardAvailability, setGiftCardAvailability] = useState({});
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   /* load points (optional) */
   useEffect(() => {
@@ -700,24 +701,69 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type?.startsWith("image/")) {
+      setErrors((prev) => ({ ...prev, avatar: "Please select a valid image file" }));
+      return;
+    }
+
     // size limit 5MB
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({ ...prev, avatar: "Image size must be less than 5MB" }));
       return;
     }
 
-    // set avatar file locally (we will convert to base64 for preview and send as dataURL)
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-      setForm((prev) => ({ ...prev, avatar: reader.result }));
-      setErrors((prev) => {
-        const n = { ...prev };
-        delete n.avatar;
-        return n;
-      });
-    };
-    reader.readAsDataURL(file);
+    const previousPreview = imagePreview;
+    const localPreview = URL.createObjectURL(file);
+    setImagePreview(localPreview);
+    setUploadingAvatar(true);
+
+    (async () => {
+      try {
+        const uploadForm = new FormData();
+        uploadForm.append("image", file);
+
+        const uploadRes = await fetch(`${API}/api/upload/image`, {
+          method: "POST",
+          body: uploadForm,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData?.url) {
+          throw new Error(uploadData?.message || "Image upload failed");
+        }
+
+        const profileRes = await fetch(`${API}/users/update-profile`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ avatar: uploadData.url }),
+        });
+        const profileData = await profileRes.json();
+        if (!profileRes.ok) {
+          throw new Error(profileData?.message || "Failed to save avatar");
+        }
+
+        setForm((prev) => ({ ...prev, avatar: profileData.user?.avatar || uploadData.url }));
+        setImagePreview(profileData.user?.avatar || uploadData.url);
+        localStorage.setItem("user", JSON.stringify(profileData.user));
+
+        setErrors((prev) => {
+          const n = { ...prev };
+          delete n.avatar;
+          return n;
+        });
+
+        toast.success("Profile photo updated");
+      } catch (err) {
+        setImagePreview(previousPreview || "");
+        toast.error(err?.message || "Failed to upload profile photo");
+      } finally {
+        setUploadingAvatar(false);
+        URL.revokeObjectURL(localPreview);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    })();
   };
 
   /* ------------------- load profile from backend (preserve existing logic) ------------------- */
@@ -745,7 +791,7 @@ export default function ProfilePage() {
           const newClass = data.user.className || "";
 
           setForm((prev) => ({ ...prev, ...data.user }));
-          if (data.user.avatar) setImagePreview(data.user.avatar);
+          setImagePreview(data.user.avatar || "");
           setPointsState(data.user.points || 0);
 
           localStorage.setItem("user", JSON.stringify(data.user));
@@ -1106,7 +1152,7 @@ export default function ProfilePage() {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full translate-y-10 -translate-x-10" />
         <div className="relative z-10 flex flex-col items-center text-center gap-2">
           {/* Avatar */}
-          <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden bg-amber-100">
+          <div className="relative w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden bg-amber-100">
             {imagePreview ? (
               <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
             ) : (
@@ -1114,6 +1160,15 @@ export default function ProfilePage() {
                 <span className="text-3xl font-bold text-amber-700">{getInitial()}</span>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -right-1 bg-slate-900 hover:bg-slate-800 text-white p-1.5 rounded-full shadow-lg disabled:opacity-60"
+              title="Change profile photo"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
           </div>
           {/* Name + Role */}
           <div>
@@ -1144,6 +1199,13 @@ export default function ProfilePage() {
       {/* Main Content */}
       <main className="relative z-20 max-w-7xl mx-auto px-0 md:px-4 lg:px-8 pb-10 md:pb-16 -mt-10 md:mt-0">
         <form onSubmit={handleSubmit} className="bg-white backdrop-blur-xl rounded-t-3xl md:rounded-3xl shadow-2xl border-0 md:border border-amber-100/80 overflow-hidden">
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            className="hidden"
+          />
           <div className="flex flex-col lg:grid lg:grid-cols-[340px,1fr]">
             {/* Sidebar Navigation */}
             <aside className="bg-white md:bg-gradient-to-b from-white via-amber-50/70 to-white border-b lg:border-b-0 lg:border-r border-amber-100 p-4 md:p-6">
@@ -1160,22 +1222,22 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
-                  {/* <button
+                  <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-slate-900 hover:bg-slate-800 text-white p-2 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+                    disabled={uploadingAvatar}
+                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-slate-900 hover:bg-slate-800 text-white p-2 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 disabled:opacity-60"
                     title="Change profile picture"
                   >
                     <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    className="hidden"
-                  /> */}
                 </div>
+                {uploadingAvatar && (
+                  <p className="text-xs text-amber-700 font-semibold">Uploading photo...</p>
+                )}
+                {errors.avatar && (
+                  <p className="text-xs text-red-500">{errors.avatar}</p>
+                )}
 
                 <div className="text-center space-y-1">
                   <h3 className="text-lg sm:text-xl font-semibold text-slate-900">{form.name || "—"}</h3>

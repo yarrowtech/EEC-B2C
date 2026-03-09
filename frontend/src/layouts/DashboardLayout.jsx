@@ -264,15 +264,27 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const [open, setOpen] = useState(false);
-    const [online, setOnline] = useState(true);
+    const [online, setOnline] = useState(
+        typeof navigator !== "undefined" ? navigator.onLine : true
+    );
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
 
     useEffect(() => {
-        const handleVisibility = () => {
-            setOnline(document.visibilityState === "visible");
+        const goOnline = () => {
+            setOnline(true);
+            toast.success("Back online");
         };
-        document.addEventListener("visibilitychange", handleVisibility);
-        return () => document.removeEventListener("visibilitychange", handleVisibility);
+        const goOffline = () => {
+            setOnline(false);
+            toast.warn("You are offline. Try to connect to the internet.");
+        };
+
+        window.addEventListener("online", goOnline);
+        window.addEventListener("offline", goOffline);
+        return () => {
+            window.removeEventListener("online", goOnline);
+            window.removeEventListener("offline", goOffline);
+        };
     }, []);
 
     // Check if teacher needs verification
@@ -343,6 +355,12 @@ export default function DashboardLayout() {
     const linkActive =
         "bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md";
 
+    const blockOfflineNavigation = (e) => {
+        if (online) return;
+        e.preventDefault();
+        toast.warn("You are offline. Try to connect to the internet.");
+    };
+
     return (
         // <div className="h-screen overflow-hidden bg-[#FFFBEA]">
         <div className="h-screen overflow-hidden">
@@ -382,14 +400,25 @@ export default function DashboardLayout() {
                         {/* MAIN NAV */}
                         {/* SCROLLABLE AREA */}
                         <div className="flex-1 overflow-y-auto">
+                            {!online && (
+                                <div className="mx-1 mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                                    You are offline. Try to connect to the internet.
+                                </div>
+                            )}
                             <nav className="space-y-1">
                                 {NAV.map((item) => (
                                     <NavLink
                                         key={item.to}
                                         to={item.to}
                                         end={item.end}
+                                        onClick={blockOfflineNavigation}
                                         className={({ isActive }) =>
-                                            `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+                                            `${linkBase} ${
+                                                !online
+                                                    ? "text-slate-400 bg-slate-100 cursor-not-allowed"
+                                                    : isActive
+                                                    ? linkActive
+                                                    : "hover:bg-yellow-100"
                                             }`
                                         }
                                     >
@@ -398,10 +427,12 @@ export default function DashboardLayout() {
                                     </NavLink>
                                 ))}
 
-                                <SyllabusSidebarBlock role={role} />
-                                <ExamSidebarBlock role={role} />
-                                <QuestionsSidebarBlock role={role} />
-                                <SettingsSidebarBlock role={role} />
+                                <div className={online ? "" : "opacity-40 pointer-events-none select-none"}>
+                                    <SyllabusSidebarBlock role={role} />
+                                    <ExamSidebarBlock role={role} />
+                                    <QuestionsSidebarBlock role={role} />
+                                    <SettingsSidebarBlock role={role} />
+                                </div>
                             </nav>
                         </div>
 
@@ -411,8 +442,16 @@ export default function DashboardLayout() {
 
                             {/* PROFILE CARD */}
                             <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white shadow-sm">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center text-white font-bold">
-                                    {user?.name?.[0]?.toUpperCase() || "U"}
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center text-white font-bold">
+                                    {user?.avatar ? (
+                                        <img
+                                            src={user.avatar}
+                                            alt="Profile"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        user?.name?.[0]?.toUpperCase() || "U"
+                                    )}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
@@ -487,9 +526,12 @@ export default function DashboardLayout() {
                                 key={item.to}
                                 to={item.to}
                                 end={item.end}
+                                onClick={blockOfflineNavigation}
                                 className={({ isActive }) =>
                                     `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
-                                        isActive
+                                        !online
+                                            ? "text-slate-400"
+                                            : isActive
                                             ? "text-orange-600"
                                             : "text-orange-800/50 hover:text-orange-700"
                                     }`
