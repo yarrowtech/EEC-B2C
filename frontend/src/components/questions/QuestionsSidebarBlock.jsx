@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ListChecks,
   Sparkles,
+  BookText,
 } from "lucide-react";
 
 /* MATCH DASHBOARD SIDEBAR STYLE */
@@ -94,6 +95,20 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
           >
             Topics
           </NavLink>
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/add-content"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <BookText size={18} />
+              <span>Add Content</span>
+            </NavLink>
+          )}
 
           {/* QUESTIONS OVERVIEW */}
           <NavLink

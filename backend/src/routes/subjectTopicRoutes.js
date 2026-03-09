@@ -121,7 +121,14 @@ router.get("/subject", requireAuth, async (req, res) => {
 // Add topic
 router.post("/topic", requireAuth, async (req, res) => {
   try {
-    const { name, subject, board, class: className } = req.body;
+    const {
+      name,
+      subject,
+      board,
+      class: className,
+      topicSummary = "",
+      learningOutcome = "",
+    } = req.body;
 
     if (!name || !subject || !board || !className) {
       return res.status(400).json({ message: "Name, subject, board, and class are required" });
@@ -132,6 +139,8 @@ router.post("/topic", requireAuth, async (req, res) => {
       subject,
       board,
       class: className,
+      topicSummary,
+      learningOutcome,
       createdBy: req.user.id,
     });
     res.json(topic);
@@ -258,12 +267,21 @@ router.delete("/subject/:id", requireAuth, async (req, res) => {
 // UPDATE TOPIC
 router.put("/topic/:id", requireAuth, async (req, res) => {
   try {
-    const { name, subject, board, class: className } = req.body;
+    const {
+      name,
+      subject,
+      board,
+      class: className,
+      topicSummary,
+      learningOutcome,
+    } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
     if (subject) updateData.subject = subject;
     if (board) updateData.board = board;
     if (className) updateData.class = className;
+    if (typeof topicSummary === "string") updateData.topicSummary = topicSummary;
+    if (typeof learningOutcome === "string") updateData.learningOutcome = learningOutcome;
 
     const updated = await Topic.findByIdAndUpdate(
       req.params.id,

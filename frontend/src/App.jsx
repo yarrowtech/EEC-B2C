@@ -57,6 +57,7 @@ import TeachersList from "./pages/TeachersList";
 import ProfilePage from "./pages/ProfilePage";
 import AddSubject from "./pages/questions/AddSubject";
 import AddTopic from "./pages/questions/AddTopic";
+import AddContent from "./pages/questions/AddContent";
 import SubjectsList from "./pages/questions/SubjectsList";
 import TopicsList from "./pages/questions/TopicsList";
 import ChatBox from "./pages/ChatBox";
@@ -419,6 +420,7 @@ export default function App() {
             {/* more outlet pages */}
             <Route path="add-subject" element={<AddSubject />} />
             <Route path="add-topic" element={<AddTopic />} />
+            <Route path="add-content" element={<RequireAdmin><AddContent /></RequireAdmin>} />
             <Route path="/dashboard/add-class" element={<AddClass />} />
             <Route path="/dashboard/add-board" element={<AddBoard />} />
             <Route path="students" element={<StudentsList />} />
