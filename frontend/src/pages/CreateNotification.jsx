@@ -157,7 +157,7 @@ export default function CreateNotification() {
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">
-                                Create Notification
+                                Send Notifications
                             </h2>
                             <p className="text-sm text-gray-500">
                                 Send important updates to users

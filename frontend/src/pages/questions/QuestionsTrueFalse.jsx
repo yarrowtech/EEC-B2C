@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
-import { postQuestion } from "../../lib/api";
+import { postQuestion, postTrueFalseBulk } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
 import { FiCheckSquare, FiAlertCircle, FiUpload } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
+import * as XLSX from "xlsx";
 
 export default function QuestionsTrueFalse() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [bulkInputKey, setBulkInputKey] = useState(0);
   const [form, setForm] = useState({
     statement: "",
     answer: "true",
@@ -17,6 +21,68 @@ export default function QuestionsTrueFalse() {
   });
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  function downloadBulkTemplate() {
+    const worksheet = XLSX.utils.json_to_sheet([
+      {
+        statement: "The Earth revolves around the Sun.",
+        answer: "true",
+        explanation: "This is a basic astronomy fact.",
+        tags: "science, astronomy",
+      },
+    ]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "True False");
+    XLSX.writeFile(workbook, "true_false_bulk_template.xlsx");
+  }
+
+  async function submitBulkUpload() {
+    if (
+      !scope.board ||
+      !scope.class ||
+      !scope.subject ||
+      !scope.topic ||
+      !scope.stage ||
+      !scope.difficulty ||
+      !scope.questionType
+    ) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
+
+    if (!bulkFile) {
+      return toast.warn("Please choose an Excel file first");
+    }
+
+    setBulkBusy(true);
+    try {
+      const stagePayload = buildQuestionStagePayload(scope.stage);
+      const payload = new FormData();
+      payload.append("file", bulkFile);
+      payload.append("board", scope.board);
+      payload.append("class", scope.class);
+      payload.append("subject", scope.subject);
+      payload.append("topic", scope.topic);
+      payload.append("stage", String(stagePayload.stage));
+      payload.append("level", stagePayload.level);
+      payload.append("difficulty", scope.difficulty.toLowerCase());
+      payload.append("questionType", "true-false");
+
+      const res = await postTrueFalseBulk(payload);
+      const failed = Number(res?.failed || 0);
+      if (failed > 0) {
+        toast.success(`Uploaded ${res.inserted} questions. ${failed} rows were skipped.`);
+      } else {
+        toast.success(`Uploaded ${res.inserted} questions successfully!`);
+      }
+
+      setBulkFile(null);
+      setBulkInputKey((k) => k + 1);
+    } catch (err) {
+      toast.error(err.message || "Failed to upload file.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -98,62 +164,115 @@ export default function QuestionsTrueFalse() {
             </p>
           </div>
         ) : (
-          <form
-            onSubmit={submit}
-            className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8"
-          >
-            <div>
-              <label className="font-bold text-slate-800 mb-2 block text-lg">Statement</label>
-              <textarea
-                className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                placeholder="Enter a statement for True/False..."
-                value={form.statement}
-                onChange={(e) => update("statement", e.target.value)}
-              />
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">Correct Answer</label>
-                <select
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                  value={form.answer}
-                  onChange={(e) => update("answer", e.target.value)}
+          <div className="space-y-6">
+            <div className="rounded-3xl bg-white border border-slate-200 shadow-xl p-8 space-y-5">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Bulk Upload (Excel)</h2>
+                  <p className="text-slate-600 text-sm mt-1">
+                    Upload multiple True/False questions using one Excel file.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadBulkTemplate}
+                  className="rounded-xl px-4 py-2 bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
                 >
-                  <option value="true">True</option>
-                  <option value="false">False</option>
-                </select>
+                  Download Template
+                </button>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">Tags (optional)</label>
+              <div className="grid sm:grid-cols-[1fr_auto] gap-4">
                 <input
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                  placeholder="facts, logic, science..."
-                  value={form.tags}
-                  onChange={(e) => update("tags", e.target.value)}
+                  key={bulkInputKey}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={submitBulkUpload}
+                  disabled={bulkBusy}
+                  className="rounded-xl px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold
+                           shadow hover:from-emerald-700 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {bulkBusy ? "Uploading..." : "Upload File"}
+                </button>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                <p className="font-semibold text-slate-800 mb-2">Excel columns for True/False bulk upload:</p>
+                <p className="text-sm text-slate-700">
+                  <strong>Required:</strong> statement (or question), answer
+                </p>
+                <p className="text-sm text-slate-700">
+                  <strong>Optional:</strong> explanation, tags
+                </p>
+                <p className="text-sm text-slate-700 mt-1">
+                  <strong>answer format:</strong> true/false, t/f, 1/0, yes/no
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={submit}
+              className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8"
+            >
+              <div>
+                <label className="font-bold text-slate-800 mb-2 block text-lg">Statement</label>
+                <textarea
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                  placeholder="Enter a statement for True/False..."
+                  value={form.statement}
+                  onChange={(e) => update("statement", e.target.value)}
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="font-bold text-slate-800 mb-2 block">Explanation (optional)</label>
-              <textarea
-                className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                placeholder="Explain why the statement is true or false..."
-                value={form.explanation}
-                onChange={(e) => update("explanation", e.target.value)}
-              />
-            </div>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="font-bold text-slate-800 mb-2 block">Correct Answer</label>
+                  <select
+                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                    value={form.answer}
+                    onChange={(e) => update("answer", e.target.value)}
+                  >
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                  </select>
+                </div>
 
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FiUpload size={20} /> {busy ? "Saving Question..." : "Save Question"}
-            </button>
-          </form>
+                <div>
+                  <label className="font-bold text-slate-800 mb-2 block">Tags (optional)</label>
+                  <input
+                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    placeholder="facts, logic, science..."
+                    value={form.tags}
+                    onChange={(e) => update("tags", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-800 mb-2 block">Explanation (optional)</label>
+                <textarea
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                  placeholder="Explain why the statement is true or false..."
+                  value={form.explanation}
+                  onChange={(e) => update("explanation", e.target.value)}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FiUpload size={20} /> {busy ? "Saving Question..." : "Save Question"}
+              </button>
+            </form>
+          </div>
         )}
       </div>
     </>

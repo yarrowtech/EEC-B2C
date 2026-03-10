@@ -1,5 +1,7 @@
 // src/controllers/questionsController.js
 import Question from "../models/Question.js";
+import User from "../models/User.js";
+import * as XLSX from "xlsx";
 
 // Helpers
 function isAdminOrTeacher(req) {
@@ -67,6 +69,116 @@ function levelToDifficulty(levelValue) {
   if (level === "intermediate") return "moderate";
   if (level === "advanced") return "hard";
   return null;
+}
+
+function normalizeBulkHeader(headerValue) {
+  return String(headerValue || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+}
+
+function getBulkCellValue(normalizedRow, aliases = []) {
+  for (const alias of aliases) {
+    const key = normalizeBulkHeader(alias);
+    if (Object.prototype.hasOwnProperty.call(normalizedRow, key)) {
+      return normalizedRow[key];
+    }
+  }
+  return "";
+}
+
+function parseMcqCorrectKey(rawValue, optionValues = []) {
+  const raw = String(rawValue || "")
+    .trim()
+    .toUpperCase()
+    .replace(/^OPTION\s+/i, "");
+  if (["A", "B", "C", "D"].includes(raw)) return raw;
+  if (["1", "2", "3", "4"].includes(raw)) return ["A", "B", "C", "D"][Number(raw) - 1];
+
+  const originalRaw = String(rawValue || "").trim();
+  if (originalRaw && Array.isArray(optionValues) && optionValues.length === 4) {
+    const idx = optionValues.findIndex(
+      (opt) => String(opt || "").trim().toLowerCase() === originalRaw.toLowerCase()
+    );
+    if (idx >= 0) return ["A", "B", "C", "D"][idx];
+  }
+
+  return "";
+}
+
+function parseMcqMultiCorrectKeys(rawValue, optionValues = []) {
+  const tokens = String(rawValue || "")
+    .split(/[|,;/\n]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const keys = tokens
+    .map((token) => parseMcqCorrectKey(token, optionValues))
+    .filter(Boolean);
+
+  const unique = [...new Set(keys)];
+  const order = { A: 1, B: 2, C: 3, D: 4 };
+  return unique.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+}
+
+function parseDelimitedList(rawValue) {
+  const raw = String(rawValue || "").trim();
+  if (!raw) return [];
+  const splitter = /[|;\n]+/.test(raw) ? /[|;\n]+/ : /,/;
+  return raw
+    .split(splitter)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+function resolveChoiceMatrixIndex(token, values = []) {
+  const clean = String(token || "").trim();
+  if (!clean) return -1;
+
+  if (/^\d+$/.test(clean)) {
+    const oneBased = Number(clean);
+    if (oneBased >= 1 && oneBased <= values.length) return oneBased - 1;
+  }
+
+  const lower = clean.toLowerCase();
+  return values.findIndex((v) => String(v || "").trim().toLowerCase() === lower);
+}
+
+function parseChoiceMatrixCorrectCells(rawValue, rows = [], cols = []) {
+  const tokens = parseDelimitedList(rawValue);
+  const cells = [];
+
+  for (const token of tokens) {
+    const directMatch = token.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (directMatch) {
+      const ri = Number(directMatch[1]);
+      const ci = Number(directMatch[2]);
+      if (ri >= 0 && ci >= 0 && ri < rows.length && ci < cols.length) {
+        cells.push(`${ri}-${ci}`);
+      }
+      continue;
+    }
+
+    const pairMatch = token.match(/^(.+?)\s*[:=]\s*(.+)$/);
+    if (pairMatch) {
+      const ri = resolveChoiceMatrixIndex(pairMatch[1], rows);
+      const ci = resolveChoiceMatrixIndex(pairMatch[2], cols);
+      if (ri >= 0 && ci >= 0) {
+        cells.push(`${ri}-${ci}`);
+      }
+    }
+  }
+
+  return [...new Set(cells)];
+}
+
+function parseTrueFalseAnswer(rawValue) {
+  const raw = String(rawValue || "").trim().toLowerCase();
+  if (!raw) return "";
+  if (["true", "t", "1", "yes", "y"].includes(raw)) return "true";
+  if (["false", "f", "0", "no", "n"].includes(raw)) return "false";
+  return "";
 }
 
 /**
@@ -264,6 +376,499 @@ export const create = async (req, res) => {
   }
 };
 
+export const bulkCreateMcqSingle = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rows.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const question = getBulkCellValue(normalizedRow, ["question", "questionText", "question_text"]);
+      const optionA = getBulkCellValue(normalizedRow, ["optionA", "option_a", "a"]);
+      const optionB = getBulkCellValue(normalizedRow, ["optionB", "option_b", "b"]);
+      const optionC = getBulkCellValue(normalizedRow, ["optionC", "option_c", "c"]);
+      const optionD = getBulkCellValue(normalizedRow, ["optionD", "option_d", "d"]);
+      const correct = parseMcqCorrectKey(
+        getBulkCellValue(normalizedRow, ["correct", "correctOption", "correct_answer", "answer"]),
+        [optionA, optionB, optionC, optionD]
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!question || !optionA || !optionB || !optionC || !optionD || !correct) {
+        failures.push({
+          row: rowNumber,
+          reason: "question, optionA, optionB, optionC, optionD and correct are required",
+        });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "mcq-single",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          question,
+          options: [optionA, optionB, optionC, optionD],
+          correct,
+          explanation,
+          tags,
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} MCQ single question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk MCQ single upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateMcqMulti = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rows.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const question = getBulkCellValue(normalizedRow, ["question", "questionText", "question_text"]);
+      const optionA = getBulkCellValue(normalizedRow, ["optionA", "option_a", "a"]);
+      const optionB = getBulkCellValue(normalizedRow, ["optionB", "option_b", "b"]);
+      const optionC = getBulkCellValue(normalizedRow, ["optionC", "option_c", "c"]);
+      const optionD = getBulkCellValue(normalizedRow, ["optionD", "option_d", "d"]);
+      const correct = parseMcqMultiCorrectKeys(
+        getBulkCellValue(normalizedRow, ["correct", "correctOption", "correct_answer", "answer"]),
+        [optionA, optionB, optionC, optionD]
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!question || !optionA || !optionB || !optionC || !optionD || !correct.length) {
+        failures.push({
+          row: rowNumber,
+          reason: "question, optionA, optionB, optionC, optionD and correct are required",
+        });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "mcq-multi",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          question,
+          options: [optionA, optionB, optionC, optionD],
+          correct,
+          explanation,
+          tags,
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} MCQ multi question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk MCQ multi upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateChoiceMatrix = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const prompt = getBulkCellValue(normalizedRow, ["prompt", "question", "questionText", "question_text"]);
+      const matrixRows = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["rows", "rowLabels", "statements"])
+      );
+      const matrixCols = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["cols", "columns", "colLabels", "options"])
+      );
+      const correctCells = parseChoiceMatrixCorrectCells(
+        getBulkCellValue(normalizedRow, ["correctCells", "correct", "answers"]),
+        matrixRows,
+        matrixCols
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!prompt || !matrixRows.length || !matrixCols.length) {
+        failures.push({
+          row: rowNumber,
+          reason: "prompt, rows and cols are required",
+        });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "choice-matrix",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          tags,
+          choiceMatrix: {
+            prompt,
+            rows: matrixRows,
+            cols: matrixCols,
+            correctCells,
+          },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} choice matrix question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk choice matrix upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateTrueFalse = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const statement = getBulkCellValue(normalizedRow, [
+        "statement",
+        "question",
+        "questionText",
+        "question_text",
+      ]);
+      const answer = parseTrueFalseAnswer(
+        getBulkCellValue(normalizedRow, ["answer", "correct", "correct_answer"])
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!statement || !answer) {
+        failures.push({
+          row: rowNumber,
+          reason: "statement/question and answer are required",
+        });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "true-false",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          question: statement,
+          answer,
+          explanation,
+          tags,
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} true/false question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk true/false upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // export const list = async (req, res) => {
 //   try {
 //     // authenticated read
@@ -302,6 +907,7 @@ export const list = async (req, res) => {
       stage,
       level,
       board,
+      mine,
       q,
       page = 1,
       limit = 20,
@@ -321,6 +927,20 @@ export const list = async (req, res) => {
       if (req.user.board) {
         filter.board = req.user.board; // ✅ AUTO board filter
       }
+    }
+
+    // Teachers should not see admin-uploaded questions in list view.
+    if (req.user?.role === "teacher") {
+      const adminUsers = await User.find({ role: { $regex: /^admin$/i } }).select("_id");
+      const adminIds = adminUsers.map((u) => u._id);
+      if (adminIds.length) {
+        filter.createdBy = { $nin: adminIds };
+      }
+    }
+
+    // Optional "mine" filter for uploader-specific lists (admin/teacher usage).
+    if (String(mine || "").toLowerCase() === "1" || String(mine || "").toLowerCase() === "true") {
+      filter.createdBy = req.user.id;
     }
 
     // ⭐ Admin class filter (from UI class tabs)
@@ -348,6 +968,7 @@ export const list = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
     const [items, total] = await Promise.all([
       Question.find(filter)
+        .populate("createdBy", "name role email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),

@@ -15,7 +15,7 @@ import {
   Bell,
   Sparkles,
 } from "lucide-react";
-import { myAttempts, adminAttempts } from "../lib/api";
+import { myAttempts, adminAttempts, getJSON } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
 import WelcomeCard from "./WelcomeCard";
 import WelcomeModal from "../components/WelcomeModal";
@@ -162,6 +162,9 @@ function AdminContent() {
 
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalTeachers, setTotalTeachers] = useState(0);
+  const [uploadedQuestions, setUploadedQuestions] = useState(0);
+  const [uploadedQuestionTypes, setUploadedQuestionTypes] = useState(0);
+  const [totalStudyMaterials, setTotalStudyMaterials] = useState(0);
   const [subjectMap, setSubjectMap] = useState({});
   const [topicMap, setTopicMap] = useState({});
 
@@ -209,6 +212,9 @@ function AdminContent() {
       setRows(cached.rows || []);
       setTotalStudents(cached.totalStudents || 0);
       setTotalTeachers(cached.totalTeachers || 0);
+      setUploadedQuestions(cached.uploadedQuestions || 0);
+      setUploadedQuestionTypes(cached.uploadedQuestionTypes || 0);
+      setTotalStudyMaterials(cached.totalStudyMaterials || 0);
       loadSubjectTopicNames();
       return;
     }
@@ -238,10 +244,28 @@ function AdminContent() {
         const teachersCount = tData.teachers?.length || 0;
         setTotalTeachers(teachersCount);
 
+        // load question stats
+        const questionData = await getJSON("/api/questions?page=1&limit=5000");
+        const questionItems = questionData.items || [];
+        const questionCount = questionItems.length;
+        const questionTypeCount = new Set(
+          questionItems.map((item) => item.type).filter(Boolean)
+        ).size;
+        setUploadedQuestions(questionCount);
+        setUploadedQuestionTypes(questionTypeCount);
+
+        // load total study materials
+        const studyMaterials = await getJSON("/api/study-materials/admin/all");
+        const materialsCount = Array.isArray(studyMaterials) ? studyMaterials.length : 0;
+        setTotalStudyMaterials(materialsCount);
+
         writeDashboardCache("admin-dashboard-core", {
           rows: items || [],
           totalStudents: sData.students?.length || 0,
           totalTeachers: teachersCount,
+          uploadedQuestions: questionCount,
+          uploadedQuestionTypes: questionTypeCount,
+          totalStudyMaterials: materialsCount,
         });
 
       } catch (e) {
@@ -287,6 +311,27 @@ function AdminContent() {
             value={totalTeachers}
             icon={<GraduationCap size={18} />}
             gradient={["from-purple-600", "to-fuchsia-600"]}
+          />
+
+          <StatCard
+            title="Uploaded Questions"
+            value={uploadedQuestions}
+            icon={<ClipboardList size={18} />}
+            gradient={["from-emerald-600", "to-teal-600"]}
+          />
+
+          <StatCard
+            title="Uploaded Question Types"
+            value={uploadedQuestionTypes}
+            icon={<Activity size={18} />}
+            gradient={["from-rose-600", "to-pink-600"]}
+          />
+
+          <StatCard
+            title="Total Study Materials"
+            value={totalStudyMaterials}
+            icon={<FileText size={18} />}
+            gradient={["from-amber-600", "to-orange-600"]}
           />
 
           {/* Existing Attempts Card */}
@@ -339,10 +384,10 @@ function AdminContent() {
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
                         <div className="font-medium text-gray-800">
-                          {subjectMap[r.subject] || r.subjectName || "—"}
+                          {r.subjectName || r.subject || "—"}
                         </div>
                         <div className="text-xs text-slate-600">
-                          {topicMap[r.topic] || r.topicName || "—"}
+                          {r.topicName || r.topic || "—"}
                         </div>
                         <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{r.type}</span>
                       </div>
@@ -443,232 +488,119 @@ function AdminContent() {
 
 
 function TeacherContent() {
-  const [rows, setRows] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
+  const [uploadedQuestions, setUploadedQuestions] = useState(0);
+  const [uploadedQuestionTypes, setUploadedQuestionTypes] = useState(0);
+  const [uploadTrend, setUploadTrend] = useState([]);
 
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [totalTeachers, setTotalTeachers] = useState(0);
+  function toLocalDateKey(dateValue) {
+    const d = new Date(dateValue);
+    if (Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
 
-  // Fetch attempts + counts
+  function buildLast7DaysTrend(items = []) {
+    const dailyCounts = {};
+    items.forEach((q) => {
+      const key = toLocalDateKey(q.createdAt);
+      if (!key) return;
+      dailyCounts[key] = (dailyCounts[key] || 0) + 1;
+    });
+
+    const trend = [];
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      const key = toLocalDateKey(d);
+      trend.push({
+        key,
+        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        count: dailyCounts[key] || 0,
+      });
+    }
+    return trend;
+  }
+
   useEffect(() => {
     (async () => {
-      setBusy(true);
-      setErr("");
-
       try {
-        // load exam attempts
-        // const { items } = await adminAttempts();
-        // setRows(items || []);
+        const currentUser = getUser();
+        const currentUserId = String(currentUser?._id || currentUser?.id || "");
+        const currentUserEmail = String(currentUser?.email || "").toLowerCase();
 
-        // load students count
-        const sRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/students-count`, {
-          headers: { Authorization: `Bearer ${getToken()}` }
-        });
-        const sData = await sRes.json();
-        setTotalStudents(sData.students?.length || 0);
+        let ownQuestions = [];
 
-        // load teachers count
-        const tRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/teachers`, {
-          headers: { Authorization: `Bearer ${getToken()}` }
-        });
-        const tData = await tRes.json();
-        setTotalTeachers(tData.teachers?.length || 0);
+        // Primary: server-side mine filter
+        const qData = await getJSON("/api/questions?mine=1&page=1&limit=5000");
+        ownQuestions = qData.items || [];
 
-      } catch (e) {
-        setErr(e.message || "Failed to load attempts");
-      } finally {
-        setBusy(false);
+        // Fallback: client-side filter on full list if mine filter returns empty.
+        if (!ownQuestions.length) {
+          const fallback = await getJSON("/api/questions?page=1&limit=5000");
+          const items = fallback.items || [];
+          ownQuestions = items.filter((item) => {
+            const uploaderId = String(item?.createdBy?._id || item?.createdBy || "");
+            const uploaderEmail = String(item?.createdBy?.email || "").toLowerCase();
+            return (
+              (currentUserId && uploaderId === currentUserId) ||
+              (currentUserEmail && uploaderEmail === currentUserEmail)
+            );
+          });
+        }
+
+        setUploadedQuestions(ownQuestions.length);
+        setUploadedQuestionTypes(new Set(ownQuestions.map((q) => q.type).filter(Boolean)).size);
+        setUploadTrend(buildLast7DaysTrend(ownQuestions));
+      } catch (error) {
+        console.error("Failed to load teacher upload trend", error);
+        setUploadedQuestions(0);
+        setUploadedQuestionTypes(0);
+        setUploadTrend(buildLast7DaysTrend([]));
       }
     })();
   }, []);
 
-  const totalAttempts = rows.length;
-  const avgPercent = rows.length
-    ? Math.round(rows.reduce((acc, r) => acc + (r.percent || 0), 0) / rows.length)
-    : 0;
+  const maxTrendValue = Math.max(1, ...uploadTrend.map((d) => d.count));
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 6;
-
-  const indexOfLast = currentPage * rowsPerPage;
-  const indexOfFirst = indexOfLast - rowsPerPage;
-  const paginatedRows = rows.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-  // const totalAttempts = rows.length;
-  // const avgPercent = rows.length
-  //   ? Math.round(rows.reduce((acc, r) => acc + (r.percent || 0), 0) / rows.length)
-  //   : 0;
   return (
     <>
       <WelcomeCard />
       <Section title="Teacher Overview" icon={<GraduationCap size={18} />}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Total Students"
-            value={totalStudents}
-            icon={<GraduationCap size={18} />}
+            title="Uploaded Questions"
+            value={uploadedQuestions}
+            icon={<ClipboardList size={18} />}
             gradient={["from-indigo-600", "to-violet-600"]}
           />
-          {/* <StatCard
-            title="Assignments To Review"
-            value="34"
-            icon={<ClipboardList size={18} />}
-            gradient={["from-rose-600", "to-pink-600"]}
-          /> */}
-          {/* <StatCard
-            title="Students"
-            value="182"
-            icon={<Users size={18} />}
+          <StatCard
+            title="Uploaded Question Types"
+            value={uploadedQuestionTypes}
+            icon={<Activity size={18} />}
             gradient={["from-emerald-600", "to-teal-600"]}
           />
-          <StatCard
-            title="Messages"
-            value="5"
-            icon={<MessageSquare size={18} />}
-            gradient={["from-amber-500", "to-orange-600"]}
-          /> */}
         </div>
       </Section>
-      <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`}>
-        <div className="rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-[900px] w-full text-sm">
-              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-                <tr>
-                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Student</th>
-                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Exam (Subject • Topic • Type)</th>
-                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Score</th>
-                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Attempts by Student</th>
-                  <th className="text-left p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedRows.map((r, index) => (
-                  <tr key={r._id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-sm font-bold flex items-center justify-center shadow">
-                          {indexOfFirst + index + 1}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-800">{r.user?.name || "—"}</div>
-                          <div className="text-xs text-slate-500">{r.user?.email || ""}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="font-medium text-gray-800">
-                          {subjectMap[r.subject] || r.subjectName || "—"}
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          {topicMap[r.topic] || r.topicName || "—"}
-                        </div>
-                        <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{r.type}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-bold text-gray-800 text-base">
-                        {r.score} / {r.total}
-                      </div>
-                      <div className="mt-1">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                          r.percent >= 90 ? "bg-green-100 text-green-700" :
-                          r.percent >= 75 ? "bg-blue-100 text-blue-700" :
-                          r.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
-                          "bg-red-100 text-red-700"
-                        }`}>
-                          {r.percent}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-xs font-semibold">
-                        {r.attemptsForUser} attempt{r.attemptsForUser !== 1 ? 's' : ''}
-                      </span>
-                    </td>
-                    <td className="p-4 text-slate-600 text-xs">
-                      {new Date(r.createdAt).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "2-digit",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                    </td>
-                  </tr>
-                ))}
-                {!rows.length && !busy && (
-                  <tr>
-                    <td colSpan={5} className="p-12 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="text-6xl">📋</div>
-                        <p className="text-gray-500 font-medium">No attempts yet</p>
-                        <p className="text-sm text-gray-400">Student exam attempts will appear here</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+      <Section title="Upload Trend (Last 7 Days)" subtitle="Date-wise by you">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid grid-cols-7 gap-3 items-end h-48">
+            {uploadTrend.map((d) => (
+              <div key={d.key} className="flex flex-col items-center justify-end h-full">
+                <div className="text-[11px] font-semibold text-slate-700 mb-1">{d.count}</div>
+                <div
+                  className="w-full rounded-md bg-gradient-to-t from-indigo-600 to-purple-500"
+                  style={{ height: `${Math.max(6, (d.count / maxTrendValue) * 130)}px` }}
+                  title={`${d.label}: ${d.count}`}
+                />
+                <div className="text-[11px] text-slate-500 mt-2 text-center">{d.label}</div>
+              </div>
+            ))}
           </div>
-
-          {/* Enhanced Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-3 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
-                  currentPage === 1
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
-                }`}
-              >
-                ← Prev
-              </button>
-
-              {currentPage !== 1 && (
-                <span className="px-2 text-gray-500 font-bold">...</span>
-              )}
-
-              <button className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-white shadow-lg scale-110">
-                {currentPage}
-              </button>
-
-              {currentPage !== totalPages && (
-                <span className="px-2 text-gray-500 font-bold">...</span>
-              )}
-
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
-                  currentPage === totalPages
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
-                }`}
-              >
-                Next →
-              </button>
-            </div>
-          )}
         </div>
       </Section>
-
-      {/* <Section title="Today’s Queue" subtitle="Auto-updated">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card title="Upcoming Sessions" icon={<Clock size={18} />} bubble={["from-blue-600", "to-indigo-600"]}>
-            Maths (2:00 PM), Science (4:00 PM)
-          </Card>
-          <Card title="Alerts" icon={<Bell size={18} />} bubble={["from-rose-600", "to-pink-600"]}>
-            2 students flagged for support
-          </Card>
-        </div>
-      </Section> */}
     </>
   );
 }

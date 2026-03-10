@@ -46,6 +46,8 @@ import ExamsIndex from "./pages/exams/ExamsIndex";
 import ExamTake from "./pages/exams/ExamTake";
 import ResultsList from "./pages/admin/ResultsList";
 import ResultDetail from "./pages/admin/ResultDetail";
+import AdvancedStudentAnalytics from "./pages/admin/AdvancedStudentAnalytics";
+import TeacherAnalytics from "./pages/admin/TeacherAnalytics";
 import HeroSettings from "./components/settings/HeroSettings";
 import WhyEecSettings from "./components/settings/WhyEecSettings";
 import FeaturesSettings from "./components/settings/FeaturesSettings";
@@ -496,6 +498,8 @@ export default function App() {
 
             <Route path="results" element={<RequireAdmin><ResultsList /></RequireAdmin>} />
             <Route path="results/:id" element={<RequireAdmin><ResultDetail /></RequireAdmin>} />
+            <Route path="student-analytics" element={<RequireAdmin><AdvancedStudentAnalytics /></RequireAdmin>} />
+            <Route path="teacher-analytics" element={<RequireAdmin><TeacherAnalytics /></RequireAdmin>} />
 
             {/* Setttings */}
             <Route path="settings/home" element={<RequireAdmin><HeroSettings /></RequireAdmin>} />

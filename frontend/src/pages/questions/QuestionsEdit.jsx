@@ -600,8 +600,121 @@ function EditMCQMulti({ doc, scope, busy, setBusy }) {
   );
 }
 
-function EditTrueFalse({ doc }) {
-  return <Card><div className="text-center text-slate-600 p-6">True/False editing coming soon...</div></Card>;
+function EditTrueFalse({ doc, scope, busy, setBusy }) {
+  const resolvedAnswer = (() => {
+    if (typeof doc.answer === "boolean") return doc.answer ? "true" : "false";
+    if (typeof doc.answer === "string") return doc.answer.toLowerCase() === "false" ? "false" : "true";
+    if (Array.isArray(doc.correct) && doc.correct.length > 0) {
+      return String(doc.correct[0]).toLowerCase() === "false" ? "false" : "true";
+    }
+    return "true";
+  })();
+
+  const [form, setForm] = useState(() => ({
+    statement: doc.question || doc.statement || "",
+    answer: resolvedAnswer,
+    tags: (doc.tags || []).join(","),
+    explanation: doc.explanation || "",
+  }));
+
+  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
+
+  async function save(e) {
+    e.preventDefault();
+
+    if (!scope.board || !scope.class || !scope.subject || !scope.topic ||
+        !scope.stage || !scope.difficulty) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
+
+    if (!form.statement.trim()) {
+      return toast.warn("Please enter the statement");
+    }
+
+    setBusy(true);
+    try {
+      const stagePayload = buildQuestionStagePayload(scope.stage);
+
+      await updateQuestion(doc._id, {
+        type: "true-false",
+        board: scope.board,
+        class: scope.class,
+        subject: scope.subject,
+        topic: scope.topic,
+        ...stagePayload,
+        difficulty: scope.difficulty.toLowerCase(),
+        question: form.statement,
+        answer: form.answer,
+        tags: form.tags,
+        explanation: form.explanation,
+      });
+      toast.success("Question updated successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to update question");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-6">
+      <Card>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Question Content</h3>
+
+        <div className="mb-6">
+          <FieldLabel>Statement</FieldLabel>
+          <textarea
+            value={form.statement}
+            onChange={(e) => update("statement", e.target.value)}
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32
+                     focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            placeholder="Enter the true/false statement..."
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6 mb-6">
+          <div>
+            <FieldLabel>Correct Answer</FieldLabel>
+            <select
+              value={form.answer}
+              onChange={(e) => update("answer", e.target.value)}
+              className="w-full rounded-xl px-4 py-2 bg-slate-50 border border-slate-300
+                       focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+            >
+              <option value="true">True</option>
+              <option value="false">False</option>
+            </select>
+          </div>
+
+          <div>
+            <FieldLabel>Tags (comma separated)</FieldLabel>
+            <input
+              value={form.tags}
+              onChange={(e) => update("tags", e.target.value)}
+              className="w-full rounded-xl px-4 py-2 bg-slate-50 border border-slate-300
+                       focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+              placeholder="facts, logic, science..."
+            />
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <FieldLabel>Explanation (optional)</FieldLabel>
+          <textarea
+            value={form.explanation}
+            onChange={(e) => update("explanation", e.target.value)}
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                     focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+            placeholder="Explain why this statement is true or false..."
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <SaveButton busy={busy} />
+        </div>
+      </Card>
+    </form>
+  );
 }
 
 function EditChoiceMatrix({ doc, scope, busy, setBusy }) {
@@ -609,6 +722,7 @@ function EditChoiceMatrix({ doc, scope, busy, setBusy }) {
     prompt: doc.choiceMatrix?.prompt || "",
     rows: doc.choiceMatrix?.rows || ["Statement 1"],
     cols: doc.choiceMatrix?.cols || ["True", "False"],
+    explanation: doc.explanation || "",
     correct: (doc.choiceMatrix?.correctCells || []).reduce((acc, key) => {
       acc[key] = true;
       return acc;
@@ -650,6 +764,7 @@ function EditChoiceMatrix({ doc, scope, busy, setBusy }) {
         topic: scope.topic,
         ...stagePayload,
         difficulty: scope.difficulty.toLowerCase(),
+        explanation: form.explanation,
         choiceMatrix: {
           prompt: form.prompt,
           rows: form.rows,
@@ -749,6 +864,17 @@ function EditChoiceMatrix({ doc, scope, busy, setBusy }) {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-6">
+          <FieldLabel>Explanation (optional)</FieldLabel>
+          <textarea
+            value={form.explanation}
+            onChange={(e) => update("explanation", e.target.value)}
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                     focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+            placeholder="Explain why these matrix choices are correct..."
+          />
         </div>
 
         <div className="flex justify-end mt-6">

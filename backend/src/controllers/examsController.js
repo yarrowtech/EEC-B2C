@@ -1262,7 +1262,7 @@ export const adminAttempts = async (req, res) => {
     // attach user info
     const userIds = [...new Set(items.map((a) => String(a.userId)))];
     const users = await User.find({ _id: { $in: userIds } })
-      .select("_id name email")
+      .select("_id name email state class className board")
       .lean();
     const uMap = new Map(users.map((u) => [String(u._id), u]));
 

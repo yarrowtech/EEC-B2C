@@ -18,8 +18,10 @@ export default function QuestionsList() {
   const { scope, clear } = useQuestionScope();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [err, setErr] = useState("");
   const [initialized, setInitialized] = useState(false);
 
@@ -44,6 +46,26 @@ export default function QuestionsList() {
     () => !!scope.subject || !!scope.topic || !!type || !!q || !!selectedClass,
     [scope, type, q, selectedClass]
   );
+
+  const userRole = useMemo(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      return String(user?.role || "").toLowerCase();
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const canDelete = userRole === "admin" || userRole === "teacher";
+  const allVisibleSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r._id));
+  const currentUserId = useMemo(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      return String(user?._id || user?.id || "");
+    } catch {
+      return "";
+    }
+  }, []);
 
   async function loadMetadata() {
     try {
@@ -108,6 +130,7 @@ export default function QuestionsList() {
       const data = await getJSON(`/api/questions?${qs.toString()}`);
       setRows(data.items || []);
       setTotal(data.total || 0);
+      setSelectedIds([]);
     } catch (e) {
       setErr(e.message || "Failed to load");
     } finally {
@@ -182,6 +205,76 @@ export default function QuestionsList() {
         title: "Delete failed",
         text: e.message || "Something went wrong",
       });
+    }
+  }
+
+  function toggleRowSelection(id) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAllVisible() {
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !rows.some((r) => r._id === id)));
+      return;
+    }
+
+    const visibleIds = rows.map((r) => r._id);
+    setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  }
+
+  async function onDeleteSelected() {
+    if (!selectedIds.length) {
+      toast.warn("Please select at least one question.");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: `Delete ${selectedIds.length} selected question(s)?`,
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, delete all",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.allSettled(selectedIds.map((id) => deleteQuestion(id)));
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      const failCount = results.length - successCount;
+
+      await load();
+
+      if (failCount === 0) {
+        await Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: `${successCount} question(s) deleted successfully.`,
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await Swal.fire({
+          icon: "warning",
+          title: "Partial delete",
+          text: `${successCount} deleted, ${failCount} failed.`,
+        });
+      }
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: "Delete failed",
+        text: e.message || "Something went wrong",
+      });
+    } finally {
+      setBulkDeleting(false);
     }
   }
 
@@ -271,10 +364,36 @@ export default function QuestionsList() {
 
         {/* Results Table */}
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
+          {canDelete && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <div className="text-sm text-slate-700 font-medium">
+                {selectedIds.length} selected
+              </div>
+              <button
+                onClick={onDeleteSelected}
+                disabled={!selectedIds.length || bulkDeleting}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2
+                         border border-red-300 text-red-700 bg-white
+                         hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FiTrash2 size={15} /> {bulkDeleting ? "Deleting..." : "Delete Selected"}
+              </button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
                 <tr>
+                  {canDelete && (
+                    <th className="text-center px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectAllVisible}
+                        className="h-4 w-4"
+                      />
+                    </th>
+                  )}
                   <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
                     #
                   </th>
@@ -300,6 +419,9 @@ export default function QuestionsList() {
                     Type
                   </th>
                   <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
+                    Uploaded By
+                  </th>
+                  <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
                     Question Preview
                   </th>
                   <th className="text-center px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
@@ -314,6 +436,16 @@ export default function QuestionsList() {
                     key={r._id}
                     className="hover:bg-blue-50/30 transition-colors"
                   >
+                    {canDelete && (
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(r._id)}
+                          onChange={() => toggleRowSelection(r._id)}
+                          className="h-4 w-4"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-slate-600 font-medium">
                       {(page - 1) * limit + idx + 1}
                     </td>
@@ -349,6 +481,18 @@ export default function QuestionsList() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {r.type || "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-700 font-medium">
+                          {r.createdBy?.name || "Unknown"}
+                        </span>
+                        {String(r.createdBy?._id || "") === currentUserId && (
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                            You
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="line-clamp-2 max-w-[300px] text-slate-700">
@@ -389,7 +533,7 @@ export default function QuestionsList() {
                 {!rows.length && !busy && (
                   <tr>
                     <td
-                      colSpan={10}
+                      colSpan={canDelete ? 12 : 11}
                       className="p-8 text-center text-slate-500"
                     >
                       <div className="text-6xl mb-3">📝</div>
@@ -401,7 +545,7 @@ export default function QuestionsList() {
 
                 {busy && (
                   <tr>
-                    <td colSpan={10} className="p-8 text-center text-slate-500">
+                    <td colSpan={canDelete ? 12 : 11} className="p-8 text-center text-slate-500">
                       Loading questions...
                     </td>
                   </tr>

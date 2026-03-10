@@ -24,6 +24,11 @@ function authHeaders() {
   };
 }
 
+function authOnlyHeaders() {
+  const token = readToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function getJSON(path) {
   const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
   const json = await res.json().catch(() => ({}));
@@ -36,6 +41,50 @@ export async function postQuestion(type, data) {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(data),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postMCQSingleBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/mcq-single`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postMCQMultiBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/mcq-multi`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postChoiceMatrixBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/choice-matrix`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postTrueFalseBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/true-false`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);

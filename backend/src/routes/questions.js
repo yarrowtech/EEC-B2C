@@ -1,5 +1,6 @@
 // src/routes/questions.js
 import { Router } from "express";
+import multer from "multer";
 import Question from "../models/Question.js";
 import {
   list,
@@ -8,6 +9,10 @@ import {
   remove,
   // (optional extras if you also want them:)
   create,
+  bulkCreateMcqSingle,
+  bulkCreateMcqMulti,
+  bulkCreateChoiceMatrix,
+  bulkCreateTrueFalse,
   metaSubjects,
   metaTopics,
   metaStages,
@@ -16,6 +21,10 @@ import {
 import {requireAuth} from "../middleware/auth.js";
 
 const router = Router();
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 router.get("/classes", async (req, res) => {
   try {
@@ -60,6 +69,11 @@ router.get("/:id", requireAuth, getOne);
 router.put("/:id", requireAuth, update);
 router.delete("/:id", requireAuth, remove);
 
+// Bulk upload
+router.post("/bulk/mcq-single", requireAuth, uploadExcel.single("file"), bulkCreateMcqSingle);
+router.post("/bulk/mcq-multi", requireAuth, uploadExcel.single("file"), bulkCreateMcqMulti);
+router.post("/bulk/choice-matrix", requireAuth, uploadExcel.single("file"), bulkCreateChoiceMatrix);
+router.post("/bulk/true-false", requireAuth, uploadExcel.single("file"), bulkCreateTrueFalse);
 
 // Create question by type
 router.post("/:type", requireAuth, create);
