@@ -379,7 +379,7 @@ export default function DashboardLayout() {
                 {/* SIDEBAR */}
                 <aside
                     className={`fixed z-40 top-16 md:top-18 bottom-0 w-80
-  bg-white dark:bg-[#211d11] border-r border-slate-200 dark:border-slate-800 shadow-sm
+  bg-white border-r border-slate-200 shadow-sm
   transition-transform
   ${open ? "translate-x-0" : "-translate-x-full"}
   md:translate-x-0`}
@@ -411,8 +411,8 @@ export default function DashboardLayout() {
                                                         !online
                                                             ? "text-slate-400 bg-slate-100 cursor-not-allowed"
                                                             : isActive
-                                                            ? "bg-[#FFD23F] text-[#211d11]"
-                                                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                            ? "bg-[#e7c555] text-[#211d11] shadow-md shadow-[#e7c555]/30"
+                                                            : "text-slate-600 hover:bg-slate-100"
                                                     }`
                                                 }
                                             >
@@ -448,7 +448,25 @@ export default function DashboardLayout() {
                         </div>
 
                         {/* USER PROFILE & LOGOUT */}
-                        <div className="flex-shrink-0 flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 pt-6 mt-4">
+                        <div className="flex-shrink-0 flex flex-col gap-4 border-t border-slate-100 pt-6 mt-4">
+                            {/* DAILY CHALLENGE - Students Only */}
+                            {role === "student" && (
+                                <div className="p-4 bg-[#e7c555]/5 rounded-2xl border border-[#e7c555]/20">
+                                    <div className="flex flex-col gap-3">
+                                        <p className="text-sm font-bold text-slate-800">Daily Challenge</p>
+                                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                            <div
+                                                className="bg-[#e7c555] h-full transition-all duration-500"
+                                                style={{ width: `${Math.min(100, ((user?.points || 0) % 500) / 5)}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className="text-xs text-slate-500">
+                                            Collect {500 - ((user?.points || 0) % 500)} more XP today!
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* PROFILE CARD */}
                             <div className="flex items-center gap-3 px-2">
                                 <div className="h-12 w-12 rounded-full border-4 border-[#4ECDC4] overflow-hidden">
@@ -465,7 +483,7 @@ export default function DashboardLayout() {
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[160px]" title={user?.name || "User"}>
+                                    <p className="text-sm font-bold text-slate-900 leading-tight truncate max-w-[160px]" title={user?.name || "User"}>
                                         {user?.name || "User"}
                                     </p>
                                     <p className="text-xs font-medium text-[#4ECDC4]">
@@ -483,7 +501,7 @@ export default function DashboardLayout() {
                                     toast.success("Logged out successfully");
                                     navigate("/", { replace: true });
                                 }}
-                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 py-3 text-sm font-bold text-[#FF6B6B] transition-all hover:bg-[#FF6B6B] hover:text-white"
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all hover:bg-[#FF6B6B] hover:text-white"
                             >
                                 <span className="material-symbols-outlined text-lg">logout</span>
                                 <span>Leave Journey</span>

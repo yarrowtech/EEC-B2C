@@ -67,7 +67,7 @@ const WelcomeCard = () => {
     const TipIcon = tipToShow.icon;
 
     return (
-        <div className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 rounded-xl sm:rounded-2xl text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#e7c555] via-[#ff6b6b] to-[#4ecdc4] rounded-xl sm:rounded-2xl text-white relative overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <div className="absolute top-2 right-2 sm:top-4 sm:right-4 w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-white rounded-full"></div>

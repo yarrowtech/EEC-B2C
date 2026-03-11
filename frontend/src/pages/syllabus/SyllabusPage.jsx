@@ -21,52 +21,52 @@ const CARD_THEMES = [
   {
     gradient: "from-blue-400 to-indigo-600",
     icon: "calculate",
-    tagBg: "bg-blue-100 dark:bg-blue-900/30",
-    tagText: "text-blue-700 dark:text-blue-300",
+    tagBg: "bg-blue-100",
+    tagText: "text-blue-700",
   },
   {
     gradient: "from-emerald-400 to-teal-600",
     icon: "biotech",
-    tagBg: "bg-teal-100 dark:bg-teal-900/30",
-    tagText: "text-teal-700 dark:text-teal-300",
+    tagBg: "bg-teal-100",
+    tagText: "text-teal-700",
   },
   {
     gradient: "from-orange-400 to-pink-600",
     icon: "menu_book",
-    tagBg: "bg-orange-100 dark:bg-orange-900/30",
-    tagText: "text-orange-700 dark:text-orange-300",
+    tagBg: "bg-orange-100",
+    tagText: "text-orange-700",
   },
   {
     gradient: "from-amber-600 to-yellow-900",
     gradientStyle: "linear-gradient(to bottom right, #d97706, #78350f)",
     icon: "explore",
-    tagBg: "bg-amber-100 dark:bg-amber-900/30",
-    tagText: "text-amber-700 dark:text-amber-300",
+    tagBg: "bg-amber-100",
+    tagText: "text-amber-700",
   },
   {
     gradient: "from-cyan-500 to-blue-700",
     icon: "public",
-    tagBg: "bg-cyan-100 dark:bg-cyan-900/30",
-    tagText: "text-cyan-700 dark:text-cyan-300",
+    tagBg: "bg-cyan-100",
+    tagText: "text-cyan-700",
   },
   {
     gradient: "from-purple-400 to-violet-600",
     icon: "psychology",
-    tagBg: "bg-purple-100 dark:bg-purple-900/30",
-    tagText: "text-purple-700 dark:text-purple-300",
+    tagBg: "bg-purple-100",
+    tagText: "text-purple-700",
   },
   {
     gradient: "from-rose-400 to-red-600",
     icon: "science",
-    tagBg: "bg-rose-100 dark:bg-rose-900/30",
-    tagText: "text-rose-700 dark:text-rose-300",
+    tagBg: "bg-rose-100",
+    tagText: "text-rose-700",
   },
 ];
 
 const DIFFICULTY_BADGES = [
-  { label: "Easy Peasy", icon: "sentiment_satisfied", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-300" },
-  { label: "Challenger", icon: "bolt", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-600" },
-  { label: "Master Mind", icon: "psychology", bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300" },
+  { label: "Easy Peasy", icon: "sentiment_satisfied", bg: "bg-green-100", text: "text-green-700" },
+  { label: "Challenger", icon: "bolt", bg: "bg-yellow-100", text: "text-yellow-700" },
+  { label: "Master Mind", icon: "psychology", bg: "bg-purple-100", text: "text-purple-700" },
 ];
 
 const TOPIC_NUMBER_THEMES = [
@@ -434,7 +434,7 @@ export default function SyllabusPage() {
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
 
       <div
-        className="min-h-screen bg-[#f8f7f6] dark:bg-[#211d11]"
+        className="min-h-screen bg-[#f8f7f6]"
         style={{
           fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
@@ -455,10 +455,10 @@ export default function SyllabusPage() {
               </div>
               <div className="flex flex-wrap justify-between items-end gap-4">
                 <div className="flex flex-col gap-2 max-w-2xl">
-                  <h1 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-tight">
+                  <h1 className="text-slate-900 text-4xl md:text-5xl font-black leading-tight tracking-tight">
                     Adventure Tryouts!
                   </h1>
-                  <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">
+                  <p className="text-slate-600 text-lg font-medium">
                     Pick a subject quest, earn badges, and climb the ranks. Are you ready, explorer?
                   </p>
                 </div>
@@ -471,7 +471,7 @@ export default function SyllabusPage() {
                       <p className="text-xs font-bold text-[#e7c555] uppercase">
                         Stage {currentStage}
                       </p>
-                      <p className="font-bold text-slate-900 dark:text-white">
+                      <p className="font-bold text-slate-900">
                         {currentStage === 1 ? "Explorer" : `Stage ${currentStage} Explorer`}
                       </p>
                     </div>
@@ -488,7 +488,7 @@ export default function SyllabusPage() {
           </div>
 
           {/* ── Filters ── */}
-          <div className="flex flex-wrap gap-3 mb-10 pb-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex flex-wrap gap-3 mb-10 pb-6 border-b border-slate-200">
             {/* Board pill */}
             <button className="flex h-11 items-center justify-center gap-x-2 rounded-full bg-[#e7c555] text-slate-900 px-6 font-bold shadow-lg shadow-[#e7c555]/20">
               <MIcon name="school" className="text-[20px]" />
@@ -496,13 +496,13 @@ export default function SyllabusPage() {
               <MIcon name="expand_more" className="text-[20px]" />
             </button>
             {/* Class pill */}
-            <button className="flex h-11 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 font-bold border border-slate-200 dark:border-slate-700 hover:border-[#e7c555] transition-all">
+            <button className="flex h-11 items-center justify-center gap-x-2 rounded-full bg-white text-slate-700 px-6 font-bold border border-slate-200 hover:border-[#e7c555] transition-all">
               <MIcon name="grade" className="text-[20px]" />
               {userClassName}
               <MIcon name="expand_more" className="text-[20px]" />
             </button>
             {/* Separator */}
-            <div className="h-11 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2 hidden sm:block" />
+            <div className="h-11 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
             {/* Stage selector pills */}
             {allStages.map((stage) => {
               const isUnlocked = unlockedStages.includes(stage);
@@ -521,8 +521,8 @@ export default function SyllabusPage() {
                     isActive
                       ? "bg-[#e7c555] text-slate-900 border-transparent shadow-lg shadow-[#e7c555]/20"
                       : isUnlocked
-                      ? "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-[#e7c555]"
-                      : "bg-slate-100 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed"
+                      ? "bg-white text-slate-700 border-slate-200 hover:border-[#e7c555]"
+                      : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                   }`}
                 >
                   {!isUnlocked && <Lock className="w-3.5 h-3.5" />}
@@ -535,7 +535,7 @@ export default function SyllabusPage() {
 
           {/* ── Subject Cards Grid ── */}
           {subjects.length === 0 ? (
-            <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[3rem] shadow-sm p-12 text-center border border-slate-200 dark:border-slate-800">
+            <div className="relative overflow-hidden bg-white rounded-[3rem] shadow-sm p-12 text-center border border-slate-200">
               {/* Decorative background */}
               <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#e7c555]/5 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-[#e7c555]/5 blur-2xl" />
@@ -543,14 +543,14 @@ export default function SyllabusPage() {
               <div className="relative z-10">
                 <div className="flex justify-center mb-6">
                   <div className="relative">
-                    <MIcon name="auto_stories" className="text-8xl text-slate-200 dark:text-slate-700" />
+                    <MIcon name="auto_stories" className="text-8xl text-slate-200" />
                     <div className="absolute -top-2 -right-2 w-10 h-10 bg-[#e7c555]/20 rounded-full flex items-center justify-center">
                       <MIcon name="search_off" className="text-[#e7c555] text-xl" />
                     </div>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">No Subjects Available</h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">No Subjects Available</h3>
+                <p className="text-slate-600 mb-6 max-w-md mx-auto">
                   No subjects have been added for{" "}
                   <span className="font-semibold text-[#e7c555]">{userBoardName}</span> —{" "}
                   <span className="font-semibold text-[#e7c555]">{userClassName}</span> yet. Please contact your administrator.
@@ -573,7 +573,7 @@ export default function SyllabusPage() {
                 return (
                   <div
                     key={subject._id}
-                    className="flex flex-col bg-white dark:bg-slate-900 rounded-[3rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-[#e7c555]/50 transition-all group"
+                    className="flex flex-col bg-white rounded-[3rem] overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl hover:border-[#e7c555]/50 transition-all group"
                   >
                     {/* Card gradient header */}
                     <div
@@ -612,7 +612,7 @@ export default function SyllabusPage() {
                       </div>
 
                       {/* Description */}
-                      <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2">
+                      <p className="text-slate-600 text-sm line-clamp-2">
                         {subject.description || `Explore ${subject.name} topics and test your knowledge with fun quests and challenges!`}
                       </p>
 
@@ -636,12 +636,12 @@ export default function SyllabusPage() {
 
               {/* Locked quest placeholder — show if there are locked stages */}
               {allStages.some((s) => !unlockedStages.includes(s)) && (
-                <div className="flex flex-col bg-slate-100 dark:bg-slate-800/50 rounded-[3rem] overflow-hidden border border-dashed border-slate-300 dark:border-slate-700 relative group opacity-80">
+                <div className="flex flex-col bg-slate-100 rounded-[3rem] overflow-hidden border border-dashed border-slate-300 relative group opacity-80">
                   <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/10 backdrop-blur-[2px]">
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-full shadow-lg text-[#e7c555] mb-2">
+                    <div className="bg-white p-4 rounded-full shadow-lg text-[#e7c555] mb-2">
                       <MIcon name="lock" fill className="text-4xl" />
                     </div>
-                    <p className="text-slate-900 dark:text-white font-bold">Unlock More Stages</p>
+                    <p className="text-slate-900 font-bold">Unlock More Stages</p>
                     <button
                       onClick={() => navigate("/dashboard/packages")}
                       className="mt-2 text-xs text-[#e7c555] font-bold underline"
@@ -649,10 +649,10 @@ export default function SyllabusPage() {
                       View Packages
                     </button>
                   </div>
-                  <div className="h-40 bg-slate-300 dark:bg-slate-700" />
+                  <div className="h-40 bg-slate-300" />
                   <div className="p-6 flex flex-col gap-4 grayscale">
-                    <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded-[1rem]" />
-                    <div className="h-10 w-full bg-slate-200 dark:bg-slate-700 rounded-[2rem]" />
+                    <div className="h-4 w-32 bg-slate-200 rounded-[1rem]" />
+                    <div className="h-10 w-full bg-slate-200 rounded-[2rem]" />
                   </div>
                 </div>
               )}
@@ -665,9 +665,9 @@ export default function SyllabusPage() {
       {/* ── TOPICS MODAL (Syllabus View) ──                    */}
       {/* ═══════════════════════════════════════════════════════ */}
       {showTopicsModal && selectedSubject && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f8f7f6] dark:bg-[#211d11]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f8f7f6]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {/* Top Header */}
-          <header className="flex items-center justify-between px-6 py-4 border-b border-[#e7c555]/10 bg-white/80 dark:bg-[#211d11]/80 backdrop-blur-md sticky top-0 z-10">
+          <header className="flex items-center justify-between px-6 py-4 border-b border-[#e7c555]/10 bg-white/80 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
@@ -678,10 +678,10 @@ export default function SyllabusPage() {
               >
                 <MIcon name="arrow_back" />
               </button>
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
                 <span>Syllabus</span>
                 <MIcon name="chevron_right" className="text-xs" />
-                <span className="text-slate-900 dark:text-slate-100">{selectedSubject.name}</span>
+                <span className="text-slate-900">{selectedSubject.name}</span>
               </div>
             </div>
             <button
@@ -689,7 +689,7 @@ export default function SyllabusPage() {
                 setShowTopicsModal(false);
                 setSelectedSubject(null);
               }}
-              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -700,25 +700,25 @@ export default function SyllabusPage() {
             <div className="relative overflow-hidden bg-gradient-to-br from-[#e7c555]/20 to-[#e7c555]/5 rounded-[3rem] p-8 border border-[#e7c555]/20">
               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="flex flex-col gap-2">
-                  <span className="bg-[#e7c555]/30 text-[#211d11] dark:text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
+                  <span className="bg-[#e7c555]/30 text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
                     Stage {currentStage} Quest
                   </span>
-                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">
                     {selectedSubject.name} Syllabus
                   </h1>
-                  <p className="text-slate-600 dark:text-slate-400 max-w-md">
+                  <p className="text-slate-600 max-w-md">
                     Master the concepts through structured quests and interactive challenges!
                   </p>
                 </div>
                 <div className="flex flex-col gap-3 min-w-[240px]">
                   <div className="flex justify-between items-end">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">Topics Available</span>
+                    <span className="text-sm font-bold text-slate-900">Topics Available</span>
                     <span className="text-2xl font-black text-[#e7c555]">{selectedSubject.topics?.length || 0}</span>
                   </div>
-                  <div className="w-full h-4 bg-white/50 dark:bg-black/20 rounded-full overflow-hidden p-1">
+                  <div className="w-full h-4 bg-white/50 rounded-full overflow-hidden p-1">
                     <div className="h-full bg-[#e7c555] rounded-full" style={{ width: '35%' }}></div>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 text-right font-medium">Ready to explore!</p>
+                  <p className="text-xs text-slate-500 text-right font-medium">Ready to explore!</p>
                 </div>
               </div>
               {/* Decorative background icon */}
@@ -730,36 +730,36 @@ export default function SyllabusPage() {
 
             {/* Topics List */}
             <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900 dark:text-white">
+              <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900">
                 <MIcon name="map" className="text-[#e7c555]" />
                 Adventure Path
               </h2>
 
               {selectedSubject.topics && selectedSubject.topics.length > 0 ? (
-                <details className="group bg-white dark:bg-[#211d11]/40 border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm" open>
+                <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm" open>
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                      <div className="size-12 rounded-[3rem] bg-blue-100 flex items-center justify-center text-blue-600">
                         <MIcon name="explore" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">{selectedSubject.name} Topics</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{selectedSubject.topics.length} Quest{selectedSubject.topics.length !== 1 ? 's' : ''} Available</p>
+                        <h3 className="font-bold text-lg text-slate-900">{selectedSubject.name} Topics</h3>
+                        <p className="text-sm text-slate-500">{selectedSubject.topics.length} Quest{selectedSubject.topics.length !== 1 ? 's' : ''} Available</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="hidden sm:block text-right">
-                        <div className="text-xs font-bold text-slate-400 dark:text-slate-500">STATUS</div>
+                        <div className="text-xs font-bold text-slate-400">STATUS</div>
                         <div className="text-xs font-bold text-blue-500">READY TO START</div>
                       </div>
-                      <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600 dark:text-slate-400" />
+                      <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600" />
                     </div>
                   </summary>
-                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50 dark:bg-[#211d11]/20 flex flex-col gap-3">
+                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50 flex flex-col gap-3">
                     {selectedSubject.topics.map((topic, index) => (
                       <div
                         key={topic._id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-[#211d11] rounded-[3rem] border border-[#e7c555]/5 shadow-sm hover:shadow-md transition-all group/item"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-[3rem] border border-[#e7c555]/5 shadow-sm hover:shadow-md transition-all group/item"
                       >
                         <div className="flex items-center gap-4 mb-3 sm:mb-0">
                           <div className="size-8 rounded-full bg-[#e7c555]/20 flex items-center justify-center text-[#e7c555]">
@@ -767,20 +767,20 @@ export default function SyllabusPage() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-900 dark:text-white">{topic.name}</span>
+                              <span className="font-semibold text-slate-900">{topic.name}</span>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTopicInfoClick(selectedSubject, topic, e);
                                 }}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+                                className="p-1 hover:bg-slate-100 rounded-full transition-colors"
                                 title="View topic details"
                               >
                                 <MIcon name="info" className="text-[14px] text-slate-400" />
                               </button>
                             </div>
                             {topic.description && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
                                 {topic.description}
                               </p>
                             )}
@@ -788,7 +788,7 @@ export default function SyllabusPage() {
                         </div>
                         <button
                           onClick={() => handleTopicClick(selectedSubject, topic)}
-                          className="px-4 py-2 rounded-full bg-[#e7c555] text-[#211d11] dark:text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md whitespace-nowrap"
+                          className="px-4 py-2 rounded-full bg-[#e7c555] text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md whitespace-nowrap"
                         >
                           Start Learning
                         </button>
@@ -797,9 +797,9 @@ export default function SyllabusPage() {
                   </div>
                 </details>
               ) : (
-                <div className="p-8 text-center flex flex-col items-center gap-3 bg-white dark:bg-[#211d11]/40 border border-[#e7c555]/10 rounded-[3rem]">
-                  <MIcon name="lock_open" className="text-4xl text-slate-300 dark:text-slate-700" />
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">No topics available for this subject yet.</p>
+                <div className="p-8 text-center flex flex-col items-center gap-3 bg-white border border-[#e7c555]/10 rounded-[3rem]">
+                  <MIcon name="lock_open" className="text-4xl text-slate-300" />
+                  <p className="text-slate-500 font-medium">No topics available for this subject yet.</p>
                 </div>
               )}
             </div>
@@ -1058,19 +1058,19 @@ export default function SyllabusPage() {
       {showTopicDetailsModal && selectedTopicForDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           <div
-            className="w-full max-w-5xl bg-[#f8f7f6] dark:bg-[#211d11] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+            className="w-full max-w-5xl bg-[#f8f7f6] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
           >
             {/* Syllabus Hero Section */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#e7c555]/20 to-[#e7c555]/5 rounded-t-[3rem] p-8 border border-[#e7c555]/20">
               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="flex flex-col gap-2">
-                  <span className="bg-[#e7c555]/30 text-[#211d11] dark:text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
+                  <span className="bg-[#e7c555]/30 text-[#211d11] text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
                     Stage {currentStage} • {selectedTopicForDetails.subject.name}
                   </span>
-                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 text-white">
                     {selectedTopicForDetails.topic.name}
                   </h1>
-                  <p className="text-slate-600 dark:text-slate-400 max-w-md">
+                  <p className="text-slate-600 max-w-md">
                     Master the concepts and practice with interactive quizzes!
                   </p>
                 </div>
@@ -1078,7 +1078,7 @@ export default function SyllabusPage() {
                   onClick={closeTopicDetailsModal}
                   className="absolute top-4 right-4 p-2 hover:bg-[#e7c555]/20 rounded-full transition-colors z-20"
                 >
-                  <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                  <X className="w-5 h-5 text-slate-600" />
                 </button>
               </div>
               {/* Decorative background icon */}
@@ -1091,21 +1091,21 @@ export default function SyllabusPage() {
             {/* Body - Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 md:p-10">
               <div className="flex flex-col gap-4">
-                <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900 dark:text-white">
+                <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900 text-white">
                   <MIcon name="map" className="text-[#e7c555]" />
                   Adventure Path
                 </h2>
 
                 {/* Topic Summary Section */}
-                <details className="group bg-white dark:bg-[#211d11]/40 border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm" open>
+                <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm" open>
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                      <div className="size-12 rounded-[3rem] bg-blue-100 bg-blue-900/30 flex items-center justify-center text-blue-600">
                         <MIcon name="pin_drop" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">Topic Summary</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Core concepts and key ideas</p>
+                        <h3 className="font-bold text-lg text-slate-900 text-white">Topic Summary</h3>
+                        <p className="text-sm text-slate-500 text-slate-400">Core concepts and key ideas</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -1113,12 +1113,12 @@ export default function SyllabusPage() {
                         <div className="text-xs font-bold text-slate-400">SECTION</div>
                         <div className="text-xs font-bold text-blue-500">OVERVIEW</div>
                       </div>
-                      <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600 dark:text-slate-400" />
+                      <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600" />
                     </div>
                   </summary>
-                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50 dark:bg-[#211d11]/20">
+                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50">
                     <div
-                      className="prose prose-sm max-w-none text-slate-700 dark:text-slate-300 prose-headings:text-slate-900 dark:prose-headings:text-white prose-strong:text-slate-900 dark:prose-strong:text-white prose-li:text-slate-700 dark:prose-li:text-slate-300"
+                      className="prose prose-sm max-w-none text-slate-700 prose-headings:text-slate-900 prose-strong:text-slate-900 prose-li:text-slate-700"
                       dangerouslySetInnerHTML={{
                         __html: getHtmlOrFallback(selectedTopicForDetails.topic.topicSummary, "Summary is not available yet."),
                       }}
@@ -1127,22 +1127,22 @@ export default function SyllabusPage() {
                 </details>
 
                 {/* Learning Outcomes Section */}
-                <details className="group bg-white dark:bg-[#211d11]/40 border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm">
+                <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm">
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+                      <div className="size-12 rounded-[3rem] bg-emerald-100 bg-emerald-900/30 flex items-center justify-center text-emerald-600">
                         <MIcon name="category" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">Learning Outcomes</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">What you will achieve</p>
+                        <h3 className="font-bold text-lg text-slate-900 text-white">Learning Outcomes</h3>
+                        <p className="text-sm text-slate-500 text-slate-400">What you will achieve</p>
                       </div>
                     </div>
-                    <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600 dark:text-slate-400" />
+                    <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600" />
                   </summary>
-                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50 dark:bg-[#211d11]/20">
+                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50">
                     <div
-                      className="prose prose-sm max-w-none text-slate-700 dark:text-slate-300 prose-headings:text-slate-900 dark:prose-headings:text-white prose-strong:text-slate-900 dark:prose-strong:text-white prose-li:text-slate-700 dark:prose-li:text-slate-300"
+                      className="prose prose-sm max-w-none text-slate-700 prose-headings:text-slate-900 prose-strong:text-slate-900 prose-li:text-slate-700"
                       dangerouslySetInnerHTML={{
                         __html: getHtmlOrFallback(selectedTopicForDetails.topic.learningOutcome, "Learning outcomes are not available yet."),
                       }}
@@ -1151,26 +1151,26 @@ export default function SyllabusPage() {
                 </details>
 
                 {/* Practice CTA Section */}
-                <details className="group bg-white dark:bg-[#211d11]/40 border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm">
+                <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm">
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600">
+                      <div className="size-12 rounded-[3rem] bg-purple-100 bg-purple-900/30 flex items-center justify-center text-purple-600">
                         <MIcon name="calculate" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">Start Practice</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Ready to test your knowledge?</p>
+                        <h3 className="font-bold text-lg text-slate-900 text-white">Start Practice</h3>
+                        <p className="text-sm text-slate-500 text-slate-400">Ready to test your knowledge?</p>
                       </div>
                     </div>
-                    <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600 dark:text-slate-400" />
+                    <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600" />
                   </summary>
-                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50 dark:bg-[#211d11]/20 flex flex-col gap-3">
-                    <div className="flex items-center justify-between p-4 bg-white dark:bg-[#211d11] rounded-[3rem] border border-[#e7c555]/5 shadow-sm">
+                  <div className="p-5 border-t border-[#e7c555]/5 bg-slate-50/50 flex flex-col gap-3">
+                    <div className="flex items-center justify-between p-4 bg-white rounded-[3rem] border border-[#e7c555]/5 shadow-sm">
                       <div className="flex items-center gap-4">
                         <div className="size-8 rounded-full bg-[#e7c555]/20 flex items-center justify-center text-[#e7c555]">
                           <MIcon name="play_arrow" className="text-sm" />
                         </div>
-                        <span className="font-semibold text-slate-900 dark:text-white">Begin Quest</span>
+                        <span className="font-semibold text-slate-900 text-white">Begin Quest</span>
                       </div>
                       <button
                         onClick={() => {
@@ -1181,7 +1181,7 @@ export default function SyllabusPage() {
                           });
                           setShowLevelSelector(true);
                         }}
-                        className="px-4 py-2 rounded-full bg-[#e7c555] text-[#211d11] dark:text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md"
+                        className="px-4 py-2 rounded-full bg-[#e7c555] text-[#211d11] text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md"
                       >
                         Start Learning
                       </button>
@@ -1192,13 +1192,13 @@ export default function SyllabusPage() {
             </div>
 
             {/* Footer - Close button */}
-            <div className="border-t border-[#e7c555]/10 bg-white dark:bg-[#211d11]/60 p-5 flex justify-between items-center">
-              <div className="text-sm text-slate-500 dark:text-slate-400">
+            <div className="border-t border-[#e7c555]/10 bg-white/60 p-5 flex justify-between items-center">
+              <div className="text-sm text-slate-500 text-slate-400">
                 Press ESC to close
               </div>
               <button
                 onClick={closeTopicDetailsModal}
-                className="px-6 py-3 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="px-6 py-3 rounded-full bg-white border-2 border-slate-200 font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 Close
               </button>

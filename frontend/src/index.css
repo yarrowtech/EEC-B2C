@@ -183,3 +183,23 @@ details[open] summary .rotate-icon {
 .dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 210, 63, 0.7);
 }
+
+/* Student Adventure Theme Variables */
+.student-adventure-theme {
+  --student-primary: #e7c555;
+  --student-coral: #ff6b6b;
+  --student-teal: #4ecdc4;
+  --student-purple: #a29bfe;
+  --student-bg-light: #f8f7f6;
+  --student-bg-dark: #211d11;
+}
+
+/* Adventure hover animation */
+@keyframes adventure-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.adventure-hover:hover {
+  animation: adventure-pulse 0.6s ease;
+}

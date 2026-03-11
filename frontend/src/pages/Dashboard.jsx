@@ -19,6 +19,9 @@ import { myAttempts, adminAttempts, getJSON } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
 import WelcomeCard from "./WelcomeCard";
 import WelcomeModal from "../components/WelcomeModal";
+import AdventureStatCard from '../components/student/AdventureStatCard';
+import DailyQuestCard from '../components/student/DailyQuestCard';
+import SubscriptionSpotlight from '../components/student/SubscriptionSpotlight';
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -837,51 +840,51 @@ function StudentContent() {
     totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0;
 
   return (
-    <>
+    <div className="student-adventure-theme relative">
+      {/* Background decorative elements */}
+      <div className="absolute top-10 right-20 opacity-10 pointer-events-none hidden lg:block">
+        <span className="material-symbols-outlined text-9xl text-[#e7c555]">rocket_launch</span>
+      </div>
+      <div className="absolute bottom-20 left-10 opacity-10 pointer-events-none hidden lg:block">
+        <span className="material-symbols-outlined text-9xl text-[#e7c555]">star</span>
+      </div>
+
       <WelcomeModal />
       <WelcomeCard />
-      {/* <Section title="My Exam Stats" icon={<Trophy size={18} />}> */}
-      <Section title="My Exam Stats">
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-
-          {/* ✅ UPDATED CARD */}
-          <StatCard
-            title="Average Score"
-            value={
-              busy
-                ? "…"
-                : `${averagePercent}% `
-            }
-            icon={<Trophy size={18} />}
-            gradient={["from-emerald-600", "to-teal-600"]}
+      <Section title="My Study Stats">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AdventureStatCard
+            title="Revision Streak"
+            value={busy ? "…" : `${totalAttempts} Days`}
+            icon={<span className="material-symbols-outlined fill-1">local_fire_department</span>}
+            accentColor="coral"
           />
-
-          <StatCard
+          <AdventureStatCard
+            title="Mastery Level"
+            value={busy ? "…" : `${averagePercent}%`}
+            icon={<span className="material-symbols-outlined fill-1">track_changes</span>}
+            accentColor="teal"
+          />
+          <AdventureStatCard
+            title="Tryouts Done"
+            value={busy ? "…" : totalAttempts}
+            icon={<span className="material-symbols-outlined fill-1">checklist</span>}
+            accentColor="primary"
+          />
+          <AdventureStatCard
             title="Total Points"
-            value={busy ? "…" : `${totalScore} / ${totalPossible}`}
-            icon={<ClipboardList size={18} />}
-            gradient={["from-blue-600", "to-indigo-600"]}
-          />
-
-          {/* other cards unchanged */}
-          <StatCard
-            title="Attempts"
-            value={busy ? "…" : `${totalAttempts} attempt${totalAttempts !== 1 ? "s" : ""}`}
-            icon={<CheckCircle2 size={18} />}
-            gradient={["from-emerald-600", "to-teal-600"]}
-          />
-          <StatCard
-            title="Passed Attempts"
-            value={busy ? "…" : `${totalScore}`}
-            icon={<Bell size={18} />}
-            gradient={["from-fuchsia-600", "to-pink-600"]}
+            value={busy ? "…" : totalScore}
+            icon={<span className="material-symbols-outlined fill-1">layers</span>}
+            accentColor="purple"
           />
         </div>
         {err && <div className="text-xs text-rose-600 mt-2">{err}</div>}
       </Section>
 
-      <Section title="Recent Exams" subtitle={busy ? "Loading…" : `${attempts.length} attempts`}>
-        <div className="rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-md overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Tryouts - 2/3 width */}
+        <Section title="Recent Tryouts" subtitle={busy ? "Loading…" : `${attempts.length} attempts`} className="lg:col-span-2">
+          <div className="rounded-2xl border border-[#e7c555]/10 bg-white/80 backdrop-blur shadow-md overflow-hidden">
 
           {/* ── MOBILE CARD LIST (< md) ── */}
           <div className="md:hidden divide-y divide-gray-100">
@@ -934,43 +937,46 @@ function StudentContent() {
           {/* ── DESKTOP TABLE (md+) ── */}
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-[720px] w-full text-sm">
-              <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
+              <thead className="bg-[#e7c555]/5 border-b border-[#e7c555]/10">
                 <tr>
-                  <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Exam Details</th>
-                  <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Score</th>
-                  <th className="p-4 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Date & Time</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Subject</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Type</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Score</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#e7c555]/5">
                 {attempts
                   .slice()
                   .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
                   .slice(0, 5)
                   .map((a, index) => (
-                    <tr key={a._id} className="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-200">
-                      <td className="p-4">
+                    <tr key={a._id} className="hover:bg-[#e7c555]/5 transition-colors">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-sm font-bold flex items-center justify-center shadow flex-shrink-0">
-                            {index + 1}
+                          <div className="w-8 h-8 rounded-lg bg-[#4ecdc4]/20 flex items-center justify-center text-[#4ecdc4]">
+                            <span className="material-symbols-outlined text-sm">science</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-gray-800">{a.subject?.name || a.subjectName || "—"}</span>
                             <span className="text-xs text-slate-600">{a.topic?.name || a.topicName || "—"}</span>
-                            <span className="inline-block mt-1 text-[10px] uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{a.type}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4 font-semibold text-slate-500">{a.type}</td>
+                      <td className="px-6 py-4">
                         <div className="font-bold text-gray-800 text-base">{a.score} / {a.total}</div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${
-                          a.percent >= 90 ? "bg-green-100 text-green-700" :
-                          a.percent >= 75 ? "bg-blue-100 text-blue-700" :
-                          a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
-                          "bg-red-100 text-red-700"
+                        <span className={`text-xs px-3 py-1 rounded-full font-black border mt-1 inline-block ${
+                          a.percent >= 90 ? "bg-[#4ecdc4]/10 text-[#4ecdc4] border-[#4ecdc4]/20" :
+                          a.percent >= 75 ? "bg-[#e7c555]/20 text-[#e7c555] border-[#e7c555]/30" :
+                          "bg-[#ff6b6b]/10 text-[#ff6b6b] border-[#ff6b6b]/20"
                         }`}>{a.percent}%</span>
                       </td>
-                      <td className="p-4 text-slate-600 text-xs">
-                        {a.submittedAt ? new Date(a.submittedAt).toLocaleString("en-US", { year: "numeric", month: "short", day: "2-digit", hour: "numeric", minute: "2-digit", hour12: true }) : "-"}
+                      <td className="px-6 py-4">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-[#e7c555] hover:text-slate-900 transition-all rounded-full font-bold text-sm">
+                          <span className="material-symbols-outlined text-sm">replay</span>
+                          Retake
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -990,6 +996,16 @@ function StudentContent() {
           </div>
         </div>
       </Section>
+
+        {/* Spotlight column - 1/3 width */}
+        <div className="flex flex-col gap-6">
+          <DailyQuestCard />
+          <SubscriptionSpotlight
+            subscriptionType={subscriptionType}
+            subscriptionInfo={subscriptionInfo}
+          />
+        </div>
+      </div>
 
       <Section
         title="Subscription & Access"
@@ -1103,7 +1119,7 @@ function StudentContent() {
         </div>
       </Section>
 
-    </>
+    </div>
   );
 }
 
