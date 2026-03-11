@@ -11,19 +11,13 @@ const RouterLink = ({ to, children, className = "", onClick, active }) => (
     to={to}
     onClick={onClick}
     className={
-      "group relative rounded-xl px-3 py-2 text-sm font-medium text-blue-900 transition hover:text-blue-950 " +
-      (active ? "text-blue-950" : "") +
+      "text-sm font-bold transition-colors px-2 py-1 " +
+      (active ? "text-[#F4736E]" : "text-slate-800 hover:text-[#F4736E]") +
       " " +
       className
     }
   >
     {children}
-    <span
-      className={
-        "pointer-events-none absolute -bottom-[2px] left-3 h-[2px] w-0 rounded-full bg-gradient-to-r from-yellow-400 to-amber-400 transition-all duration-300 group-hover:w-[calc(100%-1.5rem)] " +
-        (active ? "w-[calc(100%-1.5rem)]" : "")
-      }
-    />
   </Link>
 );
 
@@ -66,22 +60,24 @@ function Dropdown({ label, children }) {
     <div className="relative" onMouseEnter={openNow} onMouseLeave={closeSoon}>
       <button
         type="button"
-        className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-blue-900 transition hover:bg-blue-50 hover:text-blue-950"
+        className="inline-flex items-center gap-1 text-sm font-bold text-slate-800 hover:text-[#F4736E] transition-colors"
         onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {label} <ChevronDown className="h-4 w-4" />
+        {label}
+        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div
-          className="absolute left-0 top-full -mt-px z-50 w-64 overflow-hidden rounded-2xl border border-blue-100/70 bg-white/90 shadow-xl backdrop-blur-md"
+          className="absolute left-0 top-full mt-2 z-50 min-w-[180px] overflow-hidden rounded-2xl border-2 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.08)]"
+          style={{ borderColor: "rgba(255,210,63,0.3)" }}
           role="menu"
           onMouseEnter={openNow}
           onMouseLeave={closeSoon}
         >
-          <div className="grid gap-1 p-2">{children}</div>
+          <div className="p-2">{children}</div>
         </div>
       )}
     </div>
@@ -175,30 +171,26 @@ export default function Navbar() {
 
   // return (
   return shouldHide ? null : (
-    <nav className="sticky top-0 z-40 bg-white/70 shadow-sm backdrop-blur-lg">
-      {/* Subtle top glow line */}
-      <div className="h-[2px] w-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-300 opacity-60" />
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-0.5">
-        {/* Brand */}
+    <nav className="sticky top-0 z-40 w-full border-b-4 bg-white/90 backdrop-blur-md" style={{ borderBottomColor: "rgba(255,210,63,0.25)" }}>
+      <style>{`
+        @keyframes wiggle {
+          0%,100% { transform: rotate(-2deg); }
+          50%      { transform: rotate(2deg);  }
+        }
+        .wiggle { animation: wiggle 1.2s ease-in-out infinite; }
+        .wiggle:hover { animation-play-state: paused; }
+      `}</style>
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
+        {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
         <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-          <div className="relative">
-            <div className="flex flex-wrap flex-col h-full justify-center items-center gap-1">
-            <img
-              src="/logo_new.png"
-              alt="EEC"
-              className="h-10 w-auto drop-shadow-sm transition hover:scale-[1.01]"
-            />
-            <span className="text-amber-600 font-bold text-sm">
-              Electronic Educare
-            </span>
-            </div>
-            {/* <span className="pointer-events-none absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-yellow-400/60 blur-[4px]" /> */}
+          <div className="flex items-center justify-center rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
+            <span className="material-symbols-outlined text-2xl font-bold" style={{ fontFamily: "'Material Symbols Outlined'", fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>auto_stories</span>
           </div>
-          <span className="sr-only">EEC</span>
+          <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>EEC</span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden items-center gap-2 md:flex">
+        {/* Desktop nav links — centered */}
+        <div className="hidden items-center gap-8 md:flex">
           <RouterLink className="ml-2" to="/" active={isActive("/")}>
             Home
           </RouterLink>
@@ -216,127 +208,79 @@ export default function Navbar() {
           <RouterLink to="/careers" active={isActive("/careers")}>
             Careers
           </RouterLink>
+        </div>
 
-          {/* <button
-            type="button"
-            onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
-            className="ml-2 inline-flex items-center rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow-md ring-1 ring-yellow-300/60 transition hover:shadow-lg hover:saturate-[1.1] active:scale-[.98]"
-          >
-            Login
-          </button> */}
-
+        {/* Desktop right side */}
+        <div className="hidden items-center gap-2 md:flex">
           {currentUser ? (
-            <div className="relative ml-2" ref={userMenuRef}>
+            <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
                 onClick={() => setUserMenuOpen((s) => !s)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900/90"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1B1F3B] transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border p-0.5">
-                  <User className="h-4 w-4" />
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
+                  <User className="h-3.5 w-3.5" />
                 </span>
                 <span className="max-w-[10rem] truncate">{currentUser.name}</span>
                 <ChevronDown className={`h-4 w-4 transition ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-blue-100 bg-white/95 shadow-lg backdrop-blur-md">
+                <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
                   <button
                     type="button"
                     onClick={proceedToDashboard}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-blue-900/90 hover:bg-blue-50"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#1B1F3B] hover:bg-slate-50"
                   >
-                    <LayoutDashboard className="h-4 w-4" />
+                    <LayoutDashboard className="h-4 w-4 text-slate-400" />
                     Dashboard
                   </button>
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-blue-900/90 hover:bg-blue-50"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#1B1F3B] hover:bg-slate-50"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="h-4 w-4 text-slate-400" />
                     Logout
                   </button>
                 </div>
               )}
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
-              className="ml-2 inline-flex items-center rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow-md ring-1 ring-yellow-300/60 transition hover:shadow-lg hover:saturate-[1.1] active:scale-[.98]"
-            >
-              Login
-            </button>
-          )}
-          <Link
-            to="/eec-b2c"
-            className="
-    ml-3 relative inline-flex items-center justify-center
-    px-4 py-2 text-sm font-extrabold text-white tracking-wide
-    rounded-2xl 
-    bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
-    shadow-[0_0_25px_rgba(168,85,247,0.9)]
-    hover:shadow-[0_0_45px_rgba(168,85,247,1)]
-    transition-all duration-300 ease-out
-    hover:scale-[1.12] active:scale-[0.96]
-    overflow-hidden
-    border border-white/20
-  "
+          ) : null}
+          {/* Claim Free Gift — exact code.html style: rounded-2xl, 3D shadow, wiggle */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
+            className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-2xl transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
           >
-            {/* Outer Neon Border Animation */}
-            <span
-              className="
-      absolute inset-0 rounded-2xl
-      border-2 border-fuchsia-400
-      animate-[borderGlow_3s_linear_infinite]
-      opacity-70
-    "
-            ></span>
-
-            {/* Moving Gradient Background */}
-            <span
-              className="
-      absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
-      bg-[length:200%_200%]
-      animate-[gradientMove_6s_ease_infinite]
-      rounded-2xl opacity-90
-    "
-            ></span>
-
-            {/* Shine Swipe */}
-            <span
-              className="
-      absolute inset-0 translate-x-[-120%]
-      bg-white/20 w-full h-full skew-x-12
-      animate-[shine_3s_infinite]
-    "
-            />
-
-            {/* Floating Glow Balls */}
-            <span className="absolute top-0 left-0 w-3 h-3 bg-white/60 rounded-full blur-md animate-ping"></span>
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-fuchsia-300/70 rounded-full blur-xl animate-pulse"></span>
-
-            {/* Button Text */}
-            <span className="relative z-10 drop-shadow-xl text-lg">For Institutions</span>
-          </Link>
-
+            Join Now 🎁
+          </button>
         </div>
 
-        {/* Mobile toggle */}
-        <button
-          className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-white/70 p-2 shadow-sm backdrop-blur-md md:hidden"
-          onClick={() => setMobileOpen((s) => !s)}
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-drawer"
-        >
-          {mobileOpen ? (
-            <X className="h-5 w-5 text-blue-900" />
-          ) : (
-            <Menu className="h-5 w-5 text-blue-900" />
-          )}
-        </button>
+        {/* Mobile: Claim Free Gift + Hamburger */}
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
+            className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-xs hover:bg-yellow-400 transition-all hover:scale-105"
+          >
+            Claim Free Gift! 🎁
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
+            onClick={() => setMobileOpen((s) => !s)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-drawer"
+          >
+            {mobileOpen ? (
+              <X className="h-5 w-5 text-[#1B1F3B]" />
+            ) : (
+              <Menu className="h-5 w-5 text-[#1B1F3B]" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* ======= Mobile Drawer + Overlay ======= */}
@@ -356,16 +300,19 @@ export default function Navbar() {
         aria-modal="true"
       >
         {/* Drawer header */}
-        <div className="flex items-center justify-between border-b border-blue-100/70 px-4 py-3">
-          <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-            <img src="/logo_new.png" alt="EEC" className="h-9 w-auto" />
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+          <Link to="/" className="flex items-center gap-2.5" onClick={closeMobile}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F4736E] text-white">
+              <span className="text-base leading-none">📖</span>
+            </div>
+            <span className="text-base font-extrabold text-[#1B1F3B]">EEC</span>
           </Link>
           <button
-            className="rounded-xl border border-blue-200 bg-white/80 p-2 backdrop-blur"
+            className="rounded-xl border border-slate-200 bg-white p-2"
             onClick={closeMobile}
             aria-label="Close menu"
           >
-            <X className="h-5 w-5 text-blue-900" />
+            <X className="h-5 w-5 text-[#1B1F3B]" />
           </button>
         </div>
 
@@ -423,74 +370,21 @@ export default function Navbar() {
             Login
           </button> */}
           {currentUser ? (
-            <div className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900/90">
-              {currentUser.name}
+            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
+                <User className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-semibold text-[#1B1F3B] truncate">{currentUser.name}</span>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(new Event("eec:open-login"));
-                closeMobile();
-              }}
-              className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow-md ring-1 ring-yellow-300/60 transition hover:shadow-lg hover:saturate-[1.1] active:scale-[.98]"
-            >
-              Login
-            </button>
-          )}
-          {/* MOBILE B2B BUTTON (same effect as desktop) */}
-          <Link
-            to="/eec-b2c"
-            onClick={closeMobile}
-            className="
-    mt-4 relative inline-flex w-full items-center justify-center
-    px-6 py-2.5 text-sm font-extrabold text-white tracking-wide
-    rounded-2xl
-    bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
-    shadow-[0_0_25px_rgba(168,85,247,0.9)]
-    hover:shadow-[0_0_45px_rgba(168,85,247,1)]
-    transition-all duration-300 ease-out
-    hover:scale-[1.08] active:scale-[0.96]
-    overflow-hidden
-    border border-white/20
-  "
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
+            className="mt-2 flex w-full items-center justify-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm transition-all hover:scale-105"
           >
-            {/* Outer Neon Border */}
-            <span
-              className="
-      absolute inset-0 rounded-2xl
-      border-2 border-fuchsia-400
-      animate-[borderGlow_3s_linear_infinite]
-      opacity-70
-    "
-            ></span>
-
-            {/* Moving Gradient */}
-            <span
-              className="
-      absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-purple-600 to-indigo-600
-      bg-[length:200%_200%]
-      animate-[gradientMove_6s_ease_infinite]
-      rounded-2xl opacity-90
-    "
-            ></span>
-
-            {/* Shine Swipe */}
-            <span
-              className="
-      absolute inset-0 translate-x-[-120%]
-      bg-white/40 w-full h-full skew-x-12
-      animate-[shine_3s_infinite]
-    "
-            />
-
-            {/* Glow Balls */}
-            <span className="absolute top-0 left-0 w-3 h-3 bg-white/60 rounded-full blur-md animate-ping"></span>
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-fuchsia-300/70 rounded-full blur-xl animate-pulse"></span>
-
-            {/* Text */}
-            <span className="relative z-10 drop-shadow-xl text-lg">For Institution</span>
-          </Link>
+            Claim Free Gift! 🎁
+          </button>
 
         </div>
       </aside>

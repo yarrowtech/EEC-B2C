@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 export default function HeroSettings() {
     // LEFT SIDE CONTENT
-    const [heading, setHeading] = useState("Personalized learning that adapts to you");
+    const [heading, setHeading] = useState("Make Learning");
     const [paragraph, setParagraph] = useState(
         "AI-guided study paths, concept videos, and gamified progress — crafted to boost focus, reduce stress, and improve outcomes."
     );

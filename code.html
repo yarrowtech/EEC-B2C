@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EEC - Your Learning Adventure Starts Here! | Class 3-10</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;family=Balsamiq+Sans:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FFD23F",
+                        "secondary": "#FF6B6B",
+                        "accent": "#4ECDC4",
+                        "adventure-purple": "#6C63FF",
+                        "background-light": "#FFFDF7",
+                        "background-dark": "#1A1A2E",
+                    },
+                    fontFamily: {
+                        "display": ["Balsamiq Sans", "cursive"],
+                        "body": ["Quicksand", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "1.5rem",
+                        "xl": "2rem",
+                        "2xl": "2.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body { font-family: 'Quicksand', sans-serif; }
+        h1, h2, h3, h4, .font-adventure { font-family: 'Balsamiq Sans', cursive; }
+        .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        .wiggle:hover { animation: wiggle 0.3s ease-in-out infinite; }
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        .blob-bg {
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 210, 63, 0.1) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(78, 205, 196, 0.1) 0%, transparent 40%);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 transition-colors duration-300 blob-bg">
+<nav class="sticky top-0 z-50 w-full border-b-4 border-primary/20 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-20">
+<div class="flex items-center gap-3">
+<div class="bg-secondary p-2 rounded-2xl rotate-3 shadow-lg">
+<span class="material-symbols-outlined text-white text-2xl font-bold">auto_stories</span>
+</div>
+<span class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white font-adventure">EEC<span class="text-adventure-purple"></span></span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-sm font-bold hover:text-secondary transition-colors" href="#subjects">Magic Subjects</a>
+<a class="text-sm font-bold hover:text-secondary transition-colors" href="#classes">All Classes</a>
+<a class="text-sm font-bold hover:text-secondary transition-colors" href="#boards">Boards</a>
+<a class="text-sm font-bold hover:text-secondary transition-colors" href="#pricing">Fun Plans</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-2xl transition-all transform hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm wiggle">
+                    Claim Free Gift! 🎁
+                </button>
+</div>
+</div>
+</div>
+</nav>
+<section class="relative overflow-hidden pt-12 pb-20 lg:pt-24 lg:pb-32">
+<div class="absolute top-20 left-10 text-secondary opacity-20 hidden lg:block"><span class="material-symbols-outlined text-8xl">rocket_launch</span></div>
+<div class="absolute bottom-20 right-10 text-accent opacity-20 hidden lg:block"><span class="material-symbols-outlined text-8xl">star</span></div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+<div class="flex-1 text-center lg:text-left">
+<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/20 border-2 border-accent text-accent-700 dark:text-accent text-xs font-black uppercase tracking-wider mb-8">
+<span class="material-symbols-outlined text-base">celebration</span>
+                50,000+ Happy Little Explorers!
+            </div>
+<h1 class="text-5xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-[1.1] mb-8 font-adventure">
+                Make Learning <br/><span class="text-secondary">An Adventure!</span>
+</h1>
+<p class="text-xl lg:text-2xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl font-medium">
+                Turn study time into playtime! Master Class 3-10 exams with fun, colorful worksheets and exciting challenges designed for curious minds.
+            </p>
+<div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-2xl border-4 border-primary/30 max-w-xl relative">
+<div class="absolute -top-6 -right-6 bg-secondary text-white p-4 rounded-full shadow-lg rotate-12 hidden sm:block">
+<span class="material-symbols-outlined text-3xl">magic_button</span>
+</div>
+<h3 class="text-2xl font-bold mb-6 text-slate-800 dark:text-white font-adventure">Ready to Start Your Adventure?</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+<div class="space-y-1">
+<label class="text-xs font-bold text-slate-500 ml-2">Explorer's Name</label>
+<input class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 focus:ring-secondary focus:border-secondary" placeholder="e.g. Rahul" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="text-xs font-bold text-slate-500 ml-2">Choose Class</label>
+<select class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 focus:ring-secondary focus:border-secondary">
+<option>Which grade?</option>
+<option>Class 3 (Young Explorers)</option>
+<option>Class 5 (Junior Heroes)</option>
+<option>Class 8 (Master Minds)</option>
+<option>Class 10 (Legendary Status)</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4">
+<div class="flex-grow space-y-1">
+<label class="text-xs font-bold text-slate-500 ml-2">Parent's Email</label>
+<input class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 focus:ring-secondary focus:border-secondary" placeholder="For the secret files..." type="email"/>
+</div>
+<button class="bg-secondary text-white font-bold py-4 px-8 rounded-2xl hover:bg-red-500 transition-all flex items-center justify-center gap-2 shadow-[0_4px_0_0_#D64545] active:translate-y-1 active:shadow-none self-end">
+                        Launch Adventure! <span class="material-symbols-outlined">rocket_launch</span>
+</button>
+</div>
+<p class="text-[10px] text-center text-slate-400 mt-4">Safe &amp; Secure • Fun Guaranteed • No Boring Stuff</p>
+</div>
+</div>
+<div class="flex-1 relative">
+<div class="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-700 bg-gradient-to-br from-primary/20 to-accent/20">
+<div class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+<span class="material-symbols-outlined text-[10rem] text-secondary/30 mb-4">child_care</span>
+<p class="font-adventure text-2xl text-slate-600 italic">Playful Illustration of <br/>Happy Children Learning Together</p>
+</div>
+<div class="absolute top-12 left-12 p-5 bg-white dark:bg-slate-800 rounded-3xl shadow-xl animate-bounce" style="animation-duration: 3s;">
+<span class="material-symbols-outlined text-secondary text-4xl">emoji_objects</span>
+</div>
+<div class="absolute bottom-24 right-12 p-5 bg-white dark:bg-slate-800 rounded-3xl shadow-xl animate-bounce" style="animation-duration: 4.5s;">
+<span class="material-symbols-outlined text-adventure-purple text-4xl">cruelty_free</span>
+</div>
+<div class="absolute top-1/2 right-6 p-5 bg-white dark:bg-slate-800 rounded-3xl shadow-xl animate-bounce" style="animation-duration: 5.5s;">
+<span class="material-symbols-outlined text-accent text-4xl">castle</span>
+</div>
+<div class="absolute bottom-12 left-20 p-5 bg-white dark:bg-slate-800 rounded-3xl shadow-xl animate-bounce" style="animation-duration: 4s;">
+<span class="material-symbols-outlined text-primary text-4xl">palette</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
+<div class="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] shadow-xl border-b-8 border-slate-200 dark:border-slate-900 flex flex-wrap items-center gap-8">
+<div class="flex bg-slate-100 dark:bg-slate-900 p-2 rounded-2xl gap-2">
+<button class="px-6 py-3 rounded-xl bg-secondary text-white shadow-md text-sm font-bold">CBSE</button>
+<button class="px-6 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors">ICSE</button>
+<button class="px-6 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition-colors">State</button>
+</div>
+<div class="h-10 w-[2px] bg-slate-200 dark:bg-slate-700 hidden lg:block"></div>
+<div class="flex gap-3 overflow-x-auto pb-2 sm:pb-0 flex-1 no-scrollbar">
+<span class="px-5 py-2 rounded-full bg-accent/20 border-2 border-accent text-accent-700 text-sm font-bold whitespace-nowrap cursor-pointer">Class 10</span>
+<span class="px-5 py-2 rounded-full bg-slate-100 dark:bg-slate-900 text-sm font-bold whitespace-nowrap cursor-pointer hover:bg-primary/20 transition-colors">Math Magic</span>
+<span class="px-5 py-2 rounded-full bg-slate-100 dark:bg-slate-900 text-sm font-bold whitespace-nowrap cursor-pointer hover:bg-primary/20 transition-colors">Science Lab</span>
+<span class="px-5 py-2 rounded-full bg-slate-100 dark:bg-slate-900 text-sm font-bold whitespace-nowrap cursor-pointer hover:bg-primary/20 transition-colors">English World</span>
+</div>
+<button class="bg-primary text-slate-900 font-bold px-8 py-3 rounded-2xl border-b-4 border-yellow-600 hover:translate-y-[-2px] transition-all">
+            Find My Quest →
+        </button>
+</div>
+</div>
+<section class="py-24 bg-white dark:bg-slate-900 relative">
+<div class="absolute top-0 left-0 w-full h-12 bg-background-light dark:bg-background-dark rounded-b-[100%]"></div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-16">
+<h2 class="text-4xl lg:text-6xl font-bold mb-6 font-adventure text-slate-900 dark:text-white">Is Studying Getting <span class="text-secondary underline decoration-primary underline-offset-8">A Bit Grumpy?</span></h2>
+<p class="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium">We turn those study-frowns upside down with tools that actually make sense!</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+<div class="bg-background-light dark:bg-slate-800 p-10 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all border-4 border-transparent hover:border-secondary group text-center">
+<div class="w-20 h-20 bg-secondary/10 text-secondary rounded-full flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-5xl">sentiment_dissatisfied</span>
+</div>
+<h3 class="text-2xl font-bold mb-4 font-adventure">The "Boring" Search</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">No more endless scrolling through dusty old websites looking for practice papers.</p>
+</div>
+<div class="bg-background-light dark:bg-slate-800 p-10 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all border-4 border-transparent hover:border-accent group text-center">
+<div class="w-20 h-20 bg-accent/10 text-accent rounded-full flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-5xl">mystery</span>
+</div>
+<h3 class="text-2xl font-bold mb-4 font-adventure">Confusing Puzzles</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Textbooks can be like secret codes. We give you the key to unlock every chapter!</p>
+</div>
+<div class="bg-background-light dark:bg-slate-800 p-10 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all border-4 border-transparent hover:border-primary group text-center">
+<div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-5xl">alarm_off</span>
+</div>
+<h3 class="text-2xl font-bold mb-4 font-adventure">Clock Crushing</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Struggling to finish on time? Our fun mock tests help you race the clock and win!</p>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-20">
+<h2 class="text-4xl lg:text-6xl font-bold mb-6 font-adventure text-slate-900 dark:text-white">Your 3-Step <span class="text-accent">Victory Path</span></h2>
+</div>
+<div class="relative flex flex-col md:flex-row justify-between items-start gap-16">
+<div class="absolute top-24 left-0 w-full h-8 border-t-8 border-dashed border-primary/20 -z-10 hidden md:block rounded-full"></div>
+<div class="flex flex-col items-center text-center max-w-xs w-full">
+<div class="relative mb-10">
+<div class="w-32 h-32 bg-primary rounded-[2.5rem] flex items-center justify-center text-5xl font-adventure font-black shadow-xl rotate-[-6deg] hover:rotate-0 transition-transform">1</div>
+<div class="absolute -bottom-4 -right-4 bg-white p-3 rounded-2xl shadow-lg">
+<span class="material-symbols-outlined text-secondary text-3xl">map</span>
+</div>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Pick Your Map</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Tell us your Board and Class. We'll show you the perfect treasure trove of content!</p>
+</div>
+<div class="flex flex-col items-center text-center max-w-xs w-full">
+<div class="relative mb-10">
+<div class="w-32 h-32 bg-accent rounded-[2.5rem] flex items-center justify-center text-5xl font-adventure font-black shadow-xl rotate-[6deg] hover:rotate-0 transition-transform">2</div>
+<div class="absolute -bottom-4 -right-4 bg-white p-3 rounded-2xl shadow-lg">
+<span class="material-symbols-outlined text-primary text-3xl">download_for_offline</span>
+</div>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Grab Your Gear</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Download colorful Smart PDFs with expert solutions that act like a friendly guide.</p>
+</div>
+<div class="flex flex-col items-center text-center max-w-xs w-full">
+<div class="relative mb-10">
+<div class="w-32 h-32 bg-adventure-purple rounded-[2.5rem] flex items-center justify-center text-5xl font-adventure font-black shadow-xl rotate-[-3deg] hover:rotate-0 transition-transform text-white">3</div>
+<div class="absolute -bottom-4 -right-4 bg-white p-3 rounded-2xl shadow-lg">
+<span class="material-symbols-outlined text-accent text-3xl">workspace_premium</span>
+</div>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Win the Game!</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Practice with joy and see your scores soar like a rocket to the moon!</p>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-primary/10">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+<div class="p-10 bg-white dark:bg-slate-800 rounded-[2.5rem] border-b-8 border-secondary shadow-lg hover:translate-y-[-10px] transition-all">
+<div class="mb-6 inline-block p-4 bg-secondary/10 rounded-3xl">
+<span class="material-symbols-outlined text-5xl text-secondary">extension</span>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">One Piece at a Time</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Focus on one chapter like a puzzle piece until the whole picture is clear!</p>
+</div>
+<div class="p-10 bg-white dark:bg-slate-800 rounded-[2.5rem] border-b-8 border-accent shadow-lg hover:translate-y-[-10px] transition-all">
+<div class="mb-6 inline-block p-4 bg-accent/10 rounded-3xl">
+<span class="material-symbols-outlined text-5xl text-accent">verified_user</span>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Teacher's Favorites</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">100% aligned with CBSE, ICSE, and State Boards. Just like what's in school!</p>
+</div>
+<div class="p-10 bg-white dark:bg-slate-800 rounded-[2.5rem] border-b-8 border-primary shadow-lg hover:translate-y-[-10px] transition-all">
+<div class="mb-6 inline-block p-4 bg-primary/10 rounded-3xl">
+<span class="material-symbols-outlined text-5xl text-primary">fitness_center</span>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Choose Your Level</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">From 'Easy Peasy' to 'Super Challenging' – we grow as you grow!</p>
+</div>
+<div class="p-10 bg-white dark:bg-slate-800 rounded-[2.5rem] border-b-8 border-adventure-purple shadow-lg hover:translate-y-[-10px] transition-all">
+<div class="mb-6 inline-block p-4 bg-adventure-purple/10 rounded-3xl">
+<span class="material-symbols-outlined text-5xl text-adventure-purple">print</span>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Real-World Paper</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Download and print our beautiful PDFs. Great for drawing and solving!</p>
+</div>
+<div class="p-10 bg-white dark:bg-slate-800 rounded-[2.5rem] border-b-8 border-pink-500 shadow-lg hover:translate-y-[-10px] transition-all">
+<div class="mb-6 inline-block p-4 bg-pink-500/10 rounded-3xl">
+<span class="material-symbols-outlined text-5xl text-pink-500">lightbulb</span>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">A-ha! Moments</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Not just answers, but "how-to" guides that make you go "Oh, now I get it!"</p>
+</div>
+<div class="p-10 bg-white dark:bg-slate-800 rounded-[2.5rem] border-b-8 border-orange-500 shadow-lg hover:translate-y-[-10px] transition-all">
+<div class="mb-6 inline-block p-4 bg-orange-500/10 rounded-3xl">
+<span class="material-symbols-outlined text-5xl text-orange-500">auto_awesome</span>
+</div>
+<h4 class="text-2xl font-bold mb-4 font-adventure">Fresh Surprises</h4>
+<p class="text-slate-600 dark:text-slate-400 font-medium">New quests and papers added every single week to keep the fun alive.</p>
+</div>
+</div>
+</div>
+</section>
+<div class="bg-slate-900 py-16">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
+<div>
+<div class="text-5xl font-adventure font-black text-primary mb-2">50k+</div>
+<div class="text-slate-400 font-bold uppercase tracking-widest text-xs">Mini Geniuses</div>
+</div>
+<div>
+<div class="text-5xl font-adventure font-black text-secondary mb-2">10k+</div>
+<div class="text-slate-400 font-bold uppercase tracking-widest text-xs">Magic Papers</div>
+</div>
+<div>
+<div class="text-5xl font-adventure font-black text-accent mb-2">3-10</div>
+<div class="text-slate-400 font-bold uppercase tracking-widest text-xs">Grade Heroes</div>
+</div>
+<div>
+<div class="text-5xl font-adventure font-black text-adventure-purple mb-2">98%</div>
+<div class="text-slate-400 font-bold uppercase tracking-widest text-xs">Smile Rate</div>
+</div>
+</div>
+</div>
+<section class="py-24" id="pricing">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-20">
+<h2 class="text-4xl lg:text-6xl font-bold mb-6 font-adventure">Choose Your <span class="text-secondary">Hero Rank</span></h2>
+<div class="inline-flex items-center gap-2 bg-accent/10 text-accent px-6 py-2 rounded-full text-sm font-bold mt-4 border border-accent">
+<span class="material-symbols-outlined text-base">verified</span> 7-Day Secret Trial on Scholar Plans!
+            </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+<div class="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border-4 border-slate-100 dark:border-slate-700 flex flex-col group hover:border-slate-200 transition-all">
+<h4 class="text-2xl font-adventure font-bold mb-2">Starter Scout</h4>
+<div class="text-5xl font-adventure font-black mb-8">₹0 <span class="text-lg font-normal text-slate-400">/ forever</span></div>
+<ul class="space-y-5 mb-10 flex-grow">
+<li class="flex items-center gap-3 font-medium text-sm"><span class="material-symbols-outlined text-accent">check_circle</span> 5 Fun Samples / mo</li>
+<li class="flex items-center gap-3 font-medium text-sm"><span class="material-symbols-outlined text-accent">check_circle</span> Public Solutions</li>
+<li class="flex items-center gap-3 font-medium text-sm text-slate-400"><span class="material-symbols-outlined">block</span> Secret Mock Exams</li>
+</ul>
+<button class="w-full py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 transition-all">Join the Scouts</button>
+</div>
+<div class="bg-white dark:bg-slate-800 p-10 rounded-[3rem] border-4 border-primary shadow-[0_20px_50px_rgba(255,210,63,0.3)] relative flex flex-col transform md:scale-110 z-10 overflow-hidden">
+<div class="absolute top-0 right-0 bg-primary text-slate-900 text-[10px] font-black px-6 py-2 rotate-45 translate-x-10 translate-y-4 uppercase">Elite</div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-secondary text-white text-xs font-black px-6 py-2 rounded-full uppercase shadow-lg">Most Popular Quest</div>
+<h4 class="text-2xl font-adventure font-bold mb-2 text-primary">Master Scholar</h4>
+<div class="text-5xl font-adventure font-black mb-8">₹199 <span class="text-lg font-normal text-slate-400">/ mo</span></div>
+<ul class="space-y-5 mb-10 flex-grow">
+<li class="flex items-center gap-3 font-bold text-sm"><span class="material-symbols-outlined text-secondary">rocket</span> Unlimited Power-ups</li>
+<li class="flex items-center gap-3 font-bold text-sm"><span class="material-symbols-outlined text-secondary">auto_awesome</span> Step-by-Step Magic</li>
+<li class="flex items-center gap-3 font-bold text-sm"><span class="material-symbols-outlined text-secondary">emoji_events</span> Weekly Mock Contests</li>
+<li class="flex items-center gap-3 font-bold text-sm"><span class="material-symbols-outlined text-secondary">visibility_off</span> Zero Boring Ads</li>
+</ul>
+<button class="w-full py-5 rounded-2xl bg-primary text-slate-900 font-black hover:bg-yellow-400 transition-all shadow-[0_6px_0_0_#D1A100] active:translate-y-1 active:shadow-none">Begin Your Trial</button>
+</div>
+<div class="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border-4 border-slate-100 dark:border-slate-700 flex flex-col group hover:border-adventure-purple transition-all">
+<h4 class="text-2xl font-adventure font-bold mb-2">Adventure Team</h4>
+<div class="text-5xl font-adventure font-black mb-8">₹349 <span class="text-lg font-normal text-slate-400">/ mo</span></div>
+<ul class="space-y-5 mb-10 flex-grow">
+<li class="flex items-center gap-3 font-medium text-sm"><span class="material-symbols-outlined text-adventure-purple">groups</span> Up to 3 Explorers</li>
+<li class="flex items-center gap-3 font-medium text-sm"><span class="material-symbols-outlined text-adventure-purple">dashboard</span> HQ Parent Control</li>
+<li class="flex items-center gap-3 font-medium text-sm"><span class="material-symbols-outlined text-adventure-purple">architecture</span> Custom Quests</li>
+</ul>
+<button class="w-full py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 transition-all">Enroll the Squad</button>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-secondary py-20 relative overflow-hidden">
+<div class="absolute -left-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+<h2 class="text-4xl lg:text-6xl font-black text-white mb-6 font-adventure">Quick! Catch the Golden Bundle! 🏃‍♂️💨</h2>
+<p class="text-white/90 text-xl mb-10 max-w-2xl mx-auto font-medium">Be a fast explorer! Sign up in the next 15 minutes and unlock the "Top 100 Secret Exam Questions" PDF instantly!</p>
+<div class="flex flex-col items-center gap-8">
+<div class="flex gap-6 mb-4">
+<div class="bg-white text-secondary w-24 h-28 rounded-[2rem] flex flex-col items-center justify-center shadow-2xl border-b-8 border-slate-200">
+<span class="text-4xl font-black font-adventure">14</span>
+<span class="text-[10px] uppercase font-bold tracking-widest">Minutes</span>
+</div>
+<div class="bg-white text-secondary w-24 h-28 rounded-[2rem] flex flex-col items-center justify-center shadow-2xl border-b-8 border-slate-200">
+<span class="text-4xl font-black font-adventure">52</span>
+<span class="text-[10px] uppercase font-bold tracking-widest">Seconds</span>
+</div>
+</div>
+<div class="w-full max-w-xl flex flex-col sm:flex-row gap-4">
+<input class="flex-grow px-8 py-5 rounded-2xl border-none focus:ring-4 focus:ring-primary text-lg" placeholder="Enter your email to claim!" type="email"/>
+<button class="bg-slate-900 text-white font-black px-10 py-5 rounded-2xl shadow-xl hover:scale-105 transition-all">Gimme My Bundle!</button>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-background-light dark:bg-slate-950">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<h2 class="text-4xl lg:text-5xl font-bold text-center mb-20 font-adventure">Stories from our <span class="text-adventure-purple">Star Explorers</span></h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+<div class="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-xl relative border-t-8 border-secondary">
+<div class="absolute -top-6 left-10 text-secondary opacity-20"><span class="material-symbols-outlined text-6xl">format_quote</span></div>
+<div class="flex items-center gap-1 text-primary mb-6">
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 mb-8 font-medium italic">"My daughter Priya used to hide her Math book! Now she calls it 'Puzzle Time'. Her scores went from a 'yikes' 72 to a 'wow' 94! Best decision ever."</p>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-2xl bg-secondary/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">woman_2</span>
+</div>
+<div>
+<div class="font-bold text-lg">Mrs. Anjali Sharma</div>
+<div class="text-xs text-slate-400">Proud Mom, Bangalore</div>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-xl relative border-t-8 border-accent">
+<div class="absolute -top-6 left-10 text-accent opacity-20"><span class="material-symbols-outlined text-6xl">format_quote</span></div>
+<div class="flex items-center gap-1 text-primary mb-6">
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 mb-8 font-medium italic">"The mock tests are like levels in a game. I practiced so much that the actual Board exam felt like just another level. I actually finished early!"</p>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center text-accent">
+<span class="material-symbols-outlined text-3xl">boy</span>
+</div>
+<div>
+<div class="font-bold text-lg">Rohan Gupta</div>
+<div class="text-xs text-slate-400">Class 10 Hero, Mumbai</div>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-xl relative border-t-8 border-adventure-purple">
+<div class="absolute -top-6 left-10 text-adventure-purple opacity-20"><span class="material-symbols-outlined text-6xl">format_quote</span></div>
+<div class="flex items-center gap-1 text-primary mb-6">
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 mb-8 font-medium italic">"The Science diagrams are so colorful and clear. My son finally understands concepts instead of just memorizing them. ICSE prep is actually fun now!"</p>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-2xl bg-adventure-purple/20 flex items-center justify-center text-adventure-purple">
+<span class="material-symbols-outlined text-3xl">man</span>
+</div>
+<div>
+<div class="font-bold text-lg">Mr. Vinay Iyer</div>
+<div class="text-xs text-slate-400">Dad &amp; Coach, Chennai</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-white dark:bg-slate-900">
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+<h2 class="text-4xl font-bold text-center mb-12 font-adventure">Got Questions? We Have <span class="text-primary">Answers!</span></h2>
+<div class="space-y-6">
+<details class="group bg-background-light dark:bg-slate-800 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden" open="">
+<summary class="flex justify-between items-center p-8 cursor-pointer font-bold list-none text-lg">
+                    Is this the latest 2024-25 syllabus?
+                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform bg-primary text-white p-1 rounded-full">expand_more</span>
+</summary>
+<div class="px-8 pb-8 text-slate-600 dark:text-slate-400 font-medium">
+                    Yes, absolutely! Our team of teacher-wizards works day and night to make sure every question is perfectly aligned with the newest board guidelines. No old stuff here!
+                </div>
+</details>
+<details class="group bg-background-light dark:bg-slate-800 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+<summary class="flex justify-between items-center p-8 cursor-pointer font-bold list-none text-lg">
+                    Can we print the papers for a real experience?
+                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform bg-secondary text-white p-1 rounded-full">expand_more</span>
+</summary>
+<div class="px-8 pb-8 text-slate-600 dark:text-slate-400 font-medium">
+                    You bet! Every paper is a high-quality PDF. Print them out, get your favorite pen, and practice just like a real exam. It's the best way to train your brain!
+                </div>
+</details>
+<details class="group bg-background-light dark:bg-slate-800 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+<summary class="flex justify-between items-center p-8 cursor-pointer font-bold list-none text-lg">
+                    What if we get stuck on a hard level?
+                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform bg-accent text-white p-1 rounded-full">expand_more</span>
+</summary>
+<div class="px-8 pb-8 text-slate-600 dark:text-slate-400 font-medium">
+                    Don't worry, every explorer gets stuck sometimes! Our Scholar plan gives you access to Expert Help. Just send a flare, and our teachers will guide you through the solution!
+                </div>
+</details>
+</div>
+</div>
+</section>
+<footer class="bg-slate-900 text-slate-300 py-20 border-t-8 border-primary">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
+<div class="col-span-1 md:col-span-1">
+<div class="flex items-center gap-3 mb-8">
+<div class="bg-primary p-2 rounded-xl rotate-[-3deg] shadow-lg">
+<span class="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
+</div>
+<span class="text-2xl font-bold tracking-tight text-white font-adventure">Papr<span class="text-primary">IQ</span></span>
+</div>
+<p class="text-sm leading-relaxed mb-8 font-medium">Empowering India's next generation of thinkers, leaders, and explorers with the most engaging practice materials. Let's make learning fun together!</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-secondary hover:text-white transition-all" href="#"><span class="material-symbols-outlined">star_rate</span></a>
+<a class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-accent hover:text-white transition-all" href="#"><span class="material-symbols-outlined">rocket</span></a>
+<a class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-adventure-purple hover:text-white transition-all" href="#"><span class="material-symbols-outlined">play_circle</span></a>
+</div>
+</div>
+<div>
+<h5 class="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Map Routes</h5>
+<ul class="space-y-4 text-sm font-medium">
+<li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-xs">chevron_right</span> Class 10 CBSE Quests</a></li>
+<li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-xs">chevron_right</span> ICSE Science Lab</a></li>
+<li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-xs">chevron_right</span> Math Adventure Notes</a></li>
+<li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-xs">chevron_right</span> New Syllabus Updates</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Our Base</h5>
+<ul class="space-y-4 text-sm font-medium">
+<li><a class="hover:text-primary transition-colors" href="#">Our Mission</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Join the Crew</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Explorer Privacy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Quest Rules</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Help Signal</h5>
+<ul class="space-y-4 text-sm font-medium">
+<li><a class="hover:text-primary transition-colors" href="#">Support HQ</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Talk to a Guide</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Scholarships</a></li>
+</ul>
+</div>
+</div>
+<div class="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold text-slate-500">
+<p>© 2024 PaprIQ Magic Labs Pvt Ltd. Adventure Awaits!</p>
+<p class="flex items-center gap-2">Built with <span class="material-symbols-outlined text-secondary text-sm fill-1">favorite</span> for incredible Indian students</p>
+</div>
+</div>
+</footer>
+
+<script>
+// ==================== MOBILE MENU ====================
+const nav = document.querySelector('nav .max-w-7xl > div');
+const navLinks = document.querySelector('nav .hidden.md\\:flex');
+
+// Create hamburger menu button
+const hamburgerBtn = document.createElement('button');
+hamburgerBtn.className = 'md:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
+hamburgerBtn.innerHTML = '<span class="material-symbols-outlined text-2xl">menu</span>';
+hamburgerBtn.id = 'hamburger-btn';
+
+// Create mobile menu
+const mobileMenu = document.createElement('div');
+mobileMenu.id = 'mobile-menu';
+mobileMenu.className = 'hidden md:hidden absolute top-full left-0 w-full bg-white dark:bg-slate-900 border-b-4 border-primary/20 shadow-xl p-6 space-y-4';
+mobileMenu.innerHTML = `
+    <a class="block text-lg font-bold hover:text-secondary transition-colors py-2" href="#subjects">Magic Subjects</a>
+    <a class="block text-lg font-bold hover:text-secondary transition-colors py-2" href="#classes">All Classes</a>
+    <a class="block text-lg font-bold hover:text-secondary transition-colors py-2" href="#boards">Boards</a>
+    <a class="block text-lg font-bold hover:text-secondary transition-colors py-2" href="#pricing">Fun Plans</a>
+`;
+
+// Insert hamburger button and mobile menu
+const navContainer = document.querySelector('nav .flex.items-center.gap-4');
+navContainer.insertBefore(hamburgerBtn, navContainer.firstChild);
+document.querySelector('nav').appendChild(mobileMenu);
+
+// Toggle mobile menu
+hamburgerBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+    const icon = hamburgerBtn.querySelector('span');
+    icon.textContent = mobileMenu.classList.contains('hidden') ? 'menu' : 'close';
+});
+
+// Close mobile menu on link click
+mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        hamburgerBtn.querySelector('span').textContent = 'menu';
+    });
+});
+
+// ==================== SMOOTH SCROLLING ====================
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// ==================== BOARD SELECTOR ====================
+const boardButtons = document.querySelectorAll('.bg-slate-100.dark\\:bg-slate-900.p-2.rounded-2xl button, .flex.bg-slate-100 button');
+let selectedBoard = 'CBSE';
+
+document.querySelectorAll('.flex.bg-slate-100 button, .bg-slate-100.dark\\:bg-slate-900.p-2 button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Remove active state from all buttons in this group
+        this.parentElement.querySelectorAll('button').forEach(b => {
+            b.classList.remove('bg-secondary', 'text-white', 'shadow-md');
+            b.classList.add('text-slate-500');
+        });
+
+        // Add active state to clicked button
+        this.classList.add('bg-secondary', 'text-white', 'shadow-md');
+        this.classList.remove('text-slate-500');
+
+        selectedBoard = this.textContent.trim();
+        showNotification(`${selectedBoard} board selected!`, 'success');
+    });
+});
+
+// ==================== SUBJECT CHIPS ====================
+const subjectChips = document.querySelectorAll('.flex.gap-3.overflow-x-auto span');
+let selectedSubjects = ['Class 10'];
+
+subjectChips.forEach(chip => {
+    chip.addEventListener('click', function() {
+        const isActive = this.classList.contains('bg-accent/20');
+
+        if (isActive) {
+            // Deactivate
+            this.classList.remove('bg-accent/20', 'border-2', 'border-accent', 'text-accent-700');
+            this.classList.add('bg-slate-100', 'dark:bg-slate-900');
+            selectedSubjects = selectedSubjects.filter(s => s !== this.textContent.trim());
+        } else {
+            // Activate
+            this.classList.add('bg-accent/20', 'border-2', 'border-accent', 'text-accent-700');
+            this.classList.remove('bg-slate-100', 'dark:bg-slate-900');
+            selectedSubjects.push(this.textContent.trim());
+        }
+    });
+});
+
+// Find My Quest button
+const findQuestBtn = document.querySelector('button:has-text("Find My Quest")') ||
+    Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Find My Quest'));
+if (findQuestBtn) {
+    findQuestBtn.addEventListener('click', () => {
+        if (selectedSubjects.length === 0) {
+            showNotification('Please select at least one subject!', 'warning');
+        } else {
+            showNotification(`Searching ${selectedBoard} resources for: ${selectedSubjects.join(', ')}`, 'success');
+        }
+    });
+}
+
+// ==================== FORM VALIDATION & SUBMISSION ====================
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Main hero form
+const heroForm = document.querySelector('.bg-white.dark\\:bg-slate-800.p-8.rounded-\\[2\\.5rem\\]');
+if (heroForm) {
+    const nameInput = heroForm.querySelector('input[type="text"]');
+    const classSelect = heroForm.querySelector('select');
+    const emailInput = heroForm.querySelector('input[type="email"]');
+    const submitBtn = heroForm.querySelector('button');
+
+    submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        const name = nameInput.value.trim();
+        const selectedClass = classSelect.value;
+        const email = emailInput.value.trim();
+
+        // Validation
+        if (!name) {
+            showNotification('Please enter the explorer\'s name!', 'error');
+            nameInput.focus();
+            return;
+        }
+
+        if (selectedClass === 'Which grade?') {
+            showNotification('Please select a class!', 'error');
+            classSelect.focus();
+            return;
+        }
+
+        if (!email || !validateEmail(email)) {
+            showNotification('Please enter a valid email address!', 'error');
+            emailInput.focus();
+            return;
+        }
+
+        // Success
+        submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Launching...';
+        submitBtn.disabled = true;
+
+        setTimeout(() => {
+            showNotification(`Welcome aboard, ${name}! Check your email for the adventure map! 🚀`, 'success');
+            submitBtn.innerHTML = 'Adventure Launched! <span class="material-symbols-outlined">check_circle</span>';
+
+            // Reset form after delay
+            setTimeout(() => {
+                nameInput.value = '';
+                classSelect.selectedIndex = 0;
+                emailInput.value = '';
+                submitBtn.innerHTML = 'Launch Adventure! <span class="material-symbols-outlined">rocket_launch</span>';
+                submitBtn.disabled = false;
+            }, 3000);
+        }, 1500);
+    });
+}
+
+// Countdown section email form
+const countdownSection = document.querySelector('.bg-secondary.py-20');
+if (countdownSection) {
+    const emailInput = countdownSection.querySelector('input[type="email"]');
+    const submitBtn = countdownSection.querySelector('button');
+
+    submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const email = emailInput.value.trim();
+
+        if (!email || !validateEmail(email)) {
+            showNotification('Please enter a valid email to claim your bundle!', 'error');
+            emailInput.focus();
+            return;
+        }
+
+        submitBtn.innerHTML = 'Sending...';
+        submitBtn.disabled = true;
+
+        setTimeout(() => {
+            showNotification('Bundle claimed! Check your inbox for the Top 100 Secret Questions PDF! 🎁', 'success');
+            submitBtn.innerHTML = 'Claimed! ✓';
+            emailInput.value = '';
+
+            setTimeout(() => {
+                submitBtn.innerHTML = 'Gimme My Bundle!';
+                submitBtn.disabled = false;
+            }, 3000);
+        }, 1500);
+    });
+}
+
+// ==================== COUNTDOWN TIMER ====================
+const countdownMinutes = document.querySelector('.bg-secondary.py-20 .bg-white.text-secondary:first-child span:first-child');
+const countdownSeconds = document.querySelector('.bg-secondary.py-20 .bg-white.text-secondary:last-child span:first-child');
+
+if (countdownMinutes && countdownSeconds) {
+    let totalSeconds = 14 * 60 + 52; // 14:52
+
+    const updateCountdown = () => {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        countdownMinutes.textContent = minutes.toString().padStart(2, '0');
+        countdownSeconds.textContent = seconds.toString().padStart(2, '0');
+
+        if (totalSeconds > 0) {
+            totalSeconds--;
+        } else {
+            // Reset timer for demo purposes
+            totalSeconds = 15 * 60;
+        }
+    };
+
+    setInterval(updateCountdown, 1000);
+}
+
+// ==================== PRICING BUTTONS ====================
+const pricingButtons = document.querySelectorAll('#pricing button');
+pricingButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+        const planName = this.closest('.bg-white, .dark\\:bg-slate-800')?.querySelector('h4')?.textContent || 'Selected Plan';
+
+        if (planName.includes('Starter')) {
+            showNotification('Welcome to Starter Scout! Creating your free account...', 'success');
+        } else if (planName.includes('Master')) {
+            showNotification('Great choice! Starting your 7-day trial for Master Scholar...', 'success');
+        } else if (planName.includes('Adventure')) {
+            showNotification('Perfect for families! Setting up Adventure Team plan...', 'success');
+        }
+
+        // Simulate redirect
+        this.innerHTML = 'Redirecting...';
+        setTimeout(() => {
+            this.innerHTML = this.textContent;
+        }, 2000);
+    });
+});
+
+// ==================== FREE GIFT BUTTON ====================
+const freeGiftBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Claim Free Gift'));
+if (freeGiftBtn) {
+    freeGiftBtn.addEventListener('click', () => {
+        showNotification('Scroll down to claim your Golden Bundle with exclusive exam questions! 🎁', 'info');
+        document.querySelector('.bg-secondary.py-20').scrollIntoView({ behavior: 'smooth' });
+    });
+}
+
+// ==================== NOTIFICATION SYSTEM ====================
+function showNotification(message, type = 'info') {
+    // Remove existing notification
+    const existing = document.querySelector('.notification-toast');
+    if (existing) existing.remove();
+
+    const colors = {
+        success: 'bg-accent text-white',
+        error: 'bg-secondary text-white',
+        warning: 'bg-primary text-slate-900',
+        info: 'bg-adventure-purple text-white'
+    };
+
+    const icons = {
+        success: 'check_circle',
+        error: 'error',
+        warning: 'warning',
+        info: 'info'
+    };
+
+    const notification = document.createElement('div');
+    notification.className = `notification-toast fixed top-24 right-4 z-[100] ${colors[type]} px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm max-w-md transform translate-x-full transition-transform duration-300`;
+    notification.innerHTML = `
+        <span class="material-symbols-outlined">${icons[type]}</span>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 10);
+
+    // Animate out
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+// ==================== FAQ SMOOTH ANIMATIONS ====================
+document.querySelectorAll('details').forEach(detail => {
+    detail.addEventListener('toggle', function() {
+        if (this.open) {
+            const content = this.querySelector('div');
+            content.style.maxHeight = '0';
+            content.style.overflow = 'hidden';
+            content.style.transition = 'max-height 0.3s ease';
+            setTimeout(() => {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }, 10);
+        }
+    });
+});
+
+// ==================== SCROLL ANIMATIONS ====================
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('animate-fade-in');
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Add scroll animations to cards and sections
+document.querySelectorAll('section > div > div, .grid > div').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+});
+
+// ==================== STATS COUNTER ANIMATION ====================
+const statsSection = document.querySelector('.bg-slate-900.py-16');
+let statsAnimated = false;
+
+const animateStats = () => {
+    if (statsAnimated) return;
+    statsAnimated = true;
+
+    const stats = statsSection.querySelectorAll('.text-5xl');
+    const targets = [50, 10, 10, 98]; // 50k, 10k, 3-10 (skip), 98%
+
+    stats.forEach((stat, i) => {
+        const text = stat.textContent;
+        if (text.includes('-')) return; // Skip "3-10"
+
+        const target = parseInt(text);
+        const suffix = text.includes('k') ? 'k+' : text.includes('%') ? '%' : '+';
+        let current = 0;
+        const increment = target / 50;
+
+        const counter = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                stat.textContent = target + suffix;
+                clearInterval(counter);
+            } else {
+                stat.textContent = Math.floor(current) + suffix;
+            }
+        }, 30);
+    });
+};
+
+const statsObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+        animateStats();
+    }
+}, { threshold: 0.5 });
+
+if (statsSection) statsObserver.observe(statsSection);
+
+console.log('🚀 EEC Landing Page initialized successfully!');
+</script>
+
+</body></html>

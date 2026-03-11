@@ -1,10 +1,11 @@
 // src/components/Login.jsx
-import React, { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 
 const LS_REMEMBER_KEY = "eecRemember";
 const LS_LOGIN_ID_KEY = "eecLoginId";
+
+const inputCls =
+  "w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15";
 
 export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
   const [showPwd, setShowPwd] = useState(false);
@@ -14,14 +15,10 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
 
-  // Load remembered email/phone on mount
   useEffect(() => {
-    const savedRemember = localStorage.getItem(LS_REMEMBER_KEY) === "1";
-    setRemember(savedRemember);
-    if (savedRemember) {
-      const savedId = localStorage.getItem(LS_LOGIN_ID_KEY) || "";
-      setEmailOrPhone(savedId);
-    }
+    const saved = localStorage.getItem(LS_REMEMBER_KEY) === "1";
+    setRemember(saved);
+    if (saved) setEmailOrPhone(localStorage.getItem(LS_LOGIN_ID_KEY) || "");
   }, []);
 
   async function handleSubmit(e) {
@@ -29,10 +26,7 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
     setError("");
     setLoading(true);
     try {
-      // Call parent submit (do your API there)
       await onSubmit?.({ emailOrPhone, password, remember });
-
-      // Persist remember choice + identifier
       if (remember) {
         localStorage.setItem(LS_REMEMBER_KEY, "1");
         localStorage.setItem(LS_LOGIN_ID_KEY, emailOrPhone);
@@ -42,50 +36,71 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
       }
     } catch (err) {
       setError(err?.message || "Login failed. Please try again.");
-      return;
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-3xl border border-blue-100/80 bg-white/90 shadow-[0_24px_80px_rgba(2,32,71,0.28)] backdrop-blur-md">
-      {/* top gradient bar */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300" />
+    <>
+      {/* ── Font + icon import ── */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@400;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+      `}</style>
 
-      <div className="p-6">
-        {/* badge */}
-        <div className="mb-4 flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-semibold text-blue-950 shadow">
-            Welcome back
+      <div
+        className="relative w-full rounded-[2.5rem] bg-white p-8 shadow-2xl border-4"
+        style={{ borderColor: "rgba(255,210,63,0.3)" }}
+      >
+        {/* Sparkle badge — top-right, rotated, coral */}
+        <div className="absolute -top-6 -right-6 hidden sm:flex items-center justify-center rounded-full bg-[#F4736E] p-4 text-white shadow-lg rotate-12">
+          <span
+            className="material-symbols-outlined text-3xl"
+            style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
+          >
+            waving_hand
           </span>
-          <span className="text-[11px] text-blue-900/60">Secure sign-in</span>
         </div>
 
-        {/* title */}
-        <h3 className="text-xl font-bold leading-6 text-blue-950">Login</h3>
-        <p className="mt-1 text-xs text-blue-900/70">
-          Use your email or mobile number to continue.
-        </p>
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition"
+        >
+          <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>close</span>
+        </button>
 
-        {/* error */}
-        {error ? (
-          <div
-            className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
-            role="alert"
+        {/* Header */}
+        <div className="mb-6">
+          {/* <div className="inline-flex items-center gap-2 rounded-full border-2 border-[#4ECDC4] bg-[#4ECDC4]/20 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1B8A84] mb-4">
+            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>star</span>
+            Welcome Back, Explorer!
+          </div> */}
+          <h3
+            className="text-2xl font-bold text-slate-800"
+            style={{ fontFamily: "'Balsamiq Sans', cursive" }}
           >
+            Login to Your Adventure!
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Use your email or mobile number to continue.
+          </p>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-4 rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-600">
             {error}
           </div>
-        ) : null}
+        )}
 
-        {/* form */}
-        <form className="mt-4 grid gap-3" onSubmit={handleSubmit}>
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-blue-900/80">
-              Email or Mobile
-            </span>
+        {/* Form */}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-500 ml-2">Email or Mobile</label>
             <input
-              className="input"
+              className={inputCls}
               placeholder="e.g. alex@mail.com"
               value={emailOrPhone}
               onChange={(e) => setEmailOrPhone(e.target.value)}
@@ -94,15 +109,13 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
               inputMode="email"
               autoComplete="username"
             />
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-blue-900/80">
-              Password
-            </span>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-500 ml-2">Password</label>
             <div className="relative">
               <input
-                className="input pr-10"
+                className={inputCls + " pr-12"}
                 type={showPwd ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
@@ -114,67 +127,70 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
               <button
                 type="button"
                 onClick={() => setShowPwd((s) => !s)}
-                className="absolute inset-y-0 right-2 my-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-900/70 hover:bg-blue-50"
+                className="absolute inset-y-0 right-3 my-auto flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 transition"
                 aria-label={showPwd ? "Hide password" : "Show password"}
               >
-                {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <span
+                  className="material-symbols-outlined text-xl"
+                  style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
+                >
+                  {showPwd ? "visibility_off" : "visibility"}
+                </span>
               </button>
             </div>
-          </label>
+          </div>
 
-          <div className="mt-1 flex items-center justify-between">
-            <label className="flex select-none items-center gap-2 text-xs text-blue-900/80">
+          <div className="flex items-center justify-between">
+            <label className="flex cursor-pointer select-none items-center gap-2 text-xs text-slate-600">
               <input
                 type="checkbox"
-                className="h-3.5 w-3.5 accent-yellow-400"
+                className="h-4 w-4 rounded accent-[#F4736E]"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
               />
               Remember me
             </label>
-
             <button
               type="button"
-              className="text-xs font-semibold text-blue-700 hover:underline"
+              className="text-xs font-bold text-[#F4736E] hover:underline"
               onClick={onForgot}
             >
               Forgot password?
             </button>
           </div>
 
+          {/* Login button — matches code.html launch button style */}
           <button
             type="submit"
             disabled={loading}
-            className="mt-1 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow-md ring-1 ring-yellow-300/60 transition hover:shadow-lg hover:saturate-[1.05] active:scale-[.98] disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none disabled:opacity-60"
           >
-            {loading ? "Signing in..." : "Login"}
+            {loading ? "Signing in…" : "Login to Adventure"}
+            {!loading && (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
+              >
+                login
+              </span>
+            )}
           </button>
         </form>
 
         {/* Sign up link */}
-        <div className="mt-6 text-center border-t border-blue-100 pt-4">
-          <p className="text-xs text-blue-900/70">
+        <div className="mt-6 border-t border-slate-100 pt-4 text-center">
+          <p className="text-xs text-slate-500">
             Don't have an account?{" "}
             <button
               type="button"
               onClick={onSignUp}
-              className="font-semibold text-blue-950 hover:text-yellow-600 transition-colors underline decoration-dotted underline-offset-2"
+              className="font-bold text-[#F4736E] hover:underline"
             >
-              Sign up here
+              Join the Adventure!
             </button>
           </p>
         </div>
-
-        {/* close button */}
-        <button
-          type="button"
-          aria-label="Close login"
-          onClick={onClose}
-          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-100/70 bg-white/80 text-blue-900/80 shadow-sm backdrop-blur hover:bg-white"
-        >
-          ×
-        </button>
       </div>
-    </div>
+    </>
   );
 }

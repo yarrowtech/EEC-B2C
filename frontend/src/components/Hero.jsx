@@ -13,6 +13,7 @@ function CustomSelect({
   labelProp = (o) => (typeof o === "string" ? o : o.label ?? o.value),
   searchable = false,
   searchPlaceholder = "Search…",
+  btnClass,      // ← optional override for trigger button
 }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -81,7 +82,7 @@ function CustomSelect({
         ref={btnRef}
         disabled={disabled}
         onClick={() => !disabled && setOpen((s) => !s)}
-        className={[
+        className={btnClass ?? [
           "w-full rounded-2xl border px-4 py-2 text-sm text-blue-950",
           "bg-white/90 shadow-sm outline-none transition",
           "border-blue-200 focus:ring-2 focus:ring-yellow-300",
@@ -174,111 +175,116 @@ const Hero = () => {
 
   const modalCardRef = useRef(null);
 
-  // Signup submit states (existing)
   const [signSubmitting, setSignSubmitting] = useState(false);
-  const [signError, setSignError] = useState("");
   const [classes, setClasses] = useState([]);
   const [boards, setBoards] = useState([]);
-  // Confirm modal state (NEW)
-  const [showConfirmSignup, setShowConfirmSignup] = useState(false);
-  const pendingFormRef = useRef(null);
 
+  // ── Stepper modal state ──
+  const [showStepper, setShowStepper] = useState(false);
+  const [basicInfo, setBasicInfo] = useState({ name: "", klass: "", email: "" });
+  const [stepIdx, setStepIdx] = useState(0);
+  const [stepValues, setStepValues] = useState({ board: "", mobile: "", state: "", password: "", confirm: "" });
+  const [stepError, setStepError] = useState("");
+  const [slideDir, setSlideDir] = useState("forward");
+  const [stepDone, setStepDone] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  const STEPS = [
+    { key: "board",    icon: "menu_book",    question: "What is your study board?",  hint: "We'll personalise your content based on your board.", type: "select" },
+    { key: "mobile",   icon: "smartphone",   question: "What's your mobile number?", hint: "We'll send you important updates here.",               type: "tel",           placeholder: "e.g. 9876543210" },
+    { key: "state",    icon: "location_on",  question: "Which state are you from?",  hint: "Helps us match your regional curriculum.",             type: "select-search" },
+    { key: "password", icon: "lock",         question: "Create a secret password!",  hint: "Make it strong to protect your adventure.",            type: "password",      placeholder: "Min. 8 characters" },
+    { key: "confirm",  icon: "check_circle", question: "Confirm your password",      hint: "Type it once more to be sure.",                        type: "password",      placeholder: "Re-enter password" },
+  ];
 
   useEffect(() => {
     async function loadMeta() {
       try {
         const [clsRes, brdRes] = await Promise.all([
           fetch(`${API_BASE}/api/classes`),
-          fetch(`${API_BASE}/api/boards`)
+          fetch(`${API_BASE}/api/boards`),
         ]);
-
         const clsData = await clsRes.json();
         const brdData = await brdRes.json();
-
         setClasses(Array.isArray(clsData) ? clsData : []);
         setBoards(Array.isArray(brdData) ? brdData : []);
       } catch (err) {
         console.error("Failed to load class/board", err);
       }
     }
-
     loadMeta();
   }, []);
 
-
-  function handleSignupIntercept(e) {
+  // Basic 3-field form → open stepper
+  function handleBasicSubmit(e) {
     e.preventDefault();
-    // pendingFormRef.current = e;
-    pendingFormRef.current = e.currentTarget; // ✅ store form, NOT event
-    setShowConfirmSignup(true);
+    const form = e.currentTarget;
+    const name = form.elements["name"]?.value?.trim();
+    const klass = form.elements["class"]?.value;
+    const email = form.elements["email"]?.value?.trim().toLowerCase();
+    if (!name) { toast.error("Please enter your name"); return; }
+    if (!klass) { toast.error("Please choose your class"); return; }
+    if (!email) { toast.error("Please enter your email"); return; }
+    setBasicInfo({ name, klass, email });
+    setStepValues({ board: "", mobile: "", state: "", password: "", confirm: "" });
+    setStepIdx(0);
+    setStepError("");
+    setStepDone(false);
+    setShowStepper(true);
   }
 
+  function handleStepNext() {
+    const step = STEPS[stepIdx];
+    const val = stepValues[step.key];
+    if (!val) { setStepError("Please fill in this field to continue."); return; }
+    if (step.key === "confirm" && val !== stepValues.password) { setStepError("Passwords don't match. Try again!"); return; }
+    setStepError("");
+    if (stepIdx < STEPS.length - 1) {
+      setSlideDir("forward");
+      setStepIdx((i) => i + 1);
+    } else {
+      handleFinalSubmit();
+    }
+  }
 
-  async function handleSignupSubmit(e) {
-    e.preventDefault();
-    setSignError("");
+  function handleStepBack() {
+    if (stepIdx === 0) { setShowStepper(false); return; }
+    setStepError("");
+    setSlideDir("back");
+    setStepIdx((i) => i - 1);
+  }
+
+  async function handleFinalSubmit() {
     setSignSubmitting(true);
-
-    const form = e.currentTarget;
-    const name = form.name?.value.trim();
-    // accept either "phone" or "mobile" without changing your markup elsewhere
-    const phone = (form.phone?.value || form.mobile?.value || "").trim();
-    const email = (form.email?.value || "").trim().toLowerCase();
-    const klass = form.elements["class"]?.value || "";    // <-- NEW (safe access)
-    const state = form.elements["state"]?.value || "";    // <-- NEW
-    const referral = form.elements["referral"]?.value || ""; // <-- NEW
-    const password = form.password?.value;
-    const confirm = form.confirm?.value;
-    const board = form.elements["board"]?.value || "";
-
-    if (!name || !email || !password) {
-      const msg = "Name, Email and Password are required.";
-      setSignError(msg);
-      setSignSubmitting(false);
-      toast.error(msg);
-      return;
-    }
-    if (password !== confirm) {
-      const msg = "Passwords do not match.";
-      setSignError(msg);
-      setSignSubmitting(false);
-      toast.error(msg);
-      return;
-    }
-
     try {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password, class: klass, state, referral, board })
+        body: JSON.stringify({
+          name: basicInfo.name,
+          email: basicInfo.email,
+          phone: stepValues.mobile,
+          password: stepValues.password,
+          class: basicInfo.klass,
+          state: stepValues.state,
+          board: stepValues.board,
+        }),
       });
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Registration failed");
-      }
-
-      // persist session (your backend returns token + user)
+      if (!res.ok) throw new Error(data?.message || "Registration failed");
       localStorage.setItem("jwt", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Clear all fields
-      form.reset();
-
-      // Success toast
-      toast.success(`Welcome, ${data?.user?.name || "User"}! Account created successfully.`);
+      setStepDone(true);
+      toast.success(`Welcome, ${data?.user?.name || "Explorer"}! 🎉`);
       setTimeout(() => {
+        setShowStepper(false);
         window.dispatchEvent(new Event("eec:open-login"));
-      }, 500);
-
-      // Optional: notify app-wide listeners
+      }, 1800);
       window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "register", user: data.user } }));
     } catch (err) {
-      const msg = err?.message || "Registration failed";
-      setSignError(msg);
-      toast.error(msg);
+      setStepError(err?.message || "Registration failed");
+      toast.error(err?.message || "Registration failed");
     } finally {
       setSignSubmitting(false);
     }
@@ -367,14 +373,6 @@ const Hero = () => {
   };
 
   // Open login via global event (intentionally disabled here)
-  useEffect(() => {
-    const openLogin = () => {
-      setShowForgot(false);
-      setShowLogin(true);
-    };
-    // window.addEventListener("eec:open-login", openLogin);
-    // return () => window.removeEventListener("eec:open-login", openLogin);
-  }, []);
 
   useEffect(() => {
     async function loadHeroSettings() {
@@ -422,236 +420,169 @@ const Hero = () => {
   }
 
 
-  return (
-    <section className="relative overflow-hidden">
-      {/* ===== Background image with rich overlay ===== */}
-      <img
-        // src="/hero.jpeg"
-        src="/bg.png"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      {/* Black tint */}
-      <div className="absolute inset-0 bg-blue-950/50" />
-      {/* Gradient sweep */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-blue-800/20 to-amber-200/10 mix-blend-multiply" />
-      {/* Soft shapes */}
-      <div className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-yellow-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-sky-300/20 blur-3xl" />
 
-      {/* ===== Content ===== */}
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-20 md:grid-cols-2 md:py-24">
-        {/* Left: Headline + CTA */}
-        <div className="relative z-10 text-white">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold backdrop-blur">
-            <span className="inline-block h-2 w-2 rounded-full bg-green-400 shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" />
-            New: 5 FREE stages for every new student
+  // Inputs — match code.html exactly: rounded-2xl, border-2, bg-slate-50
+  const inputCls =
+    "w-full rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15";
+
+  const selectBtnCls =
+    "w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
+
+  return (
+    <section className="relative overflow-hidden bg-[#FEF4E8]" style={{ minHeight: "calc(100vh - 60px)" }}>
+      {/* ── Decorative blobs ── */}
+      <div className="pointer-events-none absolute -left-32 top-10 h-[500px] w-[500px] rounded-full bg-[#F4736E]/8 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 bottom-0 h-[600px] w-[600px] rounded-full bg-yellow-300/15 blur-3xl" />
+
+      {/* ── Floating rocket decor ── */}
+      <div className="pointer-events-none absolute left-8 top-32 hidden opacity-15 md:block">
+        <span className="material-symbols-outlined text-[80px] text-[#F4736E]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}>rocket_launch</span>
+      </div>
+
+      {/* ===== Main grid ===== */}
+      <div className="relative mx-auto grid min-h-[calc(100vh-60px)] max-w-[1400px] grid-cols-1 items-center gap-8 px-8 py-12 md:grid-cols-2 md:py-16 lg:px-16 xl:px-24">
+
+        {/* ── LEFT: Heading + Floating form card ── */}
+        <div className="flex flex-col gap-8">
+
+          {/* Badge — matches code.html: accent bg, border, celebration icon */}
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border-2 border-[#4ECDC4] bg-[#4ECDC4]/20 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1B8A84]">
+            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>celebration</span>
+            50,000+ Happy Little Explorers!
           </div>
-          {/* <h1 className="mt-4 text-4xl font-extrabold leading-[1.1] tracking-tight drop-shadow-sm md:text-6xl">
-            Personalized learning that <span className="text-yellow-300">adapts</span> to you
-          </h1> */}
-          {hero && (
-            <h1 className="mt-4 text-4xl font-extrabold leading-[1.1] tracking-tight drop-shadow-sm md:text-6xl">
-              {hero.heading.split(" ").map((word, i) =>
-                i === hero.heading.split(" ").length - 1 ? (
-                  <span key={i} className="text-yellow-300"> {word} </span>
-                ) : (
-                  " " + word
-                )
-              )}
+
+          {/* Heading — large like screenshot */}
+          {hero ? (
+            <h1 className="text-6xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] md:text-2xl lg:text-7xl">
+              {(() => {
+                const words = hero.heading.split(" ");
+                const half = Math.ceil(words.length / 2);
+                return (
+                  <>
+                    {words.slice(0, half).join(" ")}
+                    <br />
+                    <span className="text-[#F4736E]">{words.slice(half).join(" ")}</span>
+                  </>
+                );
+              })()}
+            </h1>
+          ) : (
+            <h1 className="text-6xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] md:text-7xl lg:text-8xl">
+              Make Learning
+              <br />
+              <span className="text-[#F4736E]">An Adventure!</span>
             </h1>
           )}
 
-          {/* <p className="mt-3 max-w-xl text-blue-100/90">
-            AI-guided study paths, concept videos, and gamified progress —
-            crafted to boost focus, reduce stress, and improve outcomes.
-          </p> */}
-          {hero && (
-            <p className="mt-3 max-w-xl text-blue-100/90">{hero.paragraph}</p>
-          )}
+          {/* Subtitle */}
+          <p className="max-w-lg text-lg md:text-2xl leading-relaxed text-slate-500">
+            {hero?.paragraph ||
+              "Turn study time into playtime! Master Class 3–12 exams with fun, colorful worksheets and exciting challenges designed for curious minds."}
+          </p>
 
+          {/* ── Floating signup card (3-field, matches screenshot) ── */}
+          <div id="hero-signup" className="relative">
+            {/* Sparkle — exact copy from code.html: single div, p-4, rotate-12 */}
+            <div className="absolute -top-6 -right-6 z-10 hidden sm:flex items-center justify-center rounded-full bg-[#F4736E] p-4 text-white shadow-lg rotate-12">
+              <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>magic_button</span>
+            </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                window.dispatchEvent(new Event("eec:open-login"))
-              }
-              className="rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-400 px-5 py-2 text-sm font-semibold text-blue-950 shadow-md ring-1 ring-yellow-300/60 transition hover:shadow-lg hover:saturate-[1.1] active:scale-[.98]"
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const user = JSON.parse(localStorage.getItem("user") || "null");
-                if (user && localStorage.getItem("jwt")) {
-                  // User is logged in, go to syllabus page
-                  window.location.href = "/dashboard/syllabus";
-                } else {
-                  // User not logged in, store intended redirect and show login modal
-                  sessionStorage.setItem("redirectAfterLogin", "/dashboard/syllabus");
-                  window.dispatchEvent(new Event("eec:open-login"));
-                }
-              }}
-              className="rounded-2xl border border-white/40 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20 active:scale-[.98]"
-            >
-              Try Outs
-            </button>
-            {/* <a
-              href="#signup"
-              className="rounded-2xl border border-white/40 bg-white/10 px-5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
-              onClick={(e) => {
-                e.preventDefault();
-                document
-                  .getElementById("hero-signup")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-            >
-              Create free account
-            </a> */}
-          </div>
+            {/* Card — exact: rounded-[2.5rem] shadow-2xl border-4 border-primary/30 */}
+            <div className="rounded-[2.5rem] border-4 bg-white p-8 shadow-2xl max-w-xl"
+              style={{ borderColor: "rgba(255,210,63,0.3)" }}>
+              <h2 className="mb-6 text-2xl font-bold text-slate-800" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+                Ready to Start Your Adventure?
+              </h2>
 
-          {/* Quick chips */}
-          <div className="mt-6 flex flex-wrap gap-2 text-[11px]">
-            {[
-              "CBSE • ICSE • State Boards",
-              "Concept videos & worksheets",
-              "Parent dashboard",
-            ].map((x) => (
-              <span
-                key={x}
-                className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-blue-50 backdrop-blur"
-              >
-                {x}
-              </span>
-            ))}
+              <form onSubmit={handleBasicSubmit}>
+                {/* Row 1: Name + Class — grid, from code.html */}
+                <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 ml-2">Explorer's Name</label>
+                    <input className={inputCls} name="name" placeholder="Koushik Bala" type="text" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 ml-2">Choose Class</label>
+                    <CustomSelect
+                      name="class"
+                      placeholder="Which grade?"
+                      options={classes}
+                      valueProp={(c) => c.name}
+                      labelProp={(c) => c.name}
+                      btnClass={selectBtnCls}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Email grows, button self-end — from code.html */}
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className="grow space-y-1">
+                    <label className="text-xs font-bold text-slate-500 ml-2"> Email</label>
+                    <input
+                      className={inputCls + " w-full"}
+                      name="email"
+                      placeholder="demo@demo.com"
+                      type="email"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="self-end flex items-center justify-center gap-2 rounded-full bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none"
+                  >
+                    Launch Adventure!
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>rocket_launch</span>
+                  </button>
+                </div>
+
+                <p className="text-center text-[10px] text-slate-400 mt-4">
+                  Safe &amp; Secure • Fun Guaranteed • No Boring Stuff
+                </p>
+                <p className="text-center text-xs text-slate-500 mt-1">
+                  Already have an account?{" "}
+                  <span
+                    onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
+                    className="cursor-pointer font-bold text-[#F4736E] hover:underline"
+                  >
+                    Login here
+                  </span>
+                </p>
+              </form>
+            </div>
           </div>
         </div>
 
-        {/* Right: Sign-up card */}
-        <div id="hero-signup" className="relative z-10 ml-0 md:ml-8">
-          <div className="w-full max-w-md rounded-3xl border border-blue-100/70 bg-white/85 p-6 shadow-[0_20px_60px_rgba(2,32,71,0.25)] backdrop-blur-md">
-            <div className="mb-3">
-              <span className="inline-block rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-semibold text-blue-950 shadow">
-                Start with 5 FREE stages
-              </span>
-              <h2 className="mt-3 text-xl font-bold leading-6 text-blue-950">
-                Sign up
-              </h2>
-              <p className="mt-1 text-xs text-blue-900/70">
-                Create your learning profile & start exploring EEC.
+        {/* ── RIGHT: Illustration card — exact structure from code.html ── */}
+        <div className="hidden md:block flex-1 relative">
+          {/* aspect-square, rounded-[3rem], overflow-hidden, border-8 border-white — exact from code.html */}
+          <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white bg-linear-to-br from-yellow-300/20 to-[#4ECDC4]/20">
+
+            {/* Center: child_care icon + caption */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+              <span
+                className="material-symbols-outlined select-none text-[#F4736E]/30 mb-4"
+                style={{ fontSize: "10rem", lineHeight: 1, fontVariationSettings: "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}
+              >child_care</span>
+              <p className="text-2xl font-bold italic text-slate-600 leading-snug" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+                Playful Illustration of<br />Happy Children Learning Together
               </p>
             </div>
 
-            <form className="grid gap-3" onSubmit={handleSignupIntercept}>
-              <input className="input" name="name" placeholder="Enter your name" />
-              <input className="input" name="mobile" placeholder="Enter your Mobile Number" />
-              <input className="input" name="email" placeholder="Email Address" />
-
-              {/* <CustomSelect
-                name="class"
-                placeholder="Select Class"
-                options={Array.from({ length: 8 }, (_, i) => {
-                  const cls = i + 3; // starts from Class 3
-                  return {
-                    value: `Class ${cls}`,
-                    label: `Class ${cls}`,
-                  };
-                })}
-              /> */}
-
-              <CustomSelect
-                name="class"
-                placeholder="Select Class"
-                options={classes}
-                valueProp={(c) => c.name}
-                labelProp={(c) => c.name}
-              />
-
-
-              {/* <CustomSelect
-                name="board"
-                placeholder="Select Board"
-                options={[
-                  "CBSE",
-                  "ICSE",
-                  // "WB Board",
-                  // "State Board"
-                ]}
-              /> */}
-
-              <CustomSelect
-                name="board"
-                placeholder="Select Board"
-                options={boards}
-                valueProp={(b) => b.name}
-                labelProp={(b) => b.name}
-              />
-
-
-
-              <CustomSelect
-                name="state"
-                placeholder={loadingStates ? "Loading states..." : "Select State"}
-                options={states}
-                disabled={loadingStates}
-                searchable
-                searchPlaceholder="Search state…"
-              />
-
-
-
-              <input className="input" name="password" type="password" placeholder="Password" />
-              <input
-                className="input"
-                type="password"
-                placeholder="Confirm Password"
-                name="confirm"
-              />
-              {/* <input className="input" name="referral" placeholder="Referral code (optional)" /> */}
-
-              {signError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  {signError}
-                </div>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={signSubmitting}
-                className="mt-1 rounded-2xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow transition hover:bg-yellow-300 active:scale-[0.99] disabled:opacity-60"
-              >
-                {signSubmitting ? "Submitting..." : "Submit"}
-              </button>
-
-              <p className="mt-1 text-center text-xs text-blue-900/80">
-                Already have an account?{" "}
-                <span
-                  onClick={() =>
-                    window.dispatchEvent(new Event("eec:open-login"))
-                  }
-                  className="cursor-pointer font-semibold text-blue-700 hover:underline"
-                >
-                  Login here
-                </span>
-              </p>
-            </form>
+            {/* Floating icon cards — INSIDE overflow-hidden, exact positions from code.html */}
+            <div className="absolute top-12 left-12 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "3s" }}>
+              <span className="material-symbols-outlined text-4xl text-[#F4736E]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>emoji_objects</span>
+            </div>
+            <div className="absolute bottom-24 right-12 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "4.5s" }}>
+              <span className="material-symbols-outlined text-4xl text-violet-500" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>cruelty_free</span>
+            </div>
+            <div className="absolute top-1/2 right-6 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "5.5s" }}>
+              <span className="material-symbols-outlined text-4xl text-[#4ECDC4]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>castle</span>
+            </div>
+            <div className="absolute bottom-12 left-20 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "4s" }}>
+              <span className="material-symbols-outlined text-4xl text-amber-400" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>palette</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ===== Wave Divider ===== */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 md:h-28">
-        <svg
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-          className="h-full w-full"
-        >
-          <path
-            fill="#ffffff"
-            d="M0,256L48,240C96,224,192,192,288,197.3C384,203,480,245,576,261.3C672,277,768,267,864,234.7C960,203,1056,149,1152,154.7C1248,160,1344,224,1392,256L1440,288V320H0Z"
-          />
-        </svg>
       </div>
 
       {/* ===== LOGIN MODAL (existing) ===== */}
@@ -812,59 +743,175 @@ const Hero = () => {
         </div>
       )}
 
-      {showConfirmSignup && (
+      {/* ===== STEPPER MODAL ===== */}
+      {showStepper && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center"
+          className="fixed inset-0 z-[70] flex items-center justify-center px-4"
           aria-modal="true"
           role="dialog"
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-blue-950/50 backdrop-blur-sm" />
+          <div
+            className="absolute inset-0 bg-[#1B1F3B]/60 backdrop-blur-sm"
+            onClick={() => !signSubmitting && setShowStepper(false)}
+          />
 
-          {/* Modal Card */}
-          <div className="relative z-[71] w-[92%] max-w-md">
-            <div className="rounded-3xl border border-blue-100/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(2,32,71,0.35)] backdrop-blur-md">
-              <h3 className="text-lg font-bold text-blue-950">
-                Confirm Your Selection
-              </h3>
+          {/* Modal card */}
+          <div className="relative z-[71] w-full max-w-sm animate-[stepperIn_300ms_cubic-bezier(0.2,0.8,0.2,1)]">
+            <div className="overflow-hidden rounded-3xl bg-[#FEF4E8] shadow-[0_32px_80px_rgba(27,31,59,0.25)]">
 
-              <p className="mt-2 text-sm text-blue-900/80">
-                You <strong>won’t be able to change your Class or Board later</strong>.
-                <br />
-                Please confirm before continuing.
-              </p>
-
-              <div className="mt-5 flex justify-end gap-3">
-                {/* Go Back */}
+              {/* Top bar */}
+              <div className="flex items-center justify-between bg-white/80 px-6 py-4 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#F4736E] text-white">
+                    <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>menu_book</span>
+                  </div>
+                  <span className="text-sm font-extrabold text-[#1B1F3B]">EEC</span>
+                </div>
+                {!stepDone && (
+                  <span className="text-xs font-bold text-slate-400">
+                    Step {stepIdx + 1} of {STEPS.length}
+                  </span>
+                )}
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowConfirmSignup(false);
-                    pendingFormRef.current = null;
-                  }}
-                  className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50"
+                  onClick={() => !signSubmitting && setShowStepper(false)}
+                  className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                 >
-                  Go Back
-                </button>
-
-                {/* Confirm */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowConfirmSignup(false);
-                    if (pendingFormRef.current) {
-                      handleSignupSubmit({
-                        preventDefault: () => { },
-                        currentTarget: pendingFormRef.current,
-                      });
-                      pendingFormRef.current = null;
-                    }
-                  }}
-                  className="rounded-xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-blue-950 shadow hover:bg-yellow-300"
-                >
-                  Confirm & Submit
+                  ✕
                 </button>
               </div>
+
+              {/* Progress dots */}
+              {!stepDone && (
+                <div className="flex items-center gap-1.5 px-6 pt-4">
+                  {STEPS.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                        i <= stepIdx ? "bg-[#F4736E]" : "bg-slate-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Step content */}
+              <div className="px-6 py-8 min-h-[260px]">
+                {stepDone ? (
+                  /* ── Success state ── */
+                  <div className="flex flex-col items-center gap-4 text-center animate-[stepperIn_400ms_ease]">
+                    <span className="material-symbols-outlined text-[72px] text-[#F4736E]" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48" }}>celebration</span>
+                    <h3 className="text-2xl font-extrabold text-[#1B1F3B]">Adventure Begins!</h3>
+                    <p className="text-sm text-slate-500">
+                      Welcome, <strong>{basicInfo.name}</strong>!<br />
+                      Your account is ready. Logging you in…
+                    </p>
+                  </div>
+                ) : (
+                  /* ── Current step ── */
+                  <div
+                    key={`step-${stepIdx}-${slideDir}`}
+                    className={`animate-[${slideDir === "forward" ? "slideInRight" : "slideInLeft"}_300ms_ease]`}
+                  >
+                    <span
+                      className="material-symbols-outlined mb-4 text-[52px] text-[#F4736E]"
+                      style={{ fontVariationSettings: "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}
+                    >{STEPS[stepIdx].icon}</span>
+                    <h3 className="text-2xl font-extrabold leading-tight text-[#1B1F3B]">
+                      {STEPS[stepIdx].question}
+                    </h3>
+                    <p className="mt-1.5 mb-5 text-sm text-slate-500">{STEPS[stepIdx].hint}</p>
+
+                    {/* Input for this step */}
+                    {STEPS[stepIdx].type === "select" ? (
+                      /* Board — controlled <select> so stepValues updates directly */
+                      <select
+                        key="board-select"
+                        autoFocus
+                        value={stepValues.board}
+                        onChange={(e) => { setStepError(""); setStepValues((p) => ({ ...p, board: e.target.value })); }}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
+                      >
+                        <option value="">Choose your board…</option>
+                        {boards.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
+                      </select>
+                    ) : STEPS[stepIdx].type === "select-search" ? (
+                      /* State — controlled <select> for reliable dropdown display */
+                      <select
+                        key="state-select"
+                        autoFocus
+                        value={stepValues.state}
+                        onChange={(e) => { setStepError(""); setStepValues((p) => ({ ...p, state: e.target.value })); }}
+                        disabled={loadingStates}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      >
+                        <option value="">
+                          {loadingStates ? "Loading states..." : "Choose your state..."}
+                        </option>
+                        {states.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        key={`input-${stepIdx}`}
+                        autoFocus
+                        type={STEPS[stepIdx].type}
+                        placeholder={STEPS[stepIdx].placeholder}
+                        value={stepValues[STEPS[stepIdx].key]}
+                        onChange={(e) => {
+                          setStepError("");
+                          setStepValues((prev) => ({ ...prev, [STEPS[stepIdx].key]: e.target.value }));
+                        }}
+                        onKeyDown={(e) => e.key === "Enter" && handleStepNext()}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
+                      />
+                    )}
+
+                    {stepError && (
+                      <p className="mt-3 text-xs font-semibold text-red-500">{stepError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer buttons */}
+              {!stepDone && (
+                <div className="flex gap-3 border-t border-slate-100 bg-white/60 px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={handleStepBack}
+                    className="flex-1 rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-[.98]"
+                  >
+                    {stepIdx === 0 ? "← Back" : "← Back"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={signSubmitting}
+                    onClick={() => {
+                      // For select steps, read the hidden value from CustomSelect’s hidden input
+                      const step = STEPS[stepIdx];
+                      if (step.type === "select" || step.type === "select-search") {
+                        // CustomSelect stores in a hidden <input name={step.key}>
+                        // We need to read it differently — watch via onChange on the wrapper
+                        handleStepNext();
+                      } else {
+                        handleStepNext();
+                      }
+                    }}
+                    className="flex-2 rounded-2xl bg-[#F4736E] py-3 text-sm font-extrabold text-white shadow-lg shadow-[#F4736E]/25 transition hover:bg-[#e85e58] active:scale-[.98] disabled:opacity-60"
+                  >
+                    {signSubmitting
+                      ? "Launching…"
+                      : stepIdx === STEPS.length - 1
+                      ? "Launch Adventure! 🚀"
+                      : "Next →"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -886,9 +933,37 @@ const Hero = () => {
       />
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Balsamiq+Sans:wght@400;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+        .material-symbols-outlined {
+          font-family: 'Material Symbols Outlined';
+          font-weight: normal;
+          font-style: normal;
+          font-size: 24px;
+          line-height: 1;
+          letter-spacing: normal;
+          text-transform: none;
+          display: inline-block;
+          white-space: nowrap;
+          word-wrap: normal;
+          direction: ltr;
+          -webkit-font-smoothing: antialiased;
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
         @keyframes modalIn {
-          0% { transform: translateY(12px) scale(0.98); opacity: 0; }
-          100% { transform: translateY(0) scale(1); opacity: 1; }
+          0%   { transform: translateY(12px) scale(0.98); opacity: 0; }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; }
+        }
+        @keyframes stepperIn {
+          0%   { transform: translateY(24px) scale(0.96); opacity: 0; }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; }
+        }
+        @keyframes slideInRight {
+          0%   { transform: translateX(48px); opacity: 0; }
+          100% { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes slideInLeft {
+          0%   { transform: translateX(-48px); opacity: 0; }
+          100% { transform: translateX(0);     opacity: 1; }
         }
       `}</style>
     </section>

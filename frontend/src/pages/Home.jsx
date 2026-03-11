@@ -2,6 +2,15 @@ import React from 'react'
 import Topbar from "../components/Topbar";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
+import StudyGrumpySection from "../components/StudyGrumpySection";
+import VictoryPathSection from "../components/VictoryPathSection";
+import FeatureCardsSection from "../components/FeatureCardsSection";
+import StatsStripSection from "../components/StatsStripSection";
+import HeroRankSection from "../components/HeroRankSection";
+import QuickBundleSection from "../components/QuickBundleSection";
+import StarExplorersSection from "../components/StarExplorersSection";
+import QuestionsAnswersSection from "../components/QuestionsAnswersSection";
+import PaprIqFooterSection from "../components/PaprIqFooterSection";
 import WhatIsEEC from "../components/WhatIsEEC";
 import EECFeaturesSection from "../components/EECFeaturesSection";
 import EECStages from "../components/EECStages";
@@ -17,12 +26,21 @@ const Home = () => {
       {/* <Topbar />
       <Navbar /> */}
       <Hero />
-      <WhatIsEEC />
-      <EECFeaturesSection />
+      <StudyGrumpySection />
+      <VictoryPathSection />
+      <FeatureCardsSection />
+      <StatsStripSection />
+      <HeroRankSection />
+      <QuickBundleSection />
+      <StarExplorersSection />
+      <QuestionsAnswersSection />
+      {/* <PaprIqFooterSection /> */}
+      {/* <WhatIsEEC /> */}
+      {/* <EECFeaturesSection /> */}
       {/* <EECStages /> */}
       {/* <EECUnique /> */}
       {/* <EECImageRow /> */}
-      <EECFAQ />
+      {/* <EECFAQ /> */}
       {/* <GlobalLoginModal /> */}
       {/* <EECFooter /> */}
     </div>

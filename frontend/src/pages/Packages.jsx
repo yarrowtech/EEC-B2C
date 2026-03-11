@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   CreditCard,
   CheckCircle2,
@@ -61,12 +62,15 @@ function getTierConfig(pkgName) {
 }
 
 export default function Packages() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [packages, setPackages] = useState([]);
   const [subscription, setSubscription] = useState(null);
   const [subscriptionType, setSubscriptionType] = useState("none");
   const [loading, setLoading] = useState(true);
   const [purchasingId, setPurchasingId] = useState(null);
+  const [autoBuyHandled, setAutoBuyHandled] = useState(false);
 
   const token = localStorage.getItem("jwt") || "";
 
@@ -133,6 +137,25 @@ export default function Packages() {
     return [...packages].sort((a, b) => (a.price || 0) - (b.price || 0));
   }, [packages]);
 
+  useEffect(() => {
+    if (loading || autoBuyHandled || !sortedPackages.length) return;
+
+    const params = new URLSearchParams(location.search);
+    const buyId = params.get("buy");
+    if (!buyId) return;
+
+    const pkg = sortedPackages.find((p) => String(p._id) === String(buyId));
+    setAutoBuyHandled(true);
+    navigate(location.pathname, { replace: true });
+
+    if (pkg) {
+      purchasePackage(pkg, { skipConfirm: true });
+    } else {
+      toast.error("Selected package not found");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, autoBuyHandled, sortedPackages, location.search, location.pathname, navigate]);
+
   function loadRazorpay() {
     return new Promise((resolve) => {
       if (window.Razorpay) return resolve(true);
@@ -144,9 +167,9 @@ export default function Packages() {
     });
   }
 
-  async function purchasePackage(pkg) {
+  async function purchasePackage(pkg, options = {}) {
     if (!pkg?._id) return;
-    if (!window.confirm(`Subscribe to ${pkg.displayName || pkg.name}?`)) return;
+    if (!options.skipConfirm && !window.confirm(`Subscribe to ${pkg.displayName || pkg.name}?`)) return;
 
     setPurchasingId(pkg._id);
     try {
