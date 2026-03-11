@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FFD23F",
+                        "secondary": "#FF6B6B",
+                        "accent": "#4ECDC4",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#211d11",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<title>Explorer Hub - Student Portal</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="relative flex h-screen w-full overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="flex h-full w-80 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark p-6 justify-between shadow-sm">
+<div class="flex flex-col gap-8">
+<!-- Branding -->
+<div class="flex items-center gap-3 px-2">
+<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-background-dark text-3xl font-bold">fort</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-xl font-800 leading-tight tracking-tight text-slate-900 dark:text-white uppercase">Explorer Hub</h1>
+<p class="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-widest uppercase">Student Portal</p>
+</div>
+</div>
+<!-- Navigation Items -->
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-full bg-primary text-background-dark font-bold transition-all hover:scale-[1.02]" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined text-accent">inventory_2</span>
+<span class="text-sm font-semibold">Packages</span>
+</a>
+<!-- Dropdown/Submenu for Quests -->
+<div class="flex flex-col gap-1">
+<button class="flex items-center justify-between w-full px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-secondary">swords</span>
+<span class="text-sm font-semibold">Attempt Quest</span>
+</div>
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</button>
+<div class="ml-12 flex flex-col gap-1 border-l-2 border-slate-100 dark:border-slate-800 pl-4 py-1">
+<a class="text-xs font-medium py-2 text-slate-500 hover:text-primary transition-colors" href="#">Stage 1: Beginner</a>
+<a class="text-xs font-medium py-2 text-slate-500 hover:text-primary transition-colors" href="#">Stage 2: Apprentice</a>
+<a class="text-xs font-medium py-2 text-slate-500 hover:text-primary transition-colors" href="#">Stage 3: Knight</a>
+</div>
+</div>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined text-primary">description</span>
+<span class="text-sm font-semibold">My Results</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined text-secondary">workspace_premium</span>
+<span class="text-sm font-semibold">Achievements</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined text-accent">menu_book</span>
+<span class="text-sm font-semibold">Study Materials</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined text-primary">leaderboard</span>
+<span class="text-sm font-semibold">Leaderboard</span>
+</a>
+</nav>
+</div>
+<!-- User Profile & Logout -->
+<div class="flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+<div class="flex items-center gap-3 px-2">
+<div class="h-12 w-12 rounded-full border-4 border-accent overflow-hidden">
+<img class="h-full w-full object-cover" data-alt="User avatar of a young student adventurer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAbAPASmTiPqIPCqC9mh0h0lMiTPapwACPDDqJ0CifwQoGmmeQki80XNr-x8PzvAmRZpZLjAPA4rqTELeMEeu0Xfn7Pfd6kahPQLDWCMnrp6mAHu4B99N1GCJZTdO2wm05zj8sticwztYb-GkYaY-G-J794xhkCq8FpDlgMsEOcGc1W_oyjZLvkptZgnUSeKAN8rc1SmBZgvcTdP9GwoC4N0pfGeG2QQ0lNo6RhCa6Tya2kS_qd2pDg0G2bkFHZANV8WceBnT8zzs"/>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Alex Explorer</p>
+<p class="text-xs font-medium text-accent">Level 24 Knight</p>
+</div>
+</div>
+<button class="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 py-3 text-sm font-bold text-secondary transition-all hover:bg-secondary hover:text-white">
+<span class="material-symbols-outlined text-lg">logout</span>
+<span>Leave Journey</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-10">
+<header class="flex items-center justify-between mb-12">
+<div>
+<h2 class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Welcome back, Adventurer!</h2>
+<p class="text-lg text-slate-500 dark:text-slate-400 mt-2">Ready to embark on your next learning quest?</p>
+</div>
+<div class="flex gap-4">
+<button class="h-12 w-12 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300">notifications</span>
+</button>
+<button class="h-12 w-12 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300">settings</span>
+</button>
+</div>
+</header>
+<!-- Dashboard Grid Example -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Kingdom of Math Card -->
+<div class="group relative flex flex-col gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all hover:-translate-y-1">
+<div class="h-48 w-full rounded-lg overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/40 to-secondary/40 z-10"></div>
+<img class="h-full w-full object-cover" data-alt="Abstract mathematical geometric patterns in vibrant colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKH1RJMKovlnJEn4TLV8FUEWeZEpiXXtAG0wbRf_De5I83rR93dZirB3ULnrv3lO9bcunCc5XydSZGI8VuLeajy2bIUHvoj3dN5fmFgb7-lrGa8eK0zY5lSolxs_T5Uy9hzVfV-X4Bskvtq2q1j4CPEF2IPLdDZjd1idb1g_XiHdBdQTayPGXXcTxpZsD7GFZ9Eg8YqQi144b1DGE3RZ9LuPKCvf9oQKpecVEmGM25Smm7e1VYhkCmrNqSkWyIrsd4Ou5cu2X21A8"/>
+<div class="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur rounded-full px-4 py-1 shadow-sm">
+<span class="text-xs font-bold text-slate-900 uppercase tracking-widest">10 Quests</span>
+</div>
+</div>
+<div>
+<h3 class="text-xl font-800 text-slate-900 dark:text-white">Kingdom of Math</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Conquer the variables and master the realm of numbers.</p>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="text-xs font-bold text-slate-400">Progress: 65%</span>
+<button class="text-primary font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                            Continue <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Science Frontier Card -->
+<div class="group relative flex flex-col gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all hover:-translate-y-1">
+<div class="h-48 w-full rounded-lg overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-br from-accent/40 to-primary/40 z-10"></div>
+<img class="h-full w-full object-cover" data-alt="Close-up of colorful chemical reactions in glass beakers" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEmMUHtThaztZSFCM531KlrM0n3vuDrIQLzloqHZk4Bk10b3QIRam1FpJoYSAcwvdTRKreII7Nicydi4yqjONBLz7aYkOJFwDAy8ooA04nAJWVYVrACZy-QDUIOjWsOHVrKxcU6X8V802nfmWP2e-LAOldDI7fC_DSMbuTJioUeNAO_V7MYGy0Jvnd_Y1sR-UAPRGottCirBsrS7NXMdz3JaSGiuEmX4PTqRo-peFSDr6TVXjUj0aIl_YHyKONQO8vVsTo6moZi70"/>
+<div class="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur rounded-full px-4 py-1 shadow-sm">
+<span class="text-xs font-bold text-slate-900 uppercase tracking-widest">8 Quests</span>
+</div>
+</div>
+<div>
+<h3 class="text-xl font-800 text-slate-900 dark:text-white">Science Frontier</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Discover the laws of nature and experimental magic.</p>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-accent h-full w-[40%]"></div>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="text-xs font-bold text-slate-400">Progress: 40%</span>
+<button class="text-accent font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                            Explore <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- History Voyage Card -->
+<div class="group relative flex flex-col gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all hover:-translate-y-1">
+<div class="h-48 w-full rounded-lg overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-br from-secondary/40 to-accent/40 z-10"></div>
+<img class="h-full w-full object-cover" data-alt="Ancient parchment map with vintage navigational tools" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQRyA5X8tpG5-2JdVq_SMk84Z1Sm1jGS6u_igp9tkOemmtQ2DGBNHG5zpRxwkiUBKrcdEBnkq5-rcysRS8JoeZleEm0JsjuO13eMeJPaFqFWzHBHVl10pywKFtr9vDA8Fl9-dG2PBlgE8be6p7CwJD6Fw4BrOm5Zj8x2CbrCixNat0Zg9kEa2MVpQMdoqlBhVgosT9G8NZf9tKLXLPwDeRVY_bpD51RBn2BPGeGnPAAt1z1ACZ25z5IV_wIcrthspO71ndL869p1M"/>
+<div class="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur rounded-full px-4 py-1 shadow-sm">
+<span class="text-xs font-bold text-slate-900 uppercase tracking-widest">12 Quests</span>
+</div>
+</div>
+<div>
+<h3 class="text-xl font-800 text-slate-900 dark:text-white">History Voyage</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Travel through time to meet legends and build empires.</p>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-secondary h-full w-[15%]"></div>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="text-xs font-bold text-slate-400">Progress: 15%</span>
+<button class="text-secondary font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                            Venture <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

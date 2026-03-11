@@ -1,0 +1,306 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PaprIQ - Adventure Tryouts</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e7c555",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#211d11",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 md:px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-slate-900 dark:text-slate-100">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined fill-icon" style="">auto_stories</span>
+</div>
+<h2 class="text-xl font-extrabold leading-tight tracking-[-0.015em]" style="">EEC</h2>
+</div>
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-primary text-sm font-bold leading-normal flex items-center gap-1" href="#" style="">
+<span class="material-symbols-outlined text-[18px]" style="">rocket_launch</span> Tryouts
+                    </a>
+<a class="text-slate-600 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#" style="">Quests</a>
+<a class="text-slate-600 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#" style="">Leaderboard</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-4 md:gap-8 items-center">
+<label class="hidden sm:flex flex-col min-w-40 h-10 max-w-64" style="">
+<div class="flex w-full flex-1 items-stretch rounded-full h-full bg-primary/10 border border-primary/20">
+<div class="text-primary flex items-center justify-center pl-4">
+<span class="material-symbols-outlined" style="">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent focus:ring-0 h-full placeholder:text-slate-400 px-4 pl-2 text-base font-normal" placeholder="Search quests...">
+</div>
+</label>
+<div class="relative group">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="User profile avatar portrait" style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAWIB-Q8vjC34ytJoE_O-GAhJsZ382Poab2OuzzSA44LqBFUDo6KRoA0_qVFdxSmOv8qMKSnnTakRX3cARwZpK0WZOYi1QmJVLcZ38oiYih71Hd69j2pgV7RDzvGX-dnlW6PhPTzgEDh5CakJIsHpYA_RAoRnWe6_5jcrTDeZgbm0s56Rc_S1qU6ZDsuiB894fvMGKtkeU9q696Blz9W9eLNcAMlD_OJ0UmtyXwsCaUSFzaSbib7ttS_8vp3-9OpjW-VIXVFtTz5fg&quot;);"></div>
+<div class="absolute -bottom-1 -right-1 size-4 bg-green-500 border-2 border-white dark:border-background-dark rounded-full"></div>
+</div>
+</div>
+</header>
+<main class="flex-1 max-w-[1200px] mx-auto w-full px-4 md:px-10 py-8">
+<!-- Hero Section -->
+<div class="flex flex-col gap-4 mb-8">
+<div class="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-widest" style="">
+<span class="material-symbols-outlined text-[18px]" style="">star</span>
+                    Level Up Your Brain
+                </div>
+<div class="flex flex-wrap justify-between items-end gap-4">
+<div class="flex flex-col gap-2 max-w-2xl">
+<h1 class="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-tight" style="">Adventure Tryouts!</h1>
+<p class="text-slate-600 dark:text-slate-400 text-lg font-medium" style="">Pick a subject quest, earn badges, and climb the ranks. Are you ready, explorer?</p>
+</div>
+<div class="flex items-center gap-4 bg-primary/20 p-4 rounded-xl border border-primary/30">
+<div class="bg-primary p-2 rounded-lg text-white">
+<span class="material-symbols-outlined fill-icon" style="">trophy</span>
+</div>
+<div>
+<p class="text-xs font-bold text-primary uppercase" style="">Current Rank</p>
+<p class="font-bold text-slate-900 dark:text-white" style="">Star Explorer</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex flex-wrap gap-3 mb-10 pb-6 border-b border-slate-200 dark:border-slate-800">
+<button class="flex h-11 items-center justify-center gap-x-2 rounded-full bg-primary text-slate-900 px-6 font-bold shadow-lg shadow-primary/20" style="">
+<span class="material-symbols-outlined text-[20px]" style="">school</span>
+                    CBSE
+                    <span class="material-symbols-outlined text-[20px]" style="">expand_more</span>
+</button>
+<button class="flex h-11 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 font-bold border border-slate-200 dark:border-slate-700 hover:border-primary transition-all" style="">
+<span class="material-symbols-outlined text-[20px]" style="">grade</span>
+                    Class 6
+                    <span class="material-symbols-outlined text-[20px]" style="">expand_more</span>
+</button>
+<div class="h-11 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2"></div>
+<button class="flex h-11 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 font-bold border border-slate-200 dark:border-slate-700 hover:border-primary transition-all" style="">
+                    All Subjects
+                </button>
+<button class="flex h-11 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 font-bold border border-slate-200 dark:border-slate-700 hover:border-primary transition-all" style="">
+                    Difficulty: Any
+                </button>
+</div>
+<!-- Tryouts Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card 1: Math Magic -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all group">
+<div class="h-40 bg-gradient-to-br from-blue-400 to-indigo-600 relative overflow-hidden p-6 flex flex-col justify-end" data-alt="Abstract geometric math patterns background">
+<div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30" style="">
+                            15 Mins
+                        </div>
+<span class="material-symbols-outlined text-white/20 text-8xl absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform" style="">calculate</span>
+<h3 class="text-white text-2xl font-black" style="">Math Magic</h3>
+</div>
+<div class="p-6 flex flex-col gap-4">
+<div class="flex flex-wrap gap-2">
+<span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">format_list_numbered</span> 20 Questions
+                            </span>
+<span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">sentiment_satisfied</span> Easy Peasy
+                            </span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-2" style="">Master the world of numbers! Fractions, decimals, and fun word problems await you in this quest.</p>
+<button class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]" style="">
+                            Start Quest <span class="material-symbols-outlined" style="">play_circle</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Science Lab -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all group">
+<div class="h-40 bg-gradient-to-br from-emerald-400 to-teal-600 relative overflow-hidden p-6 flex flex-col justify-end" data-alt="Bubbling laboratory beakers abstract background">
+<div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30" style="">
+                            25 Mins
+                        </div>
+<span class="material-symbols-outlined text-white/20 text-8xl absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform" style="">biotech</span>
+<h3 class="text-white text-2xl font-black" style="">Science Lab</h3>
+</div>
+<div class="p-6 flex flex-col gap-4">
+<div class="flex flex-wrap gap-2">
+<span class="bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">format_list_numbered</span> 35 Questions
+                            </span>
+<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">psychology</span> Master Mind
+                            </span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-2" style="">Discover how the world works. From tiny atoms to giant galaxies, test your inner Einstein!</p>
+<button class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]" style="">
+                            Start Quest <span class="material-symbols-outlined" style="">play_circle</span>
+</button>
+</div>
+</div>
+<!-- Card 3: Word Wonders -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all group">
+<div class="h-40 bg-gradient-to-br from-orange-400 to-pink-600 relative overflow-hidden p-6 flex flex-col justify-end" data-alt="Floating letters and book pages abstract background">
+<div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30" style="">
+                            20 Mins
+                        </div>
+<span class="material-symbols-outlined text-white/20 text-8xl absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform" style="">menu_book</span>
+<h3 class="text-white text-2xl font-black" style="">Word Wonders</h3>
+</div>
+<div class="p-6 flex flex-col gap-4">
+<div class="flex flex-wrap gap-2">
+<span class="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">format_list_numbered</span> 25 Questions
+                            </span>
+<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-600 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">bolt</span> Challenger
+                            </span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-2" style="">Enhance your vocabulary and grammar. Become a master of the English language through creative quests.</p>
+<button class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]" style="">
+                            Start Quest <span class="material-symbols-outlined" style="">play_circle</span>
+</button>
+</div>
+</div>
+<!-- Card 4: History Hikers -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all group">
+<div class="h-40 bg-gradient-to-br from-amber-600 to-brown-800 relative overflow-hidden p-6 flex flex-col justify-end" data-alt="Ancient parchment and compass abstract background" style="background-image: linear-gradient(to bottom right, #d97706, #78350f);">
+<div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30" style="">
+                            30 Mins
+                        </div>
+<span class="material-symbols-outlined text-white/20 text-8xl absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform" style="">explore</span>
+<h3 class="text-white text-2xl font-black" style="">History Hikers</h3>
+</div>
+<div class="p-6 flex flex-col gap-4">
+<div class="flex flex-wrap gap-2">
+<span class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">format_list_numbered</span> 30 Questions
+                            </span>
+<span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">sentiment_satisfied</span> Easy Peasy
+                            </span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-2" style="">Travel back in time! Explore ancient civilizations and famous leaders who shaped our world.</p>
+<button class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]" style="">
+                            Start Quest <span class="material-symbols-outlined" style="">play_circle</span>
+</button>
+</div>
+</div>
+<!-- Card 5: Geo Giants -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all group">
+<div class="h-40 bg-gradient-to-br from-cyan-500 to-blue-700 relative overflow-hidden p-6 flex flex-col justify-end" data-alt="Topographic map and globe abstract background">
+<div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30" style="">
+                            15 Mins
+                        </div>
+<span class="material-symbols-outlined text-white/20 text-8xl absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform" style="">public</span>
+<h3 class="text-white text-2xl font-black" style="">Geo Giants</h3>
+</div>
+<div class="p-6 flex flex-col gap-4">
+<div class="flex flex-wrap gap-2">
+<span class="bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">format_list_numbered</span> 15 Questions
+                            </span>
+<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-600 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1" style="">
+<span class="material-symbols-outlined text-[14px]" style="">bolt</span> Challenger
+                            </span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-2" style="">Mountains, rivers, and capitals. How well do you know your planet? Test your geography skills!</p>
+<button class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]" style="">
+                            Start Quest <span class="material-symbols-outlined" style="">play_circle</span>
+</button>
+</div>
+</div>
+<!-- Locked Quest Placeholder -->
+<div class="flex flex-col bg-slate-100 dark:bg-slate-800/50 rounded-xl overflow-hidden border border-dashed border-slate-300 dark:border-slate-700 relative group opacity-80">
+<div class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/10 backdrop-blur-[2px]">
+<div class="bg-white dark:bg-slate-800 p-4 rounded-full shadow-lg text-primary mb-2">
+<span class="material-symbols-outlined text-4xl fill-icon" style="">lock</span>
+</div>
+<p class="text-slate-900 dark:text-white font-bold" style="">Unlocks at Level 5</p>
+</div>
+<div class="h-40 bg-slate-300 dark:bg-slate-700"></div>
+<div class="p-6 flex flex-col gap-4 grayscale">
+<div class="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
+<div class="h-10 w-full bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+</div>
+</div>
+</div>
+<!-- More Section -->
+<div class="mt-12 text-center">
+<button class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 font-bold px-8 py-3 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm inline-flex items-center gap-2" style="">
+                    Load More Quests <span class="material-symbols-outlined" style="">expand_more</span>
+</button>
+</div>
+</main>
+<!-- Sidebar / Floating Action for Profile Explorer -->
+<div class="fixed left-8 bottom-8 hidden xl:flex flex-col gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl z-40 w-64">
+<h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2" style="">Explorer Status</h4>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between text-xs font-bold text-slate-500">
+<span class="" style="">LEVEL 4</span>
+<span class="" style="">1,250 / 2,000 XP</span>
+</div>
+<div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 65%"></div>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<div class="size-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined fill-icon" style="">local_fire_department</span>
+</div>
+<p class="text-sm font-bold" style="">3 Day Streak!</p>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-10 bg-white dark:bg-background-dark">
+<div class="max-w-[1200px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-3">
+<div class="size-6 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xs fill-icon" style="">auto_stories</span>
+</div>
+<span class="font-bold text-slate-900 dark:text-white" style="">PaprIQ Adventure Study</span>
+</div>
+<div class="flex gap-8 text-sm font-medium text-slate-500 dark:text-slate-400">
+<a class="hover:text-primary transition-colors" href="#" style="">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#" style="">Terms of Quest</a>
+<a class="hover:text-primary transition-colors" href="#" style="">Help Center</a>
+</div>
+<div class="text-slate-400 text-sm" style="">
+                    © 2024 PaprIQ Labs. All rights reserved.
+                </div>
+</div>
+</footer>
+</div>
+</div>
+</body></html>

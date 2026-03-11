@@ -355,13 +355,6 @@ export default function DashboardLayout() {
         setOpen(false);
     }, [location.pathname]);
 
-    /* ---- SIDEBAR LINK STYLES (SCREENSHOT MATCHED) ---- */
-    const linkBase =
-        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-orange-800 transition-all";
-
-    const linkActive =
-        "bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md";
-
     const blockOfflineNavigation = (e) => {
         if (online) return;
         e.preventDefault();
@@ -385,104 +378,103 @@ export default function DashboardLayout() {
 
                 {/* SIDEBAR */}
                 <aside
-                    className={`fixed z-40 top-16 md:top-18 bottom-0 w-72
-  bg-[#FFF7DB] border-r border-yellow-200
+                    className={`fixed z-40 top-16 md:top-18 bottom-0 w-80
+  bg-white dark:bg-[#211d11] border-r border-slate-200 dark:border-slate-800 shadow-sm
   transition-transform
   ${open ? "translate-x-0" : "-translate-x-full"}
   md:translate-x-0`}
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
-                    {/* <div className="h-full overflow-y-auto px-3 py-4"> */}
-                    <div className="h-full flex flex-col px-3 py-4">
+                    <div className="h-full flex flex-col p-6 overflow-x-hidden">
+                        {/* SCROLLABLE NAVIGATION */}
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll pr-2">
+                                {!online && (
+                                    <div className="mx-1 mb-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                                        You are offline. Connect to continue.
+                                    </div>
+                                )}
 
-                        {/* SIDEBAR HEADER */}
-                        <div className="flex items-center gap-3 px-3 py-3 mb-4 border-b border-yellow-200">
-                            <div className="w-9 h-9 rounded-full bg-white shadow flex items-center justify-center">
-                                🎓
-                            </div>
-                            <span className="text-lg font-bold text-orange-700">
-                                {user.role === "admin" ? "Admin" : user.role === "teacher" ? "Teacher" : "Student"} Portal
-                            </span>
+                                <nav className="flex flex-col gap-2 w-full overflow-x-hidden">
+                                    {NAV.map((item, idx) => {
+                                        // Cycle through colors for each nav item
+                                        const iconColors = ['text-[#FFD23F]', 'text-[#4ECDC4]', 'text-[#FF6B6B]'];
+                                        const iconColor = iconColors[idx % iconColors.length];
+
+                                        return (
+                                            <NavLink
+                                                key={item.to}
+                                                to={item.to}
+                                                end={item.end}
+                                                onClick={blockOfflineNavigation}
+                                                className={({ isActive }) =>
+                                                    `flex items-center gap-4 px-4 py-3 rounded-full font-bold transition-all hover:scale-[1.02] whitespace-nowrap overflow-hidden ${
+                                                        !online
+                                                            ? "text-slate-400 bg-slate-100 cursor-not-allowed"
+                                                            : isActive
+                                                            ? "bg-[#FFD23F] text-[#211d11]"
+                                                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                    }`
+                                                }
+                                            >
+                                                {({ isActive }) => (
+                                                    <>
+                                                        <span className={`material-symbols-outlined ${isActive ? '' : iconColor}`}>
+                                                            {item.to === '/dashboard' ? 'grid_view' :
+                                                             item.to.includes('student') ? 'groups' :
+                                                             item.to.includes('teacher') ? 'school' :
+                                                             item.to.includes('result') ? 'leaderboard' :
+                                                             item.to.includes('package') ? 'inventory_2' :
+                                                             item.to.includes('gift') ? 'card_giftcard' :
+                                                             item.to.includes('purchase') ? 'shopping_cart' :
+                                                             item.to.includes('subscription') ? 'credit_card' :
+                                                             item.to.includes('upload') || item.to.includes('material') ? 'menu_book' :
+                                                             item.to.includes('notification') ? 'notifications' :
+                                                             'description'}
+                                                        </span>
+                                                        <span className="text-sm truncate">{item.label}</span>
+                                                    </>
+                                                )}
+                                            </NavLink>
+                                        );
+                                    })}
+
+                                    <div className={online ? "" : "opacity-40 pointer-events-none select-none"}>
+                                        <SyllabusSidebarBlock role={role} />
+                                        <ExamSidebarBlock role={role} />
+                                        <QuestionsSidebarBlock role={role} />
+                                        <SettingsSidebarBlock role={role} />
+                                    </div>
+                                </nav>
                         </div>
 
-                        {/* MAIN NAV */}
-                        {/* SCROLLABLE AREA */}
-                        <div className="flex-1 overflow-y-auto">
-                            {!online && (
-                                <div className="mx-1 mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                                    You are offline. Try to connect to the internet.
-                                </div>
-                            )}
-                            <nav className="space-y-1">
-                                {NAV.map((item) => (
-                                    <NavLink
-                                        key={item.to}
-                                        to={item.to}
-                                        end={item.end}
-                                        onClick={blockOfflineNavigation}
-                                        className={({ isActive }) =>
-                                            `${linkBase} ${
-                                                !online
-                                                    ? "text-slate-400 bg-slate-100 cursor-not-allowed"
-                                                    : isActive
-                                                    ? linkActive
-                                                    : "hover:bg-yellow-100"
-                                            }`
-                                        }
-                                    >
-                                        {item.icon}
-                                        <span>{item.label}</span>
-                                    </NavLink>
-                                ))}
-
-                                <div className={online ? "" : "opacity-40 pointer-events-none select-none"}>
-                                    <SyllabusSidebarBlock role={role} />
-                                    <ExamSidebarBlock role={role} />
-                                    <QuestionsSidebarBlock role={role} />
-                                    <SettingsSidebarBlock role={role} />
-                                </div>
-                            </nav>
-                        </div>
-
-                        {/* BOTTOM SECTION */}
-                        {/* BOTTOM SECTION */}
-                        <div className="pt-4 border-t border-yellow-200 space-y-3">
-
+                        {/* USER PROFILE & LOGOUT */}
+                        <div className="flex-shrink-0 flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 pt-6 mt-4">
                             {/* PROFILE CARD */}
-                            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white shadow-sm">
-                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center text-white font-bold">
+                            <div className="flex items-center gap-3 px-2">
+                                <div className="h-12 w-12 rounded-full border-4 border-[#4ECDC4] overflow-hidden">
                                     {user?.avatar ? (
                                         <img
+                                            className="h-full w-full object-cover"
                                             src={user.avatar}
-                                            alt="Profile"
-                                            className="w-full h-full object-cover"
+                                            alt="User avatar"
                                         />
                                     ) : (
-                                        user?.name?.[0]?.toUpperCase() || "U"
+                                        <div className="h-full w-full bg-gradient-to-br from-[#FFD23F] to-[#FF6B6B] flex items-center justify-center text-white font-bold text-lg">
+                                            {user?.name?.[0]?.toUpperCase() || "U"}
+                                        </div>
                                     )}
                                 </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-800 truncate" title={user?.name || "User"}>
+                                <div className="flex flex-col">
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[160px]" title={user?.name || "User"}>
                                         {user?.name || "User"}
                                     </p>
-                                    <p className="text-xs text-slate-500 truncate" title={user?.email || "user@email.com"}>
-                                        {user?.email || "user@email.com"}
-                                    </p>
-                                </div>
-
-                                {/* ONLINE STATUS */}
-                                <div className="flex items-center gap-1 text-xs font-medium">
-                                    <span
-                                        className={`w-2 h-2 rounded-full ${online ? "bg-green-500" : "bg-gray-400"
-                                            }`}
-                                    />
-                                    <span className={online ? "text-green-600" : "text-gray-500"}>
+                                    <p className="text-xs font-medium text-[#4ECDC4]">
                                         {online ? "Online" : "Offline"}
-                                    </span>
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* LOGOUT */}
+                            {/* LOGOUT BUTTON */}
                             <button
                                 onClick={() => {
                                     localStorage.removeItem("jwt");
@@ -491,11 +483,10 @@ export default function DashboardLayout() {
                                     toast.success("Logged out successfully");
                                     navigate("/", { replace: true });
                                 }}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 font-semibold hover:bg-red-50 transition"
-                                title="Logout"
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 py-3 text-sm font-bold text-[#FF6B6B] transition-all hover:bg-[#FF6B6B] hover:text-white"
                             >
-                                <LogOut size={18} />
-                                Logout
+                                <span className="material-symbols-outlined text-lg">logout</span>
+                                <span>Leave Journey</span>
                             </button>
                         </div>
                     </div>
@@ -504,7 +495,7 @@ export default function DashboardLayout() {
                 {/* MAIN CONTENT */}
                 <main
                     className={`
-            ml-0 md:ml-72
+            ml-0 md:ml-80
             h-[calc(100vh-56px)]
             overflow-y-auto
             w-full

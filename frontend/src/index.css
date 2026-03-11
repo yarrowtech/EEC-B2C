@@ -1,5 +1,13 @@
 @import 'tailwindcss';
 
+/* Material Symbols defaults */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.fill-icon {
+  font-variation-settings: 'FILL' 1;
+}
+
 /* index.css extra */
 .input {
   @apply w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm text-blue-950 outline-none placeholder:text-blue-900/50 focus:border-blue-400 focus:ring-2 focus:ring-blue-100;
@@ -96,3 +104,72 @@ body {
 .mcq-option-selected {
   animation: option-selected 0.3s ease forwards;
 } */
+
+/* Details/Summary dropdown animation */
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+details > div {
+  animation: slideDown 0.3s ease-out;
+}
+
+details[open] summary .rotate-icon {
+  transform: rotate(180deg);
+}
+
+.rotate-icon {
+  transition: transform 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Minimal Modern Sidebar Scrollbar - Vertical Only */
+.sidebar-scroll {
+  overflow-x: hidden !important;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 210, 63, 0.3) transparent;
+  max-width: 100%;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 210, 63, 0.3);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 210, 63, 0.6);
+}
+
+/* Dark mode scrollbar */
+.dark .sidebar-scroll {
+  scrollbar-color: rgba(255, 210, 63, 0.4) transparent;
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 210, 63, 0.4);
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 210, 63, 0.7);
+}

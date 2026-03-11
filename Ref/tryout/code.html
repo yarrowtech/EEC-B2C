@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PaprIQ - Math Magic Syllabus</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e7c555",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#211d11",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Main Container -->
+<div class="flex h-full grow flex-row">
+<!-- Sidebar Navigation -->
+<aside class="hidden md:flex w-72 flex-col border-r border-primary/20 bg-white dark:bg-background-dark/50 p-6 gap-8">
+<div class="flex items-center gap-3 px-2">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-background-dark">
+<span class="material-symbols-outlined font-bold">menu_book</span>
+</div>
+<h2 class="text-xl font-black tracking-tight">PaprIQ</h2>
+</div>
+<div class="flex flex-col gap-6">
+<!-- User Profile Mini Card -->
+<div class="flex items-center gap-3 p-3 rounded-xl bg-primary/10">
+<div class="size-12 rounded-full bg-primary/30 flex items-center justify-center overflow-hidden">
+<img alt="User avatar" data-alt="Playful cartoon avatar of a young student" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMJC40UnREg6JcUrMRIuyZ7t9-pLNJxmpWx5PBaT_3NyWsddDwcPYKqn_DR95Kyxb1tKyXtvpTn5ZTey-iwx7UUXMrKf4VE5c-YUNpNbfMQwdsgi-DxRcQnwR9W4RM-LDZOhy411sh2wrf6N6v1Iy1USfCcRDZP3xXoTuXJv3IFR82rOskf3AFvskG1sZUkrAaHp5-9b8rHMPbFcgXZCv29xraImBpPu5F1IxTt9Ka7xrwJwACLKN4bKs-V2V0KvhG731XmwYR5e0"/>
+</div>
+<div class="flex flex-col">
+<p class="font-bold text-sm">Alex Explorer</p>
+<p class="text-xs text-slate-500">Lv. 12 Adventurer</p>
+</div>
+</div>
+<!-- Nav Links -->
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-background-dark font-bold" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span>My Quests</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">quiz</span>
+<span>Tryouts</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">style</span>
+<span>Flashcards</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">library_books</span>
+<span>Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">workspace_premium</span>
+<span>Rewards</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-4 rounded-xl bg-slate-100 dark:bg-background-dark border border-primary/10">
+<p class="text-xs font-bold text-primary uppercase tracking-wider mb-2">Daily Streak</p>
+<div class="flex gap-1">
+<span class="material-symbols-outlined text-primary">local_fire_department</span>
+<span class="font-black text-lg">15 Days</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex flex-1 flex-col overflow-y-auto">
+<!-- Top Header (Mobile Friendly) -->
+<header class="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 rounded-lg bg-primary/20">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-500">
+<span>Curriculum</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-900 dark:text-slate-100">Math Magic</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined p-2 text-slate-600 hover:bg-slate-100 rounded-full cursor-pointer">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
+</div>
+<span class="material-symbols-outlined p-2 text-slate-600 hover:bg-slate-100 rounded-full cursor-pointer">settings</span>
+</div>
+</header>
+<div class="p-6 md:p-10 max-w-5xl mx-auto w-full flex flex-col gap-8">
+<!-- Syllabus Hero Section -->
+<div class="bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl p-8 border border-primary/20 relative overflow-hidden">
+<div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="flex flex-col gap-2">
+<span class="bg-primary/30 text-background-dark px-3 py-1 rounded-full text-xs font-bold w-fit">GRADE 5 SPECIAL</span>
+<h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-900">Math Magic Syllabus</h1>
+<p class="text-slate-600 max-w-md">Master the mystical arts of numbers, shapes, and logic in this epic mathematical journey!</p>
+</div>
+<div class="flex flex-col gap-3 min-w-[240px]">
+<div class="flex justify-between items-end">
+<span class="text-sm font-bold">Overall Progress</span>
+<span class="text-2xl font-black text-primary">35%</span>
+</div>
+<div class="w-full h-4 bg-white/50 dark:bg-black/20 rounded-full overflow-hidden p-1">
+<div class="h-full bg-primary rounded-full" style="width: 35%;"></div>
+</div>
+<p class="text-xs text-slate-500 text-right font-medium">12 of 34 Quests Completed</p>
+</div>
+</div>
+<!-- Decorative background icon -->
+<span class="material-symbols-outlined absolute -bottom-10 -right-10 text-[200px] text-primary/10 pointer-events-none">functions</span>
+</div>
+<!-- Chapters List -->
+<div class="flex flex-col gap-4">
+<h2 class="text-xl font-bold px-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">map</span>
+                        Adventure Path
+                    </h2>
+<!-- Chapter 1 -->
+<details class="group bg-white dark:bg-background-dark/40 border border-primary/10 rounded-xl overflow-hidden shadow-sm" open="">
+<summary class="flex items-center justify-between p-5 cursor-pointer hover:bg-primary/5 transition-colors list-none">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined">pin_drop</span>
+</div>
+<div>
+<h3 class="font-bold text-lg">Chapter 1: Number Sense</h3>
+<p class="text-sm text-slate-500">6 Quests • 4 Completed</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:block text-right">
+<div class="text-xs font-bold text-slate-400">STATUS</div>
+<div class="text-xs font-bold text-blue-500">IN PROGRESS</div>
+</div>
+<span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</div>
+</summary>
+<div class="p-5 border-t border-primary/5 bg-slate-50/50 dark:bg-background-dark/20 flex flex-col gap-3">
+<!-- Topic 1 -->
+<div class="flex items-center justify-between p-4 bg-white dark:bg-background-dark rounded-xl border border-primary/5 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="size-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="font-semibold">Prime Numbers &amp; Factors</span>
+</div>
+<button class="px-4 py-2 rounded-full border-2 border-primary text-background-dark font-bold text-sm bg-primary hover:shadow-lg transition-all">Review Quest</button>
+</div>
+<!-- Topic 2 -->
+<div class="flex items-center justify-between p-4 bg-white dark:bg-background-dark rounded-xl border border-primary/5 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+</div>
+<span class="font-semibold">Long Division Mastery</span>
+</div>
+<button class="px-4 py-2 rounded-full bg-primary text-background-dark font-bold text-sm hover:scale-105 transition-transform shadow-md">Start Learning</button>
+</div>
+<!-- Topic 3 -->
+<div class="flex items-center justify-between p-4 bg-white dark:bg-background-dark rounded-xl border border-primary/5 opacity-60">
+<div class="flex items-center gap-4">
+<div class="size-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+<span class="font-semibold">Fractions Decryption</span>
+</div>
+<span class="text-xs font-bold text-slate-400 px-4">LOCKED</span>
+</div>
+</div>
+</details>
+<!-- Chapter 2 -->
+<details class="group bg-white dark:bg-background-dark/40 border border-primary/10 rounded-xl overflow-hidden shadow-sm">
+<summary class="flex items-center justify-between p-5 cursor-pointer hover:bg-primary/5 transition-colors list-none">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined">category</span>
+</div>
+<div>
+<h3 class="font-bold text-lg">Chapter 2: Geometry Explorers</h3>
+<p class="text-sm text-slate-500">8 Quests • 2 Completed</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</div>
+</summary>
+<div class="p-5 border-t border-primary/5 bg-slate-50/50 dark:bg-background-dark/20 flex flex-col gap-3">
+<div class="flex items-center justify-between p-4 bg-white dark:bg-background-dark rounded-xl border border-primary/5">
+<div class="flex items-center gap-4">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">square_foot</span>
+</div>
+<span class="font-semibold">Angles &amp; Shapes Expedition</span>
+</div>
+<button class="px-4 py-2 rounded-full bg-primary text-background-dark font-bold text-sm hover:scale-105 transition-transform shadow-md">Start Learning</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-white dark:bg-background-dark rounded-xl border border-primary/5">
+<div class="flex items-center gap-4">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">pentagon</span>
+</div>
+<span class="font-semibold">Perimeter &amp; Area Secrets</span>
+</div>
+<button class="px-4 py-2 rounded-full bg-primary text-background-dark font-bold text-sm hover:scale-105 transition-transform shadow-md">Start Learning</button>
+</div>
+</div>
+</details>
+<!-- Chapter 3 -->
+<details class="group bg-white dark:bg-background-dark/40 border border-primary/10 rounded-xl overflow-hidden shadow-sm">
+<summary class="flex items-center justify-between p-5 cursor-pointer hover:bg-primary/5 transition-colors list-none">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600">
+<span class="material-symbols-outlined">calculate</span>
+</div>
+<div>
+<h3 class="font-bold text-lg">Chapter 3: Algebra Quests</h3>
+<p class="text-sm text-slate-500">10 Quests • 0 Completed</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</div>
+</summary>
+<div class="p-8 text-center flex flex-col items-center gap-3">
+<span class="material-symbols-outlined text-4xl text-slate-300">lock_open</span>
+<p class="text-slate-500 font-medium">Complete more Number Sense quests to unlock the Algebra realm!</p>
+</div>
+</details>
+</div>
+<!-- Footer Stats / CTA -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+<div class="bg-white dark:bg-background-dark/60 p-5 rounded-xl border border-primary/10 flex items-center gap-4">
+<div class="size-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+<span class="material-symbols-outlined">star</span>
+</div>
+<div>
+<p class="text-xs text-slate-500 font-bold uppercase">Reward Points</p>
+<p class="text-xl font-black">2,450 XP</p>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/60 p-5 rounded-xl border border-primary/10 flex items-center gap-4">
+<div class="size-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+<span class="material-symbols-outlined">history</span>
+</div>
+<div>
+<p class="text-xs text-slate-500 font-bold uppercase">Time Studied</p>
+<p class="text-xl font-black">14.5 Hours</p>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/60 p-5 rounded-xl border border-primary/10 flex items-center gap-4">
+<div class="size-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined">emoji_events</span>
+</div>
+<div>
+<p class="text-xs text-slate-500 font-bold uppercase">Achievements</p>
+<p class="text-xl font-black">8 Badges</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>
