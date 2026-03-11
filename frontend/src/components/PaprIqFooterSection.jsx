@@ -11,7 +11,7 @@ export default function PaprIqFooterSection() {
                 <span className="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
               </div>
               <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                Papr<span className="text-[#FFD23F]">IQ</span>
+                EEC<span className="text-[#FFD23F]"></span>
               </span>
             </div>
             <p className="text-sm leading-relaxed mb-8 font-medium">
