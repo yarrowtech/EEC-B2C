@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { Handshake, Target, Lock, Zap } from "lucide-react";
-import EECFooter from "../components/EECFooter";
 
 export default function AboutUs() {
   const [sections, setSections] = useState([]);
@@ -87,221 +86,160 @@ export default function AboutUs() {
   const valuesIcons = [Target, Handshake, Lock, Zap];
 
   return (
-    <div className="overflow-hidden bg-white text-blue-950 selection:bg-yellow-200/60">
-      {/* =========================
-          HERO (Parallax + Glass)
-      ========================== */}
+    <div className="overflow-hidden bg-[#f6f6f8] text-[#1f3557] selection:bg-[#ffe68a]/60">
       <section
-        className="relative flex h-[68vh] items-center justify-center bg-cover bg-center bg-fixed text-white"
+        className="relative flex min-h-[58vh] items-center justify-center overflow-hidden bg-cover bg-center px-4 py-20"
         style={{ backgroundImage: `url('${heroBgImage}')` }}
       >
-        {/* layered gradients for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/50" />
-        <div className="absolute inset-0 mix-blend-overlay bg-gradient-to-tr from-sky-500/10 via-fuchsia-400/10 to-amber-400/10" />
-
-        {/* floating orbs */}
-        <div className="pointer-events-none absolute -left-24 top-24 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 bottom-16 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl" />
-
-        {/* glass headline card */}
-        <div className="relative z-10 mx-6 w-full max-w-4xl">
-          <div className="rounded-3xl border border-white/15 bg-white/10 p-8 backdrop-blur-xl shadow-[0_20px_80px_-10px_rgba(0,0,0,0.45)]">
-            <h1 className="text-center text-3xl font-extrabold tracking-tight drop-shadow md:text-5xl">
-              {heroTitle}
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-center text-blue-50/90 md:text-xl">
-              {heroSubtitle}
-            </p>
-
-            {/* mini highlights (kept static for now) */}
-            <div className="mt-6 grid grid-cols-2 gap-3 text-center text-sm text-blue-50/90 md:grid-cols-4">
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur">
-                Student-first
-              </span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur">
-                AI-assisted
-              </span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur">
-                Insight-driven
-              </span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur">
-                Scalable
-              </span>
-            </div>
+        <div className="absolute inset-0 bg-[#091a38]/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#091a38]/25 to-[#091a38]/75" />
+        <div className="relative z-10 mx-auto max-w-5xl text-center">
+          <div className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white/95">
+            About EEC
           </div>
+          <h1
+            className="mt-6 text-4xl font-bold leading-tight text-white md:text-6xl"
+            style={{ fontFamily: "'Balsamiq Sans', cursive" }}
+          >
+            {heroTitle}
+          </h1>
+          <p className="mx-auto mt-5 max-w-3xl text-lg text-white/90 md:text-2xl">
+            {heroSubtitle}
+          </p>
         </div>
-
-        {/* wave divider */}
-        <svg
-          className="pointer-events-none absolute -bottom-[1px] left-0 w-full"
-          viewBox="0 0 1440 120"
-          aria-hidden
-        >
-          <path
-            fill="#ffffff"
-            d="M0,64L48,69.3C96,75,192,85,288,85.3C384,85,480,75,576,80C672,85,768,107,864,117.3C960,128,1056,128,1152,117.3C1248,107,1344,85,1392,74.7L1440,64L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
-          />
-        </svg>
       </section>
 
-      {/* =========================
-          VISION (Text + Image)
-      ========================== */}
-      <section className="relative bg-gradient-to-b from-white via-sky-50/60 to-white py-20">
-        <div className="absolute -top-10 right-10 h-40 w-40 rounded-full bg-sky-300/20 blur-2xl" />
-        <div className="mx-auto max-w-6xl px-6">
-          <h2 className="mx-auto mb-12 w-fit rounded-full bg-gradient-to-r from-sky-100 to-amber-100 px-5 py-2 text-center text-sm font-semibold text-blue-900 shadow-sm">
-            OUR VISION
-          </h2>
-
-          <div className="grid items-center gap-10 md:grid-cols-2">
+      <section className="relative py-20 sm:py-24">
+        <div className="absolute left-0 right-0 top-0 h-14 bg-[#fff3cc]" />
+        <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
+          <article className="grid items-center gap-8 rounded-[2rem] border border-[#dbe1eb] bg-[#fffefa] p-6 shadow-[0_16px_30px_rgba(31,53,87,0.08)] md:grid-cols-2 md:p-10">
             <div>
-              <h3 className="text-2xl font-semibold">Vision Goals</h3>
-              <div className="mb-5 mt-2 h-[3px] w-24 bg-yellow-400" />
-              <p className="leading-relaxed text-blue-900/90">
-                {visionDesc}
-              </p>
-
-              {/* tiny bullets */}
-              <ul className="mt-6 space-y-2 text-blue-900/90">
+              <h2
+                className="text-3xl font-bold text-[#102a4f]"
+                style={{ fontFamily: "'Balsamiq Sans', cursive" }}
+              >
+                Vision Goals
+              </h2>
+              <div className="mt-3 h-1 w-24 rounded-full bg-[#f6c945]" />
+              <p className="mt-5 text-lg leading-relaxed text-[#425f84]">{visionDesc}</p>
+              <ul className="mt-6 space-y-3">
                 {visionBullets.map((b, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="mt-1 inline-block h-2 w-2 rounded-full bg-sky-500" />
+                  <li key={i} className="flex items-start gap-3 text-base text-[#365274]">
+                    <span className="mt-2 inline-block h-2.5 w-2.5 rounded-full bg-[#4ecdc4]" />
                     {b}
                   </li>
                 ))}
               </ul>
             </div>
-
-            <div className="group relative">
+            <div className="rounded-[1.75rem] border border-[#e8edf4] bg-white p-3 shadow-md">
               <img
                 src={visionImg}
                 alt="Vision Goals"
-                className="relative z-10 w-full scale-[1.01] rounded-3xl border border-blue-100/60 shadow-xl transition-transform duration-300 ease-out group-hover:scale-[1.015]"
+                className="h-full max-h-[420px] w-full rounded-[1.25rem] object-cover"
               />
-              <div className="absolute inset-0 -z-0 translate-x-3 translate-y-3 rounded-3xl bg-gradient-to-br from-sky-200/40 to-amber-200/40 blur-lg" />
             </div>
-          </div>
-        </div>
-      </section>
+          </article>
 
-      {/* =========================
-          BRAND IDENTITY
-      ========================== */}
-      <section className="py-20">
-        <div className="mx-auto max-w-6xl grid items-center gap-10 px-6 md:grid-cols-2">
-          <div className="group relative order-last md:order-first">
-            <img
-              src={brandImg}
-              alt="Brand Identity"
-              className="relative z-10 w-full rounded-3xl border border-blue-100/60 shadow-xl transition duration-300 ease-out group-hover:scale-[1.01]"
-            />
-            <div className="absolute inset-0 -z-0 translate-x-3 translate-y-3 rounded-3xl bg-gradient-to-br from-fuchsia-200/40 to-sky-200/40 blur-lg" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-semibold">Brand Identity</h3>
-            <div className="mb-4 mt-2 h-[3px] w-24 bg-yellow-400" />
-            <p className="leading-relaxed text-blue-900/90">
-              {brandDesc}
-            </p>
-
-            {/* stat chips */}
-            <div className="mt-6 flex flex-wrap gap-3">
-              {brandChips.map((chip, i) => (
-                <span
-                  key={i}
-                  className="rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm shadow-sm"
-                >
-                  {chip}
-                </span>
-              ))}
+          <article className="grid items-center gap-8 rounded-[2rem] border border-[#dbe1eb] bg-[#fffefa] p-6 shadow-[0_16px_30px_rgba(31,53,87,0.08)] md:grid-cols-2 md:p-10">
+            <div className="order-2 md:order-1">
+              <div className="rounded-[1.75rem] border border-[#e8edf4] bg-white p-3 shadow-md">
+                <img
+                  src={brandImg}
+                  alt="Brand Identity"
+                  className="h-full max-h-[420px] w-full rounded-[1.25rem] object-cover"
+                />
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================
-          VALUES
-      ========================== */}
-      <section className="bg-gradient-to-b from-white via-sky-50/60 to-white py-20">
-        <div className="mx-auto max-w-6xl grid items-center gap-10 px-6 md:grid-cols-2">
-          <div>
-            <h3 className="text-2xl font-semibold">Values</h3>
-            <div className="mb-4 mt-2 h-[3px] w-24 bg-yellow-400" />
-            <p className="leading-relaxed text-blue-900/90">
-              {valuesDesc}
-            </p>
-
-            {/* value points */}
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {valuesChips.slice(0, 4).map((text, idx) => {
-                const Icon = valuesIcons[idx] || Target;
-                return (
-                  <div
-                    key={idx}
-                    className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm flex items-center gap-2"
+            <div className="order-1 md:order-2">
+              <h2
+                className="text-3xl font-bold text-[#102a4f]"
+                style={{ fontFamily: "'Balsamiq Sans', cursive" }}
+              >
+                Brand Identity
+              </h2>
+              <div className="mt-3 h-1 w-24 rounded-full bg-[#ff6b6b]" />
+              <p className="mt-5 text-lg leading-relaxed text-[#425f84]">{brandDesc}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {brandChips.map((chip, i) => (
+                  <span
+                    key={i}
+                    className="rounded-2xl border border-[#e1e7ef] bg-[#f9fbfe] px-4 py-2 text-sm font-semibold text-[#365274]"
                   >
-                    <Icon className="inline-block" />
-                    <span>{text}</span>
-                  </div>
-                );
-              })}
+                    {chip}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          </article>
 
-          <div className="group relative">
-            <img
-              src={valuesImg}
-              alt="Values"
-              className="relative z-10 w-full rounded-3xl border border-blue-100/60 shadow-xl transition duration-300 ease-out group-hover:scale-[1.01]"
-            />
-            <div className="absolute inset-0 -z-0 translate-x-3 translate-y-3 rounded-3xl bg-gradient-to-br from-amber-200/40 to-fuchsia-200/40 blur-lg" />
-          </div>
+          <article className="grid items-center gap-8 rounded-[2rem] border border-[#dbe1eb] bg-[#fffefa] p-6 shadow-[0_16px_30px_rgba(31,53,87,0.08)] md:grid-cols-2 md:p-10">
+            <div>
+              <h2
+                className="text-3xl font-bold text-[#102a4f]"
+                style={{ fontFamily: "'Balsamiq Sans', cursive" }}
+              >
+                Values
+              </h2>
+              <div className="mt-3 h-1 w-24 rounded-full bg-[#4ecdc4]" />
+              <p className="mt-5 text-lg leading-relaxed text-[#425f84]">{valuesDesc}</p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {valuesChips.slice(0, 4).map((text, idx) => {
+                  const Icon = valuesIcons[idx] || Target;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 rounded-2xl border border-[#e1e7ef] bg-[#f9fbfe] px-4 py-3"
+                    >
+                      <Icon className="h-4 w-4 text-[#1f3557]" />
+                      <span className="text-sm font-semibold text-[#365274]">{text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="rounded-[1.75rem] border border-[#e8edf4] bg-white p-3 shadow-md">
+              <img
+                src={valuesImg}
+                alt="Values"
+                className="h-full max-h-[420px] w-full rounded-[1.25rem] object-cover"
+              />
+            </div>
+          </article>
+
+          <article className="grid items-center gap-8 rounded-[2rem] border border-[#dbe1eb] bg-[#fffefa] p-6 shadow-[0_16px_30px_rgba(31,53,87,0.08)] md:grid-cols-2 md:p-10">
+            <div className="order-2 md:order-1">
+              <div className="rounded-[1.75rem] border border-[#e8edf4] bg-white p-3 shadow-md">
+                <img
+                  src={missionImg}
+                  alt="Mission of EEC"
+                  className="h-full max-h-[420px] w-full rounded-[1.25rem] object-cover"
+                />
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <h2
+                className="text-3xl font-bold text-[#102a4f]"
+                style={{ fontFamily: "'Balsamiq Sans', cursive" }}
+              >
+                Mission of EEC
+              </h2>
+              <div className="mt-3 h-1 w-24 rounded-full bg-[#6c63ff]" />
+              <p className="mt-5 text-lg leading-relaxed text-[#425f84]">{missionDesc1}</p>
+              <p className="mt-4 text-lg leading-relaxed text-[#425f84]">{missionDesc2}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {missionChips.map((chip, i) => (
+                  <span
+                    key={i}
+                    className="rounded-2xl border border-[#e1e7ef] bg-[#f9fbfe] px-4 py-2 text-sm font-semibold text-[#365274]"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </article>
         </div>
       </section>
-
-      {/* =========================
-          MISSION
-      ========================== */}
-      <section className="py-20">
-        <div className="mx-auto max-w-6xl grid items-center gap-10 px-6 md:grid-cols-2">
-          <div className="group relative">
-            <img
-              src={missionImg}
-              alt="Mission of EEC"
-              className="relative z-10 w-full rounded-3xl border border-blue-100/60 shadow-xl transition duration-300 ease-out group-hover:scale-[1.01]"
-            />
-            <div className="absolute inset-0 -z-0 translate-x-3 translate-y-3 rounded-3xl bg-gradient-to-br from-sky-200/40 to-amber-200/40 blur-lg" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-semibold">Mission of EEC</h3>
-            <div className="mb-4 mt-2 h-[3px] w-24 bg-yellow-400" />
-            <p className="mb-3 leading-relaxed text-blue-900/90">
-              {missionDesc1}
-            </p>
-            <p className="leading-relaxed text-blue-900/90">
-              {missionDesc2}
-            </p>
-
-            {/* mission chips */}
-            <div className="mt-6 flex flex-wrap gap-3">
-              {missionChips.map((chip, i) => (
-                <span
-                  key={i}
-                  className="rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm shadow-sm"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer is handled globally */}
-      {/* <EECFooter /> */}
     </div>
   );
 }

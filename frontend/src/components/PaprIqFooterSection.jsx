@@ -2,7 +2,20 @@ import React from "react";
 
 export default function PaprIqFooterSection() {
   return (
-    <footer className="bg-slate-900 text-slate-300 py-20 border-t-8 border-[#FFD23F]">
+    <footer className="relative mt-14 bg-slate-900 pb-20 pt-24 text-slate-300 border-t-8 border-[#FFD23F]">
+      <div className="pointer-events-none absolute -top-14 left-0 right-0 h-14 overflow-hidden">
+        <svg
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          className="block h-full w-full"
+          aria-hidden="true"
+        >
+          <path
+            fill="#0f172a"
+            d="M0,96L60,80C120,64,240,32,360,37.3C480,43,600,85,720,96C840,107,960,85,1080,74.7C1200,64,1320,64,1380,64L1440,64V120H1380C1320,120,1200,120,1080,120C960,120,840,120,720,120C600,120,480,120,360,120C240,120,120,120,60,120H0Z"
+          />
+        </svg>
+      </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
           <div className="col-span-1 md:col-span-1">
