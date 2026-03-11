@@ -490,6 +490,7 @@ function AdminContent() {
 function TeacherContent() {
   const [uploadedQuestions, setUploadedQuestions] = useState(0);
   const [uploadedQuestionTypes, setUploadedQuestionTypes] = useState(0);
+  const [uploadedStudyMaterials, setUploadedStudyMaterials] = useState(0);
   const [uploadTrend, setUploadTrend] = useState([]);
 
   function toLocalDateKey(dateValue) {
@@ -553,11 +554,16 @@ function TeacherContent() {
 
         setUploadedQuestions(ownQuestions.length);
         setUploadedQuestionTypes(new Set(ownQuestions.map((q) => q.type).filter(Boolean)).size);
+
+        const materials = await getJSON("/api/study-materials/admin/all");
+        setUploadedStudyMaterials(Array.isArray(materials) ? materials.length : 0);
+
         setUploadTrend(buildLast7DaysTrend(ownQuestions));
       } catch (error) {
         console.error("Failed to load teacher upload trend", error);
         setUploadedQuestions(0);
         setUploadedQuestionTypes(0);
+        setUploadedStudyMaterials(0);
         setUploadTrend(buildLast7DaysTrend([]));
       }
     })();
@@ -581,6 +587,12 @@ function TeacherContent() {
             value={uploadedQuestionTypes}
             icon={<Activity size={18} />}
             gradient={["from-emerald-600", "to-teal-600"]}
+          />
+          <StatCard
+            title="Uploaded Study Materials"
+            value={uploadedStudyMaterials}
+            icon={<FileText size={18} />}
+            gradient={["from-amber-600", "to-orange-600"]}
           />
         </div>
       </Section>
@@ -614,8 +626,10 @@ function StudentContent() {
   const [packagesErr, setPackagesErr] = useState("");
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [subscriptionType, setSubscriptionType] = useState("");
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState(null);
   const [subscriptionEndDate, setSubscriptionEndDate] = useState(null);
   const [subscriptionBusy, setSubscriptionBusy] = useState(false);
+  const [subscriptionCancelBusy, setSubscriptionCancelBusy] = useState(false);
   const [subscriptionErr, setSubscriptionErr] = useState("");
 
   useEffect(() => {
@@ -650,6 +664,7 @@ function StudentContent() {
     if (cachedSubscription) {
       setSubscriptionInfo(cachedSubscription.subscriptionInfo || null);
       setSubscriptionType(cachedSubscription.subscriptionType || "none");
+      setSubscriptionStartDate(cachedSubscription.subscriptionStartDate || null);
       setSubscriptionEndDate(cachedSubscription.subscriptionEndDate || null);
     }
 
@@ -686,24 +701,30 @@ function StudentContent() {
               data.subscription?.package?.name ||
               data.subscription?.packageName ||
               "none";
+            const nextSubscriptionStartDate =
+              data.startDate || data.subscription?.startDate || data.subscription?.createdAt || null;
             const nextSubscriptionEndDate =
               data.endDate || data.subscription?.endDate || null;
 
             setSubscriptionInfo(nextSubscriptionInfo);
             setSubscriptionType(nextSubscriptionType);
+            setSubscriptionStartDate(nextSubscriptionStartDate);
             setSubscriptionEndDate(nextSubscriptionEndDate);
             writeDashboardCache("student-subscription", {
               subscriptionInfo: nextSubscriptionInfo,
               subscriptionType: nextSubscriptionType,
+              subscriptionStartDate: nextSubscriptionStartDate,
               subscriptionEndDate: nextSubscriptionEndDate,
             });
           } else {
             setSubscriptionInfo(null);
             setSubscriptionType("none");
+            setSubscriptionStartDate(null);
             setSubscriptionEndDate(null);
             writeDashboardCache("student-subscription", {
               subscriptionInfo: null,
               subscriptionType: "none",
+              subscriptionStartDate: null,
               subscriptionEndDate: null,
             });
           }
@@ -761,6 +782,51 @@ function StudentContent() {
         )
       )
     : null;
+
+  async function cancelSubscription() {
+    if (!subscriptionInfo?._id || subscriptionCancelBusy) return;
+    const ok = window.confirm("Cancel your active subscription?");
+    if (!ok) return;
+
+    setSubscriptionCancelBusy(true);
+    setSubscriptionErr("");
+    try {
+      const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/api/subscriptions/${subscriptionInfo._id}/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || "Failed to cancel subscription");
+
+      setSubscriptionInfo(null);
+      setSubscriptionType("none");
+      setSubscriptionStartDate(null);
+      setSubscriptionEndDate(null);
+
+      const stored = getUser() || {};
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...stored,
+          activeSubscription: null,
+          subscriptionType: "none",
+          subscriptionEndDate: null,
+        })
+      );
+
+      writeDashboardCache("student-subscription", {
+        subscriptionInfo: null,
+        subscriptionType: "none",
+        subscriptionStartDate: null,
+        subscriptionEndDate: null,
+      });
+    } catch (e) {
+      setSubscriptionErr(e.message || "Failed to cancel subscription");
+    } finally {
+      setSubscriptionCancelBusy(false);
+    }
+  }
 
   const totalAttempts = attempts.length;
   const totalScore = attempts.reduce((acc, a) => acc + (a.score || 0), 0);
@@ -939,6 +1005,11 @@ function StudentContent() {
               )}
               {resolvedType === "none" && <Badge tone="slate">Free</Badge>}
             </div>
+            {subscriptionStartDate && (
+              <div className="mt-2 text-xs text-slate-500">
+                Starts on {new Date(subscriptionStartDate).toLocaleDateString()}
+              </div>
+            )}
             {subscriptionEndDate && (
               <div className="mt-2 text-xs text-slate-500">
                 Ends on {new Date(subscriptionEndDate).toLocaleDateString()}
@@ -946,6 +1017,16 @@ function StudentContent() {
                   <span className="ml-1">({subscriptionDaysLeft} days left)</span>
                 )}
               </div>
+            )}
+            {resolvedType !== "none" && subscriptionInfo?._id && (
+              <button
+                type="button"
+                onClick={cancelSubscription}
+                disabled={subscriptionCancelBusy}
+                className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {subscriptionCancelBusy ? "Cancelling..." : "Cancel Subscription"}
+              </button>
             )}
             {subscriptionErr && (
               <div className="mt-2 text-xs text-rose-600">{subscriptionErr}</div>

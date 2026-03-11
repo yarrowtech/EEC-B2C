@@ -7,6 +7,11 @@ import { ToastContainer } from "react-toastify";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const emptyWhyItem = { title: "", description: "", icon: "" };
+const defaultContacts = [
+  { id: "address", title: "Office Address", value: "", type: "address" },
+  { id: "phone", title: "Contact Number", value: "", type: "phone" },
+  { id: "email", title: "Email", value: "", type: "email" },
+];
 const emptyJob = {
   title: "",
   tag: "Opening",
@@ -28,15 +33,31 @@ const CareerSettings = () => {
   const [jobSectionTitle, setJobSectionTitle] =
     useState("Current Job Openings");
   const [jobOpenings, setJobOpenings] = useState([emptyJob]);
+  const [contactItems, setContactItems] = useState(defaultContacts);
 
   // fetch existing data
   useEffect(() => {
+    function normalizeContacts(officeDoc) {
+      if (Array.isArray(officeDoc?.contacts) && officeDoc.contacts.length) {
+        return officeDoc.contacts;
+      }
+      return [
+        { id: "address", title: "Office Address", value: officeDoc?.address || "", type: "address" },
+        { id: "phone", title: "Contact Number", value: officeDoc?.phone || "", type: "phone" },
+        { id: "email", title: "Email", value: officeDoc?.email || "", type: "email" },
+      ];
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(
-          `${API_BASE}/api/settings/career-page`
-        );
+        const [careerRes, officeRes] = await Promise.all([
+          axios.get(`${API_BASE}/api/settings/career-page`),
+          axios.get(`${API_BASE}/api/office`),
+        ]);
+
+        const data = careerRes.data || {};
+        const office = officeRes.data || {};
 
         setWhyJoinTitle(data.whyJoinTitle || "Why Join EEC?");
         setWhyJoinItems(
@@ -49,6 +70,7 @@ const CareerSettings = () => {
         setJobOpenings(
           data.jobOpenings?.length ? data.jobOpenings : [emptyJob]
         );
+        setContactItems(normalizeContacts(office));
       } catch (err) {
         console.error(err);
         toast.error("Failed to load career page data");
@@ -83,10 +105,38 @@ const CareerSettings = () => {
         }
       );
 
-      toast.success("Career page updated successfully");
+      const normalizedContacts = (contactItems || [])
+        .map((item, idx) => ({
+          id: item?.id || `contact-${Date.now()}-${idx}`,
+          title: String(item?.title || "").trim(),
+          value: String(item?.value || "").trim(),
+          type: String(item?.type || "text").trim() || "text",
+        }))
+        .filter((item) => item.title || item.value);
+
+      await axios.put(
+        `${API_BASE}/api/office`,
+        {
+          contacts: normalizedContacts,
+          address:
+            normalizedContacts.find((item) => item.type === "address")?.value || "",
+          phone:
+            normalizedContacts.find((item) => item.type === "phone")?.value || "",
+          email:
+            normalizedContacts.find((item) => item.type === "email")?.value || "",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      );
+
+      toast.success("Career and contact data updated successfully");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update career page");
+      toast.error("Failed to update data");
     } finally {
       setSaving(false);
     }
@@ -132,6 +182,25 @@ const CareerSettings = () => {
 
   const removeJob = (index) => {
     setJobOpenings((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateContactItem = (index, key, value) => {
+    setContactItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [key]: value };
+      return copy;
+    });
+  };
+
+  const addContactItem = () => {
+    setContactItems((prev) => [
+      ...prev,
+      { id: `contact-${Date.now()}`, title: "New Contact", value: "", type: "text" },
+    ]);
+  };
+
+  const removeContactItem = (index) => {
+    setContactItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -407,6 +476,68 @@ const CareerSettings = () => {
           >
             + Add Job
           </button>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">
+              Contact Data
+            </h2>
+            <button
+              type="button"
+              onClick={addContactItem}
+              className="text-xs rounded-full border border-slate-300 px-3 py-1 hover:bg-slate-100"
+            >
+              + Add Contact
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {contactItems.map((item, index) => (
+              <div
+                key={item.id || index}
+                className="rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm grid gap-3 md:grid-cols-12"
+              >
+                <input
+                  type="text"
+                  placeholder="Title"
+                  className="md:col-span-3 rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
+                  value={item.title || ""}
+                  onChange={(e) =>
+                    updateContactItem(index, "title", e.target.value)
+                  }
+                />
+                <select
+                  className="md:col-span-2 rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
+                  value={item.type || "text"}
+                  onChange={(e) =>
+                    updateContactItem(index, "type", e.target.value)
+                  }
+                >
+                  <option value="text">Text</option>
+                  <option value="address">Address</option>
+                  <option value="phone">Phone</option>
+                  <option value="email">Email</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Value"
+                  className="md:col-span-6 rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
+                  value={item.value || ""}
+                  onChange={(e) =>
+                    updateContactItem(index, "value", e.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => removeContactItem(index)}
+                  className="md:col-span-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-100"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* SAVE BUTTON */}

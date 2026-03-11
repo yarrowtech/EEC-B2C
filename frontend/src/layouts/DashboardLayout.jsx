@@ -341,6 +341,7 @@ export default function DashboardLayout() {
         if (role === "teacher") {
             base.push(
                 { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
+                { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },
                 { to: "/dashboard/notifications/create", label: "Send Notifications", icon: <LayoutGrid size={18} /> }
             );
         }

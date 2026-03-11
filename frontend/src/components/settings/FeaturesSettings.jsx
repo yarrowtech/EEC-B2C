@@ -10,7 +10,8 @@ import {
   Brain,
   Volume2,
   LayoutDashboard,
-  Settings
+  Settings,
+  Trash2
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -56,6 +57,11 @@ export default function FeaturesSettings() {
     setFeatures((prev) =>
       prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
     );
+  }
+
+  function deleteFeature(id) {
+    if (!window.confirm("Delete this feature item?")) return;
+    setFeatures((prev) => prev.filter((f) => f.id !== id));
   }
 
   async function saveData() {
@@ -198,6 +204,17 @@ export default function FeaturesSettings() {
                   value={f.description}
                   onChange={(e) => updateFeature(f.id, "description", e.target.value)}
                 />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => deleteFeature(f.id)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition"
+                >
+                  <Trash2 size={16} />
+                  Delete Item
+                </button>
               </div>
 
             </div>

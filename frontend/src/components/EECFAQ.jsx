@@ -9,11 +9,11 @@ import { useState } from "react";
 import { ChevronDown, PlayCircle, WifiOff, GraduationCap, Gift, BarChart3, ShieldCheck } from "lucide-react";
 
 const faqs = [
-  { q: "Is EEC a video-based app?", a: "No. EEC uses smart text and audio to teach – no long videos.", icon: PlayCircle },
+  { q: "Is EEC a video-based app?", a: "No. EEC uses smart text like tryouts and study materials to teach – no long videos.", icon: PlayCircle },
   { q: "Can I use it offline?", a: "Not yet. EEC requires active internet for accurate AI functioning.", icon: WifiOff },
-  { q: "What grades does it support?", a: "From Class 1 to Class 12.", icon: GraduationCap },
-  { q: "How much is free?", a: "The first 5 stages are completely free.", icon: Gift },
-  { q: "Can parents track progress?", a: "Yes. Every account includes a Parent Dashboard.", icon: BarChart3 },
+  { q: "What grades does it support?", a: "From Class 3 to Class 10.", icon: GraduationCap },
+  { q: "How much is free?", a: "Some stages are free.", icon: Gift },
+  { q: "Is study Materials free?", a: "No, some of the materials are free", icon: BarChart3 },
   { q: "Is my data safe with EEC?", a: "Absolutely. All user data is encrypted and securely stored on cloud servers.", icon: ShieldCheck },
 ];
 

@@ -210,11 +210,9 @@ export default function Navbar() {
             <DropItem to="/dashboard/syllabus?stage=1">Tryouts</DropItem>
           </Dropdown>
 
-          <Dropdown label="Contact Us">
-            <DropItem to="/support">Support Center</DropItem>
-            <DropItem to="/careers">Career</DropItem>
-            <DropItem to="/office">Office</DropItem>
-          </Dropdown>
+          <RouterLink to="/contact-us" active={isActive("/contact-us") || isActive("/office")}>
+            Contact Us
+          </RouterLink>
 
           {/* <button
             type="button"
@@ -394,23 +392,14 @@ export default function Navbar() {
             </div>
           </details>
 
-          {/* Contact group */}
-          <details className="rounded-xl p-1 open:bg-blue-50/70">
-            <summary className="cursor-pointer rounded-xl px-2 py-2 text-sm font-medium text-blue-900">
-              Contact Us
-            </summary>
-            <div className="mt-1 grid gap-1 rounded-xl bg-white/90 p-1 backdrop-blur-sm">
-              <DropItem to="/support" onClick={closeMobile}>
-                Support Center
-              </DropItem>
-              <DropItem to="/careers" onClick={closeMobile}>
-                Career
-              </DropItem>
-              <DropItem to="/office" onClick={closeMobile}>
-                Office
-              </DropItem>
-            </div>
-          </details>
+          <RouterLink
+            to="/contact-us"
+            className="!block !px-2"
+            onClick={closeMobile}
+            active={isActive("/contact-us") || isActive("/office")}
+          >
+            Contact Us
+          </RouterLink>
 
           {/* <button
             type="button"

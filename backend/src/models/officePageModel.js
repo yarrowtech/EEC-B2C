@@ -20,6 +20,17 @@ const OfficePageSchema = new mongoose.Schema(
     address: { type: String, default: "" },
     phone: { type: String, default: "" },
     email: { type: String, default: "" },
+    contacts: {
+      type: [
+        {
+          id: { type: String, default: "" },
+          title: { type: String, default: "" },
+          value: { type: String, default: "" },
+          type: { type: String, default: "text" },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

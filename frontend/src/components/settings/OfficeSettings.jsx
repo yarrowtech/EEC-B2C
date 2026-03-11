@@ -5,6 +5,11 @@ import { Image, Upload, Settings } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
 const API = import.meta.env.VITE_API_URL || "";
+const DEFAULT_CONTACTS = [
+  { id: "address", title: "Office Address", value: "", type: "address" },
+  { id: "phone", title: "Contact Number", value: "", type: "phone" },
+  { id: "email", title: "Email", value: "", type: "email" },
+];
 
 export default function OfficeSettings() {
   const [data, setData] = useState(null);
@@ -18,12 +23,21 @@ export default function OfficeSettings() {
   });
 
   useEffect(() => {
+    function normalizeContacts(doc) {
+      if (Array.isArray(doc?.contacts) && doc.contacts.length) return doc.contacts;
+      return [
+        { id: "address", title: "Office Address", value: doc?.address || "", type: "address" },
+        { id: "phone", title: "Contact Number", value: doc?.phone || "", type: "phone" },
+        { id: "email", title: "Email", value: doc?.email || "", type: "email" },
+      ];
+    }
+
     async function load() {
       try {
         setLoading(true);
         const res = await fetch(`${API}/api/office`);
         const json = await res.json();
-        setData(json);
+        setData({ ...json, contacts: normalizeContacts(json) });
       } catch (err) {
         toast.error("Failed to load office settings");
         console.error(err);
@@ -48,6 +62,41 @@ export default function OfficeSettings() {
       }
       cur[rest[rest.length - 1]] = value;
       return copy;
+    });
+  }
+
+  function updateContact(index, key, value) {
+    setData((prev) => {
+      const next = { ...(prev || {}) };
+      const list = Array.isArray(next.contacts) ? [...next.contacts] : [...DEFAULT_CONTACTS];
+      list[index] = { ...(list[index] || {}), [key]: value };
+      next.contacts = list;
+      return next;
+    });
+  }
+
+  function addContact() {
+    setData((prev) => {
+      const next = { ...(prev || {}) };
+      const list = Array.isArray(next.contacts) ? [...next.contacts] : [];
+      list.push({
+        id: `contact-${Date.now()}`,
+        title: "New Contact",
+        value: "",
+        type: "text",
+      });
+      next.contacts = list;
+      return next;
+    });
+  }
+
+  function removeContact(index) {
+    setData((prev) => {
+      const next = { ...(prev || {}) };
+      const list = Array.isArray(next.contacts) ? [...next.contacts] : [];
+      list.splice(index, 1);
+      next.contacts = list;
+      return next;
     });
   }
 
@@ -108,6 +157,30 @@ export default function OfficeSettings() {
       if (payload.workspace?.chips && typeof payload.workspace.chips === "string") {
         payload.workspace.chips = payload.workspace.chips.split(",").map((c) => c.trim()).filter(Boolean);
       }
+
+      // normalize contacts payload and keep legacy fields synced
+      const normalizedContacts = (Array.isArray(payload.contacts) ? payload.contacts : [])
+        .map((c, index) => ({
+          id: c?.id || `contact-${index + 1}`,
+          title: String(c?.title || "").trim(),
+          value: String(c?.value || "").trim(),
+          type: String(c?.type || "text").trim() || "text",
+        }))
+        .filter((c) => c.title || c.value);
+      payload.contacts = normalizedContacts;
+
+      payload.address =
+        normalizedContacts.find((c) => c.type === "address")?.value ||
+        payload.address ||
+        "";
+      payload.phone =
+        normalizedContacts.find((c) => c.type === "phone")?.value ||
+        payload.phone ||
+        "";
+      payload.email =
+        normalizedContacts.find((c) => c.type === "email")?.value ||
+        payload.email ||
+        "";
 
       const res = await fetch(`${API}/api/office`, {
         method: "PUT",
@@ -357,33 +430,50 @@ export default function OfficeSettings() {
           />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Address</label>
-            <input
-              value={data.address || ""}
-              onChange={(e) => updateField("address", e.target.value)}
-              className="w-full rounded-xl border px-3 py-2 text-sm"
-            />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-slate-700">Contact Items</label>
+            <button
+              type="button"
+              onClick={addContact}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              Add Contact
+            </button>
           </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Phone</label>
-            <input
-              value={data.phone || ""}
-              onChange={(e) => updateField("phone", e.target.value)}
-              className="w-full rounded-xl border px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Email</label>
-            <input
-              value={data.email || ""}
-              onChange={(e) => updateField("email", e.target.value)}
-              className="w-full rounded-xl border px-3 py-2 text-sm"
-            />
-          </div>
+          {(data.contacts || []).map((contact, index) => (
+            <div key={contact.id || index} className="grid gap-2 md:grid-cols-12 items-center rounded-xl border p-3 bg-white/70">
+              <input
+                className="md:col-span-3 rounded-lg border px-3 py-2 text-sm"
+                placeholder="Title"
+                value={contact.title || ""}
+                onChange={(e) => updateContact(index, "title", e.target.value)}
+              />
+              <select
+                className="md:col-span-2 rounded-lg border px-3 py-2 text-sm"
+                value={contact.type || "text"}
+                onChange={(e) => updateContact(index, "type", e.target.value)}
+              >
+                <option value="text">Text</option>
+                <option value="address">Address</option>
+                <option value="phone">Phone</option>
+                <option value="email">Email</option>
+              </select>
+              <input
+                className="md:col-span-6 rounded-lg border px-3 py-2 text-sm"
+                placeholder="Value"
+                value={contact.value || ""}
+                onChange={(e) => updateContact(index, "value", e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => removeContact(index)}
+                className="md:col-span-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

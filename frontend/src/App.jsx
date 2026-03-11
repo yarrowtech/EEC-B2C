@@ -409,7 +409,8 @@ export default function App() {
           <Route path="/e-learn-well" element={<LearningWellbeing />} />
           <Route path="/aim" element={<EECCommitment />} />
           <Route path="/careers" element={<EECCareers />} />
-          <Route path="/office" element={<EECOffice />} />
+          <Route path="/contact-us" element={<EECOffice />} />
+          <Route path="/office" element={<Navigate to="/contact-us" replace />} />
           <Route path="/boards" element={<EECLearningBoards />} />
           <Route path="/support" element={<SupportCenter />} />
           <Route path="/marketing" element={<EECMarketing />} />

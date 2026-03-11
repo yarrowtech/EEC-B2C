@@ -19,9 +19,9 @@ const Home = () => {
       <Hero />
       <WhatIsEEC />
       <EECFeaturesSection />
-      <EECStages />
-      <EECUnique />
-      <EECImageRow />
+      {/* <EECStages /> */}
+      {/* <EECUnique /> */}
+      {/* <EECImageRow /> */}
       <EECFAQ />
       {/* <GlobalLoginModal /> */}
       {/* <EECFooter /> */}

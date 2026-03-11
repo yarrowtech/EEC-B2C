@@ -10,6 +10,14 @@ function getToken() {
 }
 
 export default function UploadStudyMaterial() {
+    const currentUser = (() => {
+        try {
+            return JSON.parse(localStorage.getItem("user") || "{}");
+        } catch {
+            return {};
+        }
+    })();
+
     const emptyForm = {
         title: "",
         class: "",
@@ -526,6 +534,16 @@ export default function UploadStudyMaterial() {
             {/* MATERIALS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {paginatedMaterials.map((m) => (
+                    (() => {
+                        const createdById =
+                            typeof m?.createdBy === "string"
+                                ? m.createdBy
+                                : m?.createdBy?._id || m?.createdBy?.id;
+                        const meId = currentUser?._id || currentUser?.id;
+                        const isYou = createdById && meId && String(createdById) === String(meId);
+                        const uploaderName = m?.createdBy?.name || m?.createdBy?.email || "Unknown";
+
+                        return (
                     <div
                         key={m._id}
                         className="group relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-md
@@ -556,6 +574,9 @@ export default function UploadStudyMaterial() {
                             {/* META */}
                             <p className="text-sm text-slate-600 mt-1">
                                 {m.class} • {m.board} • {m.subject}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Uploaded by: {uploaderName}{isYou ? " (You)" : ""}
                             </p>
 
                             {/* BADGE */}
@@ -598,6 +619,8 @@ export default function UploadStudyMaterial() {
                             </div>
                         </div>
                     </div>
+                        );
+                    })()
                 ))}
 
                 {materials.length === 0 && (

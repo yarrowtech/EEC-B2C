@@ -162,6 +162,11 @@ router.put(
         return res.status(404).json({ message: "Material not found" });
       }
 
+      const role = String(req.user?.role || "").toLowerCase();
+      if (role === "teacher" && String(material.createdBy) !== String(req.user.id)) {
+        return res.status(403).json({ message: "You can only update your own materials." });
+      }
+
       // Update text fields
       material.title = req.body.title;
       material.class = req.body.class;
@@ -204,7 +209,11 @@ router.put(
 
 /* ADMIN → list all materials */
 router.get("/admin/all", requireAuth, requireAdmin, async (req, res) => {
-  const materials = await StudyMaterial.find().sort({ createdAt: -1 });
+  const role = String(req.user?.role || "").toLowerCase();
+  const filter = role === "teacher" ? { createdBy: req.user.id } : {};
+  const materials = await StudyMaterial.find(filter)
+    .populate("createdBy", "name email role")
+    .sort({ createdAt: -1 });
   res.json(materials);
 });
 
@@ -214,6 +223,11 @@ router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
     const material = await StudyMaterial.findById(req.params.id);
     if (!material) {
       return res.status(404).json({ message: "Material not found" });
+    }
+
+    const role = String(req.user?.role || "").toLowerCase();
+    if (role === "teacher" && String(material.createdBy) !== String(req.user.id)) {
+      return res.status(403).json({ message: "You can only delete your own materials." });
     }
 
     // ✅ Safely attempt Cloudinary delete

@@ -4,18 +4,45 @@ import { motion } from "framer-motion";
 import { MapPin, Phone, Mail } from "lucide-react";
 
 export default function EECOffice() {
-  const mapsEmbed =
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3684.5105918990157!2d88.34842407405898!3d22.559998933434503!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a027708e4bbaea9%3A0xcac9c767f56f9985!2s19B%2C%20Jawaharlal%20Nehru%20Rd%2C%20New%20Market%20Area%2C%20Dharmatala%2C%20Taltala%2C%20Kolkata%2C%20West%20Bengal%20700087!5e0!3m2!1sen!2sin!4v1728293602394!5m2!1sen!2sin";
+  const API = import.meta.env.VITE_API_URL || "";
+  const [data, setData] = React.useState(null);
 
-  const mapsDir =
-    "https://www.google.com/maps/dir/?api=1&destination=19B%20Jawaharlal%20Nehru%20Rd%2C%20Esplanade%2C%20Kolkata%2C%20700087";
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/office`);
+        const json = await res.json();
+        setData(json);
+      } catch (e) {
+        console.error("Failed to load contact-us page", e);
+      }
+    })();
+  }, [API]);
+
+  const mapsEmbed = data?.mapEmbedUrl || "";
+  const mapsDir = data?.mapDirectionsUrl || "";
+  const contacts =
+    Array.isArray(data?.contacts) && data.contacts.length
+      ? data.contacts
+      : [
+          { id: "address", title: "Office Address", value: data?.address || "", type: "address" },
+          { id: "phone", title: "Contact Number", value: data?.phone || "", type: "phone" },
+          { id: "email", title: "Email", value: data?.email || "", type: "email" },
+        ].filter((c) => c.value);
+
+  const addressValue = contacts.find((c) => c.type === "address")?.value || data?.address || "";
+  const phoneValue = contacts.find((c) => c.type === "phone")?.value || data?.phone || "";
+  const emailValue = contacts.find((c) => c.type === "email")?.value || data?.email || "";
 
   return (
     <div className="overflow-x-hidden bg-white text-blue-950 selection:bg-yellow-200/60">
       {/* =========================
           HERO (image + bluish overlay + curve)
       ========================== */}
-      <section className="relative flex h-[72vh] w-full items-center justify-center overflow-hidden bg-[url('/office.jpg')] bg-cover bg-center">
+      <section
+        className="relative flex h-[72vh] w-full items-center justify-center overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url('${data?.hero?.image || "/office.jpg"}')` }}
+      >
         {/* overlays */}
         <div className="absolute inset-0 bg-blue-950/55" />
         <div className="absolute inset-0 mix-blend-overlay bg-gradient-to-tr from-sky-400/15 via-indigo-400/10 to-amber-300/10" />
@@ -32,13 +59,13 @@ export default function EECOffice() {
         >
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold backdrop-blur">
             <MapPin className="h-3.5 w-3.5" />
-            Kolkata • Collaboration-first workspace
+            {data?.hero?.badge || "Our Office"}
           </span>
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight drop-shadow md:text-6xl">
-            Welcome to the <span className="text-yellow-300">EEC</span> Office!
+            {data?.hero?.title || "Welcome to the EEC Office!"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-blue-100/90">
-            Located in Kolkata, our workspace is designed for collaboration and creativity.
+            {data?.hero?.subtitle || "Located in Kolkata, our workspace is designed for collaboration and creativity."}
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -77,7 +104,7 @@ export default function EECOffice() {
       ========================== */}
       <section className="bg-blue-50/40 py-16">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 md:flex-row">
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, x: -24 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -90,9 +117,9 @@ export default function EECOffice() {
               className="relative z-10 w-full rounded-3xl border border-blue-100/60 shadow-xl transition-transform duration-300 ease-out group-hover:scale-[1.01]"
             />
             <div className="absolute inset-0 -z-0 translate-x-3 translate-y-3 rounded-3xl bg-gradient-to-br from-sky-200/40 to-amber-200/40 blur-lg" />
-          </motion.div>
+          </motion.div> */}
 
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, x: 24 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -106,8 +133,6 @@ export default function EECOffice() {
               features flexible workstations, a lounge area, and wellness programs to promote work-life
               balance. We are committed to creating an inclusive and productive culture for our team.
             </p>
-
-            {/* mini chips */}
             <div className="mt-5 flex flex-wrap gap-2 text-[11px]">
               {["Focus rooms", "Wellness corner", "Collab spaces", "Fast Wi-Fi"].map((chip) => (
                 <span
@@ -118,7 +143,7 @@ export default function EECOffice() {
                 </span>
               ))}
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </section>
 
@@ -130,21 +155,26 @@ export default function EECOffice() {
           <h2 className="text-3xl font-semibold">Find Us</h2>
           <div className="mx-auto mt-3 h-[3px] w-28 bg-yellow-400" />
           <p className="mx-auto mt-4 max-w-2xl text-blue-900/90">
-            We are located in the heart of Kolkata. Visit us at our office or get in touch with us
-            through the contact details below.
+            Visit us at our office or get in touch through the contact details below.
           </p>
 
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             {/* Map */}
             <div className="md:col-span-2">
               <div className="aspect-video w-full overflow-hidden rounded-3xl border border-blue-100 shadow-lg">
-                <iframe
-                  className="h-full w-full border-0"
-                  src={mapsEmbed}
-                  allowFullScreen
-                  loading="lazy"
-                  title="EEC Office Location"
-                />
+                {mapsEmbed ? (
+                  <iframe
+                    className="h-full w-full border-0"
+                    src={mapsEmbed}
+                    allowFullScreen
+                    loading="lazy"
+                    title="EEC Office Location"
+                  />
+                ) : (
+                  <div className="h-full w-full grid place-items-center text-slate-500 bg-slate-50">
+                    Map not configured yet
+                  </div>
+                )}
               </div>
             </div>
 
@@ -154,33 +184,35 @@ export default function EECOffice() {
                 <div className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-5 w-5 text-blue-700" />
                   <p className="text-sm text-blue-900/90">
-                    123 EEC, 19B Jawaharlal Nehru Marg, Esplanade, Kolkata, West Bengal 700087
+                    {addressValue || "Address not available"}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-blue-700" />
-                  <a href="tel:+919830590929" className="text-sm text-blue-900/90 hover:underline">
-                    +91 9830590929
+                  <a href={phoneValue ? `tel:${phoneValue}` : undefined} className="text-sm text-blue-900/90 hover:underline">
+                    {phoneValue || "Phone not available"}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-blue-700" />
                   <a
-                    href="mailto:contact@eeclearning.com"
+                    href={emailValue ? `mailto:${emailValue}` : undefined}
                     className="text-sm text-blue-900/90 hover:underline"
                   >
-                    contact@eeclearning.com
+                    {emailValue || "Email not available"}
                   </a>
                 </div>
               </div>
-              <a
-                href={mapsDir}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg active:scale-[.98]"
-              >
-                Open in Google Maps
-              </a>
+              {mapsDir ? (
+                <a
+                  href={mapsDir}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg active:scale-[.98]"
+                >
+                  Open in Google Maps
+                </a>
+              ) : null}
             </div>
           </div>
         </div>
@@ -191,18 +223,9 @@ export default function EECOffice() {
       ========================== */}
       <section className="bg-blue-50/40 py-16">
         <div className="mx-auto grid max-w-6xl gap-10 px-6 text-center md:grid-cols-3">
-          {[
-            {
-              title: "Office Address",
-              text:
-                "123 EEC, 19B Jawaharlal Nehru Marg, Esplanade, Kolkata, West Bengal 700087",
-              icon: <MapPin className="h-5 w-5" />,
-            },
-            { title: "Contact Number", text: "+91 9830590929", icon: <Phone className="h-5 w-5" /> },
-            { title: "Email", text: "contact@eeclearning.com", icon: <Mail className="h-5 w-5" /> },
-          ].map((info, i) => (
+          {contacts.map((info, i) => (
             <motion.div
-              key={info.title}
+              key={info.id || `${info.title}-${i}`}
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -210,11 +233,11 @@ export default function EECOffice() {
               className="rounded-3xl border border-blue-100/60 bg-white/90 p-6 shadow-lg backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="mx-auto mb-3 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-3 py-1 text-xs font-semibold text-blue-900">
-                {info.icon}
+                {info.type === "phone" ? <Phone className="h-5 w-5" /> : info.type === "email" ? <Mail className="h-5 w-5" /> : <MapPin className="h-5 w-5" />}
                 Info
               </div>
               <h4 className="mb-2 text-xl font-semibold">{info.title}</h4>
-              <p className="text-blue-900/90">{info.text}</p>
+              <p className="text-blue-900/90">{info.value}</p>
             </motion.div>
           ))}
         </div>
