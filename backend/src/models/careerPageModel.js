@@ -14,7 +14,13 @@ const JobOpeningSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     tag: { type: String, default: "Opening" },
+    employmentType: { type: String, default: "Full-time" },
+    department: { type: String, default: "" },
+    location: { type: String, default: "" },
+    workMode: { type: String, default: "Remote / On-site" },
+    salary: { type: String, default: "" },
     shortDescription: { type: String, default: "" },
+    fullDescription: { type: String, default: "" },
     points: { type: [String], default: [] },
     experience: { type: String, default: "" },
     buttonLabel: { type: String, default: "Apply Now" },

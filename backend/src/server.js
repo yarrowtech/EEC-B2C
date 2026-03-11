@@ -37,6 +37,7 @@ import aiQuestionRoutes from "./routes/aiQuestionRoutes.js";
 import selfStudyRoutes from "./routes/selfStudyRoutes.js";
 import packageRoutes from "./routes/packages.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
+import careerApplicationsRoutes from "./routes/careerApplicationsRoutes.js";
 
 const app = express();
 
@@ -61,7 +62,7 @@ app.use(
       }
       return cb(new Error("Not allowed by CORS"));
     },
-    methods: ["GET", "POST", "DELETE", "PUT"],
+    methods: ["GET", "POST", "DELETE", "PUT", "PATCH"],
     credentials: true,
   })
 );
@@ -86,6 +87,7 @@ app.use("/api/features", featuresRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/about-us", aboutUsRoutes);
 app.use("/api/settings", careerPageRoutes);
+app.use("/api/career-applications", careerApplicationsRoutes);
 app.use("/api/office", officePageRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api", subjectTopicRoutes);

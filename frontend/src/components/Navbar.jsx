@@ -213,6 +213,9 @@ export default function Navbar() {
           <RouterLink to="/contact-us" active={isActive("/contact-us") || isActive("/office")}>
             Contact Us
           </RouterLink>
+          <RouterLink to="/careers" active={isActive("/careers")}>
+            Careers
+          </RouterLink>
 
           {/* <button
             type="button"
@@ -399,6 +402,14 @@ export default function Navbar() {
             active={isActive("/contact-us") || isActive("/office")}
           >
             Contact Us
+          </RouterLink>
+          <RouterLink
+            to="/careers"
+            className="!block !px-2"
+            onClick={closeMobile}
+            active={isActive("/careers")}
+          >
+            Careers
           </RouterLink>
 
           {/* <button

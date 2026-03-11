@@ -14,6 +14,7 @@ import TailoredLearning from "./pages/TailoredLearning";
 import LearningWellbeing from "./pages/LearningWellbeing";
 import EECCommitment from "./pages/EECCommitment";
 import EECCareers from "./pages/EECCareers";
+import EECCareerDetails from "./pages/EECCareerDetails";
 import EECOffice from "./pages/EECOffice";
 import EECLearningBoards from "./pages/EECLearningBoards";
 import EECPartner from "./pages/EECMarketing";
@@ -48,6 +49,7 @@ import ResultsList from "./pages/admin/ResultsList";
 import ResultDetail from "./pages/admin/ResultDetail";
 import AdvancedStudentAnalytics from "./pages/admin/AdvancedStudentAnalytics";
 import TeacherAnalytics from "./pages/admin/TeacherAnalytics";
+import JobApplicationsPage from "./pages/admin/JobApplicationsPage";
 import HeroSettings from "./components/settings/HeroSettings";
 import WhyEecSettings from "./components/settings/WhyEecSettings";
 import FeaturesSettings from "./components/settings/FeaturesSettings";
@@ -409,6 +411,8 @@ export default function App() {
           <Route path="/e-learn-well" element={<LearningWellbeing />} />
           <Route path="/aim" element={<EECCommitment />} />
           <Route path="/careers" element={<EECCareers />} />
+          <Route path="/careers/:jobSlug" element={<EECCareerDetails />} />
+          <Route path="/career" element={<Navigate to="/careers" replace />} />
           <Route path="/contact-us" element={<EECOffice />} />
           <Route path="/office" element={<Navigate to="/contact-us" replace />} />
           <Route path="/boards" element={<EECLearningBoards />} />
@@ -501,14 +505,17 @@ export default function App() {
             <Route path="results/:id" element={<RequireAdmin><ResultDetail /></RequireAdmin>} />
             <Route path="student-analytics" element={<RequireAdmin><AdvancedStudentAnalytics /></RequireAdmin>} />
             <Route path="teacher-analytics" element={<RequireAdmin><TeacherAnalytics /></RequireAdmin>} />
+            <Route path="job-applications" element={<RequireAdmin><JobApplicationsPage /></RequireAdmin>} />
 
             {/* Setttings */}
             <Route path="settings/home" element={<RequireAdmin><HeroSettings /></RequireAdmin>} />
             <Route path="settings/why-eec" element={<RequireAdmin><WhyEecSettings /></RequireAdmin>} />
             <Route path="settings/features" element={<RequireAdmin><FeaturesSettings /></RequireAdmin>} />
             <Route path="settings/about-us" element={<RequireAdmin><AboutUsSettings /></RequireAdmin>} />
-            <Route path="settings/contact-career" element={<RequireAdmin><CareerSettings /></RequireAdmin>} />
-            <Route path="settings/contact-office" element={<RequireAdmin><OfficeSettings /></RequireAdmin>} />
+            <Route path="settings/contact-us" element={<RequireAdmin><OfficeSettings /></RequireAdmin>} />
+            <Route path="settings/careers" element={<RequireAdmin><CareerSettings /></RequireAdmin>} />
+            <Route path="settings/contact-career" element={<Navigate to="/dashboard/settings/careers" replace />} />
+            <Route path="settings/contact-office" element={<Navigate to="/dashboard/settings/contact-us" replace />} />
 
             <Route path="exams" element={<ExamsIndex />} />
             <Route path="exams/take/:attemptId" element={<ExamTake />} />

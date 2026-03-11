@@ -21,7 +21,6 @@ export default function SettingsSidebarBlock({ role }) {
   const [openMain, setOpenMain] = useState(false);
   const [openHome, setOpenHome] = useState(false);
   const [openPages, setOpenPages] = useState(false);
-  const [openContact, setOpenContact] = useState(false);
 
   return (
     <div className="mt-2 space-y-1">
@@ -120,33 +119,23 @@ export default function SettingsSidebarBlock({ role }) {
                 About Us
               </NavLink>
 
-              {/* CONTACT US */}
-              <button
-                onClick={() => setOpenContact(!openContact)}
-                className={`${linkBase} w-full justify-between hover:bg-yellow-100`}
+              <NavLink
+                to="/dashboard/settings/contact-us"
+                className={({ isActive }) =>
+                  `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+                }
               >
-                <span>Contact Us</span>
-                {openContact ? (
-                  <ChevronDown size={14} />
-                ) : (
-                  <ChevronRight size={14} />
-                )}
-              </button>
+                Contact Us
+              </NavLink>
 
-              {openContact && (
-                <div className="ml-4 pl-3 border-l border-yellow-200 space-y-1">
-                  <NavLink
-                    to="/dashboard/settings/contact-career"
-                    className={({ isActive }) =>
-                      `${linkBase} ${
-                        isActive ? linkActive : "hover:bg-yellow-100"
-                      }`
-                    }
-                  >
-                    Career
-                  </NavLink>
-                </div>
-              )}
+              <NavLink
+                to="/dashboard/settings/careers"
+                className={({ isActive }) =>
+                  `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+                }
+              >
+                Careers
+              </NavLink>
             </div>
           )}
 

@@ -1,7 +1,19 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Settings, BriefcaseBusiness } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  ToggleLeft,
+  ToggleRight,
+  Link,
+  AlignLeft,
+  Users,
+  Phone,
+} from "lucide-react";
 import { ToastContainer } from "react-toastify";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -15,7 +27,13 @@ const defaultContacts = [
 const emptyJob = {
   title: "",
   tag: "Opening",
+  employmentType: "Full-time",
+  department: "",
+  location: "",
+  workMode: "Remote / On-site",
+  salary: "",
   shortDescription: "",
+  fullDescription: "",
   points: ["", "", ""],
   experience: "",
   buttonLabel: "Apply Now",
@@ -23,6 +41,275 @@ const emptyJob = {
   order: 0,
 };
 
+/* ── small reusable pieces ──────────────────────── */
+function Label({ children, className = "" }) {
+  return (
+    <label className={`block text-xs font-semibold text-slate-600 mb-1 ${className}`}>
+      {children}
+    </label>
+  );
+}
+
+function Input({ className = "", ...props }) {
+  return (
+    <input
+      className={`w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${className}`}
+      {...props}
+    />
+  );
+}
+
+function Textarea({ className = "", ...props }) {
+  return (
+    <textarea
+      className={`w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition resize-none focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${className}`}
+      {...props}
+    />
+  );
+}
+
+function SectionCard({ icon, title, description, children, accent = "indigo" }) {
+  const accents = {
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    rose: "bg-rose-50 text-rose-600 border-rose-100",
+  };
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+        <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border ${accents[accent]}`}>
+          {icon}
+        </div>
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+          {description && (
+            <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="px-6 py-5">{children}</div>
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+        checked
+          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+          : "bg-slate-100 text-slate-500 border border-slate-200"
+      }`}
+    >
+      {checked ? (
+        <ToggleRight className="h-3.5 w-3.5" />
+      ) : (
+        <ToggleLeft className="h-3.5 w-3.5" />
+      )}
+      {checked ? "Active" : "Inactive"}
+    </button>
+  );
+}
+
+/* ── collapsible job card ───────────────────────── */
+function JobCard({ job, index, total, onUpdate, onUpdatePoint, onRemove }) {
+  const [open, setOpen] = useState(index === 0);
+
+  return (
+    <div className={`rounded-xl border transition ${job.isActive ? "border-slate-200" : "border-slate-100 opacity-60"} bg-white shadow-sm`}>
+      {/* Card header */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+          {index + 1}
+        </span>
+        <p className="flex-1 text-sm font-semibold text-slate-800 truncate">
+          {job.title || `Job Opening ${index + 1}`}
+        </p>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Toggle
+            checked={job.isActive}
+            onChange={(v) => onUpdate(index, "isActive", v)}
+          />
+          {total > 1 && (
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              className="rounded-lg border border-rose-100 bg-rose-50 p-1.5 text-rose-500 hover:bg-rose-100 transition"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-slate-400" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-slate-400" />
+        )}
+      </div>
+
+      {/* Collapsible body */}
+      {open && (
+        <div className="border-t border-slate-100 px-4 pb-4 pt-4 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Job Title *</Label>
+              <Input
+                placeholder="e.g. Frontend Developer"
+                value={job.title}
+                onChange={(e) => onUpdate(index, "title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Badge / Tag</Label>
+              <Input
+                placeholder="e.g. Full-time, Contract"
+                value={job.tag}
+                onChange={(e) => onUpdate(index, "tag", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Employment Type</Label>
+              <select
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                value={job.employmentType || "Full-time"}
+                onChange={(e) => onUpdate(index, "employmentType", e.target.value)}
+              >
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Internship">Internship</option>
+                <option value="Contract">Contract</option>
+                <option value="Freelance">Freelance</option>
+              </select>
+            </div>
+            <div>
+              <Label>Department</Label>
+              <Input
+                placeholder="e.g. Engineering"
+                value={job.department || ""}
+                onChange={(e) => onUpdate(index, "department", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Short Description</Label>
+            <Textarea
+              rows={3}
+              placeholder="Brief description of the role..."
+              value={job.shortDescription}
+              onChange={(e) => onUpdate(index, "shortDescription", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label>Full Job Details</Label>
+            <Textarea
+              rows={5}
+              placeholder="Detailed role information for the job details page..."
+              value={job.fullDescription || ""}
+              onChange={(e) => onUpdate(index, "fullDescription", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label>Requirements (Bullet Points)</Label>
+            <div className="space-y-2">
+              {(job.points || ["", "", ""]).map((p, pIndex) => (
+                <div key={pIndex} className="flex items-center gap-2">
+                  <span className="shrink-0 text-xs font-medium text-slate-400 w-4">{pIndex + 1}.</span>
+                  <Input
+                    placeholder={`Requirement ${pIndex + 1}`}
+                    value={p}
+                    onChange={(e) => onUpdatePoint(index, pIndex, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <Label>Location</Label>
+              <Input
+                placeholder="e.g. Kolkata, India"
+                value={job.location || ""}
+                onChange={(e) => onUpdate(index, "location", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Work Mode</Label>
+              <Input
+                placeholder="e.g. On-site / Hybrid / Remote"
+                value={job.workMode || ""}
+                onChange={(e) => onUpdate(index, "workMode", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Salary / Stipend</Label>
+              <Input
+                placeholder="e.g. ₹4-7 LPA or ₹15,000/month"
+                value={job.salary || ""}
+                onChange={(e) => onUpdate(index, "salary", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <Label>Experience Required</Label>
+              <Input
+                placeholder="e.g. 2+ Years"
+                value={job.experience}
+                onChange={(e) => onUpdate(index, "experience", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Button Label</Label>
+              <Input
+                placeholder="Apply Now"
+                value={job.buttonLabel}
+                onChange={(e) => onUpdate(index, "buttonLabel", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Display Order</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={job.order}
+                onChange={(e) => onUpdate(index, "order", Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Application Form URL</Label>
+            <div className="relative">
+              <Link className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                className="pl-8"
+                placeholder="https://forms.google.com/..."
+                value={job.formUrl || ""}
+                onChange={(e) => onUpdate(index, "formUrl", e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── main component ─────────────────────────────── */
 const CareerSettings = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,12 +317,10 @@ const CareerSettings = () => {
   const [whyJoinTitle, setWhyJoinTitle] = useState("Why Join EEC?");
   const [whyJoinItems, setWhyJoinItems] = useState([emptyWhyItem]);
   const [introText, setIntroText] = useState("");
-  const [jobSectionTitle, setJobSectionTitle] =
-    useState("Current Job Openings");
+  const [jobSectionTitle, setJobSectionTitle] = useState("Open Positions");
   const [jobOpenings, setJobOpenings] = useState([emptyJob]);
   const [contactItems, setContactItems] = useState(defaultContacts);
 
-  // fetch existing data
   useEffect(() => {
     function normalizeContacts(officeDoc) {
       if (Array.isArray(officeDoc?.contacts) && officeDoc.contacts.length) {
@@ -55,20 +340,21 @@ const CareerSettings = () => {
           axios.get(`${API_BASE}/api/settings/career-page`),
           axios.get(`${API_BASE}/api/office`),
         ]);
-
         const data = careerRes.data || {};
         const office = officeRes.data || {};
 
         setWhyJoinTitle(data.whyJoinTitle || "Why Join EEC?");
-        setWhyJoinItems(
-          data.whyJoinItems?.length ? data.whyJoinItems : [emptyWhyItem]
-        );
+        setWhyJoinItems(data.whyJoinItems?.length ? data.whyJoinItems : [emptyWhyItem]);
         setIntroText(data.introText || "");
-        setJobSectionTitle(
-          data.jobSectionTitle || "Current Job Openings"
-        );
+        setJobSectionTitle(data.jobSectionTitle || "Open Positions");
         setJobOpenings(
-          data.jobOpenings?.length ? data.jobOpenings : [emptyJob]
+          data.jobOpenings?.length
+            ? data.jobOpenings.map((job) => ({
+                ...emptyJob,
+                ...job,
+                points: Array.isArray(job?.points) ? job.points : ["", "", ""],
+              }))
+            : [emptyJob]
         );
         setContactItems(normalizeContacts(office));
       } catch (err) {
@@ -78,7 +364,6 @@ const CareerSettings = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -86,8 +371,12 @@ const CareerSettings = () => {
     e.preventDefault();
     try {
       setSaving(true);
+      const token = localStorage.getItem("admin_token");
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      };
 
-      const token = localStorage.getItem("admin_token"); // or wherever you store
       await axios.put(
         `${API_BASE}/api/settings/career-page`,
         {
@@ -95,14 +384,31 @@ const CareerSettings = () => {
           whyJoinItems,
           introText,
           jobSectionTitle,
-          jobOpenings,
+          jobOpenings: (jobOpenings || [])
+            .map((job, index) => ({
+              title: String(job?.title || "").trim(),
+              tag: String(job?.tag || "Opening").trim() || "Opening",
+              employmentType:
+                String(job?.employmentType || "Full-time").trim() || "Full-time",
+              department: String(job?.department || "").trim(),
+              location: String(job?.location || "").trim(),
+              workMode:
+                String(job?.workMode || "Remote / On-site").trim() || "Remote / On-site",
+              salary: String(job?.salary || "").trim(),
+              shortDescription: String(job?.shortDescription || "").trim(),
+              fullDescription: String(job?.fullDescription || "").trim(),
+              points: Array.isArray(job?.points)
+                ? job.points.map((p) => String(p || "").trim()).filter(Boolean)
+                : [],
+              experience: String(job?.experience || "").trim(),
+              buttonLabel: String(job?.buttonLabel || "Apply Now").trim() || "Apply Now",
+              isActive: Boolean(job?.isActive),
+              order: Number.isFinite(Number(job?.order)) ? Number(job?.order) : index,
+              formUrl: String(job?.formUrl || "").trim(),
+            }))
+            .filter((job) => job.title),
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        }
+        { headers }
       );
 
       const normalizedContacts = (contactItems || [])
@@ -118,22 +424,14 @@ const CareerSettings = () => {
         `${API_BASE}/api/office`,
         {
           contacts: normalizedContacts,
-          address:
-            normalizedContacts.find((item) => item.type === "address")?.value || "",
-          phone:
-            normalizedContacts.find((item) => item.type === "phone")?.value || "",
-          email:
-            normalizedContacts.find((item) => item.type === "email")?.value || "",
+          address: normalizedContacts.find((i) => i.type === "address")?.value || "",
+          phone: normalizedContacts.find((i) => i.type === "phone")?.value || "",
+          email: normalizedContacts.find((i) => i.type === "email")?.value || "",
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        }
+        { headers }
       );
 
-      toast.success("Career and contact data updated successfully");
+      toast.success("Career page updated successfully");
     } catch (err) {
       console.error(err);
       toast.error("Failed to update data");
@@ -142,412 +440,276 @@ const CareerSettings = () => {
     }
   };
 
-  const updateWhyItem = (index, key, value) => {
+  const updateWhyItem = (index, key, value) =>
     setWhyJoinItems((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [key]: value };
       return copy;
     });
-  };
 
-  const addWhyItem = () => {
-    setWhyJoinItems((prev) => [...prev, { ...emptyWhyItem }]);
-  };
-
-  const removeWhyItem = (index) => {
-    setWhyJoinItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateJob = (index, key, value) => {
+  const updateJob = (index, key, value) =>
     setJobOpenings((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [key]: value };
       return copy;
     });
-  };
 
-  const updateJobPoint = (jobIndex, pointIndex, value) => {
+  const updateJobPoint = (jobIndex, pointIndex, value) =>
     setJobOpenings((prev) => {
       const copy = [...prev];
-      const points = copy[jobIndex].points || [];
+      const points = [...(copy[jobIndex].points || [])];
       points[pointIndex] = value;
-      copy[jobIndex].points = points;
+      copy[jobIndex] = { ...copy[jobIndex], points };
       return copy;
     });
-  };
 
-  const addJob = () => {
-    setJobOpenings((prev) => [...prev, { ...emptyJob }]);
-  };
-
-  const removeJob = (index) => {
-    setJobOpenings((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateContactItem = (index, key, value) => {
+  const updateContactItem = (index, key, value) =>
     setContactItems((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [key]: value };
       return copy;
     });
-  };
-
-  const addContactItem = () => {
-    setContactItems((prev) => [
-      ...prev,
-      { id: `contact-${Date.now()}`, title: "New Contact", value: "", type: "text" },
-    ]);
-  };
-
-  const removeContactItem = (index) => {
-    setContactItems((prev) => prev.filter((_, i) => i !== index));
-  };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
       <ToastContainer />
 
-      {/* HEADER */}
-      <div className="flex items-center gap-4 mt-4">
-        <div className="size-11 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center shadow-md">
-          <BriefcaseBusiness size={22} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Career Page Settings
-          </h1>
-          <p className="text-sm text-slate-500">
-            Manage “Why Join EEC?”, intro text and current job openings
-          </p>
+      {/* ── Page Header ── */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/25">
+            <BriefcaseBusiness size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Career Page Settings</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Manage job openings, intro text, and why-join cards
+            </p>
+          </div>
         </div>
         {loading && (
-          <span className="ml-auto text-xs text-slate-400">
-            Loading...
-          </span>
+          <span className="text-xs text-slate-400 animate-pulse">Loading…</span>
         )}
       </div>
 
-      <form
-        onSubmit={handleSave}
-        className="space-y-8 rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-xl p-5 md:p-7 shadow-xl"
-      >
-        {/* Why Join Section */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">
-              Why Join EEC Section
-            </h2>
-          </div>
+      <form onSubmit={handleSave} className="space-y-5">
 
-          <div className="space-y-3">
-            <label className="block text-sm text-slate-700">
-              Section Title
-              <input
-                type="text"
-                className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/70 shadow-sm"
+        {/* ── Intro Paragraph ── */}
+        <SectionCard
+          icon={<AlignLeft className="h-4 w-4" />}
+          title="Intro / Mission Statement"
+          description="Displayed below the hero headline on the careers page"
+          accent="blue"
+        >
+          <Textarea
+            rows={5}
+            value={introText}
+            onChange={(e) => setIntroText(e.target.value)}
+            placeholder="At EEC, we're on a mission to transform education…"
+          />
+        </SectionCard>
+
+        {/* ── Why Join Section ── */}
+        <SectionCard
+          icon={<Users className="h-4 w-4" />}
+          title="Why Join EEC? — Cards"
+          description="Feature cards shown in the 'Why Join' section"
+          accent="indigo"
+        >
+          <div className="space-y-4">
+            <div>
+              <Label>Section Title</Label>
+              <Input
                 value={whyJoinTitle}
                 onChange={(e) => setWhyJoinTitle(e.target.value)}
+                placeholder="Why Join EEC?"
               />
-            </label>
+            </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {whyJoinItems.map((item, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border border-slate-200 bg-white/80 p-3 space-y-2 shadow-sm"
+                  className="relative rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3"
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-800">
-                      Card {index + 1}
-                    </p>
+                    <span className="text-xs font-bold text-slate-500">Card {index + 1}</span>
                     {whyJoinItems.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeWhyItem(index)}
-                        className="text-xs text-rose-500 hover:text-rose-400"
+                        onClick={() =>
+                          setWhyJoinItems((prev) => prev.filter((_, i) => i !== index))
+                        }
+                        className="rounded-md p-1 text-rose-400 hover:bg-rose-50 transition"
                       >
-                        Remove
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
-
-                  <input
-                    type="text"
-                    placeholder="Title"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={item.title}
-                    onChange={(e) =>
-                      updateWhyItem(index, "title", e.target.value)
-                    }
-                  />
-
-                  <textarea
-                    rows={3}
-                    placeholder="Description"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs resize-none focus:ring-1 focus:ring-indigo-500/60"
-                    value={item.description}
-                    onChange={(e) =>
-                      updateWhyItem(index, "description", e.target.value)
-                    }
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Icon (optional)"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={item.icon || ""}
-                    onChange={(e) =>
-                      updateWhyItem(index, "icon", e.target.value)
-                    }
-                  />
+                  <div>
+                    <Label>Title</Label>
+                    <Input
+                      placeholder="e.g. Innovative Culture"
+                      value={item.title}
+                      onChange={(e) => updateWhyItem(index, "title", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Textarea
+                      rows={3}
+                      placeholder="Short description..."
+                      value={item.description}
+                      onChange={(e) => updateWhyItem(index, "description", e.target.value)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
 
             <button
               type="button"
-              onClick={addWhyItem}
-              className="text-xs mt-1 rounded-full border border-slate-300 px-3 py-1 hover:bg-slate-100"
+              onClick={() => setWhyJoinItems((prev) => [...prev, { ...emptyWhyItem }])}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-xs font-semibold text-slate-500 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition"
             >
-              + Add Card
+              <Plus className="h-3.5 w-3.5" />
+              Add Card
             </button>
           </div>
-        </section>
+        </SectionCard>
 
-        {/* Intro Paragraph */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-800">
-            Intro Paragraph
-          </h2>
-          <textarea
-            rows={5}
-            className="w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-indigo-500/70 shadow-sm"
-            value={introText}
-            onChange={(e) => setIntroText(e.target.value)}
-            placeholder="Welcome to EEC, where innovation meets education! ..."
-          />
-        </section>
-
-        {/* Job Openings */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">
-              Current Job Openings
-            </h2>
-          </div>
-
-          <label className="block text-sm text-slate-700">
-            Section Title
-            <input
-              type="text"
-              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/70 shadow-sm"
-              value={jobSectionTitle}
-              onChange={(e) => setJobSectionTitle(e.target.value)}
-            />
-          </label>
-
+        {/* ── Job Openings ── */}
+        <SectionCard
+          icon={<BriefcaseBusiness className="h-4 w-4" />}
+          title="Job Openings"
+          description="Active openings are shown on the public careers page"
+          accent="emerald"
+        >
           <div className="space-y-4">
-            {jobOpenings.map((job, index) => (
-              <div
-                key={job._id || index}
-                className="rounded-2xl border border-slate-200 bg-white/80 p-4 space-y-3 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-slate-800">
-                    Job {index + 1}
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-1 text-xs text-slate-700">
-                      <span>Active</span>
-                      <input
-                        type="checkbox"
-                        checked={job.isActive}
-                        onChange={(e) =>
-                          updateJob(index, "isActive", e.target.checked)
-                        }
-                      />
-                    </label>
-                    {jobOpenings.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeJob(index)}
-                        className="text-xs text-rose-500 hover:text-rose-400"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={jobSectionTitle}
+                onChange={(e) => setJobSectionTitle(e.target.value)}
+                placeholder="Open Positions"
+              />
+            </div>
 
-                <div className="grid md:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Job Title"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={job.title}
-                    onChange={(e) =>
-                      updateJob(index, "title", e.target.value)
-                    }
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Badge Text (Opening)"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={job.tag}
-                    onChange={(e) =>
-                      updateJob(index, "tag", e.target.value)
-                    }
-                  />
-                </div>
-
-                <textarea
-                  rows={3}
-                  placeholder="Short description"
-                  className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs resize-none focus:ring-1 focus:ring-indigo-500/60"
-                  value={job.shortDescription}
-                  onChange={(e) =>
-                    updateJob(index, "shortDescription", e.target.value)
+            <div className="space-y-3">
+              {jobOpenings.map((job, index) => (
+                <JobCard
+                  key={job._id || index}
+                  job={job}
+                  index={index}
+                  total={jobOpenings.length}
+                  onUpdate={updateJob}
+                  onUpdatePoint={updateJobPoint}
+                  onRemove={(i) =>
+                    setJobOpenings((prev) => prev.filter((_, idx) => idx !== i))
                   }
                 />
+              ))}
+            </div>
 
-                <div className="grid md:grid-cols-3 gap-3">
-                  {(job.points || ["", "", ""]).map((p, pIndex) => (
-                    <input
-                      key={pIndex}
-                      type="text"
-                      placeholder={`Bullet ${pIndex + 1}`}
-                      className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                      value={p}
-                      onChange={(e) =>
-                        updateJobPoint(index, pIndex, e.target.value)
-                      }
-                    />
-                  ))}
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Experience text"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={job.experience}
-                    onChange={(e) =>
-                      updateJob(index, "experience", e.target.value)
-                    }
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Button label"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={job.buttonLabel}
-                    onChange={(e) =>
-                      updateJob(index, "buttonLabel", e.target.value)
-                    }
-                  />
-
-                  <input
-                    type="number"
-                    placeholder="Order"
-                    className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                    value={job.order}
-                    onChange={(e) =>
-                      updateJob(index, "order", Number(e.target.value))
-                    }
-                  />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Enter Google Form Link"
-                  className="w-full rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                  value={job.formUrl || ""}
-                  onChange={(e) => updateJob(index, "formUrl", e.target.value)}
-                />
-
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={addJob}
-            className="text-xs mt-1 rounded-full border border-slate-300 px-3 py-1 hover:bg-slate-100"
-          >
-            + Add Job
-          </button>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">
-              Contact Data
-            </h2>
             <button
               type="button"
-              onClick={addContactItem}
-              className="text-xs rounded-full border border-slate-300 px-3 py-1 hover:bg-slate-100"
+              onClick={() => setJobOpenings((prev) => [...prev, { ...emptyJob }])}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-xs font-semibold text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 transition"
             >
-              + Add Contact
+              <Plus className="h-3.5 w-3.5" />
+              Add Job Opening
             </button>
           </div>
+        </SectionCard>
 
+        {/* ── Contact Info ── */}
+        <SectionCard
+          icon={<Phone className="h-4 w-4" />}
+          title="Contact Information"
+          description="Displayed in the contact / footer section"
+          accent="rose"
+        >
           <div className="space-y-3">
             {contactItems.map((item, index) => (
               <div
                 key={item.id || index}
-                className="rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm grid gap-3 md:grid-cols-12"
+                className="grid gap-2 sm:grid-cols-12 items-end"
               >
-                <input
-                  type="text"
-                  placeholder="Title"
-                  className="md:col-span-3 rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                  value={item.title || ""}
-                  onChange={(e) =>
-                    updateContactItem(index, "title", e.target.value)
-                  }
-                />
-                <select
-                  className="md:col-span-2 rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                  value={item.type || "text"}
-                  onChange={(e) =>
-                    updateContactItem(index, "type", e.target.value)
-                  }
-                >
-                  <option value="text">Text</option>
-                  <option value="address">Address</option>
-                  <option value="phone">Phone</option>
-                  <option value="email">Email</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Value"
-                  className="md:col-span-6 rounded-md bg-white border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500/60"
-                  value={item.value || ""}
-                  onChange={(e) =>
-                    updateContactItem(index, "value", e.target.value)
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => removeContactItem(index)}
-                  className="md:col-span-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-100"
-                >
-                  Remove
-                </button>
+                <div className="sm:col-span-3">
+                  {index === 0 && <Label>Label</Label>}
+                  <Input
+                    placeholder="e.g. Office Address"
+                    value={item.title || ""}
+                    onChange={(e) => updateContactItem(index, "title", e.target.value)}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  {index === 0 && <Label>Type</Label>}
+                  <select
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    value={item.type || "text"}
+                    onChange={(e) => updateContactItem(index, "type", e.target.value)}
+                  >
+                    <option value="text">Text</option>
+                    <option value="address">Address</option>
+                    <option value="phone">Phone</option>
+                    <option value="email">Email</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-6">
+                  {index === 0 && <Label>Value</Label>}
+                  <Input
+                    placeholder="Contact value..."
+                    value={item.value || ""}
+                    onChange={(e) => updateContactItem(index, "value", e.target.value)}
+                  />
+                </div>
+                <div className="sm:col-span-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContactItems((prev) => prev.filter((_, i) => i !== index))
+                    }
+                    className="rounded-lg border border-rose-100 bg-rose-50 p-2 text-rose-500 hover:bg-rose-100 transition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
-          </div>
-        </section>
 
-        {/* SAVE BUTTON */}
-        <div className="pt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={() =>
+                setContactItems((prev) => [
+                  ...prev,
+                  { id: `contact-${Date.now()}`, title: "", value: "", type: "text" },
+                ])
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-xs font-semibold text-slate-500 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Contact Field
+            </button>
+          </div>
+        </SectionCard>
+
+        {/* ── Save ── */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <p className="text-xs text-slate-400">All sections save together</p>
           <button
             type="submit"
             disabled={saving}
-            className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-sm font-medium text-white shadow disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-600/25 transition hover:bg-indigo-700 active:scale-[.98] disabled:opacity-60"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? (
+              <>
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Saving…
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </button>
         </div>
       </form>
