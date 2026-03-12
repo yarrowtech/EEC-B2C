@@ -85,6 +85,8 @@ import SelfStudy from "./pages/SelfStudy";
 import SelfStudyResults from "./pages/SelfStudyResults";
 import SelfStudyResultDetail from "./pages/SelfStudyResultDetail";
 import SyllabusPage from "./pages/syllabus/SyllabusPage";
+import EECTryouts from "./pages/EECTryouts";
+import TryoutSubjects from "./pages/TryoutSubjects";
 import SyllabusTopicContentPage from "./pages/syllabus/SyllabusTopicContentPage";
 import ManagePackages from "./pages/admin/ManagePackages";
 import Packages from "./pages/Packages";
@@ -427,6 +429,8 @@ export default function App() {
           <Route path="/tollered" element={<TailoredLearning />} />
           <Route path="/e-learn-well" element={<LearningWellbeing />} />
           <Route path="/aim" element={<EECCommitment />} />
+          <Route path="/tryouts" element={<EECTryouts />} />
+          <Route path="/tryouts/:tryoutType" element={<TryoutSubjects />} />
           <Route path="/careers" element={<EECCareers />} />
           <Route path="/careers/:jobSlug" element={<EECCareerDetails />} />
           <Route path="/career" element={<Navigate to="/careers" replace />} />

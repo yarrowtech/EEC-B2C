@@ -78,6 +78,16 @@ const TOPIC_NUMBER_THEMES = [
   "from-rose-400 to-red-500",
 ];
 
+const CHAPTER_THEMES = [
+  { bg: "bg-blue-100", text: "text-blue-600", icon: "pin_drop" },
+  { bg: "bg-orange-100", text: "text-orange-600", icon: "category" },
+  { bg: "bg-purple-100", text: "text-purple-600", icon: "calculate" },
+  { bg: "bg-teal-100", text: "text-teal-600", icon: "biotech" },
+  { bg: "bg-rose-100", text: "text-rose-600", icon: "menu_book" },
+  { bg: "bg-cyan-100", text: "text-cyan-600", icon: "public" },
+  { bg: "bg-amber-100", text: "text-amber-600", icon: "explore" },
+];
+
 export default function SyllabusPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

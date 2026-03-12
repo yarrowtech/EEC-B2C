@@ -70,6 +70,7 @@ export default function Packages() {
   const [subscriptionType, setSubscriptionType] = useState("none");
   const [loading, setLoading] = useState(true);
   const [purchasingId, setPurchasingId] = useState(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [autoBuyHandled, setAutoBuyHandled] = useState(false);
 
   const token = localStorage.getItem("jwt") || "";
@@ -247,6 +248,48 @@ export default function Packages() {
   }
 
   const hasActivePlan = activeType !== "none";
+  const activePackage = subscription?.package || null;
+  const startDate = subscription?.startDate || null;
+  const startDateLabel = startDate
+    ? new Date(startDate).toLocaleDateString("en-IN", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      })
+    : null;
+  const paymentMethod = String(subscription?.paymentMethod || "").toUpperCase();
+  const amountPaid = Number(subscription?.amountPaid || 0);
+  const activeStudyAccess = subscription?.studyMaterialsAccess || activePackage?.studyMaterialsAccess || "none";
+  const activeStudyBadge = {
+    full: { label: "Full Access", cls: "bg-emerald-100 text-emerald-700" },
+    limited: { label: "Limited", cls: "bg-amber-100 text-amber-700" },
+    none: { label: "No Access", cls: "bg-slate-100 text-slate-500" },
+  }[activeStudyAccess] || { label: activeStudyAccess, cls: "bg-slate-100 text-slate-500" };
+
+  async function cancelSubscription() {
+    if (!subscription?._id || cancelBusy) return;
+    if (!window.confirm("Cancel your active subscription?")) return;
+
+    setCancelBusy(true);
+    try {
+      const res = await fetch(`${API}/api/subscriptions/${subscription._id}/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to cancel subscription");
+
+      setSubscription(null);
+      setSubscriptionType("none");
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...stored, subscriptionType: "none" }));
+      toast.success("Subscription cancelled successfully");
+    } catch (err) {
+      toast.error(err.message || "Failed to cancel subscription");
+    } finally {
+      setCancelBusy(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50">
@@ -298,6 +341,101 @@ export default function Packages() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {hasActivePlan && activePackage && (
+          <div className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Current Active Package</p>
+                <h2 className="mt-1 text-2xl font-bold text-slate-800">
+                  {activePackage.displayName || activePackage.name}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">{activePackage.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={cancelSubscription}
+                disabled={cancelBusy}
+                className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelBusy ? "Cancelling..." : "Cancel Subscription"}
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Plan Type</p>
+                <p className="text-sm font-semibold text-slate-800">{activePackage.name}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Duration</p>
+                <p className="text-sm font-semibold text-slate-800">{activePackage.duration} days</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Amount Paid</p>
+                <p className="text-sm font-semibold text-slate-800">{amountPaid > 0 ? `₹${amountPaid}` : "Free"}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Payment Method</p>
+                <p className="text-sm font-semibold text-slate-800">{paymentMethod || "N/A"}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Start Date</p>
+                <p className="text-sm font-semibold text-slate-800">{startDateLabel || "N/A"}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">End Date</p>
+                <p className="text-sm font-semibold text-slate-800">{endDateLabel || "N/A"}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Study Materials</p>
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${activeStudyBadge.cls}`}>
+                  {activeStudyBadge.label}
+                </span>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3 sm:col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Unlocked Stages</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {Array.isArray(subscription?.unlockedStages) && subscription.unlockedStages.length > 0 ? (
+                    subscription.unlockedStages.map((stage) => (
+                      <span key={stage} className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        Stage {stage}
+                      </span>
+                    ))
+                  ) : Array.isArray(activePackage.unlockedStages) && activePackage.unlockedStages.length > 0 ? (
+                    activePackage.unlockedStages.map((stage) => (
+                      <span key={stage} className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        Stage {stage}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-500">No stages unlocked</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {Array.isArray(activePackage.features) && activePackage.features.length > 0 && (
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Included Features</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {activePackage.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {subscription?.transactionId && (
+              <p className="mt-4 text-xs text-slate-500">
+                Transaction ID: <span className="font-semibold text-slate-700">{subscription.transactionId}</span>
+              </p>
+            )}
           </div>
         )}
 

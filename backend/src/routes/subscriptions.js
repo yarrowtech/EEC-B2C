@@ -67,7 +67,7 @@ router.post("/:id/cancel", requireAuth, async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    if (subscription.user.toString() !== req.user.id) {
+    if (subscription.user.toString() !== String(req.user.id)) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 

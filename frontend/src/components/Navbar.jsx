@@ -199,7 +199,7 @@ export default function Navbar() {
           </RouterLink>
 
           <Dropdown label="Study Tools">
-            <DropItem to="/dashboard/syllabus?stage=1">Tryouts</DropItem>
+            <DropItem to="/tryouts">Tryouts</DropItem>
           </Dropdown>
 
           <RouterLink to="/contact-us" active={isActive("/contact-us") || isActive("/office")}>
@@ -336,7 +336,7 @@ export default function Navbar() {
               Study Tools
             </summary>
             <div className="mt-1 grid gap-1 rounded-xl bg-white/90 p-1 backdrop-blur-sm">
-              <DropItem to="/dashboard/syllabus?stage=1" onClick={closeMobile}>
+              <DropItem to="/tryouts" onClick={closeMobile}>
                 Tryouts
               </DropItem>
             </div>
