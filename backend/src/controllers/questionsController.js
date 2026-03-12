@@ -1306,3 +1306,75 @@ export const getQuestionTypes = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Public summary for tryouts page (optionally filtered by board/class)
+export const getTryoutSummary = async (req, res) => {
+  try {
+    const { board, class: classValue } = req.query;
+    const filter = {};
+
+    if (board) {
+      let boardValues = [board];
+      try {
+        const Board = (await import("../models/Board.js")).default;
+        const boardDoc = await Board.findOne({ name: board }).select("_id name");
+        if (boardDoc) {
+          boardValues = [board, boardDoc.name, String(boardDoc._id)];
+        }
+      } catch {
+        // Ignore lookup failures and continue with raw value.
+      }
+      filter.board = { $in: [...new Set(boardValues)] };
+    }
+    if (classValue) {
+      let classValues = [classValue];
+      try {
+        const ClassModel = (await import("../models/Class.js")).default;
+        const classDoc = await ClassModel.findOne({ name: classValue }).select("_id name");
+        if (classDoc) {
+          classValues = [classValue, classDoc.name, String(classDoc._id)];
+        }
+      } catch {
+        // Ignore lookup failures and continue with raw value.
+      }
+      filter.class = { $in: [...new Set(classValues)] };
+    }
+
+    const rows = await Question.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: {
+            type: "$type",
+            difficulty: "$difficulty",
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.type": 1 } },
+    ]);
+
+    const byType = {};
+    for (const row of rows) {
+      const type = String(row?._id?.type || "").trim();
+      if (!type) continue;
+
+      if (!byType[type]) {
+        byType[type] = { type, total: 0, easy: 0, moderate: 0, hard: 0 };
+      }
+
+      const d = String(row?._id?.difficulty || "easy").toLowerCase();
+      const count = Number(row?.count || 0);
+      byType[type].total += count;
+      if (d === "hard") byType[type].hard += count;
+      else if (d === "moderate") byType[type].moderate += count;
+      else byType[type].easy += count;
+    }
+
+    const items = Object.values(byType).sort((a, b) => a.type.localeCompare(b.type));
+    res.json({ items });
+  } catch (err) {
+    console.error("Failed to fetch tryout summary", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

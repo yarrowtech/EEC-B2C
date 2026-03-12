@@ -102,6 +102,7 @@ const DIFFICULTIES = ["All Subjects", "Difficulty: Any"];
 
 export default function EECTryouts() {
   const navigate = useNavigate();
+  const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("jwt") || "";
   const isLoggedIn = Boolean(token);
 
@@ -116,48 +117,36 @@ export default function EECTryouts() {
     let mounted = true;
 
     async function loadTryoutTypes() {
-      if (!isLoggedIn) {
-        setCards([]);
-        return;
-      }
-
       setLoading(true);
       try {
-        const profile = await getJSON("/api/users/profile");
-        const user = profile?.user || {};
+        let summaryUrl = `${API}/api/questions/tryout-summary`;
 
-        const boardLabel = user.boardName || user.board || BOARDS[0];
-        const classLabel = user.className || user.class || GRADES[3];
-        const boardValue = user.boardId || user.board || user.boardName || boardLabel;
-        const classValue = user.classId || user.class || user.className || classLabel;
+        if (isLoggedIn) {
+          const profile = await getJSON("/api/users/profile");
+          const user = profile?.user || {};
 
-        if (!boardValue || !classValue) {
-          throw new Error("Please update profile board and class");
+          const boardLabel = user.boardName || user.board || BOARDS[0];
+          const classLabel = user.className || user.class || GRADES[3];
+          const boardValue = user.boardId || user.board || user.boardName || boardLabel;
+          const classValue = user.classId || user.class || user.className || classLabel;
+
+          if (!boardValue || !classValue) {
+            throw new Error("Please update profile board and class");
+          }
+
+          setActiveBoard(boardLabel);
+          setActiveGrade(classLabel);
+          summaryUrl = `${summaryUrl}?board=${encodeURIComponent(boardValue)}&class=${encodeURIComponent(classValue)}`;
         }
 
-        const questionData = await getJSON(
-          `/api/questions?board=${encodeURIComponent(boardValue)}&class=${encodeURIComponent(
-            classValue
-          )}&page=1&limit=5000`
-        );
-        const questionItems = Array.isArray(questionData?.items) ? questionData.items : [];
+        const summaryRes = await fetch(summaryUrl);
+        const summaryData = await summaryRes.json();
+        const summaryItems = Array.isArray(summaryData?.items) ? summaryData.items : [];
 
-        const byType = {};
-        for (const q of questionItems) {
-          const type = String(q?.type || "").trim();
-          if (!type) continue;
-          if (!byType[type]) byType[type] = { total: 0, easy: 0, moderate: 0, hard: 0 };
-          byType[type].total += 1;
-
-          const d = String(q?.difficulty || "easy").toLowerCase();
-          if (d === "hard") byType[type].hard += 1;
-          else if (d === "moderate") byType[type].moderate += 1;
-          else byType[type].easy += 1;
-        }
-
-        const nextCards = Object.entries(byType)
-          .filter(([, stats]) => stats.total > 0)
-          .map(([type, stats], idx) => {
+        const nextCards = summaryItems
+          .filter((stats) => Number(stats?.total || 0) > 0)
+          .map((stats, idx) => {
+            const type = String(stats?.type || "");
             const meta = TYPE_META[type] || {};
             const fallbackThemes = Object.values(TYPE_META);
             const theme = meta.name ? meta : fallbackThemes[idx % fallbackThemes.length];
@@ -167,10 +156,10 @@ export default function EECTryouts() {
               type,
               name: theme.name || type,
               description: theme.description || "Question type tryout",
-              questions: stats.total,
-              time: `${Math.max(10, Math.ceil(stats.total * 0.8))} Mins`,
+              questions: Number(stats.total || 0),
+              time: `${Math.max(10, Math.ceil(Number(stats.total || 0) * 0.8))} Mins`,
               difficulty: {
-                label: `E:${stats.easy} M:${stats.moderate} H:${stats.hard}`,
+                label: `E:${Number(stats.easy || 0)} M:${Number(stats.moderate || 0)} H:${Number(stats.hard || 0)}`,
                 icon: "tune",
                 bg: "bg-violet-100",
                 text: "text-violet-700",
@@ -185,8 +174,6 @@ export default function EECTryouts() {
           .sort((a, b) => a.name.localeCompare(b.name));
 
         if (!mounted) return;
-        setActiveBoard(boardLabel);
-        setActiveGrade(classLabel);
         setCards(nextCards);
       } catch {
         if (mounted) setCards([]);
@@ -199,7 +186,7 @@ export default function EECTryouts() {
     return () => {
       mounted = false;
     };
-  }, [isLoggedIn]);
+  }, [API, isLoggedIn]);
 
   const visibleCards = useMemo(() => cards, [cards]);
 
@@ -269,12 +256,17 @@ export default function EECTryouts() {
         <div className="flex flex-wrap gap-3 mb-10 pb-6 border-b border-slate-200">
           <div className="relative">
             <button
+              disabled={isLoggedIn}
               onClick={() => {
                 if (isLoggedIn) return;
                 setBoardOpen((o) => !o);
                 setGradeOpen(false);
               }}
-              className="flex h-11 items-center gap-2 rounded-full bg-[#e7c555] text-slate-900 px-6 font-bold shadow-lg shadow-[#e7c555]/30 hover:bg-[#d4b44a] transition-colors"
+              className={`flex h-11 items-center gap-2 rounded-full px-6 font-bold transition-colors ${
+                isLoggedIn
+                  ? "bg-slate-200 text-slate-600 cursor-not-allowed"
+                  : "bg-[#e7c555] text-slate-900 shadow-lg shadow-[#e7c555]/30 hover:bg-[#d4b44a]"
+              }`}
             >
               <MIcon name="school" className="text-[20px]" />
               {activeBoard}
@@ -302,12 +294,17 @@ export default function EECTryouts() {
 
           <div className="relative">
             <button
+              disabled={isLoggedIn}
               onClick={() => {
                 if (isLoggedIn) return;
                 setGradeOpen((o) => !o);
                 setBoardOpen(false);
               }}
-              className="flex h-11 items-center gap-2 rounded-full bg-white text-slate-700 px-6 font-bold border border-slate-200 hover:border-[#e7c555] transition-all"
+              className={`flex h-11 items-center gap-2 rounded-full px-6 font-bold border transition-all ${
+                isLoggedIn
+                  ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed"
+                  : "bg-white text-slate-700 border-slate-200 hover:border-[#e7c555]"
+              }`}
             >
               <MIcon name="grade" className="text-[20px]" />
               {activeGrade}
@@ -346,21 +343,17 @@ export default function EECTryouts() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {!isLoggedIn && (
-            <div className="col-span-full rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">
-              Please login to view tryouts.
-            </div>
-          )}
-
-          {isLoggedIn && loading && (
+          {loading && (
             <div className="col-span-full rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
               Loading tryouts from database...
             </div>
           )}
 
-          {isLoggedIn && !loading && visibleCards.length === 0 && (
+          {!loading && visibleCards.length === 0 && (
             <div className="col-span-full rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-              No tryouts found for your board and class.
+              {isLoggedIn
+                ? "No tryouts found for your board and class."
+                : "No tryouts available right now."}
             </div>
           )}
 
@@ -409,7 +402,7 @@ export default function EECTryouts() {
             </div>
           ))}
 
-          {isLoggedIn && !loading && (
+          {!loading && (
             <div className="flex flex-col bg-slate-100 rounded-xl overflow-hidden border border-dashed border-slate-300 relative group opacity-80">
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/10 backdrop-blur-[2px]">
                 <div className="bg-white p-4 rounded-full shadow-lg text-[#e7c555] mb-2">

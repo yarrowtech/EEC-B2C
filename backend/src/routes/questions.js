@@ -17,6 +17,7 @@ import {
   metaTopics,
   metaStages,
   getQuestionTypes,
+  getTryoutSummary,
 } from "../controllers/questionsController.js";
 import {requireAuth} from "../middleware/auth.js";
 
@@ -48,6 +49,8 @@ router.get("/stages", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+router.get("/tryout-summary", getTryoutSummary);
 
 
 // Reads (auth)
