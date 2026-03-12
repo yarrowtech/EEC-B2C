@@ -184,7 +184,7 @@ function ShellLayout() {
         </>
       )}
 
-      {/* Main Scrollable Area */}
+      {/* Main Scrollable Areadf */}
       {/* <main className="pt-[7.5rem] pb-[6rem]"> */}
       <Outlet />
       {/* </main> */}
