@@ -172,7 +172,7 @@ function ShellLayout() {
     };
   }, []);
 
-  const showHeader = !isLoggedIn && !location.pathname.startsWith("/dashboard");
+  const showHeader = !location.pathname.startsWith("/dashboard");
 
   return (
     <div className="min-h-screen bg-white text-blue-950">
