@@ -1,6 +1,6 @@
 // src/pages/EECCareers.jsx
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   UserPlus,
@@ -187,15 +187,49 @@ export default function EECCareers() {
   const [careerData, setCareerData] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [selectedJobTitle, setSelectedJobTitle] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadCareer() {
       try {
+        setLoading(true);
+
+        // Check cache first
+        const CACHE_KEY = 'eec:careers:cache';
+        const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          try {
+            const parsed = JSON.parse(cachedData);
+            if (parsed && typeof parsed.ts === 'number' && Date.now() - parsed.ts < CACHE_TTL) {
+              // Use cached data
+              setCareerData(parsed.data);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            // Invalid cache, continue to fetch
+          }
+        }
+
+        // Fetch from API
         const res = await fetch(`${API_BASE}/api/settings/career-page`);
         const json = await res.json();
+
+        // Cache the data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          ts: Date.now(),
+          data: json
+        }));
+
+        // Add a small delay for smooth transition
+        await new Promise(resolve => setTimeout(resolve, 500));
         setCareerData(json);
       } catch (err) {
         console.error("Failed to load career page:", err);
+      } finally {
+        setLoading(false);
       }
     }
     loadCareer();
@@ -329,8 +363,66 @@ export default function EECCareers() {
     show: { opacity: 1, y: 0 },
   };
 
+  // Loading component
+  if (loading) {
+    return (
+      <>
+        <style>
+          {`
+            .heart-loader {
+              width: 60px;
+              aspect-ratio: 1;
+              background: linear-gradient(#dc1818 0 0) bottom/100% 0% no-repeat #f5e6c8;
+              -webkit-mask:
+                radial-gradient(circle at 60% 65%, #000 62%, #0000 65%) top left,
+                radial-gradient(circle at 40% 65%, #000 62%, #0000 65%) top right,
+                linear-gradient(to bottom left, #000 42%, #0000 43%) bottom left,
+                linear-gradient(to bottom right, #000 42%, #0000 43%) bottom right;
+              -webkit-mask-size: 50% 50%;
+              -webkit-mask-repeat: no-repeat;
+              mask:
+                radial-gradient(circle at 60% 65%, #000 62%, #0000 65%) top left,
+                radial-gradient(circle at 40% 65%, #000 62%, #0000 65%) top right,
+                linear-gradient(to bottom left, #000 42%, #0000 43%) bottom left,
+                linear-gradient(to bottom right, #000 42%, #0000 43%) bottom right;
+              mask-size: 50% 50%;
+              mask-repeat: no-repeat;
+              animation: heart-fill 2s infinite linear;
+            }
+            @keyframes heart-fill {
+              90%, 100% { background-size: 100% 100%; }
+            }
+          `}
+        </style>
+        <div className="min-h-screen bg-[#fffaf1] flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center gap-6"
+          >
+            <div className="heart-loader" />
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg font-semibold text-[#142239]"
+            >
+              Loading Career Opportunities...
+            </motion.p>
+          </motion.div>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <div className="bg-[#fffaf1] text-[#142239] selection:bg-yellow-200/60">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="bg-[#fffaf1] text-[#142239] selection:bg-yellow-200/60"
+    >
       <ToastContainer />
 
       {/* Hero */}
@@ -551,6 +643,6 @@ export default function EECCareers() {
           </a>
         </motion.div>
       </section>
-    </div>
+    </motion.div>
   );
 }
