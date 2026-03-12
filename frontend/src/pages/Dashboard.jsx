@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx
-import React, { useMemo, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import React, { useMemo, useEffect, useState, useRef } from "react";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import {
   Users,
   CreditCard,
@@ -42,6 +42,14 @@ function isTokenValid(token) {
   } catch {
     return false;
   }
+}
+
+function getLevel(score) {
+  if (score >= 2000) return "Champion";
+  if (score >= 1000) return "Explorer";
+  if (score >= 500) return "Apprentice";
+  if (score >= 100) return "Scout";
+  return "Novice";
 }
 
 const DASHBOARD_CACHE_PREFIX = "eec:dashboard-cache";
@@ -621,6 +629,10 @@ function TeacherContent() {
 }
 
 function StudentContent() {
+  const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const navigate = useNavigate();
+  const profileMenuRef = useRef(null);
+  const notificationRef = useRef(null);
   const [attempts, setAttempts] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -634,6 +646,15 @@ function StudentContent() {
   const [subscriptionBusy, setSubscriptionBusy] = useState(false);
   const [subscriptionCancelBusy, setSubscriptionCancelBusy] = useState(false);
   const [subscriptionErr, setSubscriptionErr] = useState("");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  function handleLogout() {
+    localStorage.removeItem("jwt");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
+  }
 
   useEffect(() => {
     const cachedAttempts = readDashboardCache("student-attempts", 2 * 60 * 1000);
@@ -654,6 +675,35 @@ function StudentContent() {
         setBusy(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const res = await fetch(`${API}/api/notifications`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data = await res.json();
+        setNotifications(Array.isArray(data) ? data : []);
+      } catch {
+        setNotifications([]);
+      }
+    }
+
+    loadNotifications();
+  }, [API]);
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setProfileMenuOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
   useEffect(() => {
@@ -785,6 +835,31 @@ function StudentContent() {
         )
       )
     : null;
+  const userIdForRead = storedUser?._id || storedUser?.id;
+  const unreadCount = notifications.filter(
+    (n) => !Array.isArray(n.readBy) || !n.readBy.some((id) => String(id) === String(userIdForRead))
+  ).length;
+  const recentNotifications = notifications.slice(0, 6);
+
+  async function markNotificationRead(id) {
+    try {
+      await fetch(`${API}/api/notifications/${id}/read`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+
+      setNotifications((prev) =>
+        prev.map((n) => {
+          if (n._id !== id) return n;
+          const nextReadBy = Array.isArray(n.readBy) ? n.readBy : [];
+          if (nextReadBy.some((v) => String(v) === String(userIdForRead))) return n;
+          return { ...n, readBy: [...nextReadBy, userIdForRead] };
+        })
+      );
+    } catch {
+      // Ignore read errors in header dropdown.
+    }
+  }
 
   async function cancelSubscription() {
     if (!subscriptionInfo?._id || subscriptionCancelBusy) return;
@@ -840,17 +915,150 @@ function StudentContent() {
     totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0;
 
   return (
-    <div className="student-adventure-theme relative">
-      {/* Background decorative elements */}
-      <div className="absolute top-10 right-20 opacity-10 pointer-events-none hidden lg:block">
-        <span className="material-symbols-outlined text-9xl text-[#e7c555]">rocket_launch</span>
-      </div>
-      <div className="absolute bottom-20 left-10 opacity-10 pointer-events-none hidden lg:block">
-        <span className="material-symbols-outlined text-9xl text-[#e7c555]">star</span>
+    <div className="student-adventure-theme relative p-4 md:p-6 space-y-6">
+      {/* Decorative star */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-[0.06] pointer-events-none select-none hidden lg:block">
+        <span className="material-symbols-outlined" style={{ fontSize: "260px", color: "#94a3b8" }}>star</span>
       </div>
 
       <WelcomeModal />
-      <WelcomeCard />
+
+      {/* ── Welcome Header ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900">
+            Welcome back, {storedUser?.name?.split(" ")[0] || "Student"}! 👋
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Your next adventure awaits.</p>
+        </div>
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
+            <span className="text-lg">🛡️</span>
+            <div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Level</div>
+              <div className="text-sm font-black text-slate-800">{busy ? "…" : getLevel(totalScore)}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
+            <span className="text-lg">🪙</span>
+            <div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
+              <div className="text-sm font-black text-slate-800">{busy ? "…" : `${Number(storedUser?.points || 0).toLocaleString()} pts`}</div>
+            </div>
+          </div>
+          <div ref={notificationRef} className="relative">
+            <button
+              type="button"
+              title="Notifications"
+              onClick={() => {
+                setShowNotifications((prev) => !prev);
+                setProfileMenuOpen(false);
+              }}
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 top-12 z-20 w-[320px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                  <p className="text-sm font-bold text-slate-800">Notifications</p>
+                  <span className="text-xs text-slate-500">{unreadCount} unread</span>
+                </div>
+                <div className="max-h-[320px] overflow-y-auto">
+                  {recentNotifications.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-sm text-slate-500">
+                      No notifications yet
+                    </div>
+                  ) : (
+                    recentNotifications.map((n) => {
+                      const isRead =
+                        Array.isArray(n.readBy) &&
+                        n.readBy.some((id) => String(id) === String(userIdForRead));
+                      return (
+                        <button
+                          key={n._id}
+                          type="button"
+                          onClick={async () => {
+                            if (!isRead) await markNotificationRead(n._id);
+                            setShowNotifications(false);
+                            navigate(`/dashboard/notification/${n._id}`);
+                          }}
+                          className={`w-full text-left px-3 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${
+                            !isRead ? "bg-amber-50/40" : ""
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            {!isRead && <span className="mt-1 h-2 w-2 rounded-full bg-rose-500 flex-shrink-0" />}
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">
+                                {n.title || "Notification"}
+                              </p>
+                              <p className="text-xs text-slate-600 line-clamp-2 mt-0.5">
+                                {n.message || ""}
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-1">
+                                {n.createdAt ? new Date(n.createdAt).toLocaleString() : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <div ref={profileMenuRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setProfileMenuOpen((prev) => !prev)}
+              className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-slate-200 shadow-sm"
+            >
+              {storedUser?.avatar ? (
+                <img src={storedUser.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                  {storedUser?.name?.[0]?.toUpperCase() || "U"}
+                </div>
+              )}
+            </button>
+            {profileMenuOpen && (
+              <div className="absolute right-0 top-12 z-20 min-w-[170px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    navigate("/dashboard/profile");
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <span className="material-symbols-outlined text-base">person</span>
+                  Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                >
+                  <span className="material-symbols-outlined text-base">logout</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <Section title="My Study Stats">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AdventureStatCard
@@ -883,7 +1091,14 @@ function StudentContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Tryouts - 2/3 width */}
-        <Section title="Recent Tryouts" subtitle={busy ? "Loading…" : `${attempts.length} attempts`} className="lg:col-span-2">
+        <section className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-500" style={{ fontSize: "20px" }}>history</span>
+              <h2 className="text-sm md:text-lg font-bold text-slate-800">Recent Tryouts</h2>
+            </div>
+            <Link to="/dashboard/result" className="text-sm font-semibold text-amber-500 hover:text-amber-600 transition-colors">View All</Link>
+          </div>
           <div className="rounded-2xl border border-[#e7c555]/10 bg-white/80 backdrop-blur shadow-md overflow-hidden">
 
           {/* ── MOBILE CARD LIST (< md) ── */}
@@ -965,12 +1180,12 @@ function StudentContent() {
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-500">{a.type}</td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-gray-800 text-base">{a.score} / {a.total}</div>
-                        <span className={`text-xs px-3 py-1 rounded-full font-black border mt-1 inline-block ${
-                          a.percent >= 90 ? "bg-[#4ecdc4]/10 text-[#4ecdc4] border-[#4ecdc4]/20" :
-                          a.percent >= 75 ? "bg-[#e7c555]/20 text-[#e7c555] border-[#e7c555]/30" :
-                          "bg-[#ff6b6b]/10 text-[#ff6b6b] border-[#ff6b6b]/20"
-                        }`}>{a.percent}%</span>
+                        <span className={`text-sm px-3 py-1.5 rounded-full font-black inline-flex items-center ${
+                          a.percent >= 90 ? "bg-green-100 text-green-700" :
+                          a.percent >= 75 ? "bg-blue-100 text-blue-700" :
+                          a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        }`}>{a.score}/{a.total}</span>
                       </td>
                       <td className="px-6 py-4">
                         <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-[#e7c555] hover:text-slate-900 transition-all rounded-full font-bold text-sm">
@@ -995,10 +1210,10 @@ function StudentContent() {
             </table>
           </div>
         </div>
-      </Section>
+        </section>
 
         {/* Spotlight column - 1/3 width */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           <DailyQuestCard />
           <SubscriptionSpotlight
             subscriptionType={subscriptionType}
@@ -1006,118 +1221,6 @@ function StudentContent() {
           />
         </div>
       </div>
-
-      <Section
-        title="Subscription & Access"
-        subtitle={subscriptionBusy ? "Loading…" : typeLabel}
-        icon={<CreditCard size={18} />}
-      >
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Card title="Current Plan" icon={<GraduationCap size={18} />} bubble={["from-emerald-600", "to-teal-600"]}>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-slate-800">{typeLabel}</span>
-              {resolvedType !== "none" && (
-                <Badge tone="emerald">Active</Badge>
-              )}
-              {resolvedType === "none" && <Badge tone="slate">Free</Badge>}
-            </div>
-            {subscriptionStartDate && (
-              <div className="mt-2 text-xs text-slate-500">
-                Starts on {new Date(subscriptionStartDate).toLocaleDateString()}
-              </div>
-            )}
-            {subscriptionEndDate && (
-              <div className="mt-2 text-xs text-slate-500">
-                Ends on {new Date(subscriptionEndDate).toLocaleDateString()}
-                {subscriptionDaysLeft !== null && (
-                  <span className="ml-1">({subscriptionDaysLeft} days left)</span>
-                )}
-              </div>
-            )}
-            {resolvedType !== "none" && subscriptionInfo?._id && (
-              <button
-                type="button"
-                onClick={cancelSubscription}
-                disabled={subscriptionCancelBusy}
-                className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {subscriptionCancelBusy ? "Cancelling..." : "Cancel Subscription"}
-              </button>
-            )}
-            {subscriptionErr && (
-              <div className="mt-2 text-xs text-rose-600">{subscriptionErr}</div>
-            )}
-          </Card>
-
-          <Card title="Stage Access" icon={<CheckCircle2 size={18} />} bubble={["from-blue-600", "to-indigo-600"]}>
-            <div className="flex items-center gap-2 text-sm">
-              <span>Stage 1</span>
-              <Badge tone="emerald">Free</Badge>
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-sm">
-              <span>Stage 2</span>
-              <Badge tone={stage2Unlocked ? "emerald" : "rose"}>
-                {stage2Unlocked ? "Unlocked" : "Locked"}
-              </Badge>
-            </div>
-            <div className="mt-2 text-xs text-slate-500">
-              Premium unlocks all stages and full study materials.
-            </div>
-          </Card>
-
-          <Card title="Study Materials" icon={<FileText size={18} />} bubble={["from-amber-600", "to-orange-600"]}>
-            <div className="flex items-center gap-2 text-sm">
-              <span>Access</span>
-              <Badge tone={studyMaterialsAccess === "full" ? "emerald" : studyMaterialsAccess === "limited" ? "amber" : "slate"}>
-                {studyMaterialsAccess === "full"
-                  ? "Full"
-                  : studyMaterialsAccess === "limited"
-                  ? "Limited"
-                  : "None"}
-              </Badge>
-            </div>
-            {packagesErr && (
-              <div className="mt-2 text-xs text-rose-600">{packagesErr}</div>
-            )}
-          </Card>
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {packagesBusy ? (
-            <Card title="Packages" icon={<CreditCard size={18} />} bubble={["from-slate-700", "to-slate-900"]}>
-              <div className="text-sm text-slate-500">Loading packages…</div>
-            </Card>
-          ) : packages.length === 0 ? (
-            <Card title="Packages" icon={<CreditCard size={18} />} bubble={["from-slate-700", "to-slate-900"]}>
-              <div className="text-sm text-slate-500">No packages available yet.</div>
-            </Card>
-          ) : (
-            packages.map((pkg) => {
-              const isCurrent = String(pkg.name || "").toLowerCase() === resolvedType;
-              return (
-                <Card
-                  key={pkg._id || pkg.name}
-                  title={pkg.displayName || pkg.name}
-                  icon={<CreditCard size={18} />}
-                  bubble={["from-slate-700", "to-slate-900"]}
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-semibold text-slate-800">{pkg.name}</span>
-                    {pkg.price === 0 ? <Badge tone="emerald">Free</Badge> : <Badge tone="slate">₹{pkg.price}</Badge>}
-                    {isCurrent && <Badge tone="emerald">Current</Badge>}
-                  </div>
-                  <div className="mt-2 text-xs text-slate-600">
-                    {pkg.duration} days • Stages {Array.isArray(pkg.unlockedStages) ? pkg.unlockedStages.join(", ") : "—"}
-                  </div>
-                  <div className="mt-2 text-xs text-slate-600">
-                    Study materials: {pkg.studyMaterialsAccess || "none"}
-                  </div>
-                </Card>
-              );
-            })
-          )}
-        </div>
-      </Section>
 
     </div>
   );
@@ -1202,7 +1305,7 @@ export default function Dashboard() {
   }, [roleKey]);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100">
+    <div className="min-h-[calc(100vh-64px)] bg-[#f5f3ef]">
       {/* <div className="border-b border-white/60 bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55">
         <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
