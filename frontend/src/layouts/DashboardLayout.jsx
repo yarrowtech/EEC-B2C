@@ -214,6 +214,7 @@
 // src/layouts/DashboardLayout.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { Outlet, NavLink, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Home,
     Users,
@@ -365,18 +366,24 @@ export default function DashboardLayout() {
         <div className="h-screen overflow-hidden">
             <div className="flex">
                 {/* MOBILE BACKDROP */}
-                {open && (
-                    <div
-                        className="fixed inset-0 z-30 bg-black/40 md:hidden"
-                        onClick={() => setOpen(false)}
-                    />
-                )}
+                <AnimatePresence>
+                    {open && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="fixed inset-0 z-30 bg-black/40 md:hidden"
+                            onClick={() => setOpen(false)}
+                        />
+                    )}
+                </AnimatePresence>
 
                 {/* SIDEBAR */}
                 <aside
                     className={`fixed z-40 top-0 bottom-0 w-80
   bg-white border-r border-slate-200 shadow-sm
-  transition-transform
+  transition-transform duration-300 ease-in-out
   ${open ? "translate-x-0" : "-translate-x-full"}
   md:translate-x-0`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -403,7 +410,7 @@ export default function DashboardLayout() {
                                                 end={item.end}
                                                 onClick={blockOfflineNavigation}
                                                 className={({ isActive }) =>
-                                                    `flex items-center gap-4 px-4 py-3 rounded-full font-bold transition-all hover:scale-[1.02] whitespace-nowrap overflow-hidden ${
+                                                    `flex items-center gap-4 px-4 py-3 rounded-full font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-sm whitespace-nowrap overflow-hidden ${
                                                         !online
                                                             ? "text-slate-400 bg-slate-100 cursor-not-allowed"
                                                             : isActive
@@ -447,14 +454,16 @@ export default function DashboardLayout() {
                         <div className="flex-shrink-0 flex flex-col gap-4 border-t border-slate-100 pt-6 mt-4">
                             {/* DAILY CHALLENGE - Students Only */}
                             {role === "student" && (
-                                <div className="p-4 bg-[#e7c555]/5 rounded-2xl border border-[#e7c555]/20">
+                                <div className="p-4 bg-[#e7c555]/5 rounded-2xl border border-[#e7c555]/20 transition-all duration-300 hover:bg-[#e7c555]/10 hover:border-[#e7c555]/30">
                                     <div className="flex flex-col gap-3">
                                         <p className="text-sm font-bold text-slate-800">Daily Challenge</p>
                                         <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                                            <div
-                                                className="bg-[#e7c555] h-full transition-all duration-500"
-                                                style={{ width: `${Math.min(100, ((user?.points || 0) % 500) / 5)}%` }}
-                                            ></div>
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${Math.min(100, ((user?.points || 0) % 500) / 5)}%` }}
+                                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                                className="bg-[#e7c555] h-full"
+                                            ></motion.div>
                                         </div>
                                         <p className="text-xs text-slate-500">
                                             Collect {500 - ((user?.points || 0) % 500)} more XP today!
@@ -497,7 +506,7 @@ export default function DashboardLayout() {
                                     toast.success("Logged out successfully");
                                     navigate("/", { replace: true });
                                 }}
-                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all hover:bg-[#FF6B6B] hover:text-white"
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all duration-300 hover:bg-[#FF6B6B] hover:text-white hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <span className="material-symbols-outlined text-lg">logout</span>
                                 <span>Leave Journey</span>
@@ -517,7 +526,20 @@ export default function DashboardLayout() {
           `}
                 >
                     <div className="mx-auto max-w-7xl">
-                        <Outlet />
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={location.pathname}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{
+                                    duration: 0.3,
+                                    ease: "easeInOut"
+                                }}
+                            >
+                                <Outlet />
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </main>
             </div>
@@ -540,21 +562,21 @@ export default function DashboardLayout() {
                                 end={item.end}
                                 onClick={blockOfflineNavigation}
                                 className={({ isActive }) =>
-                                    `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
+                                    `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 ${
                                         !online
                                             ? "text-slate-400"
                                             : isActive
                                             ? "text-orange-600"
-                                            : "text-orange-800/50 hover:text-orange-700"
+                                            : "text-orange-800/50 hover:text-orange-700 active:scale-95"
                                     }`
                                 }
                             >
                                 {({ isActive }) => (
                                     <>
-                                        <span className={`transition-transform ${isActive ? "scale-110" : ""}`}>
+                                        <span className={`transition-transform duration-300 ${isActive ? "scale-110" : ""}`}>
                                             {item.icon}
                                         </span>
-                                        <span>{item.label}</span>
+                                        <span className="transition-all duration-300">{item.label}</span>
                                     </>
                                 )}
                             </NavLink>
