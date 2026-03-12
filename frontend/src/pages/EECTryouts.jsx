@@ -96,6 +96,8 @@ const TYPE_META = {
   },
 };
 
+const DEFAULT_FREE_TRYOUT_TYPES = ["mcq-single", "mcq-multi", "choice-matrix", "true-false"];
+
 const BOARDS = ["CBSE", "ICSE", "State Board", "IB"];
 const GRADES = ["Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10"];
 const DIFFICULTIES = ["All Subjects", "Difficulty: Any"];
@@ -112,6 +114,9 @@ export default function EECTryouts() {
   const [gradeOpen, setGradeOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cards, setCards] = useState([]);
+  const [allowedTryoutTypesState, setAllowedTryoutTypesState] = useState(
+    new Set(DEFAULT_FREE_TRYOUT_TYPES)
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -136,7 +141,32 @@ export default function EECTryouts() {
 
           setActiveBoard(boardLabel);
           setActiveGrade(classLabel);
+
+          const [packagesRes, subscriptionRes] = await Promise.all([
+            fetch(`${API}/api/packages`),
+            fetch(`${API}/api/subscriptions/current`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+          const [packagesData, subscriptionData] = await Promise.all([
+            packagesRes.json(),
+            subscriptionRes.json(),
+          ]);
+
+          const packageRows = Array.isArray(packagesData?.packages) ? packagesData.packages : [];
+          const basicPackage = packageRows.find((p) => String(p?.name || "").toLowerCase() === "basic");
+          const activePackage = subscriptionData?.subscription?.package || null;
+
+          const allowedFromPackage = Array.isArray(activePackage?.allowedTryoutTypes) && activePackage.allowedTryoutTypes.length > 0
+            ? activePackage.allowedTryoutTypes
+            : Array.isArray(basicPackage?.allowedTryoutTypes) && basicPackage.allowedTryoutTypes.length > 0
+            ? basicPackage.allowedTryoutTypes
+            : DEFAULT_FREE_TRYOUT_TYPES;
+          setAllowedTryoutTypesState(new Set(allowedFromPackage.map((t) => String(t).trim())));
+
           summaryUrl = `${summaryUrl}?board=${encodeURIComponent(boardValue)}&class=${encodeURIComponent(classValue)}`;
+        } else {
+          setAllowedTryoutTypesState(new Set(DEFAULT_FREE_TRYOUT_TYPES));
         }
 
         const summaryRes = await fetch(summaryUrl);
@@ -189,10 +219,15 @@ export default function EECTryouts() {
   }, [API, isLoggedIn]);
 
   const visibleCards = useMemo(() => cards, [cards]);
+  const allowedTryoutTypes = useMemo(() => allowedTryoutTypesState, [allowedTryoutTypesState]);
 
   function handleCardClick(card) {
     if (!isLoggedIn) {
       window.dispatchEvent(new Event("eec:open-login"));
+      return;
+    }
+    if (!allowedTryoutTypes.has(card.type)) {
+      navigate("/dashboard/packages");
       return;
     }
     navigate(`/tryouts/${encodeURIComponent(card.type)}`, {
@@ -207,7 +242,10 @@ export default function EECTryouts() {
 
   function handleStartQuest() {
     if (visibleCards.length > 0) {
-      handleCardClick(visibleCards[0]);
+      const first = isLoggedIn
+        ? visibleCards.find((c) => allowedTryoutTypes.has(c.type)) || visibleCards[0]
+        : visibleCards[0];
+      handleCardClick(first);
       return;
     }
     if (!isLoggedIn) {
@@ -395,7 +433,7 @@ export default function EECTryouts() {
                   onClick={() => handleCardClick(subject)}
                   className="w-full bg-[#e7c555] hover:bg-[#d4b44a] text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]"
                 >
-                  Start Quest
+                  {isLoggedIn && !allowedTryoutTypes.has(subject.type) ? "Unlock Tryout" : "Start Quest"}
                   <MIcon name="play_circle" />
                 </button>
               </div>
@@ -403,19 +441,29 @@ export default function EECTryouts() {
           ))}
 
           {!loading && (
-            <div className="flex flex-col bg-slate-100 rounded-xl overflow-hidden border border-dashed border-slate-300 relative group opacity-80">
+            <button
+              type="button"
+              onClick={() => {
+                if (!isLoggedIn) {
+                  window.dispatchEvent(new Event("eec:open-login"));
+                  return;
+                }
+                navigate("/dashboard/packages");
+              }}
+              className="flex flex-col bg-slate-100 rounded-xl overflow-hidden border border-dashed border-slate-300 relative group opacity-80 text-left"
+            >
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/10 backdrop-blur-[2px]">
                 <div className="bg-white p-4 rounded-full shadow-lg text-[#e7c555] mb-2">
                   <MIcon name="lock" className="text-4xl" fill />
                 </div>
-                <p className="text-slate-900 font-bold">Unlocks at Level 5</p>
+                <p className="text-slate-900 font-bold">Unlock more tryouts</p>
               </div>
               <div className="h-40 bg-slate-300" />
               <div className="p-6 flex flex-col gap-4 grayscale">
                 <div className="h-4 w-32 bg-slate-200 rounded" />
                 <div className="h-10 w-full bg-slate-200 rounded-lg" />
               </div>
-            </div>
+            </button>
           )}
         </div>
 

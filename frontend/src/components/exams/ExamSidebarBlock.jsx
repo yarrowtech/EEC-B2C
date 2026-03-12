@@ -8,7 +8,9 @@ import {
   Table2,
   Gamepad2,
   Brain,
-  Zap
+  Zap,
+  TimerReset,
+  History
 } from "lucide-react";
 import { getJSON } from "../../lib/api";
 
@@ -167,8 +169,8 @@ export default function ExamSidebarBlock({ role = "student" }) {
           }`
         }
       >
-        <ListChecks size={18} />
-        <span>My Results</span>
+        <History size={18} />
+        <span>History</span>
       </NavLink>
 
       {/* ACHIEVEMENTS */}

@@ -7,9 +7,59 @@ import crypto from "crypto";
 import { razorpay } from "../utils/razorpay.js";
 import User from "../models/User.js";
 import Purchase from "../models/Purchase.js";
+import Package from "../models/Package.js";
+import Subscription from "../models/Subscription.js";
 import { sendPurchaseConfirmationEmail } from "../utils/sendMail.js";
 
 const router = express.Router();
+
+function getMaterialPrice(material) {
+  return Number(material?.price || 0);
+}
+
+function isMaterialFree(material) {
+  return Boolean(material?.isFree) && getMaterialPrice(material) <= 0;
+}
+
+function getAccessLevel(material) {
+  const raw = String(material?.accessLevel || "").toLowerCase();
+  if (["free", "limited", "premium"].includes(raw)) return raw;
+  return isMaterialFree(material) ? "free" : "premium";
+}
+
+function canPackageAccessLevel(studyAccess, accessLevel) {
+  if (accessLevel === "free") return true;
+  if (studyAccess === "full") return true;
+  if (studyAccess === "limited" && accessLevel === "limited") return true;
+  return false;
+}
+
+function normalizeAccessLevel(rawAccessLevel, rawIsFree) {
+  const normalized = String(rawAccessLevel || "").toLowerCase();
+  if (["free", "limited", "premium"].includes(normalized)) return normalized;
+  return rawIsFree === "true" ? "free" : "premium";
+}
+
+async function resolveStudyMaterialsAccessForUser(userDoc) {
+  if (!userDoc) return "none";
+
+  let activePackage = null;
+  if (userDoc.activeSubscription) {
+    const subscription = await Subscription.findById(userDoc.activeSubscription)
+      .populate("package")
+      .lean();
+    activePackage = subscription?.package || null;
+  }
+
+  if (!activePackage) {
+    activePackage = await Package.findOne({ name: "Basic", isActive: true })
+      .select("studyMaterialsAccess")
+      .lean();
+  }
+
+  const resolved = String(activePackage?.studyMaterialsAccess || "none").toLowerCase();
+  return ["none", "limited", "full"].includes(resolved) ? resolved : "none";
+}
 
 /**
  * ADMIN & TEACHER → Upload Study Material PDF
@@ -39,13 +89,20 @@ router.post(
       }
 
       const material = await StudyMaterial.create({
+        ...(function () {
+          const normalizedPrice = Math.max(0, Number(req.body.price || 0));
+          const accessLevel = normalizeAccessLevel(req.body.accessLevel, req.body.isFree);
+          return {
+            accessLevel,
+            isFree: accessLevel === "free",
+            price: accessLevel === "free" ? 0 : normalizedPrice,
+          };
+        })(),
         title: req.body.title,
         class: req.body.class,
         board: req.body.board,
         subject: req.body.subject,
         category: req.body.category || "Notes",
-        isFree: req.body.isFree === "true",
-        price: req.body.price || 0,
 
         pdfUrl: req.file.path, // ✅ Cloudinary secure_url
         pdfPublicId: req.file.filename, // ✅ needed for delete
@@ -116,9 +173,32 @@ router.get("/", requireAuth, async (req, res) => {
 
     const materials = await StudyMaterial.find(filter).sort({
       createdAt: -1,
-    });
+    }).lean();
 
-    res.json(materials);
+    const userDoc = await User.findById(req.user.id)
+      .select("purchasedMaterials activeSubscription role")
+      .lean();
+    const studyAccess =
+      String(userDoc?.role || "").toLowerCase() === "student"
+        ? await resolveStudyMaterialsAccessForUser(userDoc)
+        : "full";
+    const purchasedSet = new Set((userDoc?.purchasedMaterials || []).map((id) => String(id)));
+
+    const normalizedMaterials = materials.map((m) => ({
+      ...m,
+      accessLevel: getAccessLevel(m),
+      price: getMaterialPrice(m),
+      isFree: isMaterialFree(m),
+      canAccess: (function () {
+        const accessLevel = getAccessLevel(m);
+        return (
+          canPackageAccessLevel(studyAccess, accessLevel) ||
+          purchasedSet.has(String(m._id))
+        );
+      })(),
+    }));
+
+    res.json(normalizedMaterials);
   } catch (err) {
     console.error("FETCH MATERIALS ERROR:", err);
     res.status(500).json({ message: "Failed to fetch materials" });
@@ -129,8 +209,21 @@ router.get("/", requireAuth, async (req, res) => {
 router.get("/secure-pdf/:id", requireAuth, async (req, res) => {
   const material = await StudyMaterial.findById(req.params.id);
   const user = await User.findById(req.user.id);
+  if (!material || !user) {
+    return res.status(404).json({ message: "Not found" });
+  }
 
-  if (!material.isFree && !user.purchasedMaterials.includes(material._id)) {
+  let studyAccess = "none";
+  if (String(user.role || "").toLowerCase() === "student") {
+    studyAccess = await resolveStudyMaterialsAccessForUser(user);
+  } else {
+    studyAccess = "full";
+  }
+
+  const materialAccessLevel = getAccessLevel(material);
+
+  if (!canPackageAccessLevel(studyAccess, materialAccessLevel) &&
+    !user.purchasedMaterials.includes(material._id)) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -173,8 +266,11 @@ router.put(
       material.board = req.body.board;
       material.subject = req.body.subject;
       material.category = req.body.category || material.category;
-      material.isFree = req.body.isFree === "true";
-      material.price = req.body.price || 0;
+      const normalizedPrice = Math.max(0, Number(req.body.price || 0));
+      const accessLevel = normalizeAccessLevel(req.body.accessLevel, req.body.isFree);
+      material.accessLevel = accessLevel;
+      material.isFree = accessLevel === "free";
+      material.price = accessLevel === "free" ? 0 : normalizedPrice;
 
       // 🔥 Only replace PDF if a new one is uploaded
       if (req.file) {
@@ -302,6 +398,16 @@ router.post("/create-order", requireAuth, async (req, res) => {
       return res.status(404).json({ message: "Material not found" });
     }
 
+    const studyAccess = await resolveStudyMaterialsAccessForUser(user);
+    const materialLevel = getAccessLevel(material);
+    if (canPackageAccessLevel(studyAccess, materialLevel)) {
+      return res.status(400).json({ message: "This material is already unlocked by your package" });
+    }
+
+    if (materialLevel === "free") {
+      return res.status(400).json({ message: "This material is free and does not require payment" });
+    }
+
     const receipt = `mat_${material._id.toString().slice(-6)}_${Date.now()
       .toString()
       .slice(-6)}`;
@@ -339,6 +445,16 @@ router.post("/verify-payment", requireAuth, async (req, res) => {
 
     if (!user || !material) {
       return res.status(404).json({ message: "User or Material not found" });
+    }
+
+    const studyAccess = await resolveStudyMaterialsAccessForUser(user);
+    const materialLevel = getAccessLevel(material);
+    if (canPackageAccessLevel(studyAccess, materialLevel)) {
+      return res.status(400).json({ message: "This material is already unlocked by your package" });
+    }
+
+    if (materialLevel === "free") {
+      return res.status(400).json({ message: "This material is free and does not require payment" });
     }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -435,6 +551,16 @@ router.post("/purchase-with-wallet", requireAuth, async (req, res) => {
     const material = await StudyMaterial.findById(materialId);
     if (!material) {
       return res.status(404).json({ message: "Study material not found" });
+    }
+
+    const studyAccess = await resolveStudyMaterialsAccessForUser(user);
+    const materialLevel = getAccessLevel(material);
+    if (canPackageAccessLevel(studyAccess, materialLevel)) {
+      return res.status(400).json({ message: "This material is already unlocked by your package" });
+    }
+
+    if (materialLevel === "free") {
+      return res.status(400).json({ message: "This material is free and does not require payment" });
     }
 
     // Check if wallet has sufficient balance

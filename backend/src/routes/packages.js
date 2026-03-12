@@ -52,6 +52,9 @@ router.post("/", requireAuth, async (req, res) => {
       features,
       unlockedStages,
       studyMaterialsAccess,
+      allowedTryoutTypes,
+      subjectContentAccess,
+      analyticsAccess,
       prioritySupport,
     } = req.body;
 
@@ -64,6 +67,9 @@ router.post("/", requireAuth, async (req, res) => {
       features,
       unlockedStages,
       studyMaterialsAccess,
+      allowedTryoutTypes,
+      subjectContentAccess,
+      analyticsAccess,
       prioritySupport,
       createdBy: req.user.id,
     });

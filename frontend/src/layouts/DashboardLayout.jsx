@@ -535,7 +535,7 @@ export default function DashboardLayout() {
                                 className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all duration-300 hover:bg-[#FF6B6B] hover:text-white hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <span className="material-symbols-outlined text-lg">logout</span>
-                                <span>Leave Journey</span>
+                                <span>Logout</span>
                             </button>
                         </div>
                     </div>

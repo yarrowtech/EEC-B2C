@@ -3,6 +3,57 @@ import { toast, ToastContainer } from "react-toastify";
 import { Package, Pencil, Trash2, Plus, Check, X } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const TRYOUT_OPTIONS = [
+  "mcq-single",
+  "mcq-multi",
+  "choice-matrix",
+  "true-false",
+  "cloze-drag",
+  "cloze-select",
+  "cloze-text",
+  "match-list",
+  "essay-plain",
+  "essay-rich",
+];
+
+const PACKAGE_PRESETS = {
+  Basic: {
+    allowedTryoutTypes: ["mcq-single", "mcq-multi", "choice-matrix", "true-false"],
+    studyMaterialsAccess: "none",
+    subjectContentAccess: "basic",
+    analyticsAccess: "none",
+    prioritySupport: false,
+    features:
+      "MCQ Single, MCQ Multi, Choice Matrix, True/False, Basic Subject Content, Sample Study Materials",
+  },
+  Intermediate: {
+    allowedTryoutTypes: [
+      "mcq-single",
+      "mcq-multi",
+      "choice-matrix",
+      "true-false",
+      "cloze-drag",
+      "cloze-select",
+      "cloze-text",
+      "match-list",
+    ],
+    studyMaterialsAccess: "limited",
+    subjectContentAccess: "extended",
+    analyticsAccess: "basic",
+    prioritySupport: false,
+    features:
+      "All Free Tryouts, Cloze Drag/Select/Text, Match List, Extended Subject Content, Limited Study Materials, Basic Analytics",
+  },
+  Premium: {
+    allowedTryoutTypes: TRYOUT_OPTIONS,
+    studyMaterialsAccess: "full",
+    subjectContentAccess: "full",
+    analyticsAccess: "full",
+    prioritySupport: true,
+    features:
+      "All Tryout Types, Essay Plain & Rich, Full Subject Content, Full Study Materials, Full Analytics, Priority Support",
+  },
+};
 
 export default function ManagePackages() {
   const [packages, setPackages] = useState([]);
@@ -20,6 +71,9 @@ export default function ManagePackages() {
     features: "",
     unlockedStages: "",
     studyMaterialsAccess: "none",
+    allowedTryoutTypes: PACKAGE_PRESETS.Basic.allowedTryoutTypes,
+    subjectContentAccess: "basic",
+    analyticsAccess: "none",
     prioritySupport: false,
   });
 
@@ -52,6 +106,33 @@ export default function ManagePackages() {
     });
   }
 
+  function handleTryoutToggle(typeName) {
+    setFormData((prev) => {
+      const list = Array.isArray(prev.allowedTryoutTypes) ? prev.allowedTryoutTypes : [];
+      const exists = list.includes(typeName);
+      return {
+        ...prev,
+        allowedTryoutTypes: exists
+          ? list.filter((t) => t !== typeName)
+          : [...list, typeName],
+      };
+    });
+  }
+
+  function applyPreset(packageName) {
+    const preset = PACKAGE_PRESETS[packageName];
+    if (!preset) return;
+    setFormData((prev) => ({
+      ...prev,
+      allowedTryoutTypes: preset.allowedTryoutTypes,
+      studyMaterialsAccess: preset.studyMaterialsAccess,
+      subjectContentAccess: preset.subjectContentAccess,
+      analyticsAccess: preset.analyticsAccess,
+      prioritySupport: preset.prioritySupport,
+      features: preset.features,
+    }));
+  }
+
   function resetForm() {
     setFormData({
       name: "Basic",
@@ -62,6 +143,9 @@ export default function ManagePackages() {
       features: "",
       unlockedStages: "",
       studyMaterialsAccess: "none",
+      allowedTryoutTypes: PACKAGE_PRESETS.Basic.allowedTryoutTypes,
+      subjectContentAccess: "basic",
+      analyticsAccess: "none",
       prioritySupport: false,
     });
     setEditingId(null);
@@ -78,6 +162,9 @@ export default function ManagePackages() {
       features: pkg.features.join(", "),
       unlockedStages: pkg.unlockedStages.join(", "),
       studyMaterialsAccess: pkg.studyMaterialsAccess,
+      allowedTryoutTypes: pkg.allowedTryoutTypes || PACKAGE_PRESETS[pkg.name]?.allowedTryoutTypes || PACKAGE_PRESETS.Basic.allowedTryoutTypes,
+      subjectContentAccess: pkg.subjectContentAccess || PACKAGE_PRESETS[pkg.name]?.subjectContentAccess || "basic",
+      analyticsAccess: pkg.analyticsAccess || PACKAGE_PRESETS[pkg.name]?.analyticsAccess || "none",
       prioritySupport: pkg.prioritySupport,
     });
     setEditingId(pkg._id);
@@ -94,6 +181,7 @@ export default function ManagePackages() {
     try {
       const payload = {
         ...formData,
+        allowedTryoutTypes: (formData.allowedTryoutTypes || []).filter(Boolean),
         features: formData.features
           .split(",")
           .map((f) => f.trim())
@@ -204,6 +292,13 @@ export default function ManagePackages() {
                   <option value="Intermediate">Intermediate</option>
                   <option value="Premium">Premium</option>
                 </select>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(formData.name)}
+                  className="mt-2 text-xs font-semibold text-purple-600 hover:text-purple-700"
+                >
+                  Apply recommended {formData.name} preset
+                </button>
               </div>
 
               {/* Display Name */}
@@ -282,6 +377,60 @@ export default function ManagePackages() {
                   <option value="limited">Limited</option>
                   <option value="full">Full Access</option>
                 </select>
+              </div>
+
+              {/* Subject Content Access */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Subject Content Access
+                </label>
+                <select
+                  name="subjectContentAccess"
+                  value={formData.subjectContentAccess}
+                  onChange={handleInputChange}
+                  className="w-full border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
+                >
+                  <option value="basic">Basic</option>
+                  <option value="extended">Extended</option>
+                  <option value="full">Full</option>
+                </select>
+              </div>
+
+              {/* Analytics Access */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Analytics Access
+                </label>
+                <select
+                  name="analyticsAccess"
+                  value={formData.analyticsAccess}
+                  onChange={handleInputChange}
+                  className="w-full border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
+                >
+                  <option value="none">None</option>
+                  <option value="basic">Basic</option>
+                  <option value="full">Full</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Allowed Tryout Types */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Allowed Tryout Types
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {TRYOUT_OPTIONS.map((typeName) => (
+                  <label key={typeName} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowedTryoutTypes.includes(typeName)}
+                      onChange={() => handleTryoutToggle(typeName)}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="text-gray-700">{typeName}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -455,6 +604,34 @@ export default function ManagePackages() {
                   >
                     {pkg.studyMaterialsAccess}
                   </span>
+                </div>
+
+                <div className="mb-4">
+                  <span className="text-xs font-semibold text-gray-500">Subject Content: </span>
+                  <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                    {pkg.subjectContentAccess || "basic"}
+                  </span>
+                </div>
+
+                <div className="mb-4">
+                  <span className="text-xs font-semibold text-gray-500">Analytics: </span>
+                  <span className="text-xs px-2 py-1 rounded bg-indigo-100 text-indigo-700">
+                    {pkg.analyticsAccess || "none"}
+                  </span>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-xs font-semibold text-gray-500 mb-2">Tryout Types:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {(pkg.allowedTryoutTypes || []).map((typeName) => (
+                      <span
+                        key={typeName}
+                        className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[11px] font-semibold"
+                      >
+                        {typeName}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Actions */}

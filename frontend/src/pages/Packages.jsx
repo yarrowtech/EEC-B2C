@@ -72,6 +72,7 @@ export default function Packages() {
   const [purchasingId, setPurchasingId] = useState(null);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [autoBuyHandled, setAutoBuyHandled] = useState(false);
+  const [confirmPkg, setConfirmPkg] = useState(null);
 
   const token = localStorage.getItem("jwt") || "";
 
@@ -170,7 +171,10 @@ export default function Packages() {
 
   async function purchasePackage(pkg, options = {}) {
     if (!pkg?._id) return;
-    if (!options.skipConfirm && !window.confirm(`Subscribe to ${pkg.displayName || pkg.name}?`)) return;
+    if (!options.skipConfirm) {
+      setConfirmPkg(pkg);
+      return;
+    }
 
     setPurchasingId(pkg._id);
     try {
@@ -249,6 +253,9 @@ export default function Packages() {
 
   const hasActivePlan = activeType !== "none";
   const activePackage = subscription?.package || null;
+  const isFreeTierActive =
+    hasActivePlan &&
+    (String(activeType) === "basic" || Number(activePackage?.price || 0) === 0);
   const startDate = subscription?.startDate || null;
   const startDateLabel = startDate
     ? new Date(startDate).toLocaleDateString("en-IN", {
@@ -289,6 +296,15 @@ export default function Packages() {
     } finally {
       setCancelBusy(false);
     }
+  }
+
+  function handleUpgradeFromFreeTier() {
+    const nextPaidPackage = sortedPackages.find((pkg) => Number(pkg?.price || 0) > 0);
+    if (!nextPaidPackage) {
+      toast.info("No paid upgrade package available right now");
+      return;
+    }
+    purchasePackage(nextPaidPackage);
   }
 
   return (
@@ -354,14 +370,24 @@ export default function Packages() {
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">{activePackage.description}</p>
               </div>
-              <button
-                type="button"
-                onClick={cancelSubscription}
-                disabled={cancelBusy}
-                className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {cancelBusy ? "Cancelling..." : "Cancel Subscription"}
-              </button>
+              {isFreeTierActive ? (
+                <button
+                  type="button"
+                  onClick={handleUpgradeFromFreeTier}
+                  className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  Upgrade Plan
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={cancelSubscription}
+                  disabled={cancelBusy}
+                  className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {cancelBusy ? "Cancelling..." : "Cancel Subscription"}
+                </button>
+              )}
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -573,12 +599,46 @@ export default function Packages() {
                         </span>
                       </div>
 
+                      {/* Subject Content */}
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <span className="text-xs text-slate-500">Subject Content:</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700">
+                          {pkg.subjectContentAccess || "basic"}
+                        </span>
+                      </div>
+
+                      {/* Analytics */}
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <span className="text-xs text-slate-500">Analytics:</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-700">
+                          {pkg.analyticsAccess || "none"}
+                        </span>
+                      </div>
+
                       {/* Duration */}
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
                         <span className="text-xs text-slate-500">
                           Valid for <span className="font-semibold text-slate-700">{pkg.duration} days</span>
                         </span>
+                      </div>
+
+                      {/* Allowed Tryout Types */}
+                      <div className="flex items-start gap-2">
+                        <Zap className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex flex-wrap gap-1">
+                          {Array.isArray(pkg.allowedTryoutTypes) && pkg.allowedTryoutTypes.length > 0 ? (
+                            pkg.allowedTryoutTypes.map((typeName) => (
+                              <span key={typeName} className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">
+                                {typeName}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400">No tryout types configured</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -623,6 +683,50 @@ export default function Packages() {
           Payments are processed securely via Razorpay. By subscribing you agree to our Terms of Service.
         </p>
       </div>
+
+      {/* ── Subscribe Confirm Modal ── */}
+      {confirmPkg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 animate-fade-in">
+            <div className="w-14 h-14 rounded-full bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+              <CreditCard className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-800">Confirm Subscription</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                You're about to subscribe to{" "}
+                <span className="font-semibold text-orange-600">
+                  {confirmPkg.displayName || confirmPkg.name}
+                </span>
+                {confirmPkg.price > 0 && (
+                  <> for <span className="font-semibold text-slate-700">₹{confirmPkg.price}</span></>
+                )}
+                .
+              </p>
+            </div>
+            <div className="flex gap-3 w-full mt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmPkg(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const pkg = confirmPkg;
+                  setConfirmPkg(null);
+                  purchasePackage(pkg, { skipConfirm: true });
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-sm shadow-md transition-all"
+              >
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

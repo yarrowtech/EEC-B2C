@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileText,
   TrendingUp,
@@ -28,6 +29,7 @@ import {
 import { getJSON } from '../lib/api';
 
 const RESULTS_CACHE_PREFIX = "eec:results-cache:v2";
+const ANALYTICS_ORDER = { none: 0, basic: 1, full: 2 };
 
 function getCacheKey(section, userKey = "anonymous") {
   return `${RESULTS_CACHE_PREFIX}:${userKey}:${section}`;
@@ -58,13 +60,17 @@ function writeCache(section, userKey, data) {
 }
 
 const ResultsView = () => {
+  const navigate = useNavigate();
   const [selectedSemester, setSelectedSemester] = useState('current');
   const [selectedExam, setSelectedExam] = useState('all');
   const [examResults, setExamResults] = useState([]);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user._id || user.id;
+  const token = localStorage.getItem("jwt") || "";
   const [showModal, setShowModal] = useState(false);
   const [activeExam, setActiveExam] = useState(null);
+  const [analyticsAccess, setAnalyticsAccess] = useState("none");
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   useEffect(() => {
     if (!showModal || !activeExam) return;
@@ -150,6 +156,10 @@ const ResultsView = () => {
   }, [showModal, activeExam?.id, activeExam?._id]);
 
   function openExamDetails(exam) {
+    if (ANALYTICS_ORDER[analyticsAccess] < ANALYTICS_ORDER.full) {
+      navigate("/dashboard/packages");
+      return;
+    }
     const answerMap = new Map(
       (exam?.answers || []).map((a) => [String(a.qid), a])
     );
@@ -182,6 +192,50 @@ const ResultsView = () => {
   //     })
   //     .catch(err => console.error("Failed to load results", err));
   // }, []);
+  useEffect(() => {
+    let mounted = true;
+    async function loadAnalyticsAccess() {
+      try {
+        if (!token) {
+          if (mounted) setAnalyticsAccess("none");
+          return;
+        }
+
+        const [packagesRes, subscriptionRes] = await Promise.all([
+          fetch(`${API}/api/packages`),
+          fetch(`${API}/api/subscriptions/current`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const [packagesData, subscriptionData] = await Promise.all([
+          packagesRes.json(),
+          subscriptionRes.json(),
+        ]);
+
+        const packageRows = Array.isArray(packagesData?.packages) ? packagesData.packages : [];
+        const basicPackage = packageRows.find((p) => String(p?.name || "").toLowerCase() === "basic");
+        const activePackage =
+          subscriptionData?.hasActiveSubscription ? subscriptionData?.subscription?.package : null;
+        const resolvedAccess = String(
+          activePackage?.analyticsAccess || basicPackage?.analyticsAccess || "none"
+        ).toLowerCase();
+
+        if (mounted) {
+          setAnalyticsAccess(["none", "basic", "full"].includes(resolvedAccess) ? resolvedAccess : "none");
+        }
+      } catch {
+        if (mounted) setAnalyticsAccess("none");
+      } finally {
+        if (mounted) setAnalyticsLoading(false);
+      }
+    }
+
+    loadAnalyticsAccess();
+    return () => {
+      mounted = false;
+    };
+  }, [API, token]);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user._id || user.id;
@@ -680,6 +734,8 @@ const ResultsView = () => {
   const excellentCount = hasResults
     ? examResults.filter(exam => exam.percentage >= 85).length
     : 0;
+  const canViewAnalytics = ANALYTICS_ORDER[analyticsAccess] >= ANALYTICS_ORDER.basic;
+  const canViewDetails = ANALYTICS_ORDER[analyticsAccess] >= ANALYTICS_ORDER.full;
 
 
   return (
@@ -716,26 +772,7 @@ const ResultsView = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-
-        {/* GPA */}
-        <div className="relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br from-amber-600 to-orange-600 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-          <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-            <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
-            <div className="absolute bottom-3 left-4 w-14 h-14 bg-white rounded-full"></div>
-          </div>
-          <div className="relative z-10 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-xs md:text-sm text-white/80 truncate">GPA</p>
-              <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">
-                {examResults.length > 0 ? (overallPercentage / 25).toFixed(2) : 0}
-              </h3>
-            </div>
-            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
-              <Target className="w-4 h-4 md:w-5 md:h-5" />
-            </div>
-          </div>
-        </div>
+      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-6">
 
         {/* Overall Percentage */}
         <div className="relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br from-emerald-600 to-teal-600 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
@@ -813,48 +850,74 @@ const ResultsView = () => {
         </div>
       </div> */}
 
-      <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
-        <div className="text-[13px] font-semibold text-slate-600 tracking-wide mb-3 flex items-center gap-2">
-          <span className="text-slate-700"><BarChart3 className="w-4 h-4 md:w-5 md:h-5" /></span>
-          Performance Summary
+      <div className="relative">
+      {canViewAnalytics ? (
+        <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
+          <div className="text-[13px] font-semibold text-slate-600 tracking-wide mb-3 flex items-center gap-2">
+            <span className="text-slate-700"><BarChart3 className="w-4 h-4 md:w-5 md:h-5" /></span>
+            Performance Summary
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 md:gap-6">
+            {/* AVERAGE SCORE */}
+            <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+                <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
+              </div>
+              <div className="relative z-10 text-xl md:text-4xl font-extrabold">{avgScore}%</div>
+              <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Avg Score</div>
+              <ChartSpline className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+            </div>
+
+            {/* BEST PERFORMANCE */}
+            <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-emerald-600 to-teal-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+                <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
+              </div>
+              <div className="relative z-10 text-xl md:text-4xl font-extrabold">{bestScore}%</div>
+              <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Best</div>
+              <Medal className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+            </div>
+
+            {/* EXCELLENT SCORES */}
+            <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-rose-600 to-pink-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+                <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
+              </div>
+              <div className="relative z-10 text-xl md:text-4xl font-extrabold">{excellentCount}/{examResults.length || 0}</div>
+              <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Excellent</div>
+              <Sparkles className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+            </div>
+          </div>
         </div>
-
-        <div className="grid grid-cols-3 gap-2 md:gap-6">
-          {/* AVERAGE SCORE */}
-          <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-              <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
-            </div>
-            <div className="relative z-10 text-xl md:text-4xl font-extrabold">{avgScore}%</div>
-            <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Avg Score</div>
-            <ChartSpline className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
-          </div>
-
-          {/* BEST PERFORMANCE */}
-          <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-emerald-600 to-teal-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-              <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
-            </div>
-            <div className="relative z-10 text-xl md:text-4xl font-extrabold">{bestScore}%</div>
-            <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Best</div>
-            <Medal className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
-          </div>
-
-          {/* EXCELLENT SCORES */}
-          <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-rose-600 to-pink-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-              <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
-            </div>
-            <div className="relative z-10 text-xl md:text-4xl font-extrabold">{excellentCount}/{examResults.length || 0}</div>
-            <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Excellent</div>
-            <Sparkles className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+      ) : (
+        <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5">
+          <div className="grid grid-cols-3 gap-2 md:gap-6">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="rounded-xl md:rounded-2xl bg-slate-200/80 h-24 md:h-36 animate-pulse" />
+            ))}
           </div>
         </div>
+      )}
+      {!analyticsLoading && !canViewAnalytics && (
+        <div className="absolute inset-0 z-10 rounded-2xl bg-slate-900/55 flex items-center justify-center p-5">
+          <div className="text-center">
+            <p className="text-white text-sm md:text-base font-semibold">Upgrade to view full analytics</p>
+            <button
+              onClick={() => navigate("/dashboard/packages")}
+              className="mt-3 px-4 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 hover:bg-slate-100 transition-colors"
+            >
+              Upgrade Plan
+            </button>
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Exam Results */}
+      <div className="relative">
       <div className="relative z-10 space-y-3 md:space-y-6">
-        {paginatedExams.map((exam) => (
+        {canViewAnalytics ? paginatedExams.map((exam) => (
           <div key={exam.id} className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow overflow-hidden">
 
             {/* Card Header — shared mobile + desktop */}
@@ -907,10 +970,14 @@ const ResultsView = () => {
               ))}
               <div className="px-4 py-3">
                 <button
-                  onClick={() => openExamDetails(exam)}
-                  className="w-full py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md active:scale-95 transition-all"
+                  onClick={() => (canViewDetails ? openExamDetails(exam) : navigate("/dashboard/packages"))}
+                  className={`w-full py-2.5 text-sm font-semibold rounded-xl shadow-md active:scale-95 transition-all ${
+                    canViewDetails
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
                 >
-                  View Details
+                  {canViewDetails ? "View Details" : "Upgrade to View Details"}
                 </button>
               </div>
             </div>
@@ -971,10 +1038,14 @@ const ResultsView = () => {
                       </td>
                       <td className="px-6 py-4">
                         <button
-                          onClick={() => openExamDetails(exam)}
-                          className="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+                          onClick={() => (canViewDetails ? openExamDetails(exam) : navigate("/dashboard/packages"))}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg shadow-md transition-all duration-300 ${
+                            canViewDetails
+                              ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-lg hover:scale-105"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
                         >
-                          View Details
+                          {canViewDetails ? "View Details" : "Upgrade to View Details"}
                         </button>
                       </td>
                     </tr>
@@ -984,10 +1055,36 @@ const ResultsView = () => {
             </div>
 
           </div>
-        ))}
+        )) : (
+          <>
+            {[1, 2].map((item) => (
+              <div key={item} className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md p-6">
+                <div className="space-y-3">
+                  <div className="h-5 w-48 bg-slate-200/80 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-slate-200/80 rounded animate-pulse" />
+                  <div className="h-24 w-full bg-slate-200/80 rounded-xl animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+      {!analyticsLoading && !canViewAnalytics && (
+        <div className="absolute inset-0 z-10 rounded-2xl bg-slate-900/55 flex items-center justify-center p-5">
+          <div className="text-center">
+            <p className="text-white text-sm md:text-base font-semibold">Upgrade to view full analytics</p>
+            <button
+              onClick={() => navigate("/dashboard/packages")}
+              className="mt-3 px-4 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 hover:bg-slate-100 transition-colors"
+            >
+              Upgrade Plan
+            </button>
+          </div>
+        </div>
+      )}
       </div>
       {/* Pagination Controls */}
-      {totalExamPages > 1 && (
+      {canViewAnalytics && totalExamPages > 1 && (
         <div className="relative z-10 flex justify-center items-center gap-2 md:gap-3 mt-4 md:mt-6">
 
           {/* Prev */}
@@ -1058,7 +1155,7 @@ const ResultsView = () => {
       )}
 
       {/* ---------------- MODAL VIEW ---------------- */}
-      {showModal && activeExam && (
+      {canViewDetails && showModal && activeExam && (
         <div
           className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-2 md:p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}

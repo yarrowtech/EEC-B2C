@@ -79,9 +79,26 @@ export default function StudyMaterialsPage() {
 
     /* ---------------- USER ACCESS CHECK ---------------- */
     function hasAccess(material) {
-        if (material.isFree) return true;
-        if (!user?.purchasedMaterials) return false;
-        return user.purchasedMaterials.includes(material._id);
+        if (typeof material?.canAccess === "boolean") return material.canAccess;
+        if (isMaterialFree(material)) return true;
+        return hasPurchased(material._id);
+    }
+
+    function isMaterialFree(material) {
+        const price = Number(material?.price || 0);
+        return Boolean(material?.isFree) && price <= 0;
+    }
+
+    function hasPurchased(materialId) {
+        if (!Array.isArray(user?.purchasedMaterials)) return false;
+        return user.purchasedMaterials.some((id) => String(id) === String(materialId));
+    }
+
+    function getAccessState(material) {
+        if (isMaterialFree(material)) return "free";
+        if (hasPurchased(material?._id)) return "owned";
+        if (hasAccess(material)) return "package";
+        return "paid";
     }
 
     /* ---------------- FETCH USER (DB = SOURCE OF TRUTH) ---------------- */
@@ -165,7 +182,6 @@ export default function StudyMaterialsPage() {
                 if (cachedMaterials) {
                     setMaterials(Array.isArray(cachedMaterials) ? cachedMaterials : []);
                     setLoading(false);
-                    return;
                 }
 
                 const res = await fetch(url.toString(), {
@@ -343,9 +359,9 @@ export default function StudyMaterialsPage() {
 
     // Filter by price
     if (priceFilter === "Free") {
-        visibleMaterials = visibleMaterials.filter((m) => m.isFree === true);
+        visibleMaterials = visibleMaterials.filter((m) => isMaterialFree(m));
     } else if (priceFilter === "Paid") {
-        visibleMaterials = visibleMaterials.filter((m) => m.isFree === false);
+        visibleMaterials = visibleMaterials.filter((m) => !isMaterialFree(m));
     }
 
     // Sort materials
@@ -623,12 +639,19 @@ export default function StudyMaterialsPage() {
                             }`}
                         >
                             {/* TOP RIBBON */}
+                            {(() => {
+                                const freeMaterial = isMaterialFree(m);
+                                const accessState = getAccessState(m);
+                                return (
                             <div className={`absolute top-0 right-0 px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-bold rounded-bl-xl shadow-md ${
-                                m.isFree ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
-                                    : hasAccess(m) ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white"
+                                freeMaterial ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
+                                    : accessState === "owned" ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white"
+                                    : accessState === "package" ? "bg-gradient-to-br from-sky-500 to-cyan-600 text-white"
                                     : "bg-gradient-to-br from-yellow-400 to-orange-500 text-white"}`}>
-                                {m.isFree ? "FREE" : hasAccess(m) ? "OWNED" : "PAID"}
+                                {freeMaterial ? "FREE" : accessState === "owned" ? "OWNED" : accessState === "package" ? "UNLOCKED" : "PAID"}
                             </div>
+                                );
+                            })()}
 
                             {/* FAVORITE HEART - desktop only (avoids overlap in mobile list) */}
                             <button
@@ -652,8 +675,8 @@ export default function StudyMaterialsPage() {
                                         <span className="text-xs text-gray-500 truncate max-w-[100px]">{m.subject}</span>
                                         {m.category && <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">🏷️ {m.category}</span>}
                                     </div>
-                                    <span className={`text-xs font-bold mt-0.5 block ${m.isFree ? "text-green-600" : hasAccess(m) ? "text-indigo-600" : "text-yellow-700"}`}>
-                                        {m.isFree ? "✨ Free" : hasAccess(m) ? "✓ Purchased" : `₹${m.price}`}
+                                    <span className={`text-xs font-bold mt-0.5 block ${isMaterialFree(m) ? "text-green-600" : getAccessState(m) === "package" ? "text-sky-600" : hasAccess(m) ? "text-indigo-600" : "text-yellow-700"}`}>
+                                        {isMaterialFree(m) ? "✨ Free" : getAccessState(m) === "owned" ? "✓ Purchased" : getAccessState(m) === "package" ? "🔓 Package Access" : `₹${m.price}`}
                                     </span>
                                 </div>
                                 {/* Action */}
@@ -691,8 +714,8 @@ export default function StudyMaterialsPage() {
                                         {m.category && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">🏷️ {m.category}</span>}
                                     </div>
                                     <div className="mt-4 flex justify-center">
-                                        <span className={`px-4 py-2 rounded-full text-sm font-bold tracking-wide shadow-md ${m.isFree ? "bg-green-100 text-green-700 border border-green-200" : hasAccess(m) ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "bg-yellow-100 text-yellow-800 border border-yellow-200"}`}>
-                                            {m.isFree ? "Free Access" : hasAccess(m) ? "Purchased" : `₹ ${m.price} Only`}
+                                        <span className={`px-4 py-2 rounded-full text-sm font-bold tracking-wide shadow-md ${isMaterialFree(m) ? "bg-green-100 text-green-700 border border-green-200" : getAccessState(m) === "package" ? "bg-sky-100 text-sky-700 border border-sky-200" : hasAccess(m) ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "bg-yellow-100 text-yellow-800 border border-yellow-200"}`}>
+                                            {isMaterialFree(m) ? "Free Access" : getAccessState(m) === "owned" ? "Purchased" : getAccessState(m) === "package" ? "Package Unlocked" : `₹ ${m.price} Only`}
                                         </span>
                                     </div>
                                     <div className="mt-6 space-y-2">
@@ -724,8 +747,8 @@ export default function StudyMaterialsPage() {
                                             <span className="text-sm text-gray-600 font-medium">{m.subject}</span>
                                             {m.category && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">🏷️ {m.category}</span>}
                                         </div>
-                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${m.isFree ? "bg-green-100 text-green-700" : hasAccess(m) ? "bg-indigo-100 text-indigo-700" : "bg-yellow-100 text-yellow-800"}`}>
-                                            {m.isFree ? "Free" : hasAccess(m) ? "Purchased" : `₹${m.price}`}
+                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${isMaterialFree(m) ? "bg-green-100 text-green-700" : getAccessState(m) === "package" ? "bg-sky-100 text-sky-700" : hasAccess(m) ? "bg-indigo-100 text-indigo-700" : "bg-yellow-100 text-yellow-800"}`}>
+                                            {isMaterialFree(m) ? "Free" : getAccessState(m) === "owned" ? "Purchased" : getAccessState(m) === "package" ? "Package" : `₹${m.price}`}
                                         </span>
                                     </div>
                                     <div className="flex gap-2 flex-shrink-0">
@@ -800,8 +823,8 @@ export default function StudyMaterialsPage() {
                             <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-xl">
                                 <div><p className="text-xs text-gray-500 mb-0.5">Class</p><p className="font-semibold text-gray-900 text-sm">{previewMaterial.class || "N/A"}</p></div>
                                 <div><p className="text-xs text-gray-500 mb-0.5">Board</p><p className="font-semibold text-gray-900 text-sm">{previewMaterial.board || "N/A"}</p></div>
-                                <div><p className="text-xs text-gray-500 mb-0.5">Type</p><p className="font-semibold text-gray-900 text-sm">{previewMaterial.isFree ? "Free Resource" : "Premium Content"}</p></div>
-                                <div><p className="text-xs text-gray-500 mb-0.5">Price</p><p className="font-semibold text-gray-900 text-sm">{previewMaterial.isFree ? "Free" : `₹${previewMaterial.price}`}</p></div>
+                                <div><p className="text-xs text-gray-500 mb-0.5">Type</p><p className="font-semibold text-gray-900 text-sm">{isMaterialFree(previewMaterial) ? "Free Resource" : "Premium Content"}</p></div>
+                                <div><p className="text-xs text-gray-500 mb-0.5">Price</p><p className="font-semibold text-gray-900 text-sm">{isMaterialFree(previewMaterial) ? "Free" : `₹${previewMaterial.price}`}</p></div>
                             </div>
                             {previewMaterial.createdAt && (
                                 <p className="text-xs text-gray-500">

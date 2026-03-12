@@ -20,6 +20,11 @@ const studyMaterialSchema = new mongoose.Schema(
 
     isFree: { type: Boolean, default: false },
     price: { type: Number, default: 0 },
+    accessLevel: {
+      type: String,
+      enum: ["free", "limited", "premium"],
+      default: "free",
+    },
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

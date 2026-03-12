@@ -80,6 +80,18 @@ export default function HeroRankSection() {
     return "No Access";
   };
 
+  const subjectContentLabel = (value) => {
+    if (value === "full") return "Full";
+    if (value === "extended") return "Extended";
+    return "Basic";
+  };
+
+  const analyticsLabel = (value) => {
+    if (value === "full") return "Full";
+    if (value === "basic") return "Basic";
+    return "None";
+  };
+
   const mergedFeatureLines = (plan, fallback) => {
     const list = Array.isArray(plan?.features) && plan.features.length
       ? plan.features.filter(Boolean)
@@ -91,6 +103,15 @@ export default function HeroRankSection() {
     }
     if (plan?.studyMaterialsAccess) {
       extras.push(`Study Materials: ${materialsLabel(plan.studyMaterialsAccess)}`);
+    }
+    if (plan?.subjectContentAccess) {
+      extras.push(`Subject Content: ${subjectContentLabel(plan.subjectContentAccess)}`);
+    }
+    if (plan?.analyticsAccess) {
+      extras.push(`Analytics: ${analyticsLabel(plan.analyticsAccess)}`);
+    }
+    if (Array.isArray(plan?.allowedTryoutTypes) && plan.allowedTryoutTypes.length) {
+      extras.push(`Tryouts: ${plan.allowedTryoutTypes.join(", ")}`);
     }
     if (plan?.prioritySupport) {
       extras.push("Priority Support");
@@ -147,12 +168,10 @@ export default function HeroRankSection() {
               {mergedFeatureLines(leftPlan, fallbackPlans[0]).map((feature, i) => (
                 <li
                   key={`${leftPlan._id || "left"}-${feature}-${i}`}
-                  className={`flex items-center gap-3 font-medium text-sm ${
-                    i < 2 ? "text-slate-700" : "text-slate-400"
-                  }`}
+                  className="flex items-center gap-3 font-medium text-sm text-slate-700"
                 >
-                  <span className={`material-symbols-outlined ${i < 2 ? "text-[#4ECDC4]" : ""}`}>
-                    {i < 2 ? "check_circle" : "block"}
+                  <span className="material-symbols-outlined text-[#4ECDC4]">
+                    check_circle
                   </span>
                   {feature}
                 </li>

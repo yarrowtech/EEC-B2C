@@ -24,6 +24,7 @@ export default function UploadStudyMaterial() {
         board: "CBSE",
         subject: "Maths",
         category: "Notes",
+        accessLevel: "free",
         isFree: true,
         price: 0,
     };
@@ -76,7 +77,22 @@ export default function UploadStudyMaterial() {
 
     function handleChange(e) {
         const { name, value, type, checked } = e.target;
-        setForm((s) => ({ ...s, [name]: type === "checkbox" ? checked : value }));
+        setForm((s) => {
+            const nextValue = type === "checkbox" ? checked : value;
+            const next = { ...s, [name]: nextValue };
+
+            if (name === "accessLevel") {
+                next.isFree = value === "free";
+                if (value === "free") next.price = 0;
+            }
+
+            if (name === "isFree") {
+                next.accessLevel = checked ? "free" : s.accessLevel === "free" ? "premium" : s.accessLevel;
+                if (checked) next.price = 0;
+            }
+
+            return next;
+        });
     }
 
     async function handleSubmit(e) {
@@ -225,6 +241,7 @@ export default function UploadStudyMaterial() {
             board: m.board,
             subject: m.subject,
             category: m.category || "Notes",
+            accessLevel: m.accessLevel || (m.isFree ? "free" : "premium"),
             isFree: m.isFree,
             price: m.price || 0,
         });
@@ -442,20 +459,25 @@ export default function UploadStudyMaterial() {
                             </select>
                         </div>
 
-                        {/* FREE / PAID */}
+                        {/* ACCESS LEVEL */}
                         <div className="flex flex-wrap items-center gap-4">
-                            <label className="flex items-center gap-2 font-semibold text-slate-700">
-                                <input
-                                    type="checkbox"
-                                    name="isFree"
-                                    checked={form.isFree}
+                            <div>
+                                <label className="text-sm font-semibold text-slate-700">
+                                    Access Level
+                                </label>
+                                <select
+                                    name="accessLevel"
+                                    value={form.accessLevel}
                                     onChange={handleChange}
-                                    className="accent-indigo-600 scale-110"
-                                />
-                                Free Material
-                            </label>
+                                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 bg-white/80 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="free">Free (Basic / Intermediate / Advanced)</option>
+                                    <option value="limited">Limited (Intermediate / Advanced)</option>
+                                    <option value="premium">Premium (Advanced)</option>
+                                </select>
+                            </div>
 
-                            {!form.isFree && (
+                            {form.accessLevel !== "free" && (
                                 <div className="flex items-center gap-2">
                                     <span className="text-slate-600 font-semibold">₹</span>
                                     <input

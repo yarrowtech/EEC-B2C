@@ -16,10 +16,13 @@ const TYPE_TITLES = {
   "essay-rich": "Essay Rich",
 };
 
+const DEFAULT_FREE_TRYOUT_TYPES = ["mcq-single", "mcq-multi", "choice-matrix", "true-false"];
+
 export default function TryoutSubjects() {
   const { tryoutType = "" } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const token = localStorage.getItem("jwt") || "";
 
   const [loading, setLoading] = useState(false);
@@ -29,6 +32,7 @@ export default function TryoutSubjects() {
   const [boardLabel, setBoardLabel] = useState(location.state?.boardLabel || "");
   const [classLabel, setClassLabel] = useState(location.state?.classLabel || "");
   const [subjects, setSubjects] = useState([]);
+  const [lockedTryout, setLockedTryout] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -46,6 +50,38 @@ export default function TryoutSubjects() {
 
         if (!board || !cls) {
           throw new Error("Board/Class missing in profile");
+        }
+
+        const [packagesRes, subscriptionRes] = await Promise.all([
+          fetch(`${API}/api/packages`),
+          fetch(`${API}/api/subscriptions/current`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const [packagesData, subscriptionData] = await Promise.all([
+          packagesRes.json(),
+          subscriptionRes.json(),
+        ]);
+
+        const packageRows = Array.isArray(packagesData?.packages) ? packagesData.packages : [];
+        const basicPackage = packageRows.find((p) => String(p?.name || "").toLowerCase() === "basic");
+        const activePackage = subscriptionData?.subscription?.package || null;
+        const allowedList = Array.isArray(activePackage?.allowedTryoutTypes) && activePackage.allowedTryoutTypes.length > 0
+          ? activePackage.allowedTryoutTypes
+          : Array.isArray(basicPackage?.allowedTryoutTypes) && basicPackage.allowedTryoutTypes.length > 0
+          ? basicPackage.allowedTryoutTypes
+          : DEFAULT_FREE_TRYOUT_TYPES;
+
+        const allowed = allowedList.includes(tryoutType);
+        if (!allowed) {
+          if (!mounted) return;
+          setBoardValue(board);
+          setClassValue(cls);
+          setBoardLabel(boardName);
+          setClassLabel(className);
+          setLockedTryout(true);
+          setSubjects([]);
+          return;
         }
 
         const [subjectRows, questionRows] = await Promise.all([
@@ -96,6 +132,7 @@ export default function TryoutSubjects() {
         setClassValue(cls);
         setBoardLabel(boardName);
         setClassLabel(className);
+        setLockedTryout(false);
         setSubjects(nextSubjects);
       } catch (e) {
         if (!mounted) return;
@@ -184,13 +221,28 @@ export default function TryoutSubjects() {
           </div>
         )}
 
-        {token && !loading && subjects.length === 0 && (
+        {token && !loading && lockedTryout && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
+            <p className="text-amber-800 font-semibold">
+              This tryout is available in upgraded packages.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/packages")}
+              className="mt-4 rounded-xl bg-amber-400 px-5 py-2.5 font-bold text-slate-900 hover:bg-amber-500"
+            >
+              Unlock more tryouts
+            </button>
+          </div>
+        )}
+
+        {token && !loading && !lockedTryout && subjects.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
             No subjects found for this tryout type.
           </div>
         )}
 
-        {token && !loading && subjects.length > 0 && (
+        {token && !loading && !lockedTryout && subjects.length > 0 && (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {subjects.map((subject) => (
               <div key={subject._id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

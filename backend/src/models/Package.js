@@ -1,5 +1,18 @@
 import mongoose from "mongoose";
 
+const TRYOUT_TYPES = [
+  "mcq-single",
+  "mcq-multi",
+  "choice-matrix",
+  "true-false",
+  "cloze-drag",
+  "cloze-select",
+  "cloze-text",
+  "match-list",
+  "essay-plain",
+  "essay-rich",
+];
+
 const packageSchema = new mongoose.Schema(
   {
     name: {
@@ -38,6 +51,28 @@ const packageSchema = new mongoose.Schema(
     studyMaterialsAccess: {
       type: String,
       enum: ["none", "limited", "full"],
+      default: "none",
+    },
+    // Tryout type access
+    allowedTryoutTypes: {
+      type: [
+        {
+          type: String,
+          enum: TRYOUT_TYPES,
+        },
+      ],
+      default: ["mcq-single", "mcq-multi", "choice-matrix", "true-false"],
+    },
+    // Subject content access
+    subjectContentAccess: {
+      type: String,
+      enum: ["basic", "extended", "full"],
+      default: "basic",
+    },
+    // Analytics access
+    analyticsAccess: {
+      type: String,
+      enum: ["none", "basic", "full"],
       default: "none",
     },
     // Priority support

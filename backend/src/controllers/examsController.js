@@ -3,7 +3,11 @@ import Question from "../models/Question.js";
 import User from "../models/User.js";
 import Topic from "../models/Topic.js";
 import Subject from "../models/Subject.js";
+import Package from "../models/Package.js";
+import Subscription from "../models/Subscription.js";
 import mongoose from "mongoose";
+
+const DEFAULT_FREE_TRYOUT_TYPES = new Set(["mcq-single", "mcq-multi", "choice-matrix", "true-false"]);
 
 function extractEssayTokens(text) {
   const tokens = String(text || "")
@@ -304,6 +308,43 @@ export const startExam = async (req, res) => {
     // ⭐ Map frontend → backend type
     let qType = type;
     if (type === "cloze-dnd") qType = "cloze-drag";
+
+    // Enforce package-based tryout access for students.
+    if (String(req.user?.role || "").toLowerCase() === "student") {
+      const userDoc = await User.findById(userId)
+        .select("activeSubscription")
+        .lean();
+
+      let allowedTryoutTypes = null;
+
+      if (userDoc?.activeSubscription) {
+        const subscription = await Subscription.findById(userDoc.activeSubscription)
+          .populate("package")
+          .lean();
+        const packageTypes = subscription?.package?.allowedTryoutTypes;
+        if (Array.isArray(packageTypes) && packageTypes.length > 0) {
+          allowedTryoutTypes = new Set(packageTypes.map((t) => String(t).trim()));
+        }
+      }
+
+      if (!allowedTryoutTypes) {
+        const basicPackage = await Package.findOne({ name: "Basic", isActive: true })
+          .select("allowedTryoutTypes")
+          .lean();
+        const basicTypes = basicPackage?.allowedTryoutTypes;
+        if (Array.isArray(basicTypes) && basicTypes.length > 0) {
+          allowedTryoutTypes = new Set(basicTypes.map((t) => String(t).trim()));
+        } else {
+          allowedTryoutTypes = DEFAULT_FREE_TRYOUT_TYPES;
+        }
+      }
+
+      if (!allowedTryoutTypes.has(qType)) {
+        return res.status(403).json({
+          message: "Upgrade your package to unlock this tryout type",
+        });
+      }
+    }
 
     const normalizeStage = (stageValue) => {
       if (stageValue === null || stageValue === undefined || stageValue === "") {
@@ -1605,6 +1646,33 @@ export const getUserResults = async (req, res) => {
       });
     }
 
+    let analyticsAccess = "full";
+    if (
+      String(req.user?.role || "").toLowerCase() === "student" &&
+      String(req.user?.id || "") === String(userId)
+    ) {
+      const userDoc = await User.findById(userId).select("activeSubscription").lean();
+      let activePackage = null;
+
+      if (userDoc?.activeSubscription) {
+        const subscription = await Subscription.findById(userDoc.activeSubscription)
+          .populate("package")
+          .lean();
+        activePackage = subscription?.package || null;
+      }
+
+      if (!activePackage) {
+        activePackage = await Package.findOne({ name: "Basic", isActive: true })
+          .select("analyticsAccess")
+          .lean();
+      }
+
+      const resolved = String(activePackage?.analyticsAccess || "none").toLowerCase();
+      analyticsAccess = ["none", "basic", "full"].includes(resolved) ? resolved : "none";
+    }
+
+    const canViewDetails = analyticsAccess === "full";
+
     const attempts = await Attempt.find({ userId })
       .sort({ createdAt: -1 })
       .lean();
@@ -1613,6 +1681,23 @@ export const getUserResults = async (req, res) => {
       attempts.map(async (att) => {
         const subjectDoc = await Subject.findById(att.subject).lean();
         const topicDoc = await Topic.findById(att.topic).lean();
+
+        if (!canViewDetails) {
+          return {
+            _id: att._id,
+            stage: att.stage,
+            type: att.type,
+            score: att.score,
+            total: att.total,
+            percent: att.percent,
+            createdAt: att.createdAt,
+            updatedAt: att.updatedAt,
+            subjectName: subjectDoc?.name || "Unknown Subject",
+            topicName: topicDoc?.name || "Unknown Topic",
+            questions: [],
+            answers: [],
+          };
+        }
 
         const fullQuestions = await Question.find({
           _id: { $in: att.questions },
@@ -1637,7 +1722,7 @@ export const getUserResults = async (req, res) => {
       })
     );
 
-    res.json({ success: true, results });
+    res.json({ success: true, analyticsAccess, results });
   } catch (error) {
     console.error("RESULTS ERROR:", error);
     res.status(500).json({
