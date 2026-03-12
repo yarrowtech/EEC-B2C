@@ -1,6 +1,4 @@
 import React from 'react'
-import Topbar from "../components/Topbar";
-import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import StudyGrumpySection from "../components/StudyGrumpySection";
 import VictoryPathSection from "../components/VictoryPathSection";
@@ -23,8 +21,6 @@ import GlobalLoginModal from "../components/GlobalLoginModal";
 const Home = () => {
   return (
     <div>
-      {/* <Topbar />
-      <Navbar /> */}
       <Hero />
       <StudyGrumpySection />
       <VictoryPathSection />

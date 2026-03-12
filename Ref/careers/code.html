@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FFD23F",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#211d11",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .adventure-card-shadow {
+            box-shadow: 0 10px 0 0 rgba(255, 210, 63, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-primary/20 px-6 md:px-20 py-5 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<div class="size-10 bg-primary flex items-center justify-center rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-background-dark text-2xl">rocket_launch</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-2xl font-extrabold leading-tight tracking-[-0.015em]">EEC</h2>
+</div>
+<div class="hidden md:flex flex-1 justify-end gap-8">
+<nav class="flex items-center gap-9">
+<a class="text-slate-900 dark:text-slate-100 text-sm font-bold hover:text-primary transition-colors" href="#">Home</a>
+<a class="text-slate-900 dark:text-slate-100 text-sm font-bold hover:text-primary transition-colors" href="#">About</a>
+<a class="text-primary text-sm font-bold border-b-2 border-primary" href="#">Careers</a>
+<a class="text-slate-900 dark:text-slate-100 text-sm font-bold hover:text-primary transition-colors" href="#">Contact</a>
+</nav>
+<button class="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-11 px-6 bg-primary text-background-dark text-sm font-extrabold shadow-lg hover:scale-105 transition-transform">
+<span>Join Us</span>
+</button>
+</div>
+<div class="md:hidden">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</div>
+</header>
+<main class="flex flex-col">
+<!-- Hero Section -->
+<section class="px-6 md:px-20 py-12 md:py-24">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+<div class="flex flex-col gap-8 flex-1">
+<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-slate-900 font-bold text-sm w-fit">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+                            We're Hiring!
+                        </div>
+<h1 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter">
+                            Shape the Future of <span class="text-primary">Education</span>
+</h1>
+<p class="text-lg md:text-xl font-medium text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                            Join a team dedicated to transforming the learning experience through innovation, passion, and a little bit of magic.
+                        </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-full h-14 px-8 bg-primary text-background-dark text-lg font-bold shadow-xl hover:translate-y-[-2px] transition-all">
+                                View Openings
+                            </button>
+<button class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-full h-14 px-8 border-4 border-primary text-slate-900 dark:text-slate-100 text-lg font-bold hover:bg-primary/10 transition-all">
+                                Our Story
+                            </button>
+</div>
+</div>
+<div class="flex-1 w-full relative">
+<div class="absolute -top-4 -left-4 w-24 h-24 bg-primary/30 rounded-full blur-3xl"></div>
+<div class="w-full aspect-square bg-cover bg-center rounded-xl md:rounded-lg border-8 border-white dark:border-background-dark shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500" data-alt="Happy educators collaborating in a modern colorful office" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDUgXj-T6yVKDkIVk8V_CqO411kZrdhh-B_ZrCOXAGacpokzI5164DC3BIMNe4owV5K_wy3PBRcMrbNiahXsq01rLMegP1xYNHTAi2uKShAW9DREuC_2xT46sJmklqvu7fUYYVtPrlpN3XRbyXEyi2dicIhaJpqOq-uAC-63anWFVKDcnWyqy-Be_c3TvAAWdsVZ_bgWFvy2zkRTMfljk8JXMkVtwVvKVEq5hbUpTTQjlbflbOoz5Op1yZtBql4yhokanFQ8XdBkD8");'></div>
+</div>
+</div>
+</section>
+<!-- Impact Stats -->
+<section class="px-6 md:px-20 py-16 bg-primary/5">
+<div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+<div class="flex flex-col items-center text-center p-8 bg-white dark:bg-background-dark/50 rounded-xl adventure-card-shadow border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">groups</span>
+<p class="text-4xl font-black text-slate-900 dark:text-slate-100 mb-1">500+</p>
+<p class="text-sm font-bold text-slate-500 uppercase tracking-widest">Students Impacted</p>
+</div>
+<div class="flex flex-col items-center text-center p-8 bg-white dark:bg-background-dark/50 rounded-xl adventure-card-shadow border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">school</span>
+<p class="text-4xl font-black text-slate-900 dark:text-slate-100 mb-1">50+</p>
+<p class="text-sm font-bold text-slate-500 uppercase tracking-widest">Partner Schools</p>
+</div>
+<div class="flex flex-col items-center text-center p-8 bg-white dark:bg-background-dark/50 rounded-xl adventure-card-shadow border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">public</span>
+<p class="text-4xl font-black text-slate-900 dark:text-slate-100 mb-1">10+</p>
+<p class="text-sm font-bold text-slate-500 uppercase tracking-widest">Countries Reached</p>
+</div>
+<div class="flex flex-col items-center text-center p-8 bg-white dark:bg-background-dark/50 rounded-xl adventure-card-shadow border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">star_rate</span>
+<p class="text-4xl font-black text-slate-900 dark:text-slate-100 mb-1">5*</p>
+<p class="text-sm font-bold text-slate-500 uppercase tracking-widest">Average Rating</p>
+</div>
+</div>
+</section>
+<!-- Mission -->
+<section class="px-6 md:px-20 py-24 text-center max-w-4xl mx-auto">
+<div class="inline-block p-4 rounded-xl bg-primary mb-6">
+<span class="material-symbols-outlined text-background-dark text-3xl">emoji_objects</span>
+</div>
+<h2 class="text-4xl md:text-5xl font-black mb-8">Our Mission</h2>
+<p class="text-xl md:text-2xl leading-relaxed font-medium text-slate-700 dark:text-slate-300 italic">
+                    "To empower every learner with the tools and support they need to succeed in an ever-changing world, fostering a culture of curiosity and excellence."
+                </p>
+</section>
+<!-- Values Section -->
+<section class="px-6 md:px-20 py-24 bg-white dark:bg-background-dark/20">
+<div class="max-w-7xl mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+<div class="max-w-xl">
+<h2 class="text-4xl md:text-5xl font-black mb-4">Our Values</h2>
+<p class="text-lg text-slate-600 dark:text-slate-400 font-medium">The core principles that guide our everyday adventure at EEC.</p>
+</div>
+<span class="material-symbols-outlined text-6xl text-primary/30">explore</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<div class="p-8 bg-background-light dark:bg-background-dark rounded-xl border-4 border-transparent hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-primary rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-background-dark font-bold">lightbulb</span>
+</div>
+<h3 class="text-xl font-black mb-3">Innovation First</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">We constantly push the boundaries of what's possible in education tech.</p>
+</div>
+<div class="p-8 bg-background-light dark:bg-background-dark rounded-xl border-4 border-transparent hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-primary rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-background-dark font-bold">favorite</span>
+</div>
+<h3 class="text-xl font-black mb-3">Student Wellbeing</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">The heart of everything we do is the growth and health of our students.</p>
+</div>
+<div class="p-8 bg-background-light dark:bg-background-dark rounded-xl border-4 border-transparent hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-primary rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-background-dark font-bold">diversity_3</span>
+</div>
+<h3 class="text-xl font-black mb-3">Collaborative Culture</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">We win together, learn together, and celebrate every milestone as a team.</p>
+</div>
+<div class="p-8 bg-background-light dark:bg-background-dark rounded-xl border-4 border-transparent hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-primary rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-background-dark font-bold">shield_with_heart</span>
+</div>
+<h3 class="text-xl font-black mb-3">Radical Empathy</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Understanding our users and each other is our superpower.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Benefits -->
+<section class="px-6 md:px-20 py-24 bg-primary">
+<div class="max-w-7xl mx-auto text-background-dark">
+<h2 class="text-4xl md:text-5xl font-black mb-16 text-center">Benefits &amp; Perks</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="flex gap-6 items-start">
+<div class="size-12 rounded-full bg-white flex shrink-0 items-center justify-center shadow-lg">
+<span class="material-symbols-outlined font-bold text-primary">payments</span>
+</div>
+<div>
+<h4 class="text-xl font-black mb-2">Competitive Pay</h4>
+<p class="font-medium opacity-80 leading-relaxed">Top-tier compensation packages including equity for everyone.</p>
+</div>
+</div>
+<div class="flex gap-6 items-start">
+<div class="size-12 rounded-full bg-white flex shrink-0 items-center justify-center shadow-lg">
+<span class="material-symbols-outlined font-bold text-primary">distance</span>
+</div>
+<div>
+<h4 class="text-xl font-black mb-2">Remote-First</h4>
+<p class="font-medium opacity-80 leading-relaxed">Work from anywhere in the world. We value output over seat time.</p>
+</div>
+</div>
+<div class="flex gap-6 items-start">
+<div class="size-12 rounded-full bg-white flex shrink-0 items-center justify-center shadow-lg">
+<span class="material-symbols-outlined font-bold text-primary">health_and_safety</span>
+</div>
+<div>
+<h4 class="text-xl font-black mb-2">Health &amp; Wellness</h4>
+<p class="font-medium opacity-80 leading-relaxed">Full medical coverage plus an annual stipend for physical &amp; mental health.</p>
+</div>
+</div>
+<div class="flex gap-6 items-start">
+<div class="size-12 rounded-full bg-white flex shrink-0 items-center justify-center shadow-lg">
+<span class="material-symbols-outlined font-bold text-primary">flight_takeoff</span>
+</div>
+<div>
+<h4 class="text-xl font-black mb-2">Unlimited PTO</h4>
+<p class="font-medium opacity-80 leading-relaxed">Take the time you need to recharge and come back inspired.</p>
+</div>
+</div>
+<div class="flex gap-6 items-start">
+<div class="size-12 rounded-full bg-white flex shrink-0 items-center justify-center shadow-lg">
+<span class="material-symbols-outlined font-bold text-primary">psychology</span>
+</div>
+<div>
+<h4 class="text-xl font-black mb-2">Learning Budget</h4>
+<p class="font-medium opacity-80 leading-relaxed">We invest in your growth with $2,000/year for courses and books.</p>
+</div>
+</div>
+<div class="flex gap-6 items-start">
+<div class="size-12 rounded-full bg-white flex shrink-0 items-center justify-center shadow-lg">
+<span class="material-symbols-outlined font-bold text-primary">celebration</span>
+</div>
+<div>
+<h4 class="text-xl font-black mb-2">Team Retreats</h4>
+<p class="font-medium opacity-80 leading-relaxed">Twice a year, the whole global team gathers for adventure.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Job Openings -->
+<section class="px-6 md:px-20 py-24">
+<div class="max-w-5xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-4xl md:text-5xl font-black mb-4">Current Job Openings</h2>
+<p class="text-lg text-slate-600 dark:text-slate-400 font-medium">Find your next big adventure with us.</p>
+</div>
+<div class="flex flex-col gap-6">
+<!-- Job 1 -->
+<div class="p-8 bg-white dark:bg-background-dark/40 rounded-xl border-2 border-primary/10 hover:border-primary transition-all adventure-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+<div>
+<div class="flex gap-2 mb-2">
+<span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-tighter">Engineering</span>
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold rounded-full uppercase tracking-tighter">Remote</span>
+</div>
+<h3 class="text-2xl font-black group-hover:text-primary transition-colors">Senior Product Designer</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Join our product team to redefine the student dashboard.</p>
+</div>
+<button class="bg-primary px-8 py-3 rounded-full font-black text-background-dark hover:scale-105 transition-transform">
+                                Apply Now
+                            </button>
+</div>
+<!-- Job 2 -->
+<div class="p-8 bg-white dark:bg-background-dark/40 rounded-xl border-2 border-primary/10 hover:border-primary transition-all adventure-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+<div>
+<div class="flex gap-2 mb-2">
+<span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-tighter">Education</span>
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold rounded-full uppercase tracking-tighter">Hybrid (NYC)</span>
+</div>
+<h3 class="text-2xl font-black group-hover:text-primary transition-colors">Curriculum Lead</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Help us craft the most engaging STEM learning journeys.</p>
+</div>
+<button class="bg-primary px-8 py-3 rounded-full font-black text-background-dark hover:scale-105 transition-transform">
+                                Apply Now
+                            </button>
+</div>
+<!-- Job 3 -->
+<div class="p-8 bg-white dark:bg-background-dark/40 rounded-xl border-2 border-primary/10 hover:border-primary transition-all adventure-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+<div>
+<div class="flex gap-2 mb-2">
+<span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-tighter">Marketing</span>
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold rounded-full uppercase tracking-tighter">Remote</span>
+</div>
+<h3 class="text-2xl font-black group-hover:text-primary transition-colors">Growth Specialist</h3>
+<p class="text-slate-600 dark:text-slate-400 font-medium">Spread the word and bring EEC to more schools worldwide.</p>
+</div>
+<button class="bg-primary px-8 py-3 rounded-full font-black text-background-dark hover:scale-105 transition-transform">
+                                Apply Now
+                            </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter/CTA -->
+<section class="px-6 md:px-20 py-24 bg-background-dark dark:bg-black rounded-t-[4rem]">
+<div class="max-w-4xl mx-auto text-center text-white">
+<h2 class="text-4xl md:text-6xl font-black mb-8">Ready for your next <span class="text-primary">Adventure?</span></h2>
+<p class="text-xl mb-12 opacity-80">If you don't see a role that fits, but love what we're doing, we'd still love to hear from you!</p>
+<div class="flex flex-col md:flex-row gap-4 justify-center">
+<button class="bg-primary text-background-dark px-10 py-5 rounded-full text-xl font-black hover:scale-105 transition-transform">
+                            Send General Application
+                        </button>
+<button class="bg-white/10 text-white border-2 border-white/20 px-10 py-5 rounded-full text-xl font-black hover:bg-white/20 transition-all">
+                            Talk to a Recruiter
+                        </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-background-dark text-white px-6 md:px-20 py-16 border-t border-white/10">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
+<div class="flex flex-col gap-6 max-w-sm">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-background-dark text-xl font-black">rocket_launch</span>
+</div>
+<h2 class="text-2xl font-black">EEC</h2>
+</div>
+<p class="opacity-60 font-medium leading-relaxed">
+                        Redefining education for the next generation of global citizens. Empowering learners through innovation and community.
+                    </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+<div class="flex flex-col gap-4">
+<h4 class="font-black text-primary uppercase text-xs tracking-widest">Company</h4>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">About</a>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">Careers</a>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">Press</a>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-black text-primary uppercase text-xs tracking-widest">Connect</h4>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">Twitter</a>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">LinkedIn</a>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">Instagram</a>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-black text-primary uppercase text-xs tracking-widest">Legal</h4>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">Privacy</a>
+<a class="opacity-70 hover:opacity-100 font-bold transition-opacity" href="#">Terms</a>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto border-t border-white/10 mt-16 pt-8 text-center text-sm opacity-40 font-bold">
+                © 2024 EEC. All rights reserved. Made with ❤️ for future learners.
+            </div>
+</footer>
+</div>
+</body></html>

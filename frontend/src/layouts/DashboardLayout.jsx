@@ -235,7 +235,6 @@ import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock
 import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
-import Header from "../components/Header";
 import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
 
@@ -364,9 +363,6 @@ export default function DashboardLayout() {
     return (
         // <div className="h-screen overflow-hidden bg-[#FFFBEA]">
         <div className="h-screen overflow-hidden">
-            {/* HEADER */}
-            <Header sidebarOpen={open} setSidebarOpen={setOpen} />
-
             <div className="flex">
                 {/* MOBILE BACKDROP */}
                 {open && (
@@ -378,7 +374,7 @@ export default function DashboardLayout() {
 
                 {/* SIDEBAR */}
                 <aside
-                    className={`fixed z-40 top-16 md:top-18 bottom-0 w-80
+                    className={`fixed z-40 top-0 bottom-0 w-80
   bg-white border-r border-slate-200 shadow-sm
   transition-transform
   ${open ? "translate-x-0" : "-translate-x-full"}
@@ -514,7 +510,7 @@ export default function DashboardLayout() {
                 <main
                     className={`
             ml-0 md:ml-80
-            h-[calc(100vh-56px)]
+            h-screen
             overflow-y-auto
             w-full
             ${role === "student" ? "pb-16 md:pb-0" : ""}

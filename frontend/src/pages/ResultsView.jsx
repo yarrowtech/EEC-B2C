@@ -683,37 +683,31 @@ const ResultsView = () => {
 
 
   return (
-    <div className="min-h-screen space-y-4 md:space-y-8 p-3 md:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
-      {/* Animated background blobs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-        <div className="absolute -top-20 -right-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-        <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
-      </div>
+    <div className="min-h-screen space-y-4 md:space-y-8 p-3 md:p-8 bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100">
 
       {/* Header */}
-      <div className="relative z-10 overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 p-6 md:p-8 text-white shadow-2xl">
+      <div className="relative z-10 overflow-hidden rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 p-6 md:p-8 shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
         {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-slate-200/[0.07] rounded-full -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-slate-200/[0.07] rounded-full -ml-16 -mb-16"></div>
 
         <div className="relative z-10">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 md:p-3 bg-white/20 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-lg">
-                <Trophy size={24} className="drop-shadow-lg md:hidden" />
-                <Trophy size={36} className="drop-shadow-lg hidden md:block" />
+              <div className="inline-flex size-9 md:size-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
+                <Trophy size={18} className="md:hidden" />
+                <Trophy size={28} className="hidden md:block" />
               </div>
               <div>
-                <h1 className="text-xl md:text-4xl font-extrabold tracking-tight drop-shadow-lg">
+                <h1 className="text-xl md:text-4xl font-extrabold tracking-tight text-slate-800">
                   My Results
                 </h1>
-                <p className="hidden md:block text-sm md:text-base text-blue-100 mt-1">Track your academic performance and achievements</p>
+                <p className="hidden md:block text-sm md:text-base text-slate-600 mt-1">Track your academic performance and achievements</p>
               </div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl shadow-lg border border-white/30">
-              <p className="text-[10px] md:text-xs text-white/80">Class</p>
-              <p className="text-sm md:text-xl font-bold text-white drop-shadow-lg">
+            <div className="bg-blue-50 px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl border border-blue-100">
+              <p className="text-[10px] md:text-xs text-blue-700">Class</p>
+              <p className="text-sm md:text-xl font-bold text-blue-800">
                 {user?.className || user?.class || "N/A"}
               </p>
             </div>
@@ -725,55 +719,55 @@ const ResultsView = () => {
       <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
 
         {/* GPA */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-3 md:p-6 shadow-md md:shadow-lg border border-gray-200/50 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 md:mb-3">
-            <div className="p-2 md:p-3 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-lg md:rounded-xl">
-              <Target className="w-4 h-4 md:w-6 md:h-6 text-yellow-600" />
-            </div>
-            <BarChart className="w-4 h-4 md:w-6 md:h-6 text-yellow-400" />
+        <div className="relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br from-amber-600 to-orange-600 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+          <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+            <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
+            <div className="absolute bottom-3 left-4 w-14 h-14 bg-white rounded-full"></div>
           </div>
-          <div>
-            <h3 className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
-              {examResults.length > 0 ? (overallPercentage / 25).toFixed(2) : 0}
-            </h3>
-            <p className="text-[11px] md:text-sm text-gray-600 mt-0.5 md:mt-1">GPA</p>
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-              <div className="bg-gradient-to-r from-yellow-500 to-amber-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((overallPercentage / 25) * 25, 100)}%` }} />
+          <div className="relative z-10 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs md:text-sm text-white/80 truncate">GPA</p>
+              <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">
+                {examResults.length > 0 ? (overallPercentage / 25).toFixed(2) : 0}
+              </h3>
+            </div>
+            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
+              <Target className="w-4 h-4 md:w-5 md:h-5" />
             </div>
           </div>
         </div>
 
         {/* Overall Percentage */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-3 md:p-6 shadow-md md:shadow-lg border border-gray-200/50 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 md:mb-3">
-            <div className="p-2 md:p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg md:rounded-xl">
-              <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-green-600" />
-            </div>
-            <GitGraphIcon className="w-4 h-4 md:w-6 md:h-6 text-green-400" />
+        <div className="relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br from-emerald-600 to-teal-600 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+          <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+            <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
+            <div className="absolute bottom-3 left-4 w-14 h-14 bg-white rounded-full"></div>
           </div>
-          <div>
-            <h3 className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{overallPercentage}%</h3>
-            <p className="text-[11px] md:text-sm text-gray-600 mt-0.5 md:mt-1">Avg Score</p>
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${overallPercentage}%` }} />
+          <div className="relative z-10 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs md:text-sm text-white/80 truncate">Avg Score</p>
+              <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">{overallPercentage}%</h3>
+            </div>
+            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
+              <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
             </div>
           </div>
         </div>
 
         {/* Total Exams */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl md:rounded-2xl p-3 md:p-6 shadow-md md:shadow-lg border border-gray-200/50 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 md:mb-3">
-            <div className="p-2 md:p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg md:rounded-xl">
-              <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-purple-600" />
-            </div>
-            <BookPlus className="w-4 h-4 md:w-6 md:h-6 text-purple-400" />
+        <div className="relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br from-purple-600 to-fuchsia-600 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+          <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+            <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
+            <div className="absolute bottom-3 left-4 w-14 h-14 bg-white rounded-full"></div>
           </div>
-          <div>
-            <h3 className="text-xl md:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{examResults.length}</h3>
-            <p className="text-[11px] md:text-sm text-gray-600 mt-0.5 md:mt-1">Total Exams</p>
-            <p className="text-[11px] md:text-xs text-green-600 mt-0.5 md:mt-1 font-medium">All completed</p>
+          <div className="relative z-10 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs md:text-sm text-white/80 truncate">Total Exams</p>
+              <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">{examResults.length}</h3>
+            </div>
+            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
+              <BookOpen className="w-4 h-4 md:w-5 md:h-5" />
+            </div>
           </div>
         </div>
 
@@ -819,34 +813,41 @@ const ResultsView = () => {
         </div>
       </div> */}
 
-      <div className="relative z-10 overflow-hidden rounded-xl md:rounded-2xl p-4 md:p-6 bg-white/90 backdrop-blur-xl shadow-lg border border-gray-200/50">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/60 via-purple-50/60 to-pink-50/60 pointer-events-none"></div>
-
-        <h3 className="relative z-10 text-sm md:text-lg font-bold text-gray-800 mb-3 md:mb-5 flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 md:w-6 md:h-6 text-indigo-600" />
+      <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
+        <div className="text-[13px] font-semibold text-slate-600 tracking-wide mb-3 flex items-center gap-2">
+          <span className="text-slate-700"><BarChart3 className="w-4 h-4 md:w-5 md:h-5" /></span>
           Performance Summary
-        </h3>
+        </div>
 
-        <div className="relative z-10 grid grid-cols-3 gap-2 md:gap-6">
+        <div className="grid grid-cols-3 gap-2 md:gap-6">
           {/* AVERAGE SCORE */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md">
-            <div className="text-xl md:text-4xl font-extrabold">{avgScore}%</div>
-            <div className="text-[10px] md:text-sm text-indigo-100 mt-1 md:mt-2 text-center">Avg Score</div>
-            <ChartSpline className="w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+          <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+              <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
+            </div>
+            <div className="relative z-10 text-xl md:text-4xl font-extrabold">{avgScore}%</div>
+            <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Avg Score</div>
+            <ChartSpline className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
           </div>
 
           {/* BEST PERFORMANCE */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md">
-            <div className="text-xl md:text-4xl font-extrabold">{bestScore}%</div>
-            <div className="text-[10px] md:text-sm text-green-100 mt-1 md:mt-2 text-center">Best</div>
-            <Medal className="w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+          <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-emerald-600 to-teal-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+              <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
+            </div>
+            <div className="relative z-10 text-xl md:text-4xl font-extrabold">{bestScore}%</div>
+            <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Best</div>
+            <Medal className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
           </div>
 
           {/* EXCELLENT SCORES */}
-          <div className="flex flex-col items-center bg-gradient-to-br from-purple-500 to-pink-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md">
-            <div className="text-xl md:text-4xl font-extrabold">{excellentCount}/{examResults.length || 0}</div>
-            <div className="text-[10px] md:text-sm text-purple-100 mt-1 md:mt-2 text-center">Excellent</div>
-            <Sparkles className="w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
+          <div className="relative overflow-hidden flex flex-col items-center bg-gradient-to-br from-rose-600 to-pink-600 text-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+              <div className="absolute top-2 right-2 w-12 h-12 bg-white rounded-full"></div>
+            </div>
+            <div className="relative z-10 text-xl md:text-4xl font-extrabold">{excellentCount}/{examResults.length || 0}</div>
+            <div className="relative z-10 text-[10px] md:text-sm text-white/80 mt-1 md:mt-2 text-center">Excellent</div>
+            <Sparkles className="relative z-10 w-4 h-4 md:w-7 md:h-7 text-white/80 mt-1 md:mt-2" />
           </div>
         </div>
       </div>
@@ -854,14 +855,14 @@ const ResultsView = () => {
       {/* Exam Results */}
       <div className="relative z-10 space-y-3 md:space-y-6">
         {paginatedExams.map((exam) => (
-          <div key={exam.id} className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-md md:shadow-lg border border-gray-200/50 overflow-hidden">
+          <div key={exam.id} className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow overflow-hidden">
 
             {/* Card Header — shared mobile + desktop */}
-            <div className="p-4 md:p-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
+            <div className="p-4 md:p-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl">
-                    <FileText className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
+                  <div className="inline-flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
+                    <FileText className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
                   <div>
                     <h3 className="text-sm md:text-lg font-bold text-gray-900 leading-tight">{exam.examName}</h3>
@@ -891,7 +892,7 @@ const ResultsView = () => {
             <div className="md:hidden divide-y divide-gray-100">
               {exam.subjects.map((subject, subIndex) => (
                 <div key={subIndex} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
                     <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -917,7 +918,7 @@ const ResultsView = () => {
             {/* DESKTOP: Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Subject</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Marks Obtained</th>
@@ -930,10 +931,10 @@ const ResultsView = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200/50">
                   {exam.subjects.map((subject, subIndex) => (
-                    <tr key={subIndex} className="hover:bg-indigo-50/30 transition-colors duration-200">
+                    <tr key={subIndex} className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
+                          <div className="p-2 bg-blue-50 rounded-lg">
                             <BookOpen className="w-4 h-4 text-blue-600" />
                           </div>
                           <div className="font-medium text-gray-900">
@@ -991,17 +992,21 @@ const ResultsView = () => {
 
           {/* Prev */}
           <button
-            className="flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-700 font-semibold text-xs md:text-sm shadow-sm hover:shadow-md hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+            className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+              examPage === 1
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+            }`}
             disabled={examPage === 1}
             onClick={() => setExamPage(examPage - 1)}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 md:hidden" />
             <span className="hidden md:inline">Previous</span>
           </button>
 
           {/* MOBILE: compact page indicator */}
-          <span className="md:hidden text-sm font-bold text-gray-800 bg-white/90 px-4 py-2 rounded-xl border border-gray-200 shadow-sm min-w-[72px] text-center">
-            {examPage} <span className="text-gray-400 font-normal text-xs">/ {totalExamPages}</span>
+          <span className="md:hidden px-4 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-white shadow-lg scale-110 min-w-[72px] text-center">
+            {examPage} <span className="text-white/80 font-normal text-xs">/ {totalExamPages}</span>
           </span>
 
           {/* DESKTOP: smart windowed page buttons */}
@@ -1037,12 +1042,16 @@ const ResultsView = () => {
 
           {/* Next */}
           <button
-            className="flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-700 font-semibold text-xs md:text-sm shadow-sm hover:shadow-md hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+            className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+              examPage === totalExamPages || totalExamPages === 0
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+            }`}
             disabled={examPage === totalExamPages || totalExamPages === 0}
             onClick={() => setExamPage(examPage + 1)}
           >
             <span className="hidden md:inline">Next</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 md:hidden" />
           </button>
 
         </div>
@@ -1055,7 +1064,7 @@ const ResultsView = () => {
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
           <div
-            className="relative w-full md:max-w-3xl rounded-t-3xl md:rounded-3xl bg-gradient-to-br from-white via-indigo-50 to-purple-50 shadow-2xl border border-white/60 overflow-hidden flex flex-col"
+            className="relative w-full md:max-w-3xl rounded-t-3xl md:rounded-3xl bg-white/70 backdrop-blur-md border border-white/60 shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] overflow-hidden flex flex-col"
             style={{ maxHeight: "calc(100dvh - 4.5rem)" }}
           >
             {/* Drag handle — mobile only */}
@@ -1064,13 +1073,13 @@ const ResultsView = () => {
             </div>
 
             {/* Decorative blobs */}
-            <div className="absolute -top-16 -right-16 w-56 h-56 bg-purple-300/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-indigo-300/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-56 h-56 bg-slate-200/[0.07] rounded-full pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-slate-200/[0.07] rounded-full pointer-events-none" />
 
             {/* Sticky modal header */}
             <div className="relative z-10 flex items-center justify-between px-5 md:px-8 py-4 md:py-6 border-b border-gray-100 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg">
+                <div className="inline-flex size-9 md:size-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
                   <Trophy className="w-5 h-5 md:w-7 md:h-7" />
                 </div>
                 <div>
@@ -1090,7 +1099,7 @@ const ResultsView = () => {
             <div className="relative z-10 overflow-y-auto flex-1 px-5 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
 
               {/* STUDENT INFO */}
-              <div className="rounded-xl md:rounded-2xl bg-white/90 border border-gray-100 shadow-sm p-4 md:p-6">
+              <div className="rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-4 md:p-6">
                 <h3 className="text-sm md:text-base font-bold text-indigo-700 flex items-center gap-2 mb-3">
                   <User className="w-4 h-4" /> Student Information
                 </h3>
@@ -1103,7 +1112,7 @@ const ResultsView = () => {
               </div>
 
               {/* SUBJECT & TOPIC */}
-              <div className="rounded-xl md:rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-100 border border-blue-100 p-4 md:p-5">
+              <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 md:p-5">
                 <h3 className="text-sm md:text-base font-bold text-blue-800 flex items-center gap-2 mb-2">
                   <BookOpen className="w-4 h-4" /> Subject & Topic
                 </h3>
@@ -1112,7 +1121,7 @@ const ResultsView = () => {
               </div>
 
               {/* SCORE TIP */}
-              <div className="rounded-xl md:rounded-2xl bg-gradient-to-r from-green-50 to-emerald-100 border border-green-100 p-4 md:p-5">
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Lightbulb className="w-4 h-4 text-emerald-600" />
                   <h4 className="text-sm font-bold text-emerald-700">Smart Improvement Tip</h4>
@@ -1146,7 +1155,7 @@ const ResultsView = () => {
                       "Question text unavailable";
 
                     return (
-                      <div key={q._id || `q-${index}`} className="p-4 md:p-5 rounded-xl md:rounded-2xl bg-white/90 shadow-sm border border-gray-100">
+                      <div key={q._id || `q-${index}`} className="p-4 md:p-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 shadow-sm">
                         <p className="font-semibold text-gray-900 text-sm md:text-base mb-3 flex items-start gap-2">
                           <Sparkles className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                           {index + 1}. {questionText}

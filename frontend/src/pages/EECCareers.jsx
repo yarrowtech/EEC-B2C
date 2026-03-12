@@ -7,6 +7,7 @@ import {
   Sparkles,
   Lightbulb,
   Handshake,
+  Mail,
   ChartLine,
   ArrowRight,
   CheckCircle2,
@@ -329,252 +330,184 @@ export default function EECCareers() {
   };
 
   return (
-    <div className="overflow-x-hidden bg-white text-slate-800 selection:bg-yellow-200/60">
+    <div className="bg-[#fffaf1] text-[#142239] selection:bg-yellow-200/60">
       <ToastContainer />
 
-      {/* ─── HERO ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[url('/join.jpeg')] bg-cover bg-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/85 via-blue-900/75 to-indigo-900/70" />
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-sky-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 top-1/2 h-80 w-80 rounded-full bg-amber-400/15 blur-3xl" />
-
-        <div className="relative z-10 mx-auto max-w-6xl px-6 py-28 md:py-36">
+      {/* Hero */}
+      <section className="bg-gradient-to-b from-[#fffef5] to-[#fff4df] px-4 py-16 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-2 md:items-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="max-w-3xl"
+            className="space-y-6"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
-              We're hiring — come build with us
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#ffd23f]/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.35em] text-[#1e1e2a]">
+              <Sparkles className="h-4 w-4 text-[#f3a600]" />
+              We're Hiring
             </span>
-
-            <h1 className="mt-6 text-5xl font-extrabold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">
-              Shape the Future
-              <br />
-              of <span className="text-yellow-300">Education</span>
+            <h1 className="text-4xl font-black leading-tight tracking-tight text-[#121225] sm:text-5xl lg:text-6xl">
+              Shape the Future of <span className="text-[#f0b429]">Education</span>
             </h1>
-
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-blue-100/80">
-              Join a team of builders, educators, and dreamers who believe that
-              better tools create better learners.
+            <p className="text-base leading-relaxed text-[#414965] md:text-lg">
+              Join a team dedicated to transforming the learning experience through innovation, compassion, and bold ideas. Everything you build at EEC reaches a student who needs it.
             </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="#openings"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .querySelector("#openings")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-950 shadow-lg shadow-yellow-400/25 transition hover:bg-yellow-300 active:scale-[.98]"
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={() => document.querySelector("#openings")?.scrollIntoView({ behavior: "smooth" })}
+                className="inline-flex min-w-[180px] items-center justify-center rounded-full bg-[#ffd23f] px-8 py-3 text-sm font-extrabold uppercase tracking-widest text-[#211d11] shadow-[0_15px_30px_rgba(255,210,63,0.35)] transition hover:-translate-y-0.5"
               >
-                View Open Roles
-                <ArrowRight className="h-4 w-4" />
-              </a>
-              <a
-                href="#why"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .querySelector("#why")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+                View Openings
+              </button>
+              <button
+                onClick={() => document.querySelector("#mission")?.scrollIntoView({ behavior: "smooth" })}
+                className="inline-flex min-w-[180px] items-center justify-center rounded-full border-4 border-[#ffd23f] px-8 py-3 text-sm font-extrabold uppercase tracking-widest text-[#142239] transition hover:bg-[#ffd23f]/10"
               >
-                Our Culture
-              </a>
+                Our Story
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-6 sm:grid-cols-4">
+              {STATS.map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-[#f2e2bd] bg-white px-4 py-3 text-center shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
+                  <p className="text-2xl font-black text-[#1c2a3b]">{stat.value}</p>
+                  <p className="text-xs font-semibold text-[#5c6378]">{stat.label}</p>
+                </div>
+              ))}
             </div>
           </motion.div>
 
-          {/* Stats row */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4"
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="relative rounded-[32px] border-8 border-white bg-white shadow-[0_40px_80px_rgba(20,25,38,0.12)]"
           >
-            {STATS.map((s) => (
-              <div
-                key={s.label}
-                className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 text-center backdrop-blur"
-              >
-                <p className="text-2xl font-extrabold text-white">{s.value}</p>
-                <p className="mt-0.5 text-xs text-blue-200">{s.label}</p>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Curve divider */}
-        <svg
-          className="pointer-events-none absolute -bottom-[1px] left-0 w-full"
-          viewBox="0 0 1440 80"
-          aria-hidden
-        >
-          <path
-            fill="#ffffff"
-            d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"
-          />
-        </svg>
-      </section>
-
-      {/* ─── MISSION STRIP ────────────────────────────────── */}
-      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          transition={{ duration: 0.55 }}
-        >
-          <p className="text-xs font-bold uppercase tracking-widest text-blue-500">
-            Our Mission
-          </p>
-          <h2 className="mt-3 text-3xl font-extrabold leading-snug text-slate-900 md:text-4xl">
-            We build education that puts <br className="hidden sm:block" />
-            students <span className="text-blue-600">first</span>.
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-500">
-            {introText}
-          </p>
-        </motion.div>
-      </section>
-
-      {/* ─── VALUES ───────────────────────────────────────── */}
-      <section className="bg-slate-50 py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-500">
-              What We Stand For
-            </p>
-            <h2 className="mt-2 text-3xl font-extrabold text-slate-900">
-              Our Values
-            </h2>
-          </motion.div>
-
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {VALUES.map((v, i) => (
-              <motion.div
-                key={v.title}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="show"
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.05 * i }}
-                className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition hover:shadow-md"
-              >
-                <div
-                  className={`inline-flex items-center justify-center rounded-xl border p-3 ${v.color}`}
-                >
-                  {v.icon}
-                </div>
-                <h3 className="mt-4 text-base font-bold text-slate-900">
-                  {v.title}
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-                  {v.body}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── WHY JOIN ─────────────────────────────────────── */}
-      <section id="why" className="py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-500">
-              Benefits & Perks
-            </p>
-            <h2 className="mt-2 text-3xl font-extrabold text-slate-900">
-              {whyJoinTitle}
-            </h2>
-          </motion.div>
-
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {whyItems.map((f, i) => (
-              <motion.div
-                key={f.title + i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="show"
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.08 * i }}
-                className="group relative flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-8 shadow-sm transition hover:border-blue-100 hover:shadow-lg"
-              >
-                <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/25 transition group-hover:scale-105">
-                  {f.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">{f.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-                    {f.body}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── JOB OPENINGS ─────────────────────────────────── */}
-      <section id="openings" className="bg-white py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex flex-col gap-10 lg:flex-row lg:gap-16">
-
-            {/* Left sticky sidebar */}
-            <div className="lg:w-64 lg:shrink-0">
-              <div className="lg:sticky lg:top-28">
-                <motion.div
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h2 className="text-4xl font-extrabold leading-tight text-slate-900 md:text-5xl">
-                    {jobSectionTitle}
-                  </h2>
-                  <p className="mt-5 text-sm leading-relaxed text-slate-500">
-                    Don't see the right fit? We'd still love to hear from you.
-                  </p>
-                  <div className="mt-6 space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                      Or contact us with
-                    </p>
-                    <a
-                      href="mailto:careers@eec.edu"
-                      className="text-base font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800 transition"
-                    >
-                      careers@eec.edu
-                    </a>
-                  </div>
-                </motion.div>
-              </div>
+            <div className="absolute -top-6 -left-6 h-24 w-24 rounded-full bg-[#ffd23f]/30 blur-3xl" />
+            <img
+              src={careerData?.heroImage || "/join.jpeg"}
+              alt="Careers at EEC"
+              className="h-full w-full rounded-[24px] object-cover"
+            />
+            <div className="absolute bottom-6 left-6 rounded-2xl bg-white/95 px-4 py-3 text-sm font-semibold text-[#1d2a3c] shadow-lg">
+              Empowering learners, one build at a time.
             </div>
+          </motion.div>
+        </div>
+      </section>
 
-            {/* Right: job rows */}
-            <div className="flex-1">
+      {/* Mission */}
+      <section id="mission" className="px-4 py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ duration: 0.55 }}>
+            <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#f0b429]">Our Mission</p>
+            <h2 className="mt-4 text-3xl font-black text-[#0f1828] md:text-4xl">We build education that puts students first.</h2>
+            <p className="mt-5 text-lg leading-relaxed text-[#485067]">{introText}</p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Values */}
+      <section className="bg-white px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+          >
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#f0b429]">Our Values</p>
+              <h3 className="mt-3 text-3xl font-black text-[#121728] sm:text-4xl">How we navigate every project</h3>
+            </div>
+            <Sparkles className="h-10 w-10 text-[#ffd23f]" />
+          </motion.div>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {VALUES.map((value, idx) => (
+              <motion.div
+                key={value.title}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: 0.05 * idx }}
+                className="rounded-3xl border-4 border-transparent bg-[#fffaf1] p-8 shadow-[0_18px_40px_rgba(15,22,32,0.06)] transition hover:border-[#ffd23f]"
+              >
+                <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffd23f] text-[#1c1c23] shadow-lg">
+                  {value.icon}
+                </div>
+                <h4 className="text-xl font-black text-[#141b2c]">{value.title}</h4>
+                <p className="mt-2 text-sm text-[#4a546a]">{value.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why join */}
+      <section id="why" className="bg-[#fef4dc] px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#d77e32]">Life at EEC</p>
+            <h3 className="mt-3 text-3xl font-black text-[#1a2235]">{whyJoinTitle}</h3>
+          </motion.div>
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {whyItems.map((item, idx) => (
+              <motion.div
+                key={item.title + idx}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: 0.05 * idx }}
+                className="rounded-[28px] border border-[#f7d9a8] bg-white p-6 text-left shadow-[0_20px_45px_rgba(212,149,70,0.15)]"
+              >
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1f2a3d] text-white">
+                  {item.icon}
+                </div>
+                <h4 className="text-lg font-bold text-[#1a1f2e]">{item.title}</h4>
+                <p className="mt-2 text-sm text-[#4a4f63]">{item.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Job openings */}
+      <section id="openings" className="bg-white px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-10 lg:grid-cols-[280px,1fr] lg:items-start">
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="rounded-[24px] border border-[#f1f1f1] bg-[#fffaf4] p-6 shadow-sm lg:sticky lg:top-24"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#f0b429]">Join the team</p>
+              <h3 className="mt-3 text-3xl font-black text-[#151c2b]">{jobSectionTitle}</h3>
+              <p className="mt-4 text-sm leading-relaxed text-[#4c5469]">
+                Don't see a perfect fit? Send us your CV and we'll reach out when the right role opens up.
+              </p>
+              <div className="mt-6 rounded-2xl bg-white p-4 shadow">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#d77e32]">Contact</p>
+                <a href="mailto:careers@eec.edu" className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-[#1f3b5b] hover:underline">
+                  <Mail className="h-4 w-4" />
+                  careers@eec.edu
+                </a>
+              </div>
+            </motion.div>
+
+            <div className="rounded-[32px] border border-[#f0f0f0] bg-[#fffefa] p-8 shadow-[0_25px_60px_rgba(16,25,40,0.08)]">
               {jobs.map((job, i) => (
                 <JobRow
                   key={job.title + i}
@@ -591,37 +524,29 @@ export default function EECCareers() {
         </div>
       </section>
 
-      <CareerApplyModal
-        open={applyOpen}
-        onClose={() => setApplyOpen(false)}
-        jobs={jobs}
-        defaultJobTitle={selectedJobTitle}
-      />
+      <CareerApplyModal open={applyOpen} onClose={() => setApplyOpen(false)} jobs={jobs} defaultJobTitle={selectedJobTitle} />
 
-      {/* ─── CTA BANNER ───────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-blue-600 py-20">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-blue-500/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 right-0 h-72 w-72 rounded-full bg-indigo-500/30 blur-3xl" />
+      {/* CTA */}
+      <section className="relative overflow-hidden bg-[#142239] px-4 py-20 text-white">
+        <div className="pointer-events-none absolute -left-16 top-0 h-64 w-64 rounded-full bg-[#ffd23f]/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-10 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          transition={{ duration: 0.55 }}
-          className="relative z-10 mx-auto max-w-3xl px-6 text-center"
+          transition={{ duration: 0.5 }}
+          className="relative z-10 mx-auto max-w-3xl text-center"
         >
-          <h2 className="text-3xl font-extrabold text-white md:text-4xl">
-            Don't see the right role?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-blue-100">
-            We're always open to talented people. Send us your portfolio or CV
-            and we'll keep you in mind for future openings.
+          <h3 className="text-3xl font-black md:text-4xl">Not seeing your role yet?</h3>
+          <p className="mt-4 text-base text-blue-100">
+            We're always open to talented people. Send us your portfolio or CV and we'll keep you in mind for future openings.
           </p>
           <a
             href="mailto:careers@eec.edu"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-bold text-blue-700 shadow-lg shadow-blue-900/20 transition hover:bg-blue-50 active:scale-[.98]"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold uppercase tracking-[0.3em] text-[#142239] shadow-lg transition hover:-translate-y-0.5"
           >
-            Get in Touch
+            Get in touch
             <ArrowRight className="h-4 w-4" />
           </a>
         </motion.div>

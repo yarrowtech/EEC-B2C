@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import Topbar from "./components/Topbar";
@@ -155,15 +155,32 @@ function ShellLayout() {
 
   const location = useLocation();
   const hideFooter = location.pathname.startsWith("/dashboard");
+  const [isLoggedIn, setIsLoggedIn] = useState(() => isTokenValid(getToken()));
+
+  useEffect(() => {
+    const updateAuthState = () => {
+      setIsLoggedIn(isTokenValid(getToken()));
+    };
+
+    window.addEventListener("eec:auth", updateAuthState);
+    window.addEventListener("storage", updateAuthState);
+    return () => {
+      window.removeEventListener("eec:auth", updateAuthState);
+      window.removeEventListener("storage", updateAuthState);
+    };
+  }, []);
+
+  const showHeader = !isLoggedIn && !location.pathname.startsWith("/dashboard");
 
   return (
     <div className="min-h-screen bg-white text-blue-950">
       <ToastContainer position="bottom-right" />
-      {/* Fixed Header */}
-      {/* <div className="fixed inset-x-0 top-0 z-50"> */}
-      <Topbar />
-      <Navbar />
-      {/* </div> */}
+      {showHeader && (
+        <>
+          <Topbar />
+          <Navbar />
+        </>
+      )}
 
       {/* Main Scrollable Area */}
       {/* <main className="pt-[7.5rem] pb-[6rem]"> */}
