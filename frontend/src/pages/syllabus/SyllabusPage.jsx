@@ -88,13 +88,17 @@ const CHAPTER_THEMES = [
   { bg: "bg-amber-100", text: "text-amber-600", icon: "explore" },
 ];
 
+const buildCacheKey = (board, klass, stage) => `${board || "unknown"}::${klass || "unknown"}::${stage}`;
+
 export default function SyllabusPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState([]);
-  const [expandedSubject, setExpandedSubject] = useState(null);
+  const [subjectsCache, setSubjectsCache] = useState({});
+  const [subjectTopicsLoading, setSubjectTopicsLoading] = useState(null);
+  const [userProfile, setUserProfile] = useState(() => getStoredUser());
   const [showTopicsModal, setShowTopicsModal] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [showTopicDetailsModal, setShowTopicDetailsModal] = useState(false);
@@ -166,6 +170,20 @@ export default function SyllabusPage() {
     loadSyllabus(stage);
   }, [searchParams, unlockedStages]);
 
+  useEffect(() => {
+    setShowTopicsModal(false);
+    setSelectedSubject(null);
+    setShowTopicDetailsModal(false);
+    setSelectedTopicForDetails(null);
+    setShowLevelSelector(false);
+    setShowTypeSelector(false);
+    setShowConfirmDialog(false);
+    setSelectedTopic(null);
+    setSelectedLevel(null);
+    setSelectedType(null);
+    setSubjectTopicsLoading(null);
+  }, [currentStage]);
+
   async function fetchAllStages() {
     try {
       const token = localStorage.getItem("jwt");
@@ -222,23 +240,30 @@ export default function SyllabusPage() {
       const profile = await getJSON("/users/profile");
       if (profile?.user) {
         localStorage.setItem("user", JSON.stringify(profile.user));
+        setUserProfile(profile.user);
         return profile.user;
       }
     } catch (err) {
       console.error("Failed to refresh user profile", err);
     }
-    return getStoredUser();
+    const fallback = getStoredUser();
+    setUserProfile(fallback);
+    return fallback;
+  }
+
+  async function ensureUserContext() {
+    let user = getStoredUser();
+    if (hasBoardAndClass(user)) {
+      setUserProfile(user);
+      return user;
+    }
+    return await loadUserProfile();
   }
 
   async function loadSyllabus(stage = 1) {
+    let usedCache = false;
     try {
-      setLoading(true);
-
-      let user = getStoredUser();
-
-      if (!hasBoardAndClass(user)) {
-        user = await loadUserProfile();
-      }
+      const user = await ensureUserContext();
 
       const userBoard = user.boardId || user.board || user.boardName || "";
       const userClass = user.classId || user.class || user.className || "";
@@ -251,35 +276,114 @@ export default function SyllabusPage() {
         return;
       }
 
+      const cacheKey = buildCacheKey(userBoard, userClass, stage);
+      const cachedSubjects = subjectsCache[cacheKey];
+
+      if (cachedSubjects) {
+        usedCache = true;
+        setSubjects(cachedSubjects);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
       const url = `/api/subject?board=${userBoard}&class=${userClass}`;
       const subjectsRes = await getJSON(url);
 
       if (!subjectsRes || subjectsRes.length === 0) {
         setSubjects([]);
-        setLoading(false);
+        setSubjectsCache((prev) => ({ ...prev, [cacheKey]: [] }));
         return;
       }
 
-      const subjectsWithTopics = await Promise.all(
-        subjectsRes.map(async (subject) => {
-          try {
-            const topics = await getJSON(
-              `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}`
-            );
-            return { ...subject, topics: topics || [] };
-          } catch (err) {
-            console.error(`Failed to load topics for ${subject.name}`, err);
-            return { ...subject, topics: [] };
-          }
-        })
-      );
+      const normalizedSubjects = subjectsRes.map((subject) => {
+        const hasTopics = Array.isArray(subject.topics) && subject.topics.length > 0;
+        return {
+          ...subject,
+          topics: hasTopics ? [...subject.topics] : [],
+          topicsLoaded: hasTopics,
+          topicsAttempted: hasTopics,
+        };
+      });
 
-      setSubjects(subjectsWithTopics);
+      setSubjects(normalizedSubjects);
+      setSubjectsCache((prev) => ({ ...prev, [cacheKey]: normalizedSubjects }));
     } catch (err) {
       console.error("Failed to load syllabus", err);
       toast.error("Failed to load syllabus. Please try again.");
     } finally {
-      setLoading(false);
+      if (!usedCache) {
+        setLoading(false);
+      }
+    }
+  }
+
+  function updateSubjectEntry(cacheKey, subjectId, patch) {
+    const activeUser = hasBoardAndClass(userProfile) ? userProfile : getStoredUser();
+    const activeBoard = activeUser.boardId || activeUser.board || activeUser.boardName || "";
+    const activeClass = activeUser.classId || activeUser.class || activeUser.className || "";
+    const activeCacheKey = buildCacheKey(activeBoard, activeClass, currentStage);
+
+    if (cacheKey === activeCacheKey) {
+      setSubjects((prev) =>
+        prev.map((item) => (item._id === subjectId ? { ...item, ...patch } : item))
+      );
+      setSelectedSubject((prev) => (prev?._id === subjectId ? { ...prev, ...patch } : prev));
+    }
+
+    if (cacheKey) {
+      setSubjectsCache((prev) => {
+        const stageSubjects = prev[cacheKey];
+        if (!stageSubjects) return prev;
+        return {
+          ...prev,
+          [cacheKey]: stageSubjects.map((item) =>
+            item._id === subjectId ? { ...item, ...patch } : item
+          ),
+        };
+      });
+    }
+  }
+
+  async function fetchSubjectTopics(subject, stage) {
+    if (!subject?._id) return null;
+
+    const resolvedUser = hasBoardAndClass(userProfile) ? userProfile : await ensureUserContext();
+    const userBoard = resolvedUser.boardId || resolvedUser.board || resolvedUser.boardName || "";
+    const userClass = resolvedUser.classId || resolvedUser.class || resolvedUser.className || "";
+
+    if (!userBoard || !userClass) {
+      toast.error("Please update your profile with board and class information.");
+      return null;
+    }
+
+    const cacheKey = buildCacheKey(userBoard, userClass, stage);
+
+    if (subjectTopicsLoading === subject._id) {
+      return null;
+    }
+
+    setSubjectTopicsLoading(subject._id);
+
+    try {
+      const topics = await getJSON(
+        `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}`
+      );
+      const normalizedTopics = Array.isArray(topics) ? topics : [];
+      updateSubjectEntry(cacheKey, subject._id, {
+        topics: normalizedTopics,
+        topicsLoaded: true,
+        topicsAttempted: true,
+      });
+      return normalizedTopics;
+    } catch (err) {
+      console.error(`Failed to load topics for ${subject.name}`, err);
+      updateSubjectEntry(cacheKey, subject._id, { topicsAttempted: true });
+      toast.error(`Failed to load ${subject.name} topics. Please try again.`);
+      return null;
+    } finally {
+      setSubjectTopicsLoading((current) => (current === subject._id ? null : current));
     }
   }
 
@@ -303,9 +407,14 @@ export default function SyllabusPage() {
     }
   }
 
-  function handleSubjectClick(subject) {
-    setSelectedSubject(subject);
+  async function handleSubjectClick(subject) {
+    const subjectData = subjects.find((item) => item._id === subject._id) || subject;
+    setSelectedSubject(subjectData);
     setShowTopicsModal(true);
+
+    if (!subjectData.topicsLoaded) {
+      await fetchSubjectTopics(subjectData, currentStage);
+    }
   }
 
   function handleTopicClick(subject, topic) {
@@ -435,9 +544,10 @@ export default function SyllabusPage() {
     );
   }
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userBoardName = user.boardName || user.board || "Your Board";
-  const userClassName = user.className || user.class || "Your Class";
+  const resolvedUserProfile =
+    userProfile && Object.keys(userProfile).length ? userProfile : getStoredUser();
+  const userBoardName = resolvedUserProfile.boardName || resolvedUserProfile.board || "Your Board";
+  const userClassName = resolvedUserProfile.className || resolvedUserProfile.class || "Your Class";
 
   return (
     <>
@@ -577,7 +687,13 @@ export default function SyllabusPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {subjects.map((subject, subjectIndex) => {
                 const theme = CARD_THEMES[subjectIndex % CARD_THEMES.length];
-                const topicCount = subject.topics?.length || 0;
+                const topicCount = subject.topicsLoaded
+                  ? subject.topics.length
+                  : typeof subject.topicCount === "number"
+                  ? subject.topicCount
+                  : null;
+                const topicCountDisplay = topicCount === null ? "--" : topicCount;
+                const topicSuffix = topicCount === 1 ? "" : "s";
                 const diffBadge = DIFFICULTY_BADGES[subjectIndex % DIFFICULTY_BADGES.length];
 
                 return (
@@ -596,7 +712,7 @@ export default function SyllabusPage() {
 
                       {/* Time badge */}
                       <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30">
-                        {topicCount} Topic{topicCount !== 1 ? "s" : ""}
+                        {topicCountDisplay} Topic{topicSuffix}
                       </div>
                       {/* Background decoration icon */}
                       <MIcon
@@ -613,7 +729,7 @@ export default function SyllabusPage() {
                       <div className="flex flex-wrap gap-2">
                         <span className={`${theme.tagBg} ${theme.tagText} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1`}>
                           <MIcon name="format_list_numbered" className="text-[14px]" />
-                          {topicCount} Topic{topicCount !== 1 ? "s" : ""}
+                          {topicCountDisplay} Topic{topicSuffix}
                         </span>
                         <span className={`${diffBadge.bg} ${diffBadge.text} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1`}>
                           <MIcon name={diffBadge.icon} className="text-[14px]" />
@@ -630,12 +746,9 @@ export default function SyllabusPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (topicCount > 0) {
-                            handleSubjectClick(subject);
-                          }
+                          handleSubjectClick(subject);
                         }}
-                        disabled={topicCount === 0}
-                        className="w-full bg-[#e7c555] hover:bg-[#d4b44a] text-slate-900 font-bold py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-[#e7c555] hover:bg-[#d4b44a] text-slate-900 font-bold py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]"
                       >
                         Start Quest <MIcon name="play_circle" />
                       </button>
@@ -723,7 +836,9 @@ export default function SyllabusPage() {
                 <div className="flex flex-col gap-3 min-w-[240px]">
                   <div className="flex justify-between items-end">
                     <span className="text-sm font-bold text-slate-900">Topics Available</span>
-                    <span className="text-2xl font-black text-[#e7c555]">{selectedSubject.topics?.length || 0}</span>
+                    <span className="text-2xl font-black text-[#e7c555]">
+                      {selectedSubject.topicsLoaded ? selectedSubject.topics.length : "--"}
+                    </span>
                   </div>
                   <div className="w-full h-4 bg-white/50 rounded-full overflow-hidden p-1">
                     <div className="h-full bg-[#e7c555] rounded-full" style={{ width: '35%' }}></div>
@@ -745,7 +860,12 @@ export default function SyllabusPage() {
                 Adventure Path
               </h2>
 
-              {selectedSubject.topics && selectedSubject.topics.length > 0 ? (
+              {subjectTopicsLoading === selectedSubject._id ? (
+                <div className="flex flex-col items-center justify-center py-12 bg-white border border-dashed border-[#e7c555]/40 rounded-[3rem] text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#e7c555] mb-3" />
+                  <p className="font-semibold">Fetching topics...</p>
+                </div>
+              ) : selectedSubject.topicsLoaded && selectedSubject.topics && selectedSubject.topics.length > 0 ? (
                 <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm" open>
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
@@ -754,7 +874,9 @@ export default function SyllabusPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-lg text-slate-900">{selectedSubject.name} Topics</h3>
-                        <p className="text-sm text-slate-500">{selectedSubject.topics.length} Quest{selectedSubject.topics.length !== 1 ? 's' : ''} Available</p>
+                        <p className="text-sm text-slate-500">
+                          {selectedSubject.topics.length} Quest{selectedSubject.topics.length !== 1 ? 's' : ''} Available
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -806,10 +928,22 @@ export default function SyllabusPage() {
                     ))}
                   </div>
                 </details>
-              ) : (
+              ) : selectedSubject.topicsLoaded ? (
                 <div className="p-8 text-center flex flex-col items-center gap-3 bg-white border border-[#e7c555]/10 rounded-[3rem]">
                   <MIcon name="lock_open" className="text-4xl text-slate-300" />
                   <p className="text-slate-500 font-medium">No topics available for this subject yet.</p>
+                </div>
+              ) : (
+                <div className="p-8 text-center flex flex-col items-center gap-3 bg-white border border-[#e7c555]/10 rounded-[3rem]">
+                  <MIcon name="error" className="text-4xl text-[#e7c555]" />
+                  <p className="text-slate-600 font-medium">Unable to load topics. Please try again.</p>
+                  <button
+                    onClick={() => fetchSubjectTopics(selectedSubject, currentStage)}
+                    className="mt-2 inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-[#e7c555] text-slate-900 font-semibold hover:bg-[#d4b44a] transition-all"
+                  >
+                    <MIcon name="refresh" className="text-base" />
+                    Retry
+                  </button>
                 </div>
               )}
             </div>

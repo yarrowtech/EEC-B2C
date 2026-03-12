@@ -212,7 +212,7 @@
 // }
 
 // src/layouts/DashboardLayout.jsx
-import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Outlet, NavLink, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -271,20 +271,6 @@ export default function DashboardLayout() {
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
-    const [contentVisible, setContentVisible] = useState(true);
-    const [isRouteTransitioning, setIsRouteTransitioning] = useState(false);
-    const [dailyChallenge, setDailyChallenge] = useState({
-        loading: false,
-        hasQuestion: false,
-        alreadyAttempted: false,
-        isCorrect: null,
-        streak: 0,
-        streakBroken: false,
-        badge: "none",
-    });
-    const isFirstPaint = useRef(true);
-    const TRANSITION_DURATION = 500;
-    const isExamTakeRoute = location.pathname.startsWith("/dashboard/exams/take/");
 
     useEffect(() => {
         const goOnline = () => {
@@ -422,28 +408,6 @@ export default function DashboardLayout() {
 
     useEffect(() => {
         setOpen(false);
-    }, [location.pathname]);
-
-    useLayoutEffect(() => {
-        if (isFirstPaint.current) {
-            isFirstPaint.current = false;
-            return;
-        }
-        setIsRouteTransitioning(true);
-        setContentVisible(false);
-
-        const showTimer = setTimeout(() => {
-            setContentVisible(true);
-        }, TRANSITION_DURATION);
-
-        const cleanupTimer = setTimeout(() => {
-            setIsRouteTransitioning(false);
-        }, TRANSITION_DURATION + 200);
-
-        return () => {
-            clearTimeout(showTimer);
-            clearTimeout(cleanupTimer);
-        };
     }, [location.pathname]);
 
     const blockOfflineNavigation = (e) => {
@@ -677,23 +641,8 @@ export default function DashboardLayout() {
             ${role === "student" && !isExamTakeRoute ? "pb-16 md:pb-0" : ""}
           `}
                 >
-                    <div
-                        className={`${isExamTakeRoute ? "w-full" : "mx-auto max-w-7xl"} transition-opacity duration-200 ${contentVisible ? "opacity-100" : "opacity-0"}`}
-                    >
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={location.pathname}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{
-                                    duration: 0.3,
-                                    ease: "easeInOut"
-                                }}
-                            >
-                                <Outlet />
-                            </motion.div>
-                        </AnimatePresence>
+                    <div className="mx-auto max-w-7xl">
+                        <Outlet />
                     </div>
                 </main>
             </div>
@@ -752,16 +701,6 @@ export default function DashboardLayout() {
                 />
             )}
 
-            {isRouteTransitioning && (
-                <div className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center bg-white/95 backdrop-blur-sm">
-                    <div className="relative flex h-32 w-32 items-center justify-center">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-gradient-to-r from-[#ffd23f] to-[#ff8b5c] opacity-70 animate-ping" />
-                        <span className="relative inline-flex h-24 w-24 items-center justify-center rounded-full bg-[#ffd23f] text-xl font-black text-[#1c2233] shadow-xl">
-                            EEC
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
