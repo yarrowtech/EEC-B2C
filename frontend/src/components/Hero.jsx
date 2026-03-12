@@ -1,5 +1,6 @@
 // src/components/Hero.jsx
 import { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -427,6 +428,7 @@ const Hero = () => {
 
   const selectBtnCls =
     "w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
+  const heroHeadingCls = "text-6xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] md:text-7xl lg:text-8xl";
 
   return (
     <section className="relative overflow-hidden bg-[#FEF4E8]" style={{ minHeight: "calc(100vh - 60px)" }}>
@@ -446,14 +448,24 @@ const Hero = () => {
         <div className="flex flex-col gap-8">
 
           {/* Badge — matches code.html: accent bg, border, celebration icon */}
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border-2 border-[#4ECDC4] bg-[#4ECDC4]/20 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1B8A84]">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="inline-flex w-fit items-center gap-2 rounded-full border-2 border-[#4ECDC4] bg-[#4ECDC4]/20 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1B8A84]"
+          >
             <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>celebration</span>
             50,000+ Happy Little Explorers!
-          </div>
+          </motion.div>
 
           {/* Heading — large like screenshot */}
           {hero ? (
-            <h1 className="text-6xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] md:text-2xl lg:text-7xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.08 }}
+              className={heroHeadingCls}
+            >
               {(() => {
                 const words = hero.heading.split(" ");
                 const half = Math.ceil(words.length / 2);
@@ -465,23 +477,39 @@ const Hero = () => {
                   </>
                 );
               })()}
-            </h1>
+            </motion.h1>
           ) : (
-            <h1 className="text-6xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] md:text-7xl lg:text-8xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.08 }}
+              className={heroHeadingCls}
+            >
               Make Learning
               <br />
               <span className="text-[#F4736E]">An Adventure!</span>
-            </h1>
+            </motion.h1>
           )}
 
           {/* Subtitle */}
-          <p className="max-w-lg text-lg md:text-2xl leading-relaxed text-slate-500">
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.16 }}
+            className="max-w-lg text-lg md:text-2xl leading-relaxed text-slate-500"
+          >
             {hero?.paragraph ||
               "Turn study time into playtime! Master Class 3–12 exams with fun, colorful worksheets and exciting challenges designed for curious minds."}
-          </p>
+          </motion.p>
 
           {/* ── Floating signup card (3-field, matches screenshot) ── */}
-          <div id="hero-signup" className="relative">
+          <motion.div
+            id="hero-signup"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.24 }}
+            className="relative"
+          >
             {/* Sparkle — exact copy from code.html: single div, p-4, rotate-12 */}
             <div className="absolute -top-6 -right-6 z-10 hidden sm:flex items-center justify-center rounded-full bg-[#F4736E] p-4 text-white shadow-lg rotate-12">
               <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>magic_button</span>
@@ -548,11 +576,16 @@ const Hero = () => {
                 </p>
               </form>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* ── RIGHT: Illustration card — exact structure from code.html ── */}
-        <div className="hidden md:block flex-1 relative">
+        <motion.div
+          initial={{ opacity: 0, x: 26, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="hidden md:block flex-1 relative"
+        >
           {/* aspect-square, rounded-[3rem], overflow-hidden, border-8 border-white — exact from code.html */}
           <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white bg-linear-to-br from-yellow-300/20 to-[#4ECDC4]/20">
 
@@ -581,7 +614,7 @@ const Hero = () => {
               <span className="material-symbols-outlined text-4xl text-amber-400" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>palette</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
       </div>
 
