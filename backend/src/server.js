@@ -38,6 +38,7 @@ import selfStudyRoutes from "./routes/selfStudyRoutes.js";
 import packageRoutes from "./routes/packages.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 import careerApplicationsRoutes from "./routes/careerApplicationsRoutes.js";
+import dailyChallengeRoutes from "./routes/dailyChallengeRoutes.js";
 
 const app = express();
 
@@ -109,6 +110,7 @@ app.use("/api/ai-questions", aiQuestionRoutes);
 app.use("/api/self-study", selfStudyRoutes);
 app.use("/api/packages", packageRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/daily-challenge", dailyChallengeRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;

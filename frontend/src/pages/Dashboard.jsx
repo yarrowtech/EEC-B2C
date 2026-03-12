@@ -649,6 +649,9 @@ function StudentContent() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [dailyBadge, setDailyBadge] = useState("none");
+  const [dailyStreak, setDailyStreak] = useState(0);
+  const [dailyHistory, setDailyHistory] = useState([]);
 
   function handleLogout() {
     localStorage.removeItem("jwt");
@@ -691,6 +694,43 @@ function StudentContent() {
     }
 
     loadNotifications();
+  }, [API]);
+
+  useEffect(() => {
+    async function loadDailyBadge() {
+      try {
+        const res = await fetch(`${API}/api/daily-challenge/stats`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return;
+        setDailyBadge(String(data?.badge || "none").toLowerCase());
+        setDailyStreak(Number(data?.streak || 0));
+      } catch {
+        setDailyBadge("none");
+        setDailyStreak(0);
+      }
+    }
+    loadDailyBadge();
+  }, [API]);
+
+  useEffect(() => {
+    async function loadDailyHistory() {
+      try {
+        const res = await fetch(`${API}/api/daily-challenge/history?days=35`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setDailyHistory([]);
+          return;
+        }
+        setDailyHistory(Array.isArray(data?.items) ? data.items : []);
+      } catch {
+        setDailyHistory([]);
+      }
+    }
+    loadDailyHistory();
   }, [API]);
 
   useEffect(() => {
@@ -840,6 +880,36 @@ function StudentContent() {
     (n) => !Array.isArray(n.readBy) || !n.readBy.some((id) => String(id) === String(userIdForRead))
   ).length;
   const recentNotifications = notifications.slice(0, 6);
+  const dailyLevelLabel =
+    dailyBadge === "none"
+      ? "Novice"
+      : `${dailyBadge.charAt(0).toUpperCase()}${dailyBadge.slice(1)}`;
+  const historyByDateKey = new Map(
+    (dailyHistory || []).map((item) => [String(item.dateKey || ""), String(item.status || "missed")])
+  );
+  const nowDate = new Date();
+  const monthYear = nowDate.getFullYear();
+  const monthIndex = nowDate.getMonth();
+  const monthStart = new Date(monthYear, monthIndex, 1);
+  const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
+  const leadingEmptyDays = monthStart.getDay();
+  const monthLabel = monthStart.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthDots = Array.from({ length: leadingEmptyDays + daysInMonth }, (_, idx) => {
+    if (idx < leadingEmptyDays) return null;
+    const day = idx - leadingEmptyDays + 1;
+    const dateKey = `${monthYear}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const status = historyByDateKey.get(dateKey) || "missed";
+    return {
+      dateKey,
+      day,
+      status,
+      isToday:
+        day === nowDate.getDate() &&
+        monthIndex === nowDate.getMonth() &&
+        monthYear === nowDate.getFullYear(),
+    };
+  });
 
   async function markNotificationRead(id) {
     try {
@@ -935,8 +1005,8 @@ function StudentContent() {
           <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
             <span className="text-lg">🛡️</span>
             <div>
-              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Level</div>
-              <div className="text-sm font-black text-slate-800">{busy ? "…" : getLevel(totalScore)}</div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Daily Badge</div>
+              <div className="text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
             </div>
           </div>
           <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
@@ -1063,7 +1133,7 @@ function StudentContent() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AdventureStatCard
             title="Revision Streak"
-            value={busy ? "…" : `${totalAttempts} Days`}
+            value={busy ? "…" : `${dailyStreak} Days`}
             icon={<span className="material-symbols-outlined fill-1">local_fire_department</span>}
             accentColor="coral"
           />
@@ -1087,6 +1157,58 @@ function StudentContent() {
           />
         </div>
         {err && <div className="text-xs text-rose-600 mt-2">{err}</div>}
+      </Section>
+
+      <Section title="Daily Streak Tracker" subtitle={monthLabel}>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid grid-cols-7 gap-2">
+            {weekdayLabels.map((label) => (
+              <div key={label} className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-wide">
+                {label}
+              </div>
+            ))}
+            {monthDots.map((dot, idx) => {
+              if (!dot) return <div key={`empty-${idx}`} className="h-6" />;
+              const title = `${dot.dateKey} - ${
+                dot.status === "correct"
+                  ? "Correct"
+                  : dot.status === "wrong"
+                  ? "Attempted (wrong)"
+                  : "No attempt"
+              }`;
+              const colorClass =
+                dot.status === "correct"
+                  ? "bg-emerald-500"
+                  : dot.status === "wrong"
+                  ? "bg-amber-400"
+                  : "bg-slate-300";
+              return (
+                <div
+                  key={dot.dateKey}
+                  title={title}
+                  className={`h-6 flex items-center justify-center rounded-md ${dot.isToday ? "ring-1 ring-indigo-300 bg-indigo-50" : ""}`}
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} />
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex items-center gap-4 text-xs text-slate-600">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-emerald-500" />
+              Correct
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-amber-400" />
+              Wrong
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-slate-200" />
+              Missed
+            </span>
+          </div>
+        </div>
       </Section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

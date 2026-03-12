@@ -43,6 +43,22 @@ export default function ExamTake() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [matchTokenSelection, setMatchTokenSelection] = useState({});
   const [hintOpen, setHintOpen] = useState({});
+  const [isFullscreen, setIsFullscreen] = useState(
+    typeof document !== "undefined" ? Boolean(document.fullscreenElement) : false
+  );
+
+  async function enterFullscreen() {
+    try {
+      if (typeof document === "undefined") return;
+      if (document.fullscreenElement) return;
+      const root = document.documentElement;
+      if (root?.requestFullscreen) {
+        await root.requestFullscreen();
+      }
+    } catch {
+      // Browser can block autoplay fullscreen; user can use the button.
+    }
+  }
 
   // Save meta to localStorage when it changes
   useEffect(() => {
@@ -54,6 +70,75 @@ export default function ExamTake() {
       }
     }
   }, [meta, META_STORAGE_KEY]);
+
+  useEffect(() => {
+    enterFullscreen();
+  }, []);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    function onBeforeUnload(e) {
+      if (result) return;
+      e.preventDefault();
+      e.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [result]);
+
+  useEffect(() => {
+    if (result) return;
+
+    function blockEvent(e) {
+      e.preventDefault();
+    }
+
+    function blockInspectAndClipboardShortcuts(e) {
+      const key = String(e.key || "").toLowerCase();
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+      if (key === "f12") {
+        e.preventDefault();
+        return;
+      }
+
+      if (isCtrlOrCmd && e.shiftKey && ["i", "j", "c", "k"].includes(key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (isCtrlOrCmd && ["u", "s", "p", "a", "c", "x", "v"].includes(key)) {
+        e.preventDefault();
+      }
+    }
+
+    document.addEventListener("contextmenu", blockEvent);
+    document.addEventListener("copy", blockEvent);
+    document.addEventListener("cut", blockEvent);
+    document.addEventListener("paste", blockEvent);
+    document.addEventListener("selectstart", blockEvent);
+    document.addEventListener("dragstart", blockEvent);
+    document.addEventListener("keydown", blockInspectAndClipboardShortcuts);
+
+    return () => {
+      document.removeEventListener("contextmenu", blockEvent);
+      document.removeEventListener("copy", blockEvent);
+      document.removeEventListener("cut", blockEvent);
+      document.removeEventListener("paste", blockEvent);
+      document.removeEventListener("selectstart", blockEvent);
+      document.removeEventListener("dragstart", blockEvent);
+      document.removeEventListener("keydown", blockInspectAndClipboardShortcuts);
+    };
+  }, [result]);
 
   // Auto-save answers to localStorage whenever they change
   useEffect(() => {
@@ -413,37 +498,98 @@ export default function ExamTake() {
       .slice(0, limit);
   }
 
+  function plainText(input) {
+    return String(input || "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function optionKeywordHints(options, questionKeywords, limit = 2) {
+    if (!Array.isArray(options) || !options.length || !questionKeywords.length) return [];
+    const scored = options
+      .map((opt) => {
+        const words = extractKeywords(plainText(opt?.text || ""), 6);
+        const overlap = words.filter((w) => questionKeywords.includes(w));
+        return { overlap, size: overlap.length };
+      })
+      .filter((x) => x.size > 0)
+      .sort((a, b) => b.size - a.size);
+
+    const unique = [];
+    for (const row of scored) {
+      for (const w of row.overlap) {
+        if (!unique.includes(w)) unique.push(w);
+        if (unique.length >= limit) return unique;
+      }
+    }
+    return unique;
+  }
+
   function getAutoHint(q, questionText) {
     const qType = q?.type || type;
-    const keywords = extractKeywords(questionText, 3);
-    const keyLine = keywords.length ? ` Focus on: ${keywords.join(", ")}.` : "";
+    const cleanQuestion = plainText(questionText);
+    const keywords = extractKeywords(cleanQuestion, 5);
+    const contextLine = [
+      q?.subject ? `Subject: ${q.subject}` : "",
+      q?.topic ? `Topic: ${q.topic}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
 
     if (qType === "mcq-single" || qType === "mcq-multi") {
-      return `Eliminate clearly wrong options first, then compare the remaining choices with the core concept.${keyLine}`;
+      const optionCues = optionKeywordHints(q?.options || [], keywords, 2);
+      const focus = keywords.length ? `Focus on: ${keywords.slice(0, 3).join(", ")}.` : "";
+      const cueLine = optionCues.length
+        ? ` Compare options around: ${optionCues.join(", ")}.`
+        : " Compare options with the key terms in the question.";
+      return `${contextLine ? `${contextLine}. ` : ""}${focus} Eliminate options that do not match the core idea.${cueLine}`;
     }
     if (qType === "true-false") {
-      return `Check for absolute words like "always", "never", or "only" before deciding.${keyLine}`;
+      const lead = keywords.length ? keywords.slice(0, 2).join(" and ") : "the main statement";
+      return `${contextLine ? `${contextLine}. ` : ""}Check whether ${lead} is universally true or only true in specific cases.`;
     }
     if (qType === "choice-matrix") {
-      return `Match each row with one column carefully; solve one row at a time.${keyLine}`;
+      return `${contextLine ? `${contextLine}. ` : ""}Solve one row at a time and confirm each row has the best matching column based on the row keyword.`;
     }
     if (qType === "cloze-drag" || qType === "cloze-select" || qType === "cloze-text") {
-      return `Read the full sentence first, then fill each blank using grammar and context clues.${keyLine}`;
+      const snippet = cleanQuestion.split("______").slice(0, 2).join("______").slice(0, 120);
+      return `${contextLine ? `${contextLine}. ` : ""}Read the full sentence first; grammar and meaning should fit each blank.${snippet ? ` Start with: "${snippet}${snippet.length >= 120 ? "..." : ""}"` : ""}`;
     }
     if (qType === "match-list") {
-      return `Start with pairs you are most confident about, then complete the remaining matches.${keyLine}`;
+      const left = Array.isArray(q?.matchList?.left) ? q.matchList.left : [];
+      const leftPreview = left.slice(0, 2).map((x) => plainText(x)).filter(Boolean);
+      return `${contextLine ? `${contextLine}. ` : ""}Start matching the most familiar pair first, then use elimination for the rest.${leftPreview.length ? ` Begin with: ${leftPreview.join(" | ")}.` : ""}`;
     }
     if (qType === "essay-rich" || qType === "essay-plain") {
-      return `Answer in a clear structure: intro, key points, and conclusion.${keyLine}`;
+      const focus = keywords.length ? keywords.slice(0, 4).join(", ") : "the main concept";
+      return `${contextLine ? `${contextLine}. ` : ""}Structure your answer in 3 parts: definition, key explanation, and example. Focus on ${focus}.`;
     }
-    return `Re-read the question and identify what exactly is being asked.${keyLine}`;
+    return `${contextLine ? `${contextLine}. ` : ""}Re-read the question and identify the exact requirement before selecting an answer.`;
   }
 
 
   return (
     <>
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
-      <form onSubmit={onSubmit} className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      {!result && !isFullscreen && (
+        <div className="fixed inset-0 z-[1200] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-6 text-center shadow-2xl">
+            <h2 className="text-xl font-bold text-slate-900">Exam Fullscreen Required</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Please enter fullscreen mode to continue your exam.
+            </p>
+            <button
+              type="button"
+              onClick={enterFullscreen}
+              className="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700"
+            >
+              Enter Fullscreen
+            </button>
+          </div>
+        </div>
+      )}
+      <form onSubmit={onSubmit} className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 select-none">
         <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-indigo-100">

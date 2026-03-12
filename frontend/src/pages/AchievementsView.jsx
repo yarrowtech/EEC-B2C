@@ -7,31 +7,40 @@ const AchievementsView = () => {
   const userPoints = user.points;
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [attempts, setAttempts] = useState([]);
+  const [dailyAttempts, setDailyAttempts] = useState([]);
 
   useEffect(() => {
     async function fetchAttempts() {
       if (!user?._id) return;
 
       try {
-        const res = await fetch(
-          `${API}/api/exams/user-results/${user._id}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
-              "Content-Type": "application/json"
-            }
-          }
-        );
+        const headers = {
+          "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
+          "Content-Type": "application/json"
+        };
 
-        const data = await res.json();
+        const [examRes, dailyRes] = await Promise.all([
+          fetch(`${API}/api/exams/user-results/${user._id}`, { headers }),
+          fetch(`${API}/api/daily-challenge/attempts`, { headers }),
+        ]);
 
-        if (res.ok) {
-          setAttempts(data.results || []);
+        const examData = await examRes.json().catch(() => ({}));
+        const dailyData = await dailyRes.json().catch(() => ({}));
+
+        if (examRes.ok) {
+          setAttempts(examData.results || []);
         } else {
           setAttempts([]);
         }
+
+        if (dailyRes.ok) {
+          setDailyAttempts(Array.isArray(dailyData.items) ? dailyData.items : []);
+        } else {
+          setDailyAttempts([]);
+        }
       } catch {
         setAttempts([]);
+        setDailyAttempts([]);
       }
     }
 
@@ -69,10 +78,23 @@ const AchievementsView = () => {
         subject: subjectLabel,
         topic: topicLabel,
         pointsEarned: attempt.score,
-        date: attempt.createdAt
+        date: attempt.createdAt,
       };
-    })
-  ];
+    }),
+    ...dailyAttempts.map((attempt) => ({
+      exam: "Daily Challenge",
+      subject: attempt.subject || "Daily Practice",
+      topic: attempt.topic || "Board/Class Daily Question",
+      pointsEarned: Number(attempt.pointsAwarded || 0),
+      date: attempt.submittedAt || attempt.createdAt,
+      isDaily: true,
+      questionType: attempt.questionType || "mcq",
+      resultLabel: attempt.isCorrect ? "Correct" : "Wrong",
+      streakAfter: Number(attempt.streakAfter || 0),
+      badgeAfter: String(attempt.badgeAfter || "none"),
+      dateKey: attempt.dateKey || "",
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const totalAchievements = pointsHistory.length;
   const earnedCount = pointsHistory.filter(item => item.pointsEarned > 0).length;
@@ -252,6 +274,18 @@ const AchievementsView = () => {
                   <PuzzleIcon size={16} className={item.isWelcome ? 'text-amber-500' : 'text-yellow-500'} />
                   <span className="font-medium">Topic:</span> {item.topic}
                 </p>
+                {item.isDaily && (
+                  <>
+                    <p className="text-xs md:text-sm flex items-center gap-2 text-gray-700">
+                      <Target size={16} className="text-indigo-500" />
+                      <span className="font-medium">Type:</span> {item.questionType}
+                    </p>
+                    <p className="text-xs md:text-sm flex items-center gap-2 text-gray-700">
+                      <Medal size={16} className={item.resultLabel === "Correct" ? "text-emerald-500" : "text-rose-500"} />
+                      <span className="font-medium">Result:</span> {item.resultLabel} • Streak {item.streakAfter}
+                    </p>
+                  </>
+                )}
                 <p className={`text-xs flex items-center gap-2 ${
                   item.isWelcome ? 'text-amber-600' : 'text-gray-500'
                 }`}>

@@ -90,6 +90,7 @@ import TryoutSubjects from "./pages/TryoutSubjects";
 import SyllabusTopicContentPage from "./pages/syllabus/SyllabusTopicContentPage";
 import ManagePackages from "./pages/admin/ManagePackages";
 import Packages from "./pages/Packages";
+import DailyChallengeExam from "./pages/DailyChallengeExam";
 
 
 function getToken() {
@@ -475,6 +476,7 @@ export default function App() {
             <Route path="self-study/results/:id" element={<SelfStudyResultDetail />} />
             <Route path="syllabus" element={<SyllabusPage />} />
             <Route path="syllabus/topic/:subjectId/:topicId" element={<SyllabusTopicContentPage />} />
+            <Route path="daily-challenge" element={<DailyChallengeExam />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />

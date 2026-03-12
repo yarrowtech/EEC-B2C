@@ -263,6 +263,7 @@ function isTokenValid(token) {
 export default function DashboardLayout() {
     const token = getToken();
     const user = getUser();
+    const role = String(user?.role || "").toLowerCase();
     const navigate = useNavigate();
     const location = useLocation();
     const [open, setOpen] = useState(false);
@@ -272,8 +273,18 @@ export default function DashboardLayout() {
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
     const [contentVisible, setContentVisible] = useState(true);
     const [isRouteTransitioning, setIsRouteTransitioning] = useState(false);
+    const [dailyChallenge, setDailyChallenge] = useState({
+        loading: false,
+        hasQuestion: false,
+        alreadyAttempted: false,
+        isCorrect: null,
+        streak: 0,
+        streakBroken: false,
+        badge: "none",
+    });
     const isFirstPaint = useRef(true);
     const TRANSITION_DURATION = 500;
+    const isExamTakeRoute = location.pathname.startsWith("/dashboard/exams/take/");
 
     useEffect(() => {
         const goOnline = () => {
@@ -300,6 +311,62 @@ export default function DashboardLayout() {
         }
     }, [user]);
 
+    useEffect(() => {
+        if (role !== "student" || !token) return;
+        let mounted = true;
+
+        async function loadDailyChallenge() {
+            setDailyChallenge((prev) => ({ ...prev, loading: true }));
+            try {
+                const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+                const res = await fetch(`${API}/api/daily-challenge/today`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!mounted) return;
+
+                if (!res.ok) {
+                    setDailyChallenge({
+                        loading: false,
+                        hasQuestion: false,
+                        alreadyAttempted: false,
+                        isCorrect: null,
+                        streak: 0,
+                        streakBroken: false,
+                        badge: "none",
+                    });
+                    return;
+                }
+
+                setDailyChallenge({
+                    loading: false,
+                    hasQuestion: Boolean(data?.question?._id),
+                    alreadyAttempted: Boolean(data?.alreadyAttempted),
+                    isCorrect: data?.isCorrect ?? null,
+                    streak: Number(data?.streak || 0),
+                    streakBroken: Boolean(data?.streakBroken),
+                    badge: String(data?.badge || "none").toLowerCase(),
+                });
+            } catch {
+                if (!mounted) return;
+                setDailyChallenge({
+                    loading: false,
+                    hasQuestion: false,
+                    alreadyAttempted: false,
+                    isCorrect: null,
+                    streak: 0,
+                    streakBroken: false,
+                    badge: "none",
+                });
+            }
+        }
+
+        loadDailyChallenge();
+        return () => {
+            mounted = false;
+        };
+    }, [role, token, location.pathname]);
+
     /* ---- auth guard (UNCHANGED) ---- */
     if (!isTokenValid(token) || !user?.role) {
         localStorage.removeItem("jwt");
@@ -307,8 +374,6 @@ export default function DashboardLayout() {
         window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
         return <Navigate to="/" replace />;
     }
-
-    const role = String(user.role || "").toLowerCase();
 
     /* ---- role-based nav (UNCHANGED) ---- */
     const NAV = useMemo(() => {
@@ -387,13 +452,31 @@ export default function DashboardLayout() {
         toast.warn("You are offline. Try to connect to the internet.");
     };
 
+    const challengeProgress = dailyChallenge.loading
+        ? 0
+        : dailyChallenge.alreadyAttempted
+            ? 100
+            : 0;
+
+    const challengeMessage = dailyChallenge.loading
+        ? "Loading today's challenge..."
+        : !dailyChallenge.hasQuestion
+            ? "No daily challenge available for your class and board."
+            : dailyChallenge.alreadyAttempted
+                ? dailyChallenge.isCorrect
+                    ? `Completed today. Streak: ${dailyChallenge.streak} day(s).`
+                    : "Completed today. Incorrect answer, streak reset."
+                : dailyChallenge.streakBroken
+                    ? "Streak uncompleted. Attempt today to restart."
+                    : `Attempt today to continue your ${dailyChallenge.streak} day streak.`;
+
     return (
         // <div className="h-screen overflow-hidden bg-[#FFFBEA]">
         <div className="h-screen overflow-hidden">
             <div className="flex">
                 {/* MOBILE BACKDROP */}
                 <AnimatePresence>
-                    {open && (
+                    {open && !isExamTakeRoute && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -411,7 +494,8 @@ export default function DashboardLayout() {
   bg-white border-r border-slate-200 shadow-sm
   transition-transform duration-300 ease-in-out
   ${open ? "translate-x-0" : "-translate-x-full"}
-  md:translate-x-0`}
+  md:translate-x-0
+  ${isExamTakeRoute ? "hidden" : ""}`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                     <div className="h-full flex flex-col p-6 overflow-x-hidden">
@@ -480,20 +564,62 @@ export default function DashboardLayout() {
                         <div className="flex-shrink-0 flex flex-col gap-4 border-t border-slate-100 pt-6 mt-4">
                             {/* DAILY CHALLENGE - Students Only */}
                             {role === "student" && (
-                                <div className="p-4 bg-[#e7c555]/5 rounded-2xl border border-[#e7c555]/20 transition-all duration-300 hover:bg-[#e7c555]/10 hover:border-[#e7c555]/30">
+                                <div
+                                    onClick={() => {
+                                        if (dailyChallenge.hasQuestion && !dailyChallenge.alreadyAttempted) {
+                                            navigate("/dashboard/daily-challenge");
+                                        }
+                                    }}
+                                    className={`p-4 bg-[#e7c555]/5 rounded-2xl border border-[#e7c555]/20 transition-all duration-300 ${
+                                        dailyChallenge.hasQuestion && !dailyChallenge.alreadyAttempted
+                                            ? "cursor-pointer hover:bg-[#e7c555]/10 hover:border-[#e7c555]/30"
+                                            : "opacity-95"
+                                    }`}
+                                >
                                     <div className="flex flex-col gap-3">
-                                        <p className="text-sm font-bold text-slate-800">Daily Challenge</p>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-sm font-bold text-slate-800">Daily Challenge</p>
+                                            {!dailyChallenge.loading && dailyChallenge.hasQuestion && (
+                                                <span
+                                                    className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                                                        dailyChallenge.alreadyAttempted
+                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            : "bg-[#e7c555]/30 text-slate-800"
+                                                    }`}
+                                                >
+                                                    {dailyChallenge.alreadyAttempted ? "Completed" : "Pending"}
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
-                                                animate={{ width: `${Math.min(100, ((user?.points || 0) % 500) / 5)}%` }}
+                                                animate={{ width: `${challengeProgress}%` }}
                                                 transition={{ duration: 0.8, ease: "easeOut" }}
                                                 className="bg-[#e7c555] h-full"
                                             ></motion.div>
                                         </div>
                                         <p className="text-xs text-slate-500">
-                                            Collect {500 - ((user?.points || 0) % 500)} more XP today!
+                                            {challengeMessage}
                                         </p>
+                                        {!dailyChallenge.loading && dailyChallenge.hasQuestion && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (dailyChallenge.alreadyAttempted) return;
+                                                    navigate("/dashboard/daily-challenge");
+                                                }}
+                                                disabled={dailyChallenge.alreadyAttempted}
+                                                className={`w-full rounded-full px-3 py-2 text-xs font-bold transition ${
+                                                    dailyChallenge.alreadyAttempted
+                                                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                                                        : "bg-[#e7c555] text-slate-900 hover:brightness-95"
+                                                }`}
+                                            >
+                                                {dailyChallenge.alreadyAttempted ? "Completed Today" : "Start Challenge"}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -544,15 +670,15 @@ export default function DashboardLayout() {
                 {/* MAIN CONTENT */}
                 <main
                     className={`
-            ml-0 md:ml-80
+            ml-0 ${isExamTakeRoute ? "" : "md:ml-80"}
             h-screen
             overflow-y-auto
             w-full
-            ${role === "student" ? "pb-16 md:pb-0" : ""}
+            ${role === "student" && !isExamTakeRoute ? "pb-16 md:pb-0" : ""}
           `}
                 >
                     <div
-                        className={`mx-auto max-w-7xl transition-opacity duration-200 ${contentVisible ? "opacity-100" : "opacity-0"}`}
+                        className={`${isExamTakeRoute ? "w-full" : "mx-auto max-w-7xl"} transition-opacity duration-200 ${contentVisible ? "opacity-100" : "opacity-0"}`}
                     >
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -573,7 +699,7 @@ export default function DashboardLayout() {
             </div>
 
             {/* MOBILE / TABLET FOOTER NAV — students only, visible below md */}
-            {role === "student" && (
+            {role === "student" && !isExamTakeRoute && (
                 <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
                     <div className="flex items-stretch h-16">
                         {[

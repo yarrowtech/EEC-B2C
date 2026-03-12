@@ -201,23 +201,17 @@ const ResultsView = () => {
           return;
         }
 
-        const [packagesRes, subscriptionRes] = await Promise.all([
-          fetch(`${API}/api/packages`),
-          fetch(`${API}/api/subscriptions/current`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-        const [packagesData, subscriptionData] = await Promise.all([
-          packagesRes.json(),
-          subscriptionRes.json(),
-        ]);
+        const subscriptionRes = await fetch(`${API}/api/subscriptions/current`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const subscriptionData = await subscriptionRes.json();
 
-        const packageRows = Array.isArray(packagesData?.packages) ? packagesData.packages : [];
-        const basicPackage = packageRows.find((p) => String(p?.name || "").toLowerCase() === "basic");
         const activePackage =
           subscriptionData?.hasActiveSubscription ? subscriptionData?.subscription?.package : null;
         const resolvedAccess = String(
-          activePackage?.analyticsAccess || basicPackage?.analyticsAccess || "none"
+          subscriptionData?.hasActiveSubscription
+            ? activePackage?.analyticsAccess || "none"
+            : "none"
         ).toLowerCase();
 
         if (mounted) {
