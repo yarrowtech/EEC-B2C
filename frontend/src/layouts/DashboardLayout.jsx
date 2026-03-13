@@ -266,11 +266,21 @@ export default function DashboardLayout() {
     const role = String(user?.role || "").toLowerCase();
     const navigate = useNavigate();
     const location = useLocation();
+    const isExamTakeRoute = location.pathname.startsWith("/dashboard/exams/take/");
     const [open, setOpen] = useState(false);
     const [online, setOnline] = useState(
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
+    const [dailyChallenge, setDailyChallenge] = useState({
+        loading: false,
+        hasQuestion: false,
+        alreadyAttempted: false,
+        isCorrect: null,
+        streak: 0,
+        streakBroken: false,
+        badge: "none",
+    });
 
     useEffect(() => {
         const goOnline = () => {
