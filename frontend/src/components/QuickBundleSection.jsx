@@ -17,10 +17,10 @@ export default function QuickBundleSection() {
           Be a fast explorer! Sign up in the next 15 minutes and unlock the
           &quot;Top 100 Secret Exam Questions&quot; PDF instantly!
         </p>
-
+ 
         <div className="flex flex-col items-center gap-8">
-          <div className="flex gap-6 mb-4">
-            <div className="bg-white text-[#FF6B6B] w-24 h-28 rounded-[2rem] flex flex-col items-center justify-center shadow-2xl border-b-8 border-slate-200">
+        {/*<div className="flex gap-6 mb-4">
+             <div className="bg-white text-[#FF6B6B] w-24 h-28 rounded-[2rem] flex flex-col items-center justify-center shadow-2xl border-b-8 border-slate-200">
               <span
                 className="text-4xl font-black"
                 style={{ fontFamily: "'Balsamiq Sans', cursive" }}
@@ -43,7 +43,7 @@ export default function QuickBundleSection() {
               </span>
             </div>
           </div>
-
+          */}
           <div className="w-full max-w-xl flex flex-col sm:flex-row gap-4">
             <input
               type="email"

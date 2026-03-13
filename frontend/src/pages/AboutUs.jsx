@@ -76,10 +76,10 @@ export default function AboutUs() {
   const visionBullets = vision?.bullets?.length
     ? vision.bullets
     : [
-        "Personalized progression & holistic growth",
-        "Teacher enablement & workload relief",
-        "Parent visibility & engagement",
-      ];
+      "Personalized progression & holistic growth",
+      "Teacher enablement & workload relief",
+      "Parent visibility & engagement",
+    ];
 
   const brandDesc =
     brand?.description ||
@@ -100,22 +100,22 @@ export default function AboutUs() {
   const valuesPillars = values?.pillars?.length
     ? values.pillars
     : [
-        {
-          title: "Stronger Bonds",
-          description:
-            "Fostering deeper connections between parents and children through shared learning experiences.",
-        },
-        {
-          title: "Efficient Workload",
-          description:
-            "Streamlining management for teachers so every moment can be spent on what truly matters — mentoring learners.",
-        },
-        {
-          title: "Inclusive Design",
-          description:
-            "Ensuring a warm, adaptive platform that welcomes every learner, regardless of background or ability.",
-        },
-      ];
+      {
+        title: "Stronger Bonds",
+        description:
+          "Fostering deeper connections between parents and children through shared learning experiences.",
+      },
+      {
+        title: "Efficient Workload",
+        description:
+          "Streamlining management for teachers so every moment can be spent on what truly matters — mentoring learners.",
+      },
+      {
+        title: "Inclusive Design",
+        description:
+          "Ensuring a warm, adaptive platform that welcomes every learner, regardless of background or ability.",
+      },
+    ];
 
   const missionDesc1 =
     mission?.description ||
@@ -150,10 +150,10 @@ export default function AboutUs() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#fffdf7] text-[#14233b] selection:bg-[#ffe68a]/60"
+      className="bg-[#fffdf7] text-[#14233b] selection:bg-[#ffe68a]/60 overflow-x-hidden block w-full max-w-[100vw]"
     >
       {/* Hero */}
-      <section className="bg-gradient-to-b from-[#fffdf2] to-[#fff5dc] px-4 py-16 sm:py-20">
+      <section className="relative w-full overflow-hidden bg-gradient-to-b from-[#fffdf2] to-[#fff5dc] px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <div className="relative grid overflow-hidden rounded-[32px] bg-[#122844] text-white shadow-[0_25px_60px_rgba(13,28,52,0.45)] md:grid-cols-2">
             <div className="relative z-10 px-8 py-12 sm:px-12 sm:py-16">
@@ -161,7 +161,7 @@ export default function AboutUs() {
                 Our Aim
               </span>
               <h1
-                className="mt-6 text-4xl font-bold leading-tight md:text-5xl"
+                className="mt-6 text-3xl sm:text-4xl font-bold leading-tight md:text-5xl break-words"
                 style={{ fontFamily: "'Balsamiq Sans', cursive" }}
               >
                 {heroTitle}
@@ -171,11 +171,10 @@ export default function AboutUs() {
                 Empowering learners with high-quality education and innovative tools for a brighter future.
               </p>
               <div className="mt-10 flex flex-wrap gap-4">
-                <button className="rounded-full bg-[#ffd861] px-6 py-3 text-sm font-semibold text-[#1c2430] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#ffe07d]">
+                <button
+                  onClick={() => document.getElementById('vision-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="rounded-full bg-[#ffd861] px-6 py-3 text-sm font-semibold text-[#1c2430] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#ffe07d]">
                   Explore More
-                </button>
-                <button className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                  Watch Video
                 </button>
               </div>
             </div>
@@ -189,7 +188,7 @@ export default function AboutUs() {
       </section>
 
       {/* Vision */}
-      <section className="bg-white px-4 py-20 sm:py-24">
+      <section id="vision-section" className="relative w-full overflow-hidden bg-white px-4 py-20 sm:py-24">
         <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2 md:gap-16">
           <div className="space-y-6">
             <div>
@@ -247,7 +246,7 @@ export default function AboutUs() {
       </section>
 
       {/* Brand / Modern learning */}
-      <section className="bg-[#fff8ee] px-4 py-20">
+      <section className="relative w-full overflow-hidden bg-[#fff8ee] px-4 py-20">
         <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2 md:gap-16">
           <div className="relative">
             <div className="rounded-[32px] bg-gradient-to-br from-[#fdd3bc] to-[#fbb68c] p-5 shadow-[0_30px_60px_rgba(249,177,131,0.35)]">
@@ -259,7 +258,7 @@ export default function AboutUs() {
                 />
               </div>
             </div>
-            <div className="absolute -bottom-8 left-1/2 w-max -translate-x-1/2 rounded-full bg-white/90 px-6 py-3 text-xs font-semibold uppercase tracking-[0.4em] text-[#f38b37] shadow-lg">
+            <div className="absolute -bottom-8 left-0 right-0 mx-auto w-fit max-w-[90%] rounded-full bg-white/90 px-6 py-3 text-xs font-semibold uppercase tracking-[0.4em] text-[#f38b37] shadow-lg text-center break-words">
               Brand Identity
             </div>
           </div>
@@ -283,15 +282,12 @@ export default function AboutUs() {
                 </div>
               ))}
             </div>
-            <button className="mt-10 rounded-full border border-[#0f1f32] px-6 py-3 text-sm font-semibold text-[#0f1f32] shadow-sm transition hover:bg-[#0f1f32] hover:text-white">
-              Learn our story
-            </button>
           </div>
         </div>
       </section>
 
       {/* Values */}
-      <section className="bg-white px-4 py-20 sm:py-24">
+      <section className="relative w-full overflow-hidden bg-white px-4 py-20 sm:py-24">
         <div className="mx-auto max-w-5xl text-center">
           <span className="text-xs font-semibold uppercase tracking-[0.4em] text-[#6c7da4]">What We Value</span>
           <h2
@@ -332,7 +328,7 @@ export default function AboutUs() {
       </section>
 
       {/* Mission */}
-      <section className="bg-gradient-to-b from-[#ffe1b5] via-[#ffc58a] to-[#ffab7b] px-4 py-20 sm:py-24">
+      <section className="relative w-full overflow-hidden bg-gradient-to-b from-[#ffe1b5] via-[#ffc58a] to-[#ffab7b] px-4 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl rounded-[36px] bg-white/90 p-8 shadow-[0_30px_60px_rgba(255,137,92,0.35)] md:p-12">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
@@ -357,7 +353,7 @@ export default function AboutUs() {
               </ul>
             </div>
             <div className="relative flex items-center justify-center">
-              <div className="relative h-72 w-72 rounded-full bg-gradient-to-br from-[#21323f] via-[#1b2f39] to-[#17242f] shadow-[0_35px_60px_rgba(23,36,47,0.6)]">
+              <div className="relative h-56 w-56 sm:h-72 sm:w-72 rounded-full bg-gradient-to-br from-[#21323f] via-[#1b2f39] to-[#17242f] shadow-[0_35px_60px_rgba(23,36,47,0.6)]">
                 <div className="absolute inset-6 rounded-full border-2 border-white/10" />
                 <div className="absolute inset-12 rounded-full border border-white/5" />
                 <img
@@ -365,7 +361,7 @@ export default function AboutUs() {
                   alt="Mission"
                   className="absolute inset-8 h-[calc(100%-4rem)] w-[calc(100%-4rem)] rounded-full object-cover"
                 />
-                <div className="absolute -bottom-4 right-6 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-[#17242f] shadow">
+                <div className="absolute -bottom-4 right-0 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-[#17242f] shadow">
                   Future
                 </div>
               </div>

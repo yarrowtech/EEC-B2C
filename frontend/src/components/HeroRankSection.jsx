@@ -64,8 +64,6 @@ export default function HeroRankSection() {
   }, [packages]);
 
   const leftPlan = plans[0] || fallbackPlans[0];
-  const middlePlan = plans[1] || fallbackPlans[1];
-  const rightPlan = plans[2] || fallbackPlans[2];
 
   const periodLabel = (plan) => {
     if (!plan) return "/ mo";
@@ -142,28 +140,20 @@ export default function HeroRankSection() {
   return (
     <section className="py-24 bg-[#FEF4E8]" id="pricing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl lg:text-6xl font-bold mb-6 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl lg:text-6xl font-bold mb-4 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
             Choose Your <span className="text-[#FF6B6B]">Hero Rank</span>
           </h2>
-          <div className="inline-flex items-center gap-2 bg-[#4ECDC4]/10 text-[#4ECDC4] px-6 py-2 rounded-full text-sm font-bold mt-4 border border-[#4ECDC4]">
-            <span className="material-symbols-outlined text-base">verified</span>
-            7-Day Secret Trial on Scholar Plans!
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-100 flex flex-col group hover:border-slate-200 transition-all">
-            <h4 className="text-2xl font-bold mb-2 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+        <div className="flex justify-center max-w-md mx-auto">
+          <div className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-100 flex flex-col group hover:border-[#4ECDC4] transition-all w-full shadow-sm hover:shadow-xl">
+            <h4 className="text-2xl font-bold mb-6 text-slate-900 text-center" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
               {leftPlan.displayName || leftPlan.name || "Starter Scout"}
             </h4>
             {!!leftPlan.description && (
-              <p className="text-sm text-slate-500 mb-4">{leftPlan.description}</p>
+              <p className="text-sm text-center text-slate-500 mb-6">{leftPlan.description}</p>
             )}
-            <div className="text-5xl font-black mb-8 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-              ₹{Number(leftPlan.price || 0)}{" "}
-              <span className="text-lg font-normal text-slate-400">{periodLabel(leftPlan)}</span>
-            </div>
             <ul className="space-y-5 mb-10 flex-grow">
               {mergedFeatureLines(leftPlan, fallbackPlans[0]).map((feature, i) => (
                 <li
@@ -180,83 +170,9 @@ export default function HeroRankSection() {
             <button
               type="button"
               onClick={() => handlePlanClick(leftPlan)}
-              className="w-full py-4 rounded-full border-2 border-slate-200 font-bold hover:bg-slate-50 transition-all"
+              className="w-full py-4 rounded-full border-2 border-slate-200 font-bold hover:border-[#4ECDC4] hover:bg-[#4ECDC4] hover:text-white transition-all shadow-sm"
             >
               {ctaLabel(leftPlan, "Join the Scouts")}
-            </button>
-          </div>
-
-          <div className="bg-white p-10 rounded-[3rem] border-4 border-[#FFD23F] shadow-[0_20px_50px_rgba(255,210,63,0.3)] relative flex flex-col transform md:scale-110 z-10 overflow-hidden">
-            <div className="absolute top-4 right-4 bg-[#FFD23F] text-slate-900 text-[10px] font-black px-3 py-1 rounded-full uppercase shadow-sm leading-none tracking-wide z-20">
-              Elite
-            </div>
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[#FF6B6B] text-white text-xs font-black px-6 py-2 rounded-full uppercase shadow-lg">
-              Most Popular Quest
-            </div>
-            <h4 className="text-2xl font-bold mb-2 text-[#FFD23F]" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-              {middlePlan.displayName || middlePlan.name || "Master Scholar"}
-            </h4>
-            {!!middlePlan.description && (
-              <p className="text-sm text-slate-500 mb-4">{middlePlan.description}</p>
-            )}
-            <div className="text-5xl font-black mb-8 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-              ₹{Number(middlePlan.price || 0)}{" "}
-              <span className="text-lg font-normal text-slate-400">{periodLabel(middlePlan)}</span>
-            </div>
-            <ul className="space-y-5 mb-10 flex-grow">
-              {mergedFeatureLines(middlePlan, fallbackPlans[1]).map((feature, i) => {
-                const icons = ["rocket", "auto_awesome", "emoji_events", "visibility_off"];
-                return (
-                  <li
-                    key={`${middlePlan._id || "middle"}-${feature}-${i}`}
-                    className="flex items-center gap-3 font-bold text-sm text-slate-900"
-                  >
-                    <span className="material-symbols-outlined text-[#FF6B6B]">{icons[i] || "check_circle"}</span>
-                    {feature}
-                  </li>
-                );
-              })}
-            </ul>
-            <button
-              type="button"
-              onClick={() => handlePlanClick(middlePlan)}
-              className="w-full py-5 rounded-full bg-[#FFD23F] text-slate-900 font-black hover:bg-yellow-400 transition-all shadow-[0_6px_0_0_#D1A100] active:translate-y-1 active:shadow-none"
-            >
-              {ctaLabel(middlePlan, "Begin Your Trial")}
-            </button>
-          </div>
-
-          <div className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-100 flex flex-col group hover:border-[#6C63FF] transition-all">
-            <h4 className="text-2xl font-bold mb-2 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-              {rightPlan.displayName || rightPlan.name || "Adventure Team"}
-            </h4>
-            {!!rightPlan.description && (
-              <p className="text-sm text-slate-500 mb-4">{rightPlan.description}</p>
-            )}
-            <div className="text-5xl font-black mb-8 text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-              ₹{Number(rightPlan.price || 0)}{" "}
-              <span className="text-lg font-normal text-slate-400">{periodLabel(rightPlan)}</span>
-            </div>
-            <ul className="space-y-5 mb-10 flex-grow">
-              {mergedFeatureLines(rightPlan, fallbackPlans[2]).map((feature, i) => {
-                const icons = ["groups", "dashboard", "architecture", "check_circle"];
-                return (
-                  <li
-                    key={`${rightPlan._id || "right"}-${feature}-${i}`}
-                    className="flex items-center gap-3 font-medium text-sm text-slate-700"
-                  >
-                    <span className="material-symbols-outlined text-[#6C63FF]">{icons[i] || "check_circle"}</span>
-                    {feature}
-                  </li>
-                );
-              })}
-            </ul>
-            <button
-              type="button"
-              onClick={() => handlePlanClick(rightPlan)}
-              className="w-full py-4 rounded-full border-2 border-slate-200 font-bold hover:bg-slate-50 transition-all"
-            >
-              {ctaLabel(rightPlan, "Enroll the Squad")}
             </button>
           </div>
         </div>

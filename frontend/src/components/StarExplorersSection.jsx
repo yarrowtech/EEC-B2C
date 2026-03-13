@@ -1,4 +1,4 @@
-import React from "react";
+{/*import React from "react";
 
 function Stars() {
   return (
@@ -91,3 +91,4 @@ export default function StarExplorersSection() {
     </section>
   );
 }
+ */}

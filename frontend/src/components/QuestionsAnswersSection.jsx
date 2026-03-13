@@ -17,7 +17,7 @@ export default function QuestionsAnswersSection() {
             open
           >
             <summary className="flex justify-between items-center p-8 cursor-pointer font-bold list-none text-lg text-slate-900">
-              Is this the latest 2024-25 syllabus?
+              Is this the latest 2025-26 syllabus?
               <span className="material-symbols-outlined group-open:rotate-180 transition-transform bg-[#FFD23F] text-white p-1 rounded-full">
                 expand_more
               </span>

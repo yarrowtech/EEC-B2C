@@ -427,11 +427,11 @@ const Hero = () => {
     "w-full rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15";
 
   const selectBtnCls =
-    "w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
-  const heroHeadingCls = "text-6xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] md:text-7xl lg:text-8xl";
+    "w-full max-w-full box-border rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
+  const heroHeadingCls = "text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] break-words";
 
   return (
-    <section className="relative overflow-hidden bg-[#FEF4E8]" style={{ minHeight: "calc(100vh - 60px)" }}>
+    <section className="relative overflow-hidden bg-[#FEF4E8] w-full max-w-[100vw]" style={{ minHeight: "calc(100vh - 60px)" }}>
       {/* ── Decorative blobs ── */}
       <div className="pointer-events-none absolute -left-32 top-10 h-[500px] w-[500px] rounded-full bg-[#F4736E]/8 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 h-[600px] w-[600px] rounded-full bg-yellow-300/15 blur-3xl" />
@@ -442,7 +442,7 @@ const Hero = () => {
       </div>
 
       {/* ===== Main grid ===== */}
-      <div className="relative mx-auto grid min-h-[calc(100vh-60px)] max-w-[1400px] grid-cols-1 items-center gap-8 px-8 py-12 md:grid-cols-2 md:py-16 lg:px-16 xl:px-24">
+      <div className="relative mx-auto grid min-h-[calc(100vh-60px)] w-full max-w-full xl:max-w-[1400px] grid-cols-1 items-center gap-8 px-4 sm:px-8 py-12 md:grid-cols-2 md:py-16 lg:px-16 xl:px-24">
 
         {/* ── LEFT: Heading + Floating form card ── */}
         <div className="flex flex-col gap-8">
@@ -510,13 +510,8 @@ const Hero = () => {
             transition={{ duration: 0.55, delay: 0.24 }}
             className="relative"
           >
-            {/* Sparkle — exact copy from code.html: single div, p-4, rotate-12 */}
-            <div className="absolute -top-6 -right-6 z-10 hidden sm:flex items-center justify-center rounded-full bg-[#F4736E] p-4 text-white shadow-lg rotate-12">
-              <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>magic_button</span>
-            </div>
-
             {/* Card — exact: rounded-[2.5rem] shadow-2xl border-4 border-primary/30 */}
-            <div className="rounded-[2.5rem] border-4 bg-white p-8 shadow-2xl max-w-xl"
+            <div className="rounded-[2.5rem] border-4 bg-white p-6 sm:p-8 shadow-2xl w-full max-w-[100%] sm:max-w-xl overflow-hidden box-border"
               style={{ borderColor: "rgba(255,210,63,0.3)" }}>
               <h2 className="mb-6 text-2xl font-bold text-slate-800" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 Ready to Start Your Adventure?
@@ -627,7 +622,7 @@ const Hero = () => {
           role="dialog"
         >
           <div className="absolute inset-0 bg-blue-950/40 backdrop-blur-sm transition-opacity" />
-          <div className="relative z-[61] w-[92%] max-w-md">
+          <div className="relative z-[61] w-[95%] sm:w-[92%] max-w-md max-h-[90vh] overflow-y-auto">
             <div
               ref={modalCardRef}
               className="relative w-full origin-center rounded-3xl border border-blue-100/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(2,32,71,0.35)] backdrop-blur-md animate-[modalIn_280ms_cubic-bezier(0.2,0.8,0.2,1)_1]"
@@ -702,7 +697,7 @@ const Hero = () => {
           role="dialog"
         >
           <div className="absolute inset-0 bg-blue-950/40 backdrop-blur-sm transition-opacity" />
-          <div className="relative z-[61] w-[92%] max-w-md">
+          <div className="relative z-[61] w-[95%] sm:w-[92%] max-w-md max-h-[90vh] overflow-y-auto">
             <div
               ref={modalCardRef}
               className="relative w-full origin-center rounded-3xl border border-blue-100/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(2,32,71,0.35)] backdrop-blur-md animate-[modalIn_280ms_cubic-bezier(0.2,0.8,0.2,1)_1]"
@@ -790,7 +785,7 @@ const Hero = () => {
           />
 
           {/* Modal card */}
-          <div className="relative z-[71] w-full max-w-sm animate-[stepperIn_300ms_cubic-bezier(0.2,0.8,0.2,1)]">
+          <div className="relative z-[71] w-[95%] sm:w-full max-w-sm max-h-[90vh] overflow-y-auto animate-[stepperIn_300ms_cubic-bezier(0.2,0.8,0.2,1)]">
             <div className="overflow-hidden rounded-3xl bg-[#FEF4E8] shadow-[0_32px_80px_rgba(27,31,59,0.25)]">
 
               {/* Top bar */}

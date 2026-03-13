@@ -7,7 +7,7 @@ import FeatureCardsSection from "../components/FeatureCardsSection";
 import StatsStripSection from "../components/StatsStripSection";
 import HeroRankSection from "../components/HeroRankSection";
 import QuickBundleSection from "../components/QuickBundleSection";
-import StarExplorersSection from "../components/StarExplorersSection";
+//import StarExplorersSection from "../components/StarExplorersSection";
 import QuestionsAnswersSection from "../components/QuestionsAnswersSection";
 import PaprIqFooterSection from "../components/PaprIqFooterSection";
 import WhatIsEEC from "../components/WhatIsEEC";
@@ -21,18 +21,19 @@ import GlobalLoginModal from "../components/GlobalLoginModal";
 import PageIntroLoader from "../components/PageIntroLoader";
 import usePageIntroLoader from "../hooks/usePageIntroLoader";
 
+
 const Home = () => {
   const loading = usePageIntroLoader("eec:home:loaded");
 
   if (loading) {
     return <PageIntroLoader message="Welcome to EEC..." />;
   }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      className="overflow-x-hidden block w-full max-w-[100vw]"
     >
       <Hero />
       <StudyGrumpySection />
@@ -41,7 +42,7 @@ const Home = () => {
       <StatsStripSection />
       <HeroRankSection />
       <QuickBundleSection />
-      <StarExplorersSection />
+     {/*} <StarExplorersSection />
       <QuestionsAnswersSection />
       {/* <PaprIqFooterSection /> */}
       {/* <WhatIsEEC /> */}
