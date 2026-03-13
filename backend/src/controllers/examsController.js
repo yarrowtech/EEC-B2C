@@ -1331,11 +1331,13 @@ export const adminAttempts = async (req, res) => {
           .filter(Boolean)
       ),
     ];
+    const subjectObjectIds = subjectIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const topicObjectIds = topicIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
 
-    const subjects = await Subject.find({ _id: { $in: subjectIds } })
+    const subjects = await Subject.find({ _id: { $in: subjectObjectIds } })
       .select("_id name")
       .lean();
-    const topics = await Topic.find({ _id: { $in: topicIds } })
+    const topics = await Topic.find({ _id: { $in: topicObjectIds } })
       .select("_id name")
       .lean();
 
