@@ -7,9 +7,14 @@ const router = express.Router();
 // SUBSCRIBE
 router.post("/subscribe", async (req, res) => {
   try {
-    const { email } = req.body;
+    const rawEmail = String(req.body?.email || "");
+    const email = rawEmail.trim().toLowerCase();
 
     if (!email) return res.status(400).json({ message: "Email is required" });
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ message: "Please enter a valid email address" });
+    }
 
     let subscriber = await Newsletter.findOne({ email });
 
@@ -149,7 +154,7 @@ router.post("/subscribe", async (req, res) => {
       `,
     });
 
-    res.json({ message: "Subscribed successfully!" });
+    res.json({ message: "Subscribed successfully! Please check your email." });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server error" });
