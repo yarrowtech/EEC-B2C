@@ -427,7 +427,7 @@ const Hero = () => {
     "w-full rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15";
 
   const selectBtnCls =
-    "w-full max-w-full box-border rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
+    "w-full max-w-full box-border rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
   const heroHeadingCls = "text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] break-words";
 
   return (
