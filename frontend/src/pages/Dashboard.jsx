@@ -790,9 +790,10 @@ function StudentContent() {
           if (res.ok && data?.hasActiveSubscription) {
             const nextSubscriptionInfo = data.subscription || null;
             const nextSubscriptionType =
-              data.subscriptionType ||
+              data.subscription?.package?.displayName ||
               data.subscription?.package?.name ||
               data.subscription?.packageName ||
+              data.subscriptionType ||
               "none";
             const nextSubscriptionStartDate =
               data.startDate || data.subscription?.startDate || data.subscription?.createdAt || null;
@@ -994,26 +995,26 @@ function StudentContent() {
       <WelcomeModal />
 
       {/* ── Welcome Header ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-slate-900">
             Welcome back, {storedUser?.name?.split(" ")[0] || "Student"}! 👋
           </h1>
           <p className="text-slate-500 text-sm mt-1">Your next adventure awaits.</p>
         </div>
-        <div className="hidden md:flex items-center gap-3">
-          <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
+        <div className="flex items-center justify-end gap-2 md:gap-3 flex-wrap">
+          <div className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm">
             <span className="text-lg">🛡️</span>
             <div>
-              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Daily Badge</div>
-              <div className="text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
+              <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Daily Badge</div>
+              <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
+          <div className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm">
             <span className="text-lg">🪙</span>
             <div>
-              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
-              <div className="text-sm font-black text-slate-800">{busy ? "…" : `${Number(storedUser?.points || 0).toLocaleString()} pts`}</div>
+              <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
+              <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : `${Number(storedUser?.points || 0).toLocaleString()} pts`}</div>
             </div>
           </div>
           <div ref={notificationRef} className="relative">
@@ -1279,7 +1280,7 @@ function StudentContent() {
                   <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Subject</th>
                   <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Type</th>
                   <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Score</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Action</th>
+                  {/* <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Action</th> */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e7c555]/5">
@@ -1309,12 +1310,12 @@ function StudentContent() {
                           "bg-red-100 text-red-700"
                         }`}>{a.score}/{a.total}</span>
                       </td>
-                      <td className="px-6 py-4">
+                      {/* <td className="px-6 py-4">
                         <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-[#e7c555] hover:text-slate-900 transition-all rounded-full font-bold text-sm">
                           <span className="material-symbols-outlined text-sm">replay</span>
                           Retake
                         </button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 {!attempts.length && !busy && (

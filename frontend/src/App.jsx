@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 import Topbar from "./components/Topbar";
 import Navbar from "./components/Navbar";
@@ -151,6 +152,195 @@ function RoleRedirect() {
   if (user.role === "admin") return <Navigate to="/admin-dashboard" replace />;
   if (user.role === "teacher") return <Navigate to="/teacher-dashboard" replace />;
   return <Navigate to="/student-dashboard" replace />; // default → student
+}
+
+function getSeoForPath(pathname) {
+  const staticSeoMap = {
+    "/": {
+      title: "Personalized Learning Platform for Students | EEC",
+      description: "Empowering students with adaptive learning, analytics, and exam-ready resources.",
+      keywords: "personalized learning platform, online learning for students, adaptive education, EEC",
+    },
+    "/about": {
+      title: "About EEC | EdTech Learning Platform India",
+      description: "Learn about EEC's mission, values, and commitment to student success.",
+      keywords: "about EEC, edtech company, student success platform, digital education India",
+    },
+    "/analytics": {
+      title: "Student Learning Analytics Dashboard | EEC",
+      description: "Track performance with EEC analytics to improve outcomes and study efficiency.",
+      keywords: "learning analytics, student performance tracking, education analytics dashboard",
+    },
+    "/ai": {
+      title: "AI Learning Solutions for Schools and Students | EEC",
+      description: "Explore AI-powered educational tools that personalize and accelerate learning.",
+      keywords: "AI learning solutions, AI in education, personalized AI tutoring, edtech AI tools",
+    },
+    "/product-advantages": {
+      title: "EEC Product Advantages for Schools, Parents and Students",
+      description: "Discover how EEC products help schools, teachers, parents, and students.",
+      keywords: "education platform benefits, school management tools, student learning app",
+    },
+    "/tollered": {
+      title: "Tailored Learning Paths for Better Exam Results | EEC",
+      description: "Tailored learning experiences designed to match every student's pace and goals.",
+      keywords: "tailored learning, personalized study plan, adaptive exam preparation",
+    },
+    "/e-learn-well": {
+      title: "Digital Learning and Student Wellbeing | EEC",
+      description: "Balanced digital learning with wellbeing-focused educational support.",
+      keywords: "student wellbeing, balanced digital learning, healthy study habits",
+    },
+    "/aim": {
+      title: "EEC Mission and Commitment to Quality Education",
+      description: "Read about EEC's commitment to quality, accessibility, and measurable progress.",
+      keywords: "quality education platform, EEC mission, learning outcomes improvement",
+    },
+    "/tryouts": {
+      title: "Free Tryouts and Practice Tests for Students | EEC",
+      description: "Try EEC practice experiences and discover the right learning pathway.",
+      keywords: "free tryout tests, student practice tests, online mock tests, EEC tryouts",
+    },
+    "/careers": {
+      title: "Careers at EEC | Join Our EdTech Team",
+      description: "Join EEC and help build impactful education technology products.",
+      keywords: "EEC careers, edtech jobs, education technology jobs, join EEC team",
+    },
+    "/contact-us": {
+      title: "Contact EEC | Support, Sales and Partnership Enquiries",
+      description: "Contact EEC for support, partnerships, and product inquiries.",
+      keywords: "contact EEC, EEC support, education platform contact, partnership enquiry",
+    },
+    "/boards": {
+      title: "CBSE ICSE IB Board Learning Resources | EEC",
+      description: "Explore board-focused learning tracks and resources on EEC.",
+      keywords: "CBSE learning platform, ICSE resources, IB study material, board exam preparation",
+    },
+    "/support": {
+      title: "EEC Support Center | Help for Students and Parents",
+      description: "Get help with EEC accounts, subscriptions, and learning workflows.",
+      keywords: "EEC help center, student support, education app support",
+    },
+    "/marketing": {
+      title: "EEC Partner and Outreach Programs",
+      description: "Explore EEC marketing programs and partner opportunities.",
+      keywords: "education partner program, school outreach, EEC partner opportunities",
+    },
+    "/eec-b2c": {
+      title: "EEC B2C Learning Solutions for Families",
+      description: "Direct-to-student learning products and offers from EEC.",
+      keywords: "B2C education platform, family learning app, direct student learning products",
+    },
+  };
+
+  if (staticSeoMap[pathname]) return staticSeoMap[pathname];
+
+  if (pathname.startsWith("/tryouts/")) {
+    return {
+      title: "Subject Tryout Tests and Practice Modules | EEC",
+      description: "Choose subject-specific tryouts to evaluate and improve your readiness.",
+      keywords: "subject tryout tests, practice modules, online subject preparation",
+    };
+  }
+
+  if (pathname.startsWith("/careers/")) {
+    return {
+      title: "Job Role Details and Application | EEC Careers",
+      description: "Explore role details, responsibilities, and application requirements at EEC.",
+      keywords: "job description EEC, apply edtech jobs, career opportunities EEC",
+    };
+  }
+
+  if (pathname.startsWith("/reset-password/")) {
+    return {
+      title: "Reset Password - EEC",
+      description: "Securely reset your EEC account password.",
+      keywords: "reset EEC password, account recovery, secure login",
+    };
+  }
+
+  if (pathname === "/dashboard") {
+    return {
+      title: "Student Dashboard | EEC Learning Portal",
+      description: "Access your EEC dashboard for classes, exams, results, and learning progress.",
+      keywords: "student dashboard, EEC learning portal, exam and study dashboard",
+      noindex: true,
+    };
+  }
+
+  if (pathname.startsWith("/dashboard/")) {
+    return {
+      title: "Dashboard Tools and Learning Management | EEC",
+      description: "Manage learning, classes, exams, notifications, and analytics inside your EEC dashboard.",
+      keywords: "learning management dashboard, student exam dashboard, teacher admin dashboard",
+      noindex: true,
+    };
+  }
+
+  return {
+    title: "EEC",
+    description: "EEC learning platform for students, teachers, and institutions.",
+    keywords: "EEC learning platform, online education, exam preparation",
+  };
+}
+
+function RouteHelmet() {
+  const location = useLocation();
+  const { title, description, keywords, noindex } = getSeoForPath(location.pathname);
+  const canonical =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${location.pathname}`
+      : location.pathname;
+
+  useEffect(() => {
+    document.title = title;
+
+    const upsertMeta = (attr, key, value) => {
+      let node = document.head.querySelector(`meta[${attr}="${key}"]`);
+      if (!node) {
+        node = document.createElement("meta");
+        node.setAttribute(attr, key);
+        document.head.appendChild(node);
+      }
+      node.setAttribute("content", value);
+    };
+
+    upsertMeta("name", "description", description);
+    upsertMeta("name", "keywords", keywords);
+    upsertMeta("name", "twitter:card", "summary_large_image");
+    upsertMeta("name", "twitter:title", title);
+    upsertMeta("name", "twitter:description", description);
+    upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");
+    upsertMeta("property", "og:title", title);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:type", "website");
+    upsertMeta("property", "og:url", canonical);
+
+    let canonicalLink = document.head.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement("link");
+      canonicalLink.setAttribute("rel", "canonical");
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute("href", canonical);
+  }, [title, description, keywords, noindex, canonical]);
+
+  return (
+    <Helmet>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta name="keywords" content={keywords} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={canonical} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      {noindex ? <meta name="robots" content="noindex,nofollow" /> : <meta name="robots" content="index,follow" />}
+      <link rel="canonical" href={canonical} />
+    </Helmet>
+  );
 }
 
 
@@ -419,7 +609,8 @@ export default function App() {
 
   return (
     <BrowserRouter>
-    <AuthExpiryHandler />
+      <RouteHelmet />
+      <AuthExpiryHandler />
       <Routes>
         <Route element={<ShellLayout />}>
           <Route index element={<Home />} />

@@ -4,6 +4,41 @@ import Login from "./Login";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+const PROFILE_CACHE_KEY = "eec:user-profile-cache:v1";
+const PROFILE_CACHE_TTL_MS = 15 * 60 * 1000;
+
+function getUserCacheId(user) {
+  return String(user?._id || user?.id || user?.email || user?.phone || "").toLowerCase();
+}
+
+function readCachedProfile(loginUser) {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.user || !parsed?.cachedAt) return null;
+    if (Date.now() - Number(parsed.cachedAt) > PROFILE_CACHE_TTL_MS) return null;
+    if (getUserCacheId(parsed.user) !== getUserCacheId(loginUser)) return null;
+    return parsed.user;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedProfile(user) {
+  try {
+    localStorage.setItem(
+      PROFILE_CACHE_KEY,
+      JSON.stringify({
+        cachedAt: Date.now(),
+        user,
+      })
+    );
+  } catch {
+    // Ignore cache write failures.
+  }
+}
+
 export default function GlobalLoginModal() {
   const [showLogin, setShowLogin] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
@@ -93,8 +128,33 @@ export default function GlobalLoginModal() {
                   const data = await res.json();
                   if (!res.ok) throw new Error(data?.message);
                   localStorage.setItem("jwt", data.token);
-                  localStorage.setItem("user", JSON.stringify(data.user));
-                  toast.success(`Welcome back, ${data.user.name}!`);
+
+                  let hydratedUser = data.user;
+                  const cachedProfileUser = readCachedProfile(data.user);
+                  if (cachedProfileUser) {
+                    hydratedUser = { ...data.user, ...cachedProfileUser };
+                  }
+
+                  const shouldFetchProfile = !cachedProfileUser || !hydratedUser?.avatar;
+                  if (shouldFetchProfile) {
+                  try {
+                    const profileRes = await fetch(`${API_BASE}/api/users/profile`, {
+                      headers: { Authorization: `Bearer ${data.token}` },
+                    });
+                    const profileData = await profileRes.json().catch(() => ({}));
+                    if (profileRes.ok && profileData?.user) {
+                      hydratedUser = { ...data.user, ...profileData.user };
+                      writeCachedProfile(hydratedUser);
+                    }
+                  } catch {
+                    // Ignore hydration failure and keep login payload user.
+                  }
+                  } else {
+                    writeCachedProfile(hydratedUser);
+                  }
+
+                  localStorage.setItem("user", JSON.stringify(hydratedUser));
+                  toast.success(`Welcome back, ${hydratedUser.name}!`);
                   setShowLogin(false);
                   const redirectPath = sessionStorage.getItem("redirectAfterLogin");
                   if (redirectPath) {
@@ -103,7 +163,7 @@ export default function GlobalLoginModal() {
                   } else {
                     navigate("/dashboard", { replace: true });
                   }
-                  window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "login", user: data.user } }));
+                  window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "login", user: hydratedUser } }));
                 } catch (err) {
                   toast.error(err.message || "Login failed");
                 }

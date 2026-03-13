@@ -4,13 +4,23 @@ import { ChevronRight } from 'lucide-react';
 
 const SubscriptionSpotlight = ({ subscriptionType, subscriptionInfo }) => {
   const navigate = useNavigate();
+  const rawPlanName =
+    subscriptionInfo?.package?.displayName ||
+    subscriptionInfo?.package?.name ||
+    subscriptionInfo?.packageName ||
+    subscriptionInfo?.name ||
+    subscriptionType ||
+    "";
+  const normalizedPlanName = String(rawPlanName || "").trim();
+  const normalizedPlanKey = normalizedPlanName.toLowerCase();
   const isPaid =
-    subscriptionType &&
-    subscriptionType.toLowerCase() !== 'none' &&
-    subscriptionType.toLowerCase() !== '';
+    normalizedPlanKey !== "" &&
+    normalizedPlanKey !== "none" &&
+    normalizedPlanKey !== "free" &&
+    normalizedPlanKey !== "free plan";
 
   const planName = isPaid
-    ? subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1) + ' Plan'
+    ? normalizedPlanName
     : 'Free Plan';
 
   const planSubtitle = isPaid

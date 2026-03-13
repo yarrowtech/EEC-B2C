@@ -1486,11 +1486,11 @@ export default function ProfilePage() {
                               >
                                 <option value="">Select Board</option>
                                 {boardOptions.length > 0 ? (
-                                    boardOptions.map((board) => (
-                                      <option key={board._id} value={board.name}>
-                                        {board.name}
-                                      </option>
-                                    ))
+                                  boardOptions.map((board) => (
+                                    <option key={board._id} value={board.name}>
+                                      {board.name}
+                                    </option>
+                                  ))
                                 ) : (
                                   <>
                                     <option value="CBSE">CBSE</option>
@@ -1621,22 +1621,19 @@ export default function ProfilePage() {
                       </div>
                     </div> */}
                       {/* ---------------- Parent Details Section ---------------- */}
-                      {user.role === "student" && (
+                      {/* {user.role === "student" && (
                         <div className="md:col-span-2 mt-3 md:mt-4">
                           <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 md:mb-3 border-b pb-2">
                             Parent Details
                           </h3>
                         </div>
-                      )}
+                      )} */}
 
                       {/* ---------------------- FATHER SECTION ---------------------- */}
-                      {user.role === "student" && (
+                      {/* {user.role === "student" && (
                         <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4 mb-4 md:mb-6">
                           <h4 className="text-sm sm:text-md font-semibold text-gray-800 mb-2 md:mb-3">Father Information</h4>
-
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-
-                            {/* Father Name */}
                             <div>
                               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                                 Father Name
@@ -1656,8 +1653,6 @@ export default function ProfilePage() {
                                 />
                               </div>
                             </div>
-
-                            {/* Father Occupation */}
                             <div>
                               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                                 Father Occupation
@@ -1692,8 +1687,6 @@ export default function ProfilePage() {
                                   ))}
                                 </select>
                               </div>
-
-                              {/* Custom Father Occupation */}
                               {(!occupationOptions.includes(form.fatherOccupation) ||
                                 form.fatherOccupation === "") && (
                                   <input
@@ -1708,8 +1701,6 @@ export default function ProfilePage() {
                                   />
                                 )}
                             </div>
-
-                            {/* Father Contact Number */}
                             <div>
                               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                                 Father Contact Number
@@ -1729,18 +1720,16 @@ export default function ProfilePage() {
                                 />
                               </div>
                             </div>
-
                           </div>
                         </div>
-                      )}
+                      )} */}
+
                       {/* ---------------------- MOTHER SECTION ---------------------- */}
-                      {user.role === "student" && (
+                      {/* {user.role === "student" && (
                         <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4">
                           <h4 className="text-sm sm:text-md font-semibold text-gray-800 mb-2 md:mb-3">Mother Information</h4>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-
-                            {/* Mother Name */}
                             <div>
                               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                                 Mother Name
@@ -1761,7 +1750,6 @@ export default function ProfilePage() {
                               </div>
                             </div>
 
-                            {/* Mother Occupation */}
                             <div>
                               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                                 Mother Occupation
@@ -1798,7 +1786,6 @@ export default function ProfilePage() {
                                 </select>
                               </div>
 
-                              {/* Custom Mother Occupation */}
                               {(!occupationOptions.includes(form.motherOccupation) ||
                                 form.motherOccupation === "") && (
                                   <input
@@ -1814,7 +1801,6 @@ export default function ProfilePage() {
                                 )}
                             </div>
 
-                            {/* Mother Contact Number */}
                             <div>
                               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
                                 Mother Contact Number
@@ -1837,7 +1823,8 @@ export default function ProfilePage() {
 
                           </div>
                         </div>
-                      )}
+                      )} */}
+
 
 
 
@@ -2145,11 +2132,10 @@ export default function ProfilePage() {
                             type="button"
                             onClick={() => redeemCoins("giftcard", option.amount)}
                             disabled={redeeming || !canRedeem}
-                            className={`relative rounded-2xl p-3.5 border-2 text-left transition-all active:scale-95 ${
-                              canRedeem
+                            className={`relative rounded-2xl p-3.5 border-2 text-left transition-all active:scale-95 ${canRedeem
                                 ? "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 hover:border-amber-400 hover:shadow-md"
                                 : "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                            }`}
+                              }`}
                           >
                             {isAvailable && availableCount <= 5 && availableCount > 0 && (
                               <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-tight">
@@ -2188,9 +2174,8 @@ export default function ProfilePage() {
                       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden divide-y divide-slate-50 max-h-96 overflow-y-auto">
                         {redemptionHistory.map((redemption) => (
                           <div key={redemption._id} className="flex items-center gap-3 px-4 py-3">
-                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                              redemption.type === "cash" ? "bg-green-100" : "bg-orange-100"
-                            }`}>
+                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${redemption.type === "cash" ? "bg-green-100" : "bg-orange-100"
+                              }`}>
                               {redemption.type === "cash"
                                 ? <ShoppingBag className="w-4 h-4 text-green-600" />
                                 : <Gift className="w-4 h-4 text-orange-600" />}
@@ -2200,13 +2185,12 @@ export default function ProfilePage() {
                                 <p className="text-sm font-semibold text-slate-900 truncate">
                                   {redemption.type === "cash" ? "Wallet Credit" : "Amazon Gift Card"}
                                 </p>
-                                <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                  redemption.status === "completed"
+                                <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${redemption.status === "completed"
                                     ? "bg-green-100 text-green-700"
                                     : redemption.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}>{redemption.status}</span>
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-red-100 text-red-700"
+                                  }`}>{redemption.status}</span>
                               </div>
                               {redemption.giftCardCode && (
                                 <p className="text-xs font-mono text-orange-600 truncate mt-0.5">{redemption.giftCardCode}</p>
@@ -2242,51 +2226,51 @@ export default function ProfilePage() {
               {activeTab !== 'rewards' && (
                 <div className="pt-4 md:pt-6 mt-4 md:mt-6 border-t border-amber-100">
                   {activeTab === 'security' ? (
-                  <button
-                    type="button"
-                    onClick={changePassword}
-                    disabled={saving}
-                    className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {saving ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Changing Password...
-                      </div>
-                    ) : (
-                      "Change Password"
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={saving || Object.keys(errors).length > 0}
-                    className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {saving ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Saving Changes...
-                      </div>
-                    ) : (
-                      "Save Changes"
-                    )}
-                  </button>
-                )}
+                    <button
+                      type="button"
+                      onClick={changePassword}
+                      disabled={saving}
+                      className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {saving ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Changing Password...
+                        </div>
+                      ) : (
+                        "Change Password"
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={saving || Object.keys(errors).length > 0}
+                      className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {saving ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Saving Changes...
+                        </div>
+                      ) : (
+                        "Save Changes"
+                      )}
+                    </button>
+                  )}
 
-                {/* SUCCESS MESSAGE */}
-                {success && (
-                  <div className="mt-3 md:mt-4 bg-green-50 border border-green-200 rounded-xl p-3 md:p-4 flex items-center gap-2 md:gap-3 animate-fade-in">
-                    <div className="bg-green-500 rounded-full p-1">
-                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                  {/* SUCCESS MESSAGE */}
+                  {success && (
+                    <div className="mt-3 md:mt-4 bg-green-50 border border-green-200 rounded-xl p-3 md:p-4 flex items-center gap-2 md:gap-3 animate-fade-in">
+                      <div className="bg-green-500 rounded-full p-1">
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-green-800 font-semibold text-sm sm:text-base">Profile Updated Successfully!</p>
+                        <p className="text-green-700 text-xs sm:text-sm">Your changes have been saved.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-green-800 font-semibold text-sm sm:text-base">Profile Updated Successfully!</p>
-                      <p className="text-green-700 text-xs sm:text-sm">Your changes have been saved.</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
               )}
             </section>
           </div>
