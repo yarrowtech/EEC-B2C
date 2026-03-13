@@ -68,8 +68,14 @@ export default function Topbar() {
   const shouldHide = location.pathname.startsWith("/dashboard");
   // return (
   return shouldHide ? null : (
-    <div className="w-full bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white text-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+    <div className="relative isolate w-full overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white text-sm">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+      >
+        <span className="topbar-orbit" />
+      </div>
+      <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
         {/* Left: contact */}
         <div className="flex min-w-0 items-center gap-4">
           {/* Desktop: gentle marquee */}
@@ -177,7 +183,7 @@ export default function Topbar() {
       </div>
 
       {/* tiny gradient hairline */}
-      <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="relative z-10 h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     </div>
   );
   // );
