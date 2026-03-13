@@ -14,6 +14,7 @@ import {
   Crown,
   Sparkles,
   Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 
@@ -73,6 +74,7 @@ export default function Packages() {
   const [cancelBusy, setCancelBusy] = useState(false);
   const [autoBuyHandled, setAutoBuyHandled] = useState(false);
   const [confirmPkg, setConfirmPkg] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const token = localStorage.getItem("jwt") || "";
 
@@ -273,9 +275,13 @@ export default function Packages() {
     none: { label: "No Access", cls: "bg-slate-100 text-slate-500" },
   }[activeStudyAccess] || { label: activeStudyAccess, cls: "bg-slate-100 text-slate-500" };
 
-  async function cancelSubscription() {
+  function openCancelModal() {
     if (!subscription?._id || cancelBusy) return;
-    if (!window.confirm("Cancel your active subscription?")) return;
+    setShowCancelModal(true);
+  }
+
+  async function confirmCancelSubscription() {
+    if (!subscription?._id || cancelBusy) return;
 
     setCancelBusy(true);
     try {
@@ -290,6 +296,7 @@ export default function Packages() {
       setSubscriptionType("none");
       const stored = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...stored, subscriptionType: "none" }));
+      setShowCancelModal(false);
       toast.success("Subscription cancelled successfully");
     } catch (err) {
       toast.error(err.message || "Failed to cancel subscription");
@@ -381,7 +388,7 @@ export default function Packages() {
               ) : (
                 <button
                   type="button"
-                  onClick={cancelSubscription}
+                  onClick={openCancelModal}
                   disabled={cancelBusy}
                   className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -722,6 +729,43 @@ export default function Packages() {
                 className="flex-1 py-2.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-sm shadow-md transition-all"
               >
                 Subscribe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel Subscription Modal ── */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100">
+              <AlertTriangle className="h-7 w-7 text-rose-600" />
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-800">Cancel Subscription?</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                You will lose your current package access after cancellation.
+              </p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                disabled={cancelBusy}
+                className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Keep Plan
+              </button>
+              <button
+                type="button"
+                onClick={confirmCancelSubscription}
+                disabled={cancelBusy}
+                className="rounded-xl bg-rose-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelBusy ? "Cancelling..." : "Yes, Cancel"}
               </button>
             </div>
           </div>

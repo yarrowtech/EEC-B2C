@@ -14,6 +14,7 @@ import {
   Clock,
   Bell,
   Sparkles,
+  User,
 } from "lucide-react";
 import { myAttempts, adminAttempts, getJSON } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
@@ -178,6 +179,14 @@ function AdminContent() {
   const [totalStudyMaterials, setTotalStudyMaterials] = useState(0);
   const [subjectMap, setSubjectMap] = useState({});
   const [topicMap, setTopicMap] = useState({});
+  const adminUser = getUser() || {};
+  const firstName = String(adminUser?.name || "Admin").split(" ")[0] || "Admin";
+  const greetingText = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  })();
 
   async function loadSubjectTopicNames() {
     const cached = readDashboardCache("admin-subject-topic-map", 10 * 60 * 1000);
@@ -300,10 +309,48 @@ function AdminContent() {
   const paginatedRows = rows.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(rows.length / rowsPerPage);
 
+  function resolveMappedLabel(value, mapObject) {
+    if (!value) return "—";
+    if (typeof value === "object" && value?.name) return value.name;
+    const key = String(value);
+    return mapObject?.[key] || key;
+  }
 
   return (
     <>
-      <WelcomeCard />
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Admin Dashboard</p>
+            <h1 className="mt-1 text-2xl font-black text-slate-900">
+              {greetingText}, {firstName}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">Manage platform activity, users, and performance from one place.</p>
+          </div>
+
+          <Link
+            to="/dashboard/profile"
+            className="group inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:bg-slate-100"
+          >
+            {adminUser?.avatar ? (
+              <img
+                src={adminUser.avatar}
+                alt="Profile"
+                className="h-11 w-11 rounded-full border border-slate-200 object-cover"
+              />
+            ) : (
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-white">
+                {(firstName[0] || "A").toUpperCase()}
+              </div>
+            )}
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-800">{adminUser?.name || "Admin"}</p>
+              <p className="max-w-[180px] truncate text-xs text-slate-500">{adminUser?.email || "No email"}</p>
+            </div>
+            <User className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+          </Link>
+        </div>
+      </div>
       {/* <Section title="Dashboard Overview" icon={<TableIcon size={18} />}> */}
       <Section title="Dashboard Overview" >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -395,10 +442,10 @@ function AdminContent() {
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
                         <div className="font-medium text-gray-800">
-                          {r.subjectName || r.subject || "—"}
+                          {resolveMappedLabel(r.subjectName || r.subject, subjectMap)}
                         </div>
                         <div className="text-xs text-slate-600">
-                          {r.topicName || r.topic || "—"}
+                          {resolveMappedLabel(r.topicName || r.topic, topicMap)}
                         </div>
                         <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full w-fit font-semibold">{r.type}</span>
                       </div>

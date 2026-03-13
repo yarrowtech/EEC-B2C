@@ -7,7 +7,6 @@ import crypto from "crypto";
 import { razorpay } from "../utils/razorpay.js";
 import User from "../models/User.js";
 import Purchase from "../models/Purchase.js";
-import Package from "../models/Package.js";
 import Subscription from "../models/Subscription.js";
 import { sendPurchaseConfirmationEmail } from "../utils/sendMail.js";
 
@@ -42,22 +41,22 @@ function normalizeAccessLevel(rawAccessLevel, rawIsFree) {
 
 async function resolveStudyMaterialsAccessForUser(userDoc) {
   if (!userDoc) return "none";
+  if (!userDoc.activeSubscription) return "none";
 
-  let activePackage = null;
-  if (userDoc.activeSubscription) {
-    const subscription = await Subscription.findById(userDoc.activeSubscription)
-      .populate("package")
-      .lean();
-    activePackage = subscription?.package || null;
+  const subscription = await Subscription.findById(userDoc.activeSubscription)
+    .populate("package")
+    .lean();
+
+  const isSubscriptionActive =
+    subscription &&
+    String(subscription.status || "").toLowerCase() === "active" &&
+    (!subscription.endDate || new Date(subscription.endDate) > new Date());
+
+  if (!isSubscriptionActive) {
+    return "none";
   }
 
-  if (!activePackage) {
-    activePackage = await Package.findOne({ name: "Basic", isActive: true })
-      .select("studyMaterialsAccess")
-      .lean();
-  }
-
-  const resolved = String(activePackage?.studyMaterialsAccess || "none").toLowerCase();
+  const resolved = String(subscription?.package?.studyMaterialsAccess || "none").toLowerCase();
   return ["none", "limited", "full"].includes(resolved) ? resolved : "none";
 }
 

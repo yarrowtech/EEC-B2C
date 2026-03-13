@@ -1317,11 +1317,37 @@ export const adminAttempts = async (req, res) => {
       { $group: { _id: "$userId", n: { $sum: 1 } } },
     ]);
     const cMap = new Map(counts.map((c) => [String(c._id), c.n]));
+    const subjectIds = [
+      ...new Set(
+        items
+          .map((a) => (a?.subject ? String(a.subject) : ""))
+          .filter(Boolean)
+      ),
+    ];
+    const topicIds = [
+      ...new Set(
+        items
+          .map((a) => (a?.topic ? String(a.topic) : ""))
+          .filter(Boolean)
+      ),
+    ];
+
+    const subjects = await Subject.find({ _id: { $in: subjectIds } })
+      .select("_id name")
+      .lean();
+    const topics = await Topic.find({ _id: { $in: topicIds } })
+      .select("_id name")
+      .lean();
+
+    const subjectMap = new Map(subjects.map((s) => [String(s._id), s.name]));
+    const topicMap = new Map(topics.map((t) => [String(t._id), t.name]));
 
     const enriched = items.map((a) => ({
       ...a,
       user: uMap.get(String(a.userId)) || null,
       attemptsForUser: cMap.get(String(a.userId)) || 1,
+      subjectName: subjectMap.get(String(a.subject || "")) || String(a.subject || ""),
+      topicName: topicMap.get(String(a.topic || "")) || String(a.topic || ""),
     }));
 
     res.json({ items: enriched });
