@@ -76,6 +76,7 @@ export default function ManagePackages() {
     analyticsAccess: "none",
     prioritySupport: false,
   });
+  const isLifetime = Number(formData.duration) <= 0;
 
   const token = localStorage.getItem("jwt");
 
@@ -181,6 +182,7 @@ export default function ManagePackages() {
     try {
       const payload = {
         ...formData,
+        duration: Number(formData.duration) <= 0 ? 0 : Number(formData.duration),
         allowedTryoutTypes: (formData.allowedTryoutTypes || []).filter(Boolean),
         features: formData.features
           .split(",")
@@ -342,9 +344,23 @@ export default function ManagePackages() {
                   name="duration"
                   value={formData.duration}
                   onChange={handleInputChange}
-                  placeholder="30"
+                  placeholder="30 (use 0 for Lifetime)"
                   className="w-full border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
                 />
+                <label className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-purple-700">
+                  <input
+                    type="checkbox"
+                    checked={isLifetime}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        duration: e.target.checked ? 0 : 30,
+                      }))
+                    }
+                    className="h-4 w-4 rounded text-purple-600"
+                  />
+                  Lifetime access
+                </label>
               </div>
 
               {/* Unlocked Stages */}
@@ -554,7 +570,7 @@ export default function ManagePackages() {
                     ₹{pkg.price}
                   </span>
                   <span className="text-gray-500 text-sm">
-                    /{pkg.duration} days
+                    {Number(pkg.duration) <= 0 ? " /Lifetime" : `/${pkg.duration} days`}
                   </span>
                 </div>
 

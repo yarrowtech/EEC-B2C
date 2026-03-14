@@ -7,7 +7,7 @@ import FeatureCardsSection from "../components/FeatureCardsSection";
 import StatsStripSection from "../components/StatsStripSection";
 import HeroRankSection from "../components/HeroRankSection";
 import QuickBundleSection from "../components/QuickBundleSection";
-//import StarExplorersSection from "../components/StarExplorersSection";
+import StarExplorersSection from "../components/StarExplorersSection";
 import QuestionsAnswersSection from "../components/QuestionsAnswersSection";
 import PaprIqFooterSection from "../components/PaprIqFooterSection";
 import WhatIsEEC from "../components/WhatIsEEC";
@@ -20,6 +20,7 @@ import EECFooter from "../components/EECFooter";
 import GlobalLoginModal from "../components/GlobalLoginModal";
 import PageIntroLoader from "../components/PageIntroLoader";
 import usePageIntroLoader from "../hooks/usePageIntroLoader";
+import HeroFilterBar from "../components/HeroFilterBar";
 
 
 const Home = () => {
@@ -36,23 +37,24 @@ const Home = () => {
       className="overflow-x-hidden block w-full max-w-[100vw]"
     >
       <Hero />
+      <HeroFilterBar />
       <StudyGrumpySection />
       <VictoryPathSection />
       <FeatureCardsSection />
       <StatsStripSection />
       <HeroRankSection />
       <QuickBundleSection />
-     {/*} <StarExplorersSection />
+     <StarExplorersSection />
       <QuestionsAnswersSection />
-      {/* <PaprIqFooterSection /> */}
-      {/* <WhatIsEEC /> */}
-      {/* <EECFeaturesSection /> */}
-      {/* <EECStages /> */}
-      {/* <EECUnique /> */}
-      {/* <EECImageRow /> */}
-      {/* <EECFAQ /> */}
-      {/* <GlobalLoginModal /> */}
-      {/* <EECFooter /> */}
+      {/* <PaprIqFooterSection />  */}
+      {/* <WhatIsEEC />
+      <EECFeaturesSection />
+      <EECStages />
+      <EECUnique />
+      <EECImageRow />
+      <EECFAQ />
+      <GlobalLoginModal />
+      <EECFooter /> */}
     </motion.div>
   )
 }

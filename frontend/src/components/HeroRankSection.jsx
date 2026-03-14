@@ -33,7 +33,7 @@ export default function HeroRankSection() {
       displayName: "Starter Scout",
       price: 0,
       duration: 0,
-      features: ["5 Fun Samples / mo", "Public Solutions", "Secret Mock Exams"],
+      features: [],
     },
     {
       _id: "master-fallback",
@@ -63,11 +63,9 @@ export default function HeroRankSection() {
       .slice(0, 3);
   }, [packages]);
 
-  const leftPlan = plans[0] || fallbackPlans[0];
-
   const periodLabel = (plan) => {
     if (!plan) return "/ mo";
-    if ((plan.price || 0) === 0) return "/ forever";
+    if (Number(plan.duration) <= 0) return "/ Lifetime";
     if (!plan.duration) return "/ mo";
     return `/ ${plan.duration} days`;
   };
@@ -146,35 +144,62 @@ export default function HeroRankSection() {
           </h2>
         </div>
 
-        <div className="flex justify-center max-w-md mx-auto">
-          <div className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-100 flex flex-col group hover:border-[#4ECDC4] transition-all w-full shadow-sm hover:shadow-xl">
-            <h4 className="text-2xl font-bold mb-6 text-slate-900 text-center" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-              {leftPlan.displayName || leftPlan.name || "Starter Scout"}
-            </h4>
-            {!!leftPlan.description && (
-              <p className="text-sm text-center text-slate-500 mb-6">{leftPlan.description}</p>
-            )}
-            <ul className="space-y-5 mb-10 flex-grow">
-              {mergedFeatureLines(leftPlan, fallbackPlans[0]).map((feature, i) => (
-                <li
-                  key={`${leftPlan._id || "left"}-${feature}-${i}`}
-                  className="flex items-center gap-3 font-medium text-sm text-slate-700"
+        <div
+          className={
+            plans.length === 1
+              ? "flex justify-center"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          }
+        >
+          {plans.map((plan, index) => {
+            const fallback = fallbackPlans[index] || fallbackPlans[0];
+            return (
+              <div
+                key={plan._id || `plan-${index}`}
+                className={`bg-white p-10 rounded-[2.5rem] border-4 border-slate-100 flex flex-col group hover:border-[#4ECDC4] transition-all w-full shadow-sm hover:shadow-xl ${
+                  plans.length === 1 ? "max-w-md" : ""
+                }`}
+              >
+                <h4
+                  className="text-2xl font-bold mb-6 text-slate-900 text-center"
+                  style={{ fontFamily: "'Balsamiq Sans', cursive" }}
                 >
-                  <span className="material-symbols-outlined text-[#4ECDC4]">
-                    check_circle
+                  {plan.displayName || plan.name || fallback.displayName}
+                </h4>
+                <div className="text-center mb-6">
+                  <span className="text-4xl font-black text-slate-900">
+                    ₹{Number(plan?.price || 0)}
                   </span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={() => handlePlanClick(leftPlan)}
-              className="w-full py-4 rounded-full border-2 border-slate-200 font-bold hover:border-[#4ECDC4] hover:bg-[#4ECDC4] hover:text-white transition-all shadow-sm"
-            >
-              {ctaLabel(leftPlan, "Join the Scouts")}
-            </button>
-          </div>
+                  <span className="ml-2 text-sm font-semibold text-slate-500">
+                    {periodLabel(plan)}
+                  </span>
+                </div>
+                {!!plan.description && (
+                  <p className="text-sm text-center text-slate-500 mb-6">{plan.description}</p>
+                )}
+                <ul className="space-y-5 mb-10 flex-grow">
+                  {mergedFeatureLines(plan, fallback).map((feature, i) => (
+                    <li
+                      key={`${plan._id || `plan-${index}`}-${feature}-${i}`}
+                      className="flex items-center gap-3 font-medium text-sm text-slate-700"
+                    >
+                      <span className="material-symbols-outlined text-[#4ECDC4]">
+                        check_circle
+                      </span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => handlePlanClick(plan)}
+                  className="w-full py-4 rounded-full border-2 border-slate-200 font-bold hover:border-[#4ECDC4] hover:bg-[#4ECDC4] hover:text-white transition-all shadow-sm"
+                >
+                  {ctaLabel(plan, "Choose Plan")}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

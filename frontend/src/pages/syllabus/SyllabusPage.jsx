@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, X, FileText, Clock, ListChecks, Lock, ChevronRight } from "lucide-react";
 import { getJSON, startExam } from "../../lib/api";
@@ -139,6 +139,14 @@ export default function SyllabusPage() {
       tone: "from-purple-500 to-indigo-500",
     },
   ];
+  const selectedTypeAvailableCount = useMemo(() => {
+    if (!selectedType) return 0;
+    if (selectedType.type === "all") {
+      return questionTypes.reduce((sum, item) => sum + Number(item?.count || 0), 0);
+    }
+    const match = questionTypes.find((item) => item?.type === selectedType.type);
+    return Number(match?.count ?? selectedType.count ?? 0);
+  }, [questionTypes, selectedType]);
 
   useEffect(() => {
     fetchUnlockedStages();
@@ -297,10 +305,26 @@ export default function SyllabusPage() {
         return;
       }
 
+      const topicCountEntries = await Promise.all(
+        subjectsRes.map(async (subject) => {
+          try {
+            const topics = await getJSON(
+              `/api/topic/${subject._id}?board=${userBoard}&class=${userClass}&stage=${stage}`
+            );
+            const count = Array.isArray(topics) ? topics.length : 0;
+            return [String(subject._id), count];
+          } catch {
+            return [String(subject._id), 0];
+          }
+        })
+      );
+      const topicCountMap = new Map(topicCountEntries);
+
       const normalizedSubjects = subjectsRes.map((subject) => {
         const hasTopics = Array.isArray(subject.topics) && subject.topics.length > 0;
         return {
           ...subject,
+          topicCount: topicCountMap.get(String(subject._id)) ?? 0,
           topics: hasTopics ? [...subject.topics] : [],
           topicsLoaded: hasTopics,
           topicsAttempted: hasTopics,
@@ -1131,7 +1155,7 @@ export default function SyllabusPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">
-                    {selectedType.count || 10} Question{(selectedType.count || 10) !== 1 ? "s" : ""}
+                    {selectedTypeAvailableCount} Question{selectedTypeAvailableCount !== 1 ? "s" : ""}
                   </p>
                   <p className="text-sm text-gray-500">{selectedType.label}</p>
                 </div>
@@ -1188,7 +1212,7 @@ export default function SyllabusPage() {
                     Starting...
                   </span>
                 ) : (
-                  "Start Exam"
+                  "Practice Now"
                 )}
               </button>
             </div>

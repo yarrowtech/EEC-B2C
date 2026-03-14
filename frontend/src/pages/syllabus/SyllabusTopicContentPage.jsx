@@ -12,6 +12,7 @@ export default function SyllabusTopicContentPage() {
   const toast = useToast();
 
   const stage = Number(searchParams.get("stage") || 1);
+  const openPracticeOnLoad = searchParams.get("openPractice") === "1";
 
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState(null);
@@ -25,6 +26,7 @@ export default function SyllabusTopicContentPage() {
   const [selectedType, setSelectedType] = useState(null);
   const [questionTypes, setQuestionTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
+  const [didAutoOpenPractice, setDidAutoOpenPractice] = useState(false);
 
   const levelOptions = [
     {
@@ -60,6 +62,14 @@ export default function SyllabusTopicContentPage() {
   ];
 
   const selectedTopic = useMemo(() => (subject && topic ? { subject, topic } : null), [subject, topic]);
+  const selectedTypeAvailableCount = useMemo(() => {
+    if (!selectedType) return 0;
+    if (selectedType.type === "all") {
+      return questionTypes.reduce((sum, item) => sum + Number(item?.count || 0), 0);
+    }
+    const match = questionTypes.find((item) => item?.type === selectedType.type);
+    return Number(match?.count ?? selectedType.count ?? 0);
+  }, [questionTypes, selectedType]);
 
   function getStoredUser() {
     try {
@@ -148,6 +158,19 @@ export default function SyllabusTopicContentPage() {
   useEffect(() => {
     loadTopicContext();
   }, [subjectId, topicId, stage]);
+
+  useEffect(() => {
+    if (
+      !loading &&
+      !didAutoOpenPractice &&
+      openPracticeOnLoad &&
+      subject &&
+      topic
+    ) {
+      setShowLevelSelector(true);
+      setDidAutoOpenPractice(true);
+    }
+  }, [loading, didAutoOpenPractice, openPracticeOnLoad, subject, topic]);
 
   async function fetchQuestionTypesForLevel(level) {
     if (!subject || !topic) return;
@@ -562,7 +585,7 @@ export default function SyllabusTopicContentPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    {selectedType.count || 10} Question{(selectedType.count || 10) !== 1 ? "s" : ""}
+                    {selectedTypeAvailableCount} Question{selectedTypeAvailableCount !== 1 ? "s" : ""}
                   </p>
                   <p className="text-xs text-gray-500">{selectedType.label}</p>
                 </div>

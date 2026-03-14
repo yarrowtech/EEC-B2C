@@ -18,6 +18,7 @@ import EECCareers from "./pages/EECCareers";
 import EECCareerDetails from "./pages/EECCareerDetails";
 import EECOffice from "./pages/EECOffice";
 import EECLearningBoards from "./pages/EECLearningBoards";
+import LearnTopicContentPage from "./pages/LearnTopicContentPage";
 import EECPartner from "./pages/EECMarketing";
 import EECMarketing from "./pages/EECMarketing";
 import SupportCenter from "./pages/SupportCenter";
@@ -629,6 +630,7 @@ export default function App() {
           <Route path="/contact-us" element={<EECOffice />} />
           <Route path="/office" element={<Navigate to="/contact-us" replace />} />
           <Route path="/boards" element={<EECLearningBoards />} />
+          <Route path="/learn/topic/:subjectId/:topicId" element={<LearnTopicContentPage />} />
           <Route path="/support" element={<SupportCenter />} />
           <Route path="/marketing" element={<EECMarketing />} />
           <Route path="/eec-b2c" element={<B2B />} />

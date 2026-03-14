@@ -208,11 +208,22 @@ const ResultsView = () => {
 
         const activePackage =
           subscriptionData?.hasActiveSubscription ? subscriptionData?.subscription?.package : null;
-        const resolvedAccess = String(
+        let resolvedAccess = String(
           subscriptionData?.hasActiveSubscription
             ? activePackage?.analyticsAccess || "none"
             : "none"
         ).toLowerCase();
+
+        // Free-tier fallback: if there is no active subscription, use current Basic package config.
+        if (!subscriptionData?.hasActiveSubscription) {
+          const packagesRes = await fetch(`${API}/api/packages`);
+          const packagesData = await packagesRes.json().catch(() => ({}));
+          const packageRows = Array.isArray(packagesData?.packages) ? packagesData.packages : [];
+          const basicPackage = packageRows.find(
+            (p) => String(p?.name || "").toLowerCase() === "basic"
+          );
+          resolvedAccess = String(basicPackage?.analyticsAccess || "none").toLowerCase();
+        }
 
         if (mounted) {
           setAnalyticsAccess(["none", "basic", "full"].includes(resolvedAccess) ? resolvedAccess : "none");
@@ -252,6 +263,10 @@ const ResultsView = () => {
       .then(data => {
         if (data.success) {
           setExamResults(formatResults(data.results));
+          const resolvedAccess = String(data?.analyticsAccess || "").toLowerCase();
+          if (["none", "basic", "full"].includes(resolvedAccess)) {
+            setAnalyticsAccess(resolvedAccess);
+          }
           writeCache("attempts", String(userId), data.results || []);
         }
       })
@@ -793,7 +808,7 @@ const ResultsView = () => {
           </div>
           <div className="relative z-10 flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs md:text-sm text-white/80 truncate">Total Exams</p>
+              <p className="text-xs md:text-sm text-white/80 truncate">Total Attempts</p>
               <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">{examResults.length}</h3>
             </div>
             <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">

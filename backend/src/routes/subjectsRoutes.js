@@ -1,7 +1,6 @@
 import express from "express";
 import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -15,11 +14,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get topics for specific subject
-router.get("/:subjectId/topics", requireAuth, requireAdmin, async (req, res) => {
+// Get topics for specific subject (public for Learn page preview)
+router.get("/:subjectId/topics", async (req, res) => {
   try {
     const topics = await Topic.find({ subject: req.params.subjectId });
-    res.json({ topics });
+    res.json({ items: topics });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

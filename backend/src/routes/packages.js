@@ -9,6 +9,17 @@ import { sendSubscriptionInvoiceEmail } from "../utils/sendMail.js";
 
 const router = Router();
 
+function resolveSubscriptionEndDate(durationDays) {
+  const duration = Number(durationDays);
+  // duration <= 0 means lifetime package
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return new Date("9999-12-31T23:59:59.999Z");
+  }
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + duration);
+  return endDate;
+}
+
 // Get all active packages (public for students to see)
 router.get("/", async (req, res) => {
   try {
@@ -169,8 +180,7 @@ router.post("/:id/purchase", requireAuth, async (req, res) => {
 
     // Create subscription
     const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + package_.duration);
+    const endDate = resolveSubscriptionEndDate(package_.duration);
 
     const subscription = new Subscription({
       user: req.user.id,
@@ -293,8 +303,7 @@ router.post("/:id/verify-payment", requireAuth, async (req, res) => {
     const user = await User.findById(req.user.id);
 
     const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + package_.duration);
+    const endDate = resolveSubscriptionEndDate(package_.duration);
 
     const subscription = new Subscription({
       user: req.user.id,

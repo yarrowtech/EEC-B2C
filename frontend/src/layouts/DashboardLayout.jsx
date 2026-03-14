@@ -401,7 +401,7 @@ export default function DashboardLayout() {
 
         if (role === "student") {
             base.push(
-                { to: "/dashboard/packages", label: "Packages", icon: <CreditCard size={18} /> }
+                // { to: "/dashboard/packages", label: "Packages", icon: <CreditCard size={18} /> }
             );
         }
 
