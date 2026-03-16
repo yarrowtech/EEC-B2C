@@ -582,32 +582,12 @@ const Hero = () => {
           className="hidden md:block flex-1 relative"
         >
           {/* aspect-square, rounded-[3rem], overflow-hidden, border-8 border-white — exact from code.html */}
-          <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white bg-linear-to-br from-yellow-300/20 to-[#4ECDC4]/20">
-
-            {/* Center: child_care icon + caption */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-              <span
-                className="material-symbols-outlined select-none text-[#F4736E]/30 mb-4"
-                style={{ fontSize: "10rem", lineHeight: 1, fontVariationSettings: "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}
-              >child_care</span>
-              <p className="text-2xl font-bold italic text-slate-600 leading-snug" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                Playful Illustration of<br />Happy Children Learning Together
-              </p>
-            </div>
-
-            {/* Floating icon cards — INSIDE overflow-hidden, exact positions from code.html */}
-            <div className="absolute top-12 left-12 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "3s" }}>
-              <span className="material-symbols-outlined text-4xl text-[#F4736E]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>emoji_objects</span>
-            </div>
-            <div className="absolute bottom-24 right-12 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "4.5s" }}>
-              <span className="material-symbols-outlined text-4xl text-violet-500" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>cruelty_free</span>
-            </div>
-            <div className="absolute top-1/2 right-6 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "5.5s" }}>
-              <span className="material-symbols-outlined text-4xl text-[#4ECDC4]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>castle</span>
-            </div>
-            <div className="absolute bottom-12 left-20 animate-bounce rounded-3xl bg-white p-5 shadow-xl" style={{ animationDuration: "4s" }}>
-              <span className="material-symbols-outlined text-4xl text-amber-400" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>palette</span>
-            </div>
+          <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden">
+            <img
+              src="/hero-png.png"
+              alt="Hero"
+              className="h-full w-full object-cover"
+            />
           </div>
         </motion.div>
 
