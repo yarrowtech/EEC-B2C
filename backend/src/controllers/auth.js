@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
 import { isEmail, normalizeLoginId } from "../utils/validators.js";
 import {
   sendWelcomeEmail,
@@ -10,6 +11,12 @@ import {
 } from "../utils/sendMail.js";
 
 const SALT_ROUNDS = 10;
+
+function getGoogleConfig() {
+  const clientId = String(process.env.GOOGLE_CLIENT_ID || "").trim();
+  if (!clientId) return { clientId: "", client: null };
+  return { clientId, client: new OAuth2Client(clientId) };
+}
 
 // src/controllers/auth.controller.js
 
@@ -25,6 +32,68 @@ function signToken(user) {
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "1h",
   });
+}
+
+async function buildLoginPayload(user) {
+  // Look up Board and Class IDs
+  let boardId = null;
+  let classId = null;
+  let boardName = user.board;
+  let className = user.className;
+
+  try {
+    // Dynamically import models to avoid circular dependency
+    const Board = (await import("../models/Board.js")).default;
+    const Class = (await import("../models/Class.js")).default;
+
+    if (user.board) {
+      const boardDoc = await Board.findOne({ name: user.board });
+      if (boardDoc) {
+        boardId = boardDoc._id.toString();
+        boardName = boardDoc.name;
+      }
+    }
+
+    if (user.className) {
+      const classDoc = await Class.findOne({ name: user.className });
+      if (classDoc) {
+        classId = classDoc._id.toString();
+        className = classDoc.name;
+      }
+    }
+  } catch (lookupErr) {
+    console.error("Board/Class lookup error:", lookupErr);
+    // Continue without IDs if lookup fails
+  }
+
+  const token = signToken(user);
+  return {
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      avatar: user.avatar || "",
+      className: className,
+      classId: classId,
+      class: className,
+      state: user.state,
+      role: user.role,
+      points: user.points || 0,
+      board: boardName,
+      boardId: boardId,
+      boardName: boardName,
+    },
+    token,
+  };
+}
+
+function isGoogleProfileIncomplete(user) {
+  const board = String(user?.board || "").trim();
+  const className = String(user?.className || user?.class || "").trim();
+  const state = String(user?.state || "").trim();
+  const phone = String(user?.phone || "").trim();
+  return !board || !className || !state || !phone;
 }
 
 export async function register(req, res) {
@@ -129,60 +198,71 @@ export async function login(req, res) {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ message: "Invalid credentials." });
 
-    // Look up Board and Class IDs
-    let boardId = null;
-    let classId = null;
-    let boardName = user.board;
-    let className = user.className;
-
-    try {
-      // Dynamically import models to avoid circular dependency
-      const Board = (await import("../models/Board.js")).default;
-      const Class = (await import("../models/Class.js")).default;
-
-      if (user.board) {
-        const boardDoc = await Board.findOne({ name: user.board });
-        if (boardDoc) {
-          boardId = boardDoc._id.toString();
-          boardName = boardDoc.name;
-        }
-      }
-
-      if (user.className) {
-        const classDoc = await Class.findOne({ name: user.className });
-        if (classDoc) {
-          classId = classDoc._id.toString();
-          className = classDoc.name;
-        }
-      }
-    } catch (lookupErr) {
-      console.error("Board/Class lookup error:", lookupErr);
-      // Continue without IDs if lookup fails
-    }
-
-    const token = signToken(user);
+    const payload = await buildLoginPayload(user);
     res.json({
       message: "Logged in",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        className: className,
-        classId: classId,
-        class: className,
-        state: user.state,
-        role: user.role,
-        points: user.points || 0,
-        board: boardName,
-        boardId: boardId,
-        boardName: boardName,
-      }, // ✅ include role and IDs
-      token,
+      ...payload,
     });
   } catch (err) {
     console.error("login error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function googleLogin(req, res) {
+  try {
+    const { credential } = req.body || {};
+    if (!credential) {
+      return res.status(400).json({ message: "Google credential is required." });
+    }
+
+    const { clientId, client } = getGoogleConfig();
+    if (!clientId || !client) {
+      return res.status(500).json({
+        message: "Google login is not configured on server. Missing GOOGLE_CLIENT_ID in backend .env.",
+      });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: clientId,
+    });
+    const googlePayload = ticket.getPayload();
+
+    if (!googlePayload?.email || !googlePayload.email_verified) {
+      return res.status(401).json({ message: "Google account email is not verified." });
+    }
+
+    const email = googlePayload.email.toLowerCase();
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      const generatedPassword = crypto.randomBytes(32).toString("hex");
+      const hash = await bcrypt.hash(generatedPassword, SALT_ROUNDS);
+
+      user = await User.create({
+        name: (googlePayload.name || email.split("@")[0] || "User").trim(),
+        email,
+        password: hash,
+        avatar: googlePayload.picture || "",
+        points: 100,
+        registrationYear: new Date().getFullYear(),
+        registrationMonth: new Date().getMonth() + 1,
+      });
+    } else if (googlePayload.picture && !user.avatar) {
+      user.avatar = googlePayload.picture;
+      await user.save();
+    }
+
+    const payload = await buildLoginPayload(user);
+    res.json({
+      message: "Logged in with Google",
+      profileIncomplete: isGoogleProfileIncomplete(user),
+      ...payload,
+    });
+  } catch (err) {
+    console.error("google login error:", err);
+    res.status(401).json({ message: "Invalid Google credential." });
   }
 }
 

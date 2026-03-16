@@ -42,6 +42,12 @@ function buildStudentAudienceFilter(user) {
 function isVisibleToUser(notification, user) {
   if (!notification || !user) return false;
 
+  const userCreatedAt = user?.createdAt ? new Date(user.createdAt) : null;
+  const notificationCreatedAt = notification?.createdAt ? new Date(notification.createdAt) : null;
+  if (userCreatedAt && notificationCreatedAt && notificationCreatedAt < userCreatedAt) {
+    return false;
+  }
+
   if (!(notification.role === "all" || notification.role === user.role)) {
     return false;
   }
@@ -56,6 +62,31 @@ function isVisibleToUser(notification, user) {
   const classOk = !targetClass || studentClassCandidates.includes(targetClass);
   const boardOk = !targetBoard || (studentBoard && studentBoard === targetBoard);
   return classOk && boardOk;
+}
+
+function buildNotificationVisibilityQuery(user) {
+  const query = {
+    $or: [{ role: user.role }, { role: "all" }],
+  };
+
+  const andClauses = [];
+  if (reqUserCreatedAtIsValid(user)) {
+    andClauses.push({ createdAt: { $gte: new Date(user.createdAt) } });
+  }
+
+  if (user.role === "student") {
+    andClauses.push(...buildStudentAudienceFilter(user));
+  }
+
+  if (andClauses.length) {
+    query.$and = andClauses;
+  }
+
+  return query;
+}
+
+function reqUserCreatedAtIsValid(user) {
+  return Boolean(user?.createdAt && !Number.isNaN(new Date(user.createdAt).getTime()));
 }
 
 /* ---------------- ADMIN: CREATE NOTIFICATION ---------------- */
@@ -95,13 +126,7 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
 
 /* ---------------- USER: GET NOTIFICATIONS ---------------- */
 router.get("/", requireAuth, async (req, res) => {
-  const baseQuery = {
-    $or: [{ role: req.user.role }, { role: "all" }],
-  };
-
-  if (req.user.role === "student") {
-    baseQuery.$and = buildStudentAudienceFilter(req.user);
-  }
+  const baseQuery = buildNotificationVisibilityQuery(req.user);
 
   const notifications = await Notification.find(baseQuery)
     .sort({ createdAt: -1 })
@@ -113,6 +138,14 @@ router.get("/", requireAuth, async (req, res) => {
 
 /* ---------------- MARK AS READ ---------------- */
 router.post("/:id/read", requireAuth, async (req, res) => {
+  const notification = await Notification.findById(req.params.id);
+  if (!notification) {
+    return res.status(404).json({ message: "Not found" });
+  }
+  if (!isVisibleToUser(notification, req.user)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
   await Notification.findByIdAndUpdate(req.params.id, {
     $addToSet: { readBy: req.user.id },
   });
@@ -122,8 +155,9 @@ router.post("/:id/read", requireAuth, async (req, res) => {
 
 /* ---------------- CLEAR ALL ---------------- */
 router.post("/clear-all", requireAuth, async (req, res) => {
+  const visibleQuery = buildNotificationVisibilityQuery(req.user);
   await Notification.updateMany(
-    {},
+    visibleQuery,
     { $addToSet: { readBy: req.user.id } }
   );
 

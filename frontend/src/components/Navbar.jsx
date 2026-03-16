@@ -253,7 +253,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
-            className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-2xl transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
+            className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
           >
             Join Now 🎁
           </button>

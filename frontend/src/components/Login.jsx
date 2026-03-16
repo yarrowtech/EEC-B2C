@@ -5,9 +5,16 @@ const LS_REMEMBER_KEY = "eecRemember";
 const LS_LOGIN_ID_KEY = "eecLoginId";
 
 const inputCls =
-  "w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15";
+  "w-full rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15";
 
-export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
+export default function Login({
+  onClose,
+  onForgot,
+  onSubmit,
+  onSignUp,
+  showGoogleLogin = false,
+  googleButtonRef = null,
+}) {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -163,7 +170,7 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 rounded-full bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none disabled:opacity-60"
           >
             {loading ? "Signing in…" : "Login to Adventure"}
             {!loading && (
@@ -175,6 +182,19 @@ export default function Login({ onClose, onForgot, onSubmit, onSignUp }) {
               </span>
             )}
           </button>
+
+          {showGoogleLogin && (
+            <>
+              <div className="flex items-center gap-3 pt-2">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">or</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+              <div className="flex justify-center pt-1">
+                <div ref={googleButtonRef} />
+              </div>
+            </>
+          )}
         </form>
 
         {/* Sign up link */}

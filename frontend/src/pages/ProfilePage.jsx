@@ -1060,10 +1060,10 @@ export default function ProfilePage() {
                   <Phone className="w-4 h-4 text-amber-600" />
                   {form.phone || "Add a phone"}
                 </span>
-                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+                {/* <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
                   <MapPin className="w-4 h-4 text-amber-600" />
                   {form.address || "Add address"}
-                </span>
+                </span> */}
               </div>
             </div>
           </div>

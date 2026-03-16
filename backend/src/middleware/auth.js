@@ -20,6 +20,7 @@ export async function requireAuth(req, res, next) {
       role: user.role,
       board: user.board,
       isTeacherVerified: user.isTeacherVerified,
+      createdAt: user.createdAt,
     };
     next();
   } catch (err) {
