@@ -28,6 +28,12 @@ export const getOfficePage = async (req, res) => {
           { id: "phone", title: "Contact Number", value: "", type: "phone" },
           { id: "email", title: "Email", value: "", type: "email" },
         ],
+        socialLinks: {
+          facebook: "",
+          instagram: "",
+          linkedin: "",
+          youtube: "",
+        },
       });
     }
     res.json(doc);
@@ -48,6 +54,7 @@ export const updateOfficePage = async (req, res) => {
       phone,
       email,
       contacts,
+      socialLinks,
     } = req.body;
 
     const update = {
@@ -59,6 +66,7 @@ export const updateOfficePage = async (req, res) => {
       ...(phone !== undefined && { phone }),
       ...(email !== undefined && { email }),
       ...(contacts !== undefined && { contacts }),
+      ...(socialLinks !== undefined && { socialLinks }),
     };
 
     const doc = await OfficePage.findOneAndUpdate({}, update, {

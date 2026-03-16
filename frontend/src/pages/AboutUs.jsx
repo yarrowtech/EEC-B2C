@@ -78,7 +78,6 @@ export default function AboutUs() {
     : [
       "Personalized progression & holistic growth",
       "Teacher enablement & workload relief",
-      "Parent visibility & engagement",
     ];
 
   const brandDesc =
@@ -127,7 +126,7 @@ export default function AboutUs() {
 
   const missionChips = mission?.chips?.length
     ? mission.chips
-    : ["Real-time Insights", "AI Feedback Loops", "Teacher Tools"];
+    : ["Real-time Insights", "AI Feedback Loops"];
 
   const visionImg = vision?.image || "/goal1.jpg";
   const brandImg = brand?.image || "/brandvalue.jpg";
@@ -246,7 +245,7 @@ export default function AboutUs() {
       </section>
 
       {/* Brand / Modern learning */}
-      <section className="relative w-full overflow-hidden bg-[#fff8ee] px-4 py-20">
+      {/* <section className="relative w-full overflow-hidden bg-[#fff8ee] px-4 py-20">
         <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2 md:gap-16">
           <div className="relative">
             <div className="rounded-[32px] bg-gradient-to-br from-[#fdd3bc] to-[#fbb68c] p-5 shadow-[0_30px_60px_rgba(249,177,131,0.35)]">
@@ -284,7 +283,7 @@ export default function AboutUs() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Values */}
       <section className="relative w-full overflow-hidden bg-white px-4 py-20 sm:py-24">

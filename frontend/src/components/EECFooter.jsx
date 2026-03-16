@@ -185,10 +185,70 @@
 //   );
 // }
 
-
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 
 export default function PaprIqFooterSection() {
+  const API = import.meta.env.VITE_API_URL || "";
+  const [dbSocialLinks, setDbSocialLinks] = useState({
+    facebook: "",
+    instagram: "",
+    linkedin: "",
+    youtube: "",
+  });
+
+  const menus = [
+    { label: "Home", to: "/" },
+    { label: "About Us", to: "/about" },
+    { label: "Tryouts", to: "/tryouts" },
+    { label: "Learn", to: "/boards" },
+    // { label: "Support", to: "/support" },
+  ];
+
+  const importantMenus = [
+    { label: "Study Materials", to: "/dashboard/study-materials" },
+    { label: "Leaderboard", to: "/dashboard/leaderboard" },
+    { label: "Careers", to: "/careers" },
+    { label: "Contact Us", to: "/contact-us" },
+    // { label: "Meet The Developer", to: "/meet-the-developer" },
+  ];
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSocialLinks() {
+      try {
+        const res = await fetch(`${API}/api/office`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || cancelled) return;
+        if (data?.socialLinks && typeof data.socialLinks === "object") {
+          setDbSocialLinks({
+            facebook: String(data.socialLinks.facebook || "").trim(),
+            instagram: String(data.socialLinks.instagram || "").trim(),
+            linkedin: String(data.socialLinks.linkedin || "").trim(),
+            youtube: String(data.socialLinks.youtube || "").trim(),
+          });
+        }
+      } catch {
+        // Keep footer fallback links if API fails.
+      }
+    }
+    loadSocialLinks();
+    return () => {
+      cancelled = true;
+    };
+  }, [API]);
+
+  const socialLinks = useMemo(
+    () => [
+      { key: "facebook", label: "Facebook", href: dbSocialLinks.facebook, Icon: Facebook },
+      { key: "instagram", label: "Instagram", href: dbSocialLinks.instagram, Icon: Instagram },
+      { key: "linkedin", label: "LinkedIn", href: dbSocialLinks.linkedin, Icon: Linkedin },
+      { key: "youtube", label: "YouTube", href: dbSocialLinks.youtube, Icon: Youtube },
+    ],
+    [dbSocialLinks]
+  );
+
   return (
     <footer className="relative mt-14 bg-slate-900 pb-20 pt-24 text-slate-300 border-t-8 border-[#FFD23F]">
       <div className="pointer-events-none absolute -top-14 left-0 right-0 h-14 overflow-hidden">
@@ -221,75 +281,79 @@ export default function PaprIqFooterSection() {
               learning fun together!
             </p>
             <div className="flex gap-4">
-              <a className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-[#FF6B6B] hover:text-white transition-all" href="#">
-                <span className="material-symbols-outlined">star_rate</span>
-              </a>
-              <a className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-[#4ECDC4] hover:text-white transition-all" href="#">
-                <span className="material-symbols-outlined">rocket</span>
-              </a>
-              <a className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-[#6C63FF] hover:text-white transition-all" href="#">
-                <span className="material-symbols-outlined">play_circle</span>
-              </a>
+              {socialLinks
+                .filter((item) => Boolean(String(item.href || "").trim()))
+                .map(({ key, label, href, Icon }) => (
+                <a
+                  key={key}
+                  className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-[#4ECDC4] hover:text-white transition-all"
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  title={label}
+                >
+                  <Icon size={18} />
+                </a>
+              ))}
             </div>
           </div>
 
           <div>
-            <h5 className="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Map Routes</h5>
+            <h5 className="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Menus</h5>
             <ul className="space-y-4 text-sm font-medium">
-              <li>
-                <a className="hover:text-[#FFD23F] transition-colors flex items-center gap-2" href="#">
-                  <span className="material-symbols-outlined text-xs">chevron_right</span>
-                  Class 10 CBSE Quests
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-[#FFD23F] transition-colors flex items-center gap-2" href="#">
-                  <span className="material-symbols-outlined text-xs">chevron_right</span>
-                  ICSE Science Lab
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-[#FFD23F] transition-colors flex items-center gap-2" href="#">
-                  <span className="material-symbols-outlined text-xs">chevron_right</span>
-                  Math Adventure Notes
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-[#FFD23F] transition-colors flex items-center gap-2" href="#">
-                  <span className="material-symbols-outlined text-xs">chevron_right</span>
-                  New Syllabus Updates
-                </a>
-              </li>
+              {menus.map((item) => (
+                <li key={item.to}>
+                  <Link className="hover:text-[#FFD23F] transition-colors flex items-center gap-2" to={item.to}>
+                    <span className="material-symbols-outlined text-xs">chevron_right</span>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <h5 className="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Our Base</h5>
+            <h5 className="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Important Menus</h5>
             <ul className="space-y-4 text-sm font-medium">
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Our Mission</a></li>
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Join the Crew</a></li>
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Explorer Privacy</a></li>
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Quest Rules</a></li>
+              {importantMenus.map((item) => (
+                <li key={item.to}>
+                  <Link className="hover:text-[#FFD23F] transition-colors" to={item.to}>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <h5 className="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Help Signal</h5>
+            <h5 className="text-white font-bold mb-8 uppercase text-xs tracking-[0.2em]">Social Links</h5>
             <ul className="space-y-4 text-sm font-medium">
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Support HQ</a></li>
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Talk to a Guide</a></li>
-              <li><a className="hover:text-[#FFD23F] transition-colors" href="#">Scholarships</a></li>
+              {socialLinks
+                .filter((item) => Boolean(String(item.href || "").trim()))
+                .map(({ key, label, href }) => (
+                <li key={key}>
+                  <a
+                    className="hover:text-[#FFD23F] transition-colors"
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
         <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold text-slate-500">
-          <p>© 2026 Electronic Educare. Adventure Awaits!</p>
-          <p className="flex items-center gap-2">
+          <p>© {new Date().getFullYear()} Electronic Educare</p>
+          {/* <p className="flex items-center gap-2">
             Built with{" "} & Care
             <span className="material-symbols-outlined text-[#FF6B6B] text-sm fill-icon">favorite</span>
             for incredible Indian students
-          </p>
+          </p> */}
         </div>
       </div>
     </footer>

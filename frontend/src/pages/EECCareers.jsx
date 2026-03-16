@@ -187,6 +187,7 @@ function toJobSlug(title, index) {
 
 export default function EECCareers() {
   const [careerData, setCareerData] = useState(null);
+  const [officeData, setOfficeData] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [selectedJobTitle, setSelectedJobTitle] = useState("");
   const [loading, setLoading] = useState(true);
@@ -236,6 +237,42 @@ export default function EECCareers() {
     }
     loadCareer();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadOffice() {
+      try {
+        const res = await fetch(`${API_BASE}/api/office`);
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || cancelled) return;
+        setOfficeData(json);
+      } catch (err) {
+        console.error("Failed to load office contact for careers:", err);
+      }
+    }
+    loadOffice();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function normalizeTextValue(value) {
+    if (typeof value === "string") return value.trim();
+    if (value && typeof value === "object") {
+      if (typeof value.value === "string") return value.value.trim();
+      if (typeof value.email === "string") return value.email.trim();
+    }
+    return "";
+  }
+
+  const careersEmail =
+    normalizeTextValue(
+      Array.isArray(officeData?.contacts)
+        ? officeData.contacts.find((c) => c?.type === "email")?.value
+        : ""
+    ) ||
+    normalizeTextValue(officeData?.email) ||
+    "careers@eec.edu";
 
   const introText =
     careerData?.introText ||
@@ -550,9 +587,9 @@ export default function EECCareers() {
               </p>
               <div className="mt-6 rounded-2xl bg-white p-4 shadow">
                 <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#d77e32]">Contact</p>
-                <a href="mailto:careers@eec.edu" className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-[#1f3b5b] hover:underline">
+                <a href={`mailto:${careersEmail}`} className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-[#1f3b5b] hover:underline">
                   <Mail className="h-4 w-4" />
-                  careers@eec.edu
+                  {careersEmail}
                 </a>
               </div>
             </motion.div>
@@ -593,7 +630,7 @@ export default function EECCareers() {
             We're always open to talented people. Send us your portfolio or CV and we'll keep you in mind for future openings.
           </p>
           <a
-            href="mailto:careers@eec.edu"
+            href={`mailto:${careersEmail}`}
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold uppercase tracking-[0.3em] text-[#142239] shadow-lg transition hover:-translate-y-0.5"
           >
             Get in touch

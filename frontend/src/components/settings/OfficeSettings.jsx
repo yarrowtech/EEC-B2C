@@ -53,7 +53,11 @@ export default function OfficeSettings() {
     const [root, ...rest] = path.split(".");
     setData((prev) => {
       const copy = { ...(prev || {}) };
-      if (!copy[root]) copy[root] = {};
+      if (!rest.length) {
+        copy[root] = value;
+        return copy;
+      }
+      if (!copy[root] || typeof copy[root] !== "object") copy[root] = {};
       let cur = copy[root];
       for (let i = 0; i < rest.length - 1; i++) {
         const k = rest[i];
@@ -181,6 +185,13 @@ export default function OfficeSettings() {
         normalizedContacts.find((c) => c.type === "email")?.value ||
         payload.email ||
         "";
+
+      payload.socialLinks = {
+        facebook: String(payload?.socialLinks?.facebook || "").trim(),
+        instagram: String(payload?.socialLinks?.instagram || "").trim(),
+        linkedin: String(payload?.socialLinks?.linkedin || "").trim(),
+        youtube: String(payload?.socialLinks?.youtube || "").trim(),
+      };
 
       const res = await fetch(`${API}/api/office`, {
         method: "PUT",
@@ -474,6 +485,49 @@ export default function OfficeSettings() {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* SOCIAL LINKS */}
+      <div className="rounded-2xl border border-white/30 bg-white/70 backdrop-blur-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-semibold text-slate-800">Social Links</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Facebook URL</label>
+            <input
+              value={data.socialLinks?.facebook || ""}
+              onChange={(e) => updateField("socialLinks.facebook", e.target.value)}
+              className="w-full rounded-xl border px-3 py-2 text-sm"
+              placeholder="https://www.facebook.com/your-page"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Instagram URL</label>
+            <input
+              value={data.socialLinks?.instagram || ""}
+              onChange={(e) => updateField("socialLinks.instagram", e.target.value)}
+              className="w-full rounded-xl border px-3 py-2 text-sm"
+              placeholder="https://www.instagram.com/your-handle"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">LinkedIn URL</label>
+            <input
+              value={data.socialLinks?.linkedin || ""}
+              onChange={(e) => updateField("socialLinks.linkedin", e.target.value)}
+              className="w-full rounded-xl border px-3 py-2 text-sm"
+              placeholder="https://www.linkedin.com/company/your-page"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">YouTube URL</label>
+            <input
+              value={data.socialLinks?.youtube || ""}
+              onChange={(e) => updateField("socialLinks.youtube", e.target.value)}
+              className="w-full rounded-xl border px-3 py-2 text-sm"
+              placeholder="https://www.youtube.com/@your-channel"
+            />
+          </div>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ export default function EECOffice() {
 
   React.useEffect(() => {
     (async () => {
+      let hasCachedData = false;
       try {
         setLoading(true);
 
@@ -24,10 +25,10 @@ export default function EECOffice() {
           try {
             const parsed = JSON.parse(cachedData);
             if (parsed && typeof parsed.ts === 'number' && Date.now() - parsed.ts < CACHE_TTL) {
-              // Use cached data
+              // Use cached data immediately, but still revalidate from API.
               setData(parsed.data);
               setLoading(false);
-              return;
+              hasCachedData = true;
             }
           } catch (e) {
             // Invalid cache, continue to fetch
@@ -50,13 +51,58 @@ export default function EECOffice() {
       } catch (e) {
         console.error("Failed to load contact-us page", e);
       } finally {
-        setLoading(false);
+        if (!hasCachedData) setLoading(false);
       }
     })();
   }, [API]);
 
-  const mapsEmbed = data?.mapEmbedUrl || "";
-  const mapsDir = data?.mapDirectionsUrl || "";
+  function normalizeTextValue(value) {
+    if (typeof value === "string") {
+      const str = value.trim();
+      if (!str) return "";
+
+      // If admin pasted full iframe HTML, extract src URL.
+      if (/<iframe/i.test(str)) {
+        const match = str.match(/src=["']([^"']+)["']/i);
+        if (match?.[1]) return match[1].trim();
+      }
+
+      // If value is a JSON string, parse and recurse.
+      if ((str.startsWith("{") && str.endsWith("}")) || (str.startsWith("[") && str.endsWith("]"))) {
+        try {
+          return normalizeTextValue(JSON.parse(str));
+        } catch {
+          return str;
+        }
+      }
+
+      return str;
+    }
+    if (value && typeof value === "object") {
+      if (typeof value.value === "string") return value.value.trim();
+      if (typeof value.url === "string") return value.url.trim();
+      if (typeof value.href === "string") return value.href.trim();
+      if (typeof value.src === "string") return value.src.trim();
+      if (typeof value.mapEmbedUrl === "string") return value.mapEmbedUrl.trim();
+      if (typeof value.mapDirectionsUrl === "string") return value.mapDirectionsUrl.trim();
+      for (const nested of Object.values(value)) {
+        const normalized = normalizeTextValue(nested);
+        if (normalized) return normalized;
+      }
+    }
+    return "";
+  }
+
+  function normalizeUrl(value) {
+    const raw = normalizeTextValue(value);
+    if (!raw) return "";
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^www\./i.test(raw)) return `https://${raw}`;
+    return raw;
+  }
+
+  const mapsEmbed = normalizeUrl(data?.mapEmbedUrl);
+  const mapsDir = normalizeUrl(data?.mapDirectionsUrl);
   const contacts =
     Array.isArray(data?.contacts) && data.contacts.length
       ? data.contacts
@@ -69,6 +115,9 @@ export default function EECOffice() {
   const addressValue = contacts.find((c) => c.type === "address")?.value || data?.address || "";
   const phoneValue = contacts.find((c) => c.type === "phone")?.value || data?.phone || "";
   const emailValue = contacts.find((c) => c.type === "email")?.value || data?.email || "";
+  const normalizedAddress = normalizeTextValue(addressValue);
+  const normalizedPhone = normalizeTextValue(phoneValue);
+  const normalizedEmail = normalizeTextValue(emailValue);
 
   const introLoading = usePageIntroLoader("eec:intro:office", 800);
   if (introLoading) {
@@ -144,19 +193,19 @@ export default function EECOffice() {
             {
               icon: <MapPin className="h-6 w-6" />,
               title: "Office Address",
-              value: addressValue || "Address not available",
+              value: normalizedAddress || "Address not available",
             },
             {
               icon: <Phone className="h-6 w-6" />,
               title: "Call Us",
-              value: phoneValue || "Phone not available",
-              link: phoneValue ? `tel:${phoneValue}` : undefined,
+              value: normalizedPhone || "Phone not available",
+              link: normalizedPhone ? `tel:${normalizedPhone}` : undefined,
             },
             {
               icon: <Mail className="h-6 w-6" />,
               title: "Email",
-              value: emailValue || "Email not available",
-              link: emailValue ? `mailto:${emailValue}` : undefined,
+              value: normalizedEmail || "Email not available",
+              link: normalizedEmail ? `mailto:${normalizedEmail}` : undefined,
             },
           ].map((card) => (
             <div key={card.title} className="rounded-[28px] border border-[#edf0f5] bg-[#fefbf5] p-6 shadow-[0_15px_40px_rgba(14,31,50,0.08)]">
@@ -249,7 +298,7 @@ export default function EECOffice() {
                 {info.type === "phone" ? "Phone" : info.type === "email" ? "Email" : "Address"}
               </div>
               <h4 className="mt-3 text-lg font-semibold text-[#15253c]">{info.title}</h4>
-              <p className="mt-2 text-sm text-[#4b5b78]">{info.value}</p>
+              <p className="mt-2 text-sm text-[#4b5b78]">{normalizeTextValue(info.value)}</p>
             </motion.div>
           ))}
         </div>

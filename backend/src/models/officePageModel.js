@@ -31,6 +31,12 @@ const OfficePageSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    socialLinks: {
+      facebook: { type: String, default: "" },
+      instagram: { type: String, default: "" },
+      linkedin: { type: String, default: "" },
+      youtube: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );
