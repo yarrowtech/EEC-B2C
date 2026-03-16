@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FileText, Lock, Wallet, CreditCard, Search, Grid, List, Heart, Eye, ArrowUpDown, X } from "lucide-react";
 import SecurePdfViewer from "../components/SecurePdfViewer.jsx";
 import { toast, ToastContainer } from "react-toastify";
+import { useLocation } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const CACHE_PREFIX = "eec:study-materials";
@@ -35,6 +36,7 @@ function writeCache(section, userKey, data) {
 }
 
 export default function StudyMaterialsPage() {
+    const location = useLocation();
     const [user, setUser] = useState(null);
     const [materials, setMaterials] = useState([]);
     const [subject, setSubject] = useState("All");
@@ -51,6 +53,14 @@ export default function StudyMaterialsPage() {
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [previewMaterial, setPreviewMaterial] = useState(null);
     const [favorites, setFavorites] = useState([]);
+    const [highlightedMaterialId, setHighlightedMaterialId] = useState("");
+    const [openedMaterialIds, setOpenedMaterialIds] = useState([]);
+
+    const userKey = user?._id || user?.id || user?.email || "anonymous";
+
+    function getOpenedMaterialsKey(currentUserKey) {
+        return `${CACHE_PREFIX}:${currentUserKey}:opened-materials`;
+    }
 
     /* ---------------- LOAD FAVORITES FROM LOCALSTORAGE ---------------- */
     useEffect(() => {
@@ -59,6 +69,17 @@ export default function StudyMaterialsPage() {
             setFavorites(JSON.parse(savedFavorites));
         }
     }, []);
+
+    useEffect(() => {
+        if (!userKey) return;
+        try {
+            const raw = localStorage.getItem(getOpenedMaterialsKey(userKey));
+            const parsed = raw ? JSON.parse(raw) : [];
+            setOpenedMaterialIds(Array.isArray(parsed) ? parsed.map((id) => String(id)) : []);
+        } catch {
+            setOpenedMaterialIds([]);
+        }
+    }, [userKey]);
 
     /* ---------------- FAVORITES HANDLERS ---------------- */
     function toggleFavorite(materialId) {
@@ -75,6 +96,27 @@ export default function StudyMaterialsPage() {
 
     function isFavorite(materialId) {
         return favorites.includes(materialId);
+    }
+
+    function markMaterialAsOpened(materialId) {
+        if (!materialId) return;
+        const id = String(materialId);
+        setOpenedMaterialIds((prev) => {
+            if (prev.includes(id)) return prev;
+            const next = [...prev, id];
+            try {
+                localStorage.setItem(getOpenedMaterialsKey(userKey), JSON.stringify(next));
+            } catch {
+                // Ignore storage errors.
+            }
+            return next;
+        });
+    }
+
+    function handleOpenMaterial(material) {
+        if (!material?._id) return;
+        markMaterialAsOpened(material._id);
+        setOpenPdf(material);
     }
 
     /* ---------------- USER ACCESS CHECK ---------------- */
@@ -108,24 +150,29 @@ export default function StudyMaterialsPage() {
             if (!token) return;
             const storedUser = JSON.parse(localStorage.getItem("user") || "null");
             const userKey = storedUser?._id || storedUser?.id || storedUser?.email || "anonymous";
+            let hasCachedUser = false;
 
             const cachedUser = readCache("profile", userKey, 5 * 60 * 1000);
             if (cachedUser) {
                 setUser(cachedUser);
-                return;
+                hasCachedUser = true;
             }
 
             try {
                 const res = await fetch(`${API}/api/users/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                if (!res.ok) return;
+                if (!res.ok) {
+                    if (!hasCachedUser && storedUser) setUser(storedUser);
+                    return;
+                }
 
                 const data = await res.json();
                 setUser(data.user);
                 writeCache("profile", userKey, data.user);
             } catch (err) {
                 console.error("FETCH USER ERROR:", err);
+                if (!hasCachedUser && storedUser) setUser(storedUser);
             }
         }
 
@@ -139,24 +186,29 @@ export default function StudyMaterialsPage() {
             if (!token) return;
             const storedUser = JSON.parse(localStorage.getItem("user") || "null");
             const userKey = storedUser?._id || storedUser?.id || storedUser?.email || "anonymous";
+            let hasCachedWallet = false;
 
             const cachedWallet = readCache("wallet", userKey, 60 * 1000);
             if (cachedWallet !== null) {
                 setWallet(Number(cachedWallet) || 0);
-                return;
+                hasCachedWallet = true;
             }
 
             try {
                 const res = await fetch(`${API}/api/users/wallet`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                if (!res.ok) return;
+                if (!res.ok) {
+                    if (!hasCachedWallet) setWallet(Number(storedUser?.wallet || 0));
+                    return;
+                }
 
                 const data = await res.json();
                 setWallet(data.wallet || 0);
                 writeCache("wallet", userKey, data.wallet || 0);
             } catch (err) {
                 console.error("FETCH WALLET ERROR:", err);
+                if (!hasCachedWallet) setWallet(Number(storedUser?.wallet || 0));
             }
         }
 
@@ -381,6 +433,33 @@ export default function StudyMaterialsPage() {
                 return 0;
         }
     });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const targetMaterialId = params.get("materialId");
+        if (!targetMaterialId || loading) return;
+
+        const targetExists = visibleMaterials.some((m) => String(m._id) === String(targetMaterialId));
+        if (!targetExists) return;
+
+        const element = document.getElementById(`study-material-${targetMaterialId}`);
+        if (!element) return;
+
+        setHighlightedMaterialId(targetMaterialId);
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        const t = setTimeout(() => setHighlightedMaterialId(""), 2500);
+        return () => clearTimeout(t);
+    }, [location.search, loading, visibleMaterials]);
+
+    const targetMaterialIdFromQuery = String(new URLSearchParams(location.search).get("materialId") || "");
+
+    function isUnreadTargetMaterial(materialId) {
+        if (!targetMaterialIdFromQuery) return false;
+        const id = String(materialId || "");
+        if (!id || id !== targetMaterialIdFromQuery) return false;
+        return !openedMaterialIds.includes(id);
+    }
 
     /* ---------------- LOADING GUARD ---------------- */
     if (!user) {
@@ -632,12 +711,18 @@ export default function StudyMaterialsPage() {
                     {visibleMaterials.map((m) => (
                         <div
                             key={m._id}
+                            id={`study-material-${m._id}`}
                             className={`group relative overflow-hidden rounded-xl md:rounded-2xl bg-white/90 backdrop-blur-sm shadow-sm md:shadow-lg hover:shadow-2xl border border-gray-200/50 transition-all duration-300 ${
                                 viewMode === "grid"
                                     ? "md:p-6 md:transform md:hover:-translate-y-2"
                                     : "md:p-5 hover:border-indigo-300"
-                            }`}
+                            } ${highlightedMaterialId === String(m._id) ? "ring-2 ring-indigo-500 ring-offset-2" : ""}`}
                         >
+                            {isUnreadTargetMaterial(m._id) && (
+                                <div className="absolute left-3 top-3 md:left-14 z-20 inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+                                    Unread
+                                </div>
+                            )}
                             {/* TOP RIBBON */}
                             {(() => {
                                 const freeMaterial = isMaterialFree(m);
@@ -683,7 +768,7 @@ export default function StudyMaterialsPage() {
                                 <div className="flex-shrink-0 flex flex-col gap-1.5">
                                     {hasAccess(m) ? (
                                         <>
-                                            <button onClick={() => setOpenPdf(m)}
+                                            <button onClick={() => handleOpenMaterial(m)}
                                                 className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs active:scale-95 transition-all shadow-sm whitespace-nowrap">
                                                 📖 View
                                             </button>
@@ -726,7 +811,7 @@ export default function StudyMaterialsPage() {
                                             </button>
                                         )}
                                         {hasAccess(m) ? (
-                                            <button onClick={() => setOpenPdf(m)}
+                                            <button onClick={() => handleOpenMaterial(m)}
                                                 className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
                                                 📖 View Material
                                             </button>
@@ -759,7 +844,7 @@ export default function StudyMaterialsPage() {
                                             </button>
                                         )}
                                         {hasAccess(m) ? (
-                                            <button onClick={() => setOpenPdf(m)}
+                                            <button onClick={() => handleOpenMaterial(m)}
                                                 className="px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300">
                                                 📖 View
                                             </button>
@@ -840,7 +925,7 @@ export default function StudyMaterialsPage() {
                                 Close
                             </button>
                             {hasAccess(previewMaterial) ? (
-                                <button onClick={() => { setShowPreviewModal(false); setOpenPdf(previewMaterial); }}
+                                <button onClick={() => { setShowPreviewModal(false); handleOpenMaterial(previewMaterial); }}
                                     className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:from-indigo-700 hover:to-purple-700 shadow-lg active:scale-[0.98] transition-all">
                                     📖 Open Material
                                 </button>

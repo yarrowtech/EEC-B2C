@@ -56,7 +56,7 @@ export default function QuestionsList() {
     }
   }, []);
 
-  const canDelete = userRole === "admin" || userRole === "teacher";
+  const canDelete = userRole === "admin";
   const allVisibleSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r._id));
   const currentUserId = useMemo(() => {
     try {
@@ -517,14 +517,16 @@ export default function QuestionsList() {
                           <FiEdit3 size={15} /> Edit
                         </Link>
 
-                        <button
-                          onClick={() => onDelete(r._id)}
-                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5
+                        {canDelete && (
+                          <button
+                            onClick={() => onDelete(r._id)}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5
                                    border border-red-300 text-red-600 bg-white
                                    hover:bg-red-50 shadow-sm transition"
-                        >
-                          <FiTrash2 size={15} /> Delete
-                        </button>
+                          >
+                            <FiTrash2 size={15} /> Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

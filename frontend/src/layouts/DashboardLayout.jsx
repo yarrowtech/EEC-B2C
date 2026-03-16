@@ -272,6 +272,7 @@ export default function DashboardLayout() {
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
+    const [studyMaterialsUnreadIds, setStudyMaterialsUnreadIds] = useState([]);
     const [dailyChallenge, setDailyChallenge] = useState({
         loading: false,
         hasQuestion: false,
@@ -299,6 +300,95 @@ export default function DashboardLayout() {
             window.removeEventListener("offline", goOffline);
         };
     }, []);
+
+    useEffect(() => {
+        if (role !== "student" || !token) {
+            setStudyMaterialsUnreadIds([]);
+            return;
+        }
+
+        const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const currentUserId = String(user?._id || user?.id || "");
+        if (!currentUserId) return;
+        let cancelled = false;
+
+        async function loadStudyMaterialUnread() {
+            try {
+                const res = await fetch(`${API}/api/notifications`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json().catch(() => []);
+                if (!res.ok || cancelled) return;
+
+                const unreadIds = (Array.isArray(data) ? data : [])
+                    .filter((n) => {
+                        if (n?.source !== "study-material") return false;
+                        const readByIds = Array.isArray(n?.readBy)
+                            ? n.readBy.map((id) => String(id))
+                            : [];
+                        return !readByIds.includes(currentUserId);
+                    })
+                    .map((n) => n._id)
+                    .filter(Boolean);
+
+                setStudyMaterialsUnreadIds(unreadIds);
+            } catch {
+                if (!cancelled) setStudyMaterialsUnreadIds([]);
+            }
+        }
+
+        loadStudyMaterialUnread();
+
+        const onServiceWorkerMessage = (event) => {
+            if (event?.data?.type === "NOTIFICATION_RECEIVED") {
+                loadStudyMaterialUnread();
+            }
+        };
+        const onAuthOrNotificationUpdate = () => loadStudyMaterialUnread();
+
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.addEventListener("message", onServiceWorkerMessage);
+        }
+        window.addEventListener("eec:auth", onAuthOrNotificationUpdate);
+
+        return () => {
+            cancelled = true;
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker.removeEventListener("message", onServiceWorkerMessage);
+            }
+            window.removeEventListener("eec:auth", onAuthOrNotificationUpdate);
+        };
+    }, [role, token, user?._id, user?.id]);
+
+    useEffect(() => {
+        if (role !== "student" || !token) return;
+        if (!location.pathname.startsWith("/dashboard/study-materials")) return;
+        if (studyMaterialsUnreadIds.length === 0) return;
+
+        const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        let cancelled = false;
+
+        async function markStudyMaterialAsRead() {
+            try {
+                await Promise.all(
+                    studyMaterialsUnreadIds.map((id) =>
+                        fetch(`${API}/api/notifications/${id}/read`, {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                        })
+                    )
+                );
+                if (!cancelled) setStudyMaterialsUnreadIds([]);
+            } catch {
+                // Keep badge if marking as read fails.
+            }
+        }
+
+        markStudyMaterialAsRead();
+        return () => {
+            cancelled = true;
+        };
+    }, [role, token, location.pathname, studyMaterialsUnreadIds]);
 
     // Check if teacher needs verification
     useEffect(() => {
@@ -407,9 +497,7 @@ export default function DashboardLayout() {
 
         if (role === "teacher") {
             base.push(
-                { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
-                { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },
-                { to: "/dashboard/notifications/create", label: "Send Notifications", icon: <LayoutGrid size={18} /> }
+                { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> }
             );
         }
 
@@ -527,7 +615,10 @@ export default function DashboardLayout() {
 
                                     <div className={online ? "" : "opacity-40 pointer-events-none select-none"}>
                                         <SyllabusSidebarBlock role={role} />
-                                        <ExamSidebarBlock role={role} />
+                                        <ExamSidebarBlock
+                                            role={role}
+                                            studyMaterialsUnreadCount={studyMaterialsUnreadIds.length}
+                                        />
                                         <QuestionsSidebarBlock role={role} />
                                         <SettingsSidebarBlock role={role} />
                                     </div>
@@ -686,8 +777,14 @@ export default function DashboardLayout() {
                             >
                                 {({ isActive }) => (
                                     <>
-                                        <span className={`transition-transform duration-300 ${isActive ? "scale-110" : ""}`}>
+                                        <span className={`relative transition-transform duration-300 ${isActive ? "scale-110" : ""}`}>
                                             {item.icon}
+                                            {item.to === "/dashboard/study-materials" &&
+                                                studyMaterialsUnreadIds.length > 0 && (
+                                                    <span className="absolute -right-2 -top-2 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] leading-4 text-center font-bold shadow">
+                                                        {studyMaterialsUnreadIds.length > 99 ? "99+" : studyMaterialsUnreadIds.length}
+                                                    </span>
+                                                )}
                                         </span>
                                         <span className="transition-all duration-300">{item.label}</span>
                                     </>

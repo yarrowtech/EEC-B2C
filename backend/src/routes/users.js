@@ -378,10 +378,11 @@ router.put("/update-profile", requireAuth, async (req, res) => {
       "motherOccupation",
       "fatherContact",
       "motherContact",
+      "board",
     ];
 
-    // Only allow className update for admins or if user has permission
-    if (currentUser.role === "admin" || currentUser.canChangeClass === true) {
+    // Allow class update from profile for students/admins
+    if (["student", "admin"].includes(String(currentUser.role || "").toLowerCase())) {
       allowedFields.push("className");
     }
 

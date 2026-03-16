@@ -201,6 +201,16 @@ const ResultsView = () => {
           return;
         }
 
+        const analyticsUserKey = String(userId || user?.email || "anonymous");
+        const cachedAnalyticsAccess = readCache("analytics-access", analyticsUserKey, 60 * 1000);
+        if (cachedAnalyticsAccess && mounted) {
+          setAnalyticsAccess(
+            ["none", "basic", "full"].includes(String(cachedAnalyticsAccess))
+              ? String(cachedAnalyticsAccess)
+              : "none"
+          );
+        }
+
         const subscriptionRes = await fetch(`${API}/api/subscriptions/current`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -226,7 +236,10 @@ const ResultsView = () => {
         }
 
         if (mounted) {
-          setAnalyticsAccess(["none", "basic", "full"].includes(resolvedAccess) ? resolvedAccess : "none");
+          const normalizedAccess =
+            ["none", "basic", "full"].includes(resolvedAccess) ? resolvedAccess : "none";
+          setAnalyticsAccess(normalizedAccess);
+          writeCache("analytics-access", analyticsUserKey, normalizedAccess);
         }
       } catch {
         if (mounted) setAnalyticsAccess("none");
@@ -242,36 +255,41 @@ const ResultsView = () => {
   }, [API, token]);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const userId = user._id || user.id;
-
     if (!userId) {
       console.error("❌ No user ID in localStorage");
       return;
     }
 
+    let cancelled = false;
     const cachedAttempts = readCache("attempts", String(userId), 2 * 60 * 1000);
     if (cachedAttempts) {
       setExamResults(formatResults(cachedAttempts));
-      return;
     }
 
     fetch(`${API}/api/exams/user-results/${userId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` }
+      headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          setExamResults(formatResults(data.results));
-          const resolvedAccess = String(data?.analyticsAccess || "").toLowerCase();
-          if (["none", "basic", "full"].includes(resolvedAccess)) {
-            setAnalyticsAccess(resolvedAccess);
-          }
-          writeCache("attempts", String(userId), data.results || []);
+        if (!data.success || cancelled) return;
+        setExamResults(formatResults(data.results));
+        const resolvedAccess = String(data?.analyticsAccess || "").toLowerCase();
+        if (["none", "basic", "full"].includes(resolvedAccess)) {
+          setAnalyticsAccess(resolvedAccess);
+          writeCache("analytics-access", String(userId), resolvedAccess);
         }
+        writeCache("attempts", String(userId), data.results || []);
       })
-      .catch(err => console.error("Failed to load results", err));
-  }, []);
+      .catch(err => {
+        if (!cachedAttempts) {
+          console.error("Failed to load results", err);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API, token, userId]);
 
 
   // function formatResults(attempts) {

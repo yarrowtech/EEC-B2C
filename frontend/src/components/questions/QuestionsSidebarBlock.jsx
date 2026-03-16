@@ -96,7 +96,7 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             Topics
           </NavLink>
 
-          {role === "admin" && (
+          {(role === "admin" || role === "teacher") && (
             <NavLink
               to="/dashboard/add-content"
               className={({ isActive }) =>

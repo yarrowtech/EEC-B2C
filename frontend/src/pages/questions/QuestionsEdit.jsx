@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FiSave, FiEdit3, FiChevronLeft } from "react-icons/fi";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
@@ -22,6 +22,15 @@ export default function QuestionsEdit() {
   const [doc, setDoc] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const userRole = useMemo(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      return String(user?.role || "").toLowerCase();
+    } catch {
+      return "";
+    }
+  }, []);
+  const isTeacher = userRole === "teacher";
 
   useEffect(() => {
     (async () => {
@@ -71,20 +80,26 @@ export default function QuestionsEdit() {
         </div>
 
         {/* Hierarchy Editor */}
-        <HierarchyEditor doc={doc} scope={scope} />
+        {!isTeacher && <HierarchyEditor doc={doc} scope={scope} />}
 
         {/* Question Type Specific Editor */}
         <div className="space-y-6">
-          {doc.type === "mcq-single" && <EditMCQSingle doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "mcq-multi" && <EditMCQMulti doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "true-false" && <EditTrueFalse doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "choice-matrix" && <EditChoiceMatrix doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "cloze-drag" && <EditClozeDrag doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "cloze-select" && <EditClozeSelect doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "cloze-text" && <EditClozeText doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "match-list" && <EditMatchList doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "essay-rich" && <EditEssayRich doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
-          {doc.type === "essay-plain" && <EditEssayPlain doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+          {isTeacher ? (
+            <TeacherQuestionOnlyEditor doc={doc} busy={busy} setBusy={setBusy} />
+          ) : (
+            <>
+              {doc.type === "mcq-single" && <EditMCQSingle doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "mcq-multi" && <EditMCQMulti doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "true-false" && <EditTrueFalse doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "choice-matrix" && <EditChoiceMatrix doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "cloze-drag" && <EditClozeDrag doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "cloze-select" && <EditClozeSelect doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "cloze-text" && <EditClozeText doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "match-list" && <EditMatchList doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "essay-rich" && <EditEssayRich doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+              {doc.type === "essay-plain" && <EditEssayPlain doc={doc} scope={scope} busy={busy} setBusy={setBusy} />}
+            </>
+          )}
         </div>
       </div>
     </>
@@ -333,6 +348,269 @@ function SaveButton({ busy }) {
     >
       <FiSave size={18} /> {busy ? "Saving..." : "Save Changes"}
     </button>
+  );
+}
+
+function getTeacherQuestionValue(doc) {
+  switch (doc.type) {
+    case "mcq-single":
+    case "mcq-multi":
+    case "true-false":
+      return doc.question || doc.statement || "";
+    case "choice-matrix":
+      return doc.choiceMatrix?.prompt || "";
+    case "cloze-drag":
+      return doc.clozeDrag?.text || "";
+    case "cloze-select":
+      return doc.clozeSelect?.text || "";
+    case "cloze-text":
+      return doc.clozeText?.text || "";
+    case "match-list":
+      return doc.matchList?.prompt || "";
+    case "essay-rich":
+    case "essay-plain":
+      return doc.prompt || "";
+    default:
+      return doc.question || "";
+  }
+}
+
+function buildTeacherUpdatePayload(doc, value) {
+  switch (doc.type) {
+    case "mcq-single":
+    case "mcq-multi":
+    case "true-false":
+      return { question: value };
+    case "choice-matrix":
+      return {
+        choiceMatrix: {
+          ...(doc.choiceMatrix || {}),
+          prompt: value,
+        },
+      };
+    case "cloze-drag":
+      return {
+        clozeDrag: {
+          ...(doc.clozeDrag || {}),
+          text: value,
+        },
+      };
+    case "cloze-select":
+      return {
+        clozeSelect: {
+          ...(doc.clozeSelect || {}),
+          text: value,
+        },
+      };
+    case "cloze-text":
+      return {
+        clozeText: {
+          ...(doc.clozeText || {}),
+          text: value,
+        },
+      };
+    case "match-list":
+      return {
+        matchList: {
+          ...(doc.matchList || {}),
+          prompt: value,
+        },
+      };
+    case "essay-rich":
+    case "essay-plain":
+      return { prompt: value };
+    default:
+      return { question: value };
+  }
+}
+
+function TeacherQuestionOnlyEditor({ doc, busy, setBusy }) {
+  const [questionText, setQuestionText] = useState(() => getTeacherQuestionValue(doc));
+
+  async function save(e) {
+    e.preventDefault();
+    const nextValue = String(questionText || "").trim();
+    if (!nextValue) {
+      toast.warn("Question text is required");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await updateQuestion(doc._id, buildTeacherUpdatePayload(doc, nextValue));
+      toast.success("Question updated successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to update question");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-6">
+      <Card>
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Teacher access: you can edit only the question text.
+        </div>
+        <div className="mb-6">
+          <FieldLabel>Question Text</FieldLabel>
+          <textarea
+            value={questionText}
+            onChange={(e) => setQuestionText(e.target.value)}
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-36
+                     focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            placeholder="Enter question text..."
+          />
+        </div>
+        <div className="flex justify-end">
+          <SaveButton busy={busy} />
+        </div>
+      </Card>
+      <TeacherReadOnlyQuestionDetails doc={doc} />
+    </form>
+  );
+}
+
+function TeacherReadOnlyQuestionDetails({ doc }) {
+  const [display, setDisplay] = useState({
+    board: "",
+    className: "",
+    subject: "",
+    topic: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveNames() {
+      try {
+        const boardRaw = doc?.board;
+        const classRaw = doc?.class;
+        const subjectRaw = doc?.subject;
+        const topicRaw = doc?.topic;
+
+        const boardId = typeof boardRaw === "string" ? boardRaw : String(boardRaw?._id || "");
+        const classId = typeof classRaw === "string" ? classRaw : String(classRaw?._id || "");
+        const subjectId = typeof subjectRaw === "string" ? subjectRaw : String(subjectRaw?._id || "");
+        const topicId = typeof topicRaw === "string" ? topicRaw : String(topicRaw?._id || "");
+
+        const result = {
+          board: typeof boardRaw === "object" ? boardRaw?.name || boardId : boardId,
+          className: typeof classRaw === "object" ? classRaw?.name || classId : classId,
+          subject: typeof subjectRaw === "object" ? subjectRaw?.name || subjectId : subjectId,
+          topic: typeof topicRaw === "object" ? topicRaw?.name || topicId : topicId,
+        };
+
+        const [boards, classes] = await Promise.all([
+          getJSON("/api/boards").catch(() => []),
+          getJSON("/api/classes").catch(() => []),
+        ]);
+
+        const boardMatch = (boards || []).find((b) => String(b?._id) === boardId);
+        if (boardMatch?.name) result.board = boardMatch.name;
+
+        const classMatch = (classes || []).find((c) => String(c?._id) === classId);
+        if (classMatch?.name) result.className = classMatch.name;
+
+        if (boardId && classId) {
+          const subjects = await getJSON(
+            `/api/subject?board=${encodeURIComponent(boardId)}&class=${encodeURIComponent(classId)}`
+          ).catch(() => []);
+          const subjectMatch = (subjects || []).find((s) => String(s?._id) === subjectId);
+          if (subjectMatch?.name) result.subject = subjectMatch.name;
+        }
+
+        if (subjectId && boardId && classId) {
+          const topics = await getJSON(
+            `/api/topic/${encodeURIComponent(subjectId)}?board=${encodeURIComponent(boardId)}&class=${encodeURIComponent(classId)}`
+          ).catch(() => []);
+          const topicMatch = (topics || []).find((t) => String(t?._id) === topicId);
+          if (topicMatch?.name) result.topic = topicMatch.name;
+        }
+
+        if (!cancelled) setDisplay(result);
+      } catch {
+        if (!cancelled) {
+          setDisplay({
+            board: String(doc?.board?.name || doc?.board || ""),
+            className: String(doc?.class?.name || doc?.class || ""),
+            subject: String(doc?.subject?.name || doc?.subject || ""),
+            topic: String(doc?.topic?.name || doc?.topic || ""),
+          });
+        }
+      }
+    }
+
+    resolveNames();
+    return () => {
+      cancelled = true;
+    };
+  }, [doc]);
+
+  const options = Array.isArray(doc.options) ? doc.options : [];
+  const correct = Array.isArray(doc.correct) ? doc.correct.join(", ") : "";
+  const tags = Array.isArray(doc.tags) ? doc.tags.join(", ") : "";
+  const explanation = doc.explanation || "";
+
+  return (
+    <Card>
+      <h3 className="text-lg font-bold text-slate-800 mb-4">Read-only Details</h3>
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <FieldLabel>Board</FieldLabel>
+          <input value={display.board || ""} disabled className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200" />
+        </div>
+        <div>
+          <FieldLabel>Class</FieldLabel>
+          <input value={display.className || ""} disabled className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200" />
+        </div>
+        <div>
+          <FieldLabel>Subject</FieldLabel>
+          <input value={display.subject || ""} disabled className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200" />
+        </div>
+        <div>
+          <FieldLabel>Topic</FieldLabel>
+          <input value={display.topic || ""} disabled className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200" />
+        </div>
+      </div>
+
+      {!!options.length && (
+        <div className="mb-4">
+          <FieldLabel>Options</FieldLabel>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {options.map((opt, idx) => (
+              <input
+                key={`${opt?.key || idx}-${idx}`}
+                value={opt?.text || ""}
+                disabled
+                className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!!correct && (
+        <div className="mb-4">
+          <FieldLabel>Correct Answer</FieldLabel>
+          <input value={correct} disabled className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200" />
+        </div>
+      )}
+
+      <div className="mb-4">
+        <FieldLabel>Explanation</FieldLabel>
+        <textarea
+          value={explanation}
+          disabled
+          className="w-full rounded-xl px-4 py-3 bg-slate-100 border border-slate-200 min-h-24"
+        />
+      </div>
+
+      <div>
+        <FieldLabel>Tags</FieldLabel>
+        <input value={tags} disabled className="w-full rounded-xl px-4 py-2 bg-slate-100 border border-slate-200" />
+      </div>
+    </Card>
   );
 }
 

@@ -22,7 +22,8 @@ export default function AddTopic() {
     const [editShortDescription, setEditShortDescription] = useState("");
     const [editTopicImage, setEditTopicImage] = useState("");
     const [editUploadingImage, setEditUploadingImage] = useState(false);
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const isTeacher = String(user?.role || "").toLowerCase() === "teacher";
     const API = import.meta.env.VITE_API_URL;
     const headers = { Authorization: `Bearer ${localStorage.getItem("jwt")}` };
 
@@ -256,117 +257,119 @@ export default function AddTopic() {
             </div>
 
             {/* ---------- Add Topic Card - Enhanced ---------- */}
-            <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
-                    <span className="text-xl"></span>
-                    Add New Topic
-                </h3>
+            {!isTeacher && (
+                <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
+                    <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
+                        <span className="text-xl"></span>
+                        Add New Topic
+                    </h3>
 
-                {/* Board → Class → Subject → Topic (Cascading Flow) */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    {/* Step 1: Select Board */}
-                    <select
-                        value={board}
-                        onChange={(e) => {
-                            setBoard(e.target.value);
-                            setClassId("");
-                            setSubject("");
-                            setName("");
-                        }}
-                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
-                    >
-                        <option value=""> Select Board</option>
-                        {boards.map((b) => (
-                            <option key={b._id} value={b._id}>
-                                {b.name}
-                            </option>
-                        ))}
-                    </select>
+                    {/* Board → Class → Subject → Topic (Cascading Flow) */}
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        {/* Step 1: Select Board */}
+                        <select
+                            value={board}
+                            onChange={(e) => {
+                                setBoard(e.target.value);
+                                setClassId("");
+                                setSubject("");
+                                setName("");
+                            }}
+                            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
+                        >
+                            <option value=""> Select Board</option>
+                            {boards.map((b) => (
+                                <option key={b._id} value={b._id}>
+                                    {b.name}
+                                </option>
+                            ))}
+                        </select>
 
-                    {/* Step 2: Select Class */}
-                    <select
-                        value={classId}
-                        onChange={(e) => {
-                            setClassId(e.target.value);
-                            setSubject("");
-                            setName("");
-                        }}
-                        disabled={!board}
-                        className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all ${!board ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                    >
-                        <option value=""> Select Class</option>
-                        {classes.map((c) => (
-                            <option key={c._id} value={c._id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
+                        {/* Step 2: Select Class */}
+                        <select
+                            value={classId}
+                            onChange={(e) => {
+                                setClassId(e.target.value);
+                                setSubject("");
+                                setName("");
+                            }}
+                            disabled={!board}
+                            className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all ${!board ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                        >
+                            <option value=""> Select Class</option>
+                            {classes.map((c) => (
+                                <option key={c._id} value={c._id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
 
-                    {/* Step 3: Select Subject (filtered by board & class) */}
-                    <select
-                        className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all ${!board || !classId ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        disabled={!board || !classId}
-                    >
-                        <option value=""> Select Subject</option>
-                        {subjects.map((s) => (
-                            <option key={s._id} value={s._id}>
-                                {s.name}
-                            </option>
-                        ))}
-                    </select>
+                        {/* Step 3: Select Subject (filtered by board & class) */}
+                        <select
+                            className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all ${!board || !classId ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            disabled={!board || !classId}
+                        >
+                            <option value=""> Select Subject</option>
+                            {subjects.map((s) => (
+                                <option key={s._id} value={s._id}>
+                                    {s.name}
+                                </option>
+                            ))}
+                        </select>
 
-                    {/* Step 4: Enter Topic Name */}
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        disabled={!subject}
-                        className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all ${!subject ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                        placeholder=" Enter Topic Name"
-                    />
+                        {/* Step 4: Enter Topic Name */}
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            disabled={!subject}
+                            className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all ${!subject ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                            placeholder=" Enter Topic Name"
+                        />
 
-                    <button
-                        onClick={submit}
-                        disabled={!name || !subject || !board || !classId}
-                        className={`px-6 py-3 rounded-xl transition-all font-semibold shadow-md ${!name || !subject || !board || !classId ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-lg'}`}
-                    >
-                        Save Topic
-                    </button>
-                </div>
+                        <button
+                            onClick={submit}
+                            disabled={!name || !subject || !board || !classId}
+                            className={`px-6 py-3 rounded-xl transition-all font-semibold shadow-md ${!name || !subject || !board || !classId ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-lg'}`}
+                        >
+                            Save Topic
+                        </button>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <textarea
-                        value={shortDescription}
-                        onChange={(e) => setShortDescription(e.target.value)}
-                        disabled={!subject}
-                        rows={3}
-                        className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all resize-none ${!subject ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                        placeholder="Short description of topic"
-                    />
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-3">
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleAddTopicImage}
-                                disabled={!subject || uploadingImage}
-                                className="w-full text-sm"
-                            />
-                            {uploadingImage && (
-                                <span className="text-xs text-purple-600 font-semibold">Uploading...</span>
-                            )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <textarea
+                            value={shortDescription}
+                            onChange={(e) => setShortDescription(e.target.value)}
+                            disabled={!subject}
+                            rows={3}
+                            className={`border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all resize-none ${!subject ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                            placeholder="Short description of topic"
+                        />
+                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-3">
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAddTopicImage}
+                                    disabled={!subject || uploadingImage}
+                                    className="w-full text-sm"
+                                />
+                                {uploadingImage && (
+                                    <span className="text-xs text-purple-600 font-semibold">Uploading...</span>
+                                )}
+                            </div>
+                            {topicImage ? (
+                                <img
+                                    src={topicImage}
+                                    alt="Topic"
+                                    className="mt-3 h-20 w-20 rounded-lg object-cover border border-gray-200"
+                                />
+                            ) : null}
                         </div>
-                        {topicImage ? (
-                            <img
-                                src={topicImage}
-                                alt="Topic"
-                                className="mt-3 h-20 w-20 rounded-lg object-cover border border-gray-200"
-                            />
-                        ) : null}
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* ---------- Topic List (Grouped by Subject) - Enhanced ---------- */}
             <div className="bg-white shadow-md rounded-2xl border border-gray-100 overflow-hidden">
@@ -548,7 +551,7 @@ export default function AddTopic() {
 
                 {/* Actions with Permission */}
                 <td className="p-4">
-                    {(user.role === "admin" || topic.createdBy?._id === user.id) ? (
+                    {!isTeacher && (user.role === "admin" || topic.createdBy?._id === user.id) ? (
                         <div className="flex gap-2 justify-center">
                             {editingId === topic._id ? (
                                 <>

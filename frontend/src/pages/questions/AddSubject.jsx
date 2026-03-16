@@ -19,7 +19,8 @@ export default function AddSubject() {
     const currentData = subjects.slice((page - 1) * limit, page * limit);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const isTeacher = String(user?.role || "").toLowerCase() === "teacher";
 
 
     const loadBoards = async () => {
@@ -160,54 +161,56 @@ export default function AddSubject() {
             </div>
 
             {/* ---------- ADD SUBJECT CARD - Enhanced ---------- */}
-            <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
-                    <span className="text-xl"></span>
-                    Add New Subject
-                </h3>
+            {!isTeacher && (
+                <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
+                    <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
+                        <span className="text-xl"></span>
+                        Add New Subject
+                    </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <select
-                        value={board}
-                        onChange={(e) => setBoard(e.target.value)}
-                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-500 outline-none transition-all"
-                    >
-                        <option value="">Select Board</option>
-                        {boards.map((b) => (
-                            <option key={b._id} value={b._id}>
-                                {b.name}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <select
+                            value={board}
+                            onChange={(e) => setBoard(e.target.value)}
+                            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-500 outline-none transition-all"
+                        >
+                            <option value="">Select Board</option>
+                            {boards.map((b) => (
+                                <option key={b._id} value={b._id}>
+                                    {b.name}
+                                </option>
+                            ))}
+                        </select>
 
-                    <select
-                        value={classId}
-                        onChange={(e) => setClassId(e.target.value)}
-                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-500 outline-none transition-all"
-                    >
-                        <option value="">Select Class</option>
-                        {classes.map((c) => (
-                            <option key={c._id} value={c._id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
+                        <select
+                            value={classId}
+                            onChange={(e) => setClassId(e.target.value)}
+                            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-500 outline-none transition-all"
+                        >
+                            <option value="">Select Class</option>
+                            {classes.map((c) => (
+                                <option key={c._id} value={c._id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
 
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-500 outline-none transition-all"
-                        placeholder="Enter Subject Name"
-                    />
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-500 outline-none transition-all"
+                            placeholder="Enter Subject Name"
+                        />
 
-                    <button
-                        onClick={submit}
-                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold"
-                    >
-                        Save Subject
-                    </button>
+                        <button
+                            onClick={submit}
+                            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold"
+                        >
+                            Save Subject
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* ---------- SUBJECT LIST CARD - Enhanced ---------- */}
             <div className="bg-white shadow-md rounded-2xl border border-gray-100 overflow-hidden">
@@ -314,7 +317,7 @@ export default function AddSubject() {
                                         </td>
 
                                         <td className="p-4">
-                                            {user.role === "admin" || s.createdBy?._id === user.id ? (
+                                            {!isTeacher && (user.role === "admin" || s.createdBy?._id === user.id) ? (
                                                 <div className="flex gap-2 justify-center">
                                                     {editingId === s._id ? (
                                                         <>

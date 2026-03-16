@@ -7,6 +7,16 @@ import { toast } from "react-toastify";
 const PROFILE_CACHE_KEY = "eec:user-profile-cache:v1";
 const PROFILE_CACHE_TTL_MS = 15 * 60 * 1000;
 
+function isTokenValid(token) {
+  if (!token) return false;
+  try {
+    const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
+    return typeof exp === "number" && Date.now() < exp * 1000;
+  } catch {
+    return false;
+  }
+}
+
 function getUserCacheId(user) {
   return String(user?._id || user?.id || user?.email || user?.phone || "").toLowerCase();
 }
@@ -52,6 +62,12 @@ export default function GlobalLoginModal() {
   ========================= */
   useEffect(() => {
     const openLogin = () => {
+      const existingToken = localStorage.getItem("jwt") || "";
+      if (isTokenValid(existingToken)) {
+        setShowForgot(false);
+        setShowLogin(false);
+        return;
+      }
       setShowForgot(false);
       setShowLogin(true);
     };
@@ -154,8 +170,9 @@ export default function GlobalLoginModal() {
                   }
 
                   localStorage.setItem("user", JSON.stringify(hydratedUser));
-                  toast.success(`Welcome back, ${hydratedUser.name}!`);
+                  setShowForgot(false);
                   setShowLogin(false);
+                  toast.success(`Welcome back, ${hydratedUser.name}!`);
                   const redirectPath = sessionStorage.getItem("redirectAfterLogin");
                   if (redirectPath) {
                     sessionStorage.removeItem("redirectAfterLogin");

@@ -10,6 +10,7 @@ const topicSchema = new mongoose.Schema(
     shortDescription: { type: String, default: "" },
     topicSummary: { type: String, default: "" },
     learningOutcome: { type: String, default: "" },
+    contentUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

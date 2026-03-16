@@ -6,6 +6,58 @@ import { sendPushNotification } from "./pushNotificationRoutes.js";
 
 const router = express.Router();
 
+function getClassCandidates(rawClass) {
+  const trimmed = String(rawClass || "").trim();
+  if (!trimmed) return [];
+
+  const candidates = new Set([trimmed]);
+  const withoutPrefix = trimmed.replace(/^class\s*/i, "").trim();
+  if (withoutPrefix) {
+    candidates.add(withoutPrefix);
+    candidates.add(`Class ${withoutPrefix}`);
+  }
+  return Array.from(candidates);
+}
+
+function buildStudentAudienceFilter(user) {
+  const clauses = [];
+
+  const classCandidates = getClassCandidates(user.class || user.className);
+  const classClause = [{ "audience.class": { $exists: false } }, { "audience.class": "" }];
+  if (classCandidates.length) {
+    classClause.push({ "audience.class": { $in: classCandidates } });
+  }
+  clauses.push({ $or: classClause });
+
+  const board = String(user.board || "").trim();
+  const boardClause = [{ "audience.board": { $exists: false } }, { "audience.board": "" }];
+  if (board) {
+    boardClause.push({ "audience.board": board });
+  }
+  clauses.push({ $or: boardClause });
+
+  return clauses;
+}
+
+function isVisibleToUser(notification, user) {
+  if (!notification || !user) return false;
+
+  if (!(notification.role === "all" || notification.role === user.role)) {
+    return false;
+  }
+
+  if (user.role !== "student") return true;
+
+  const studentClassCandidates = getClassCandidates(user.class || user.className);
+  const targetClass = String(notification?.audience?.class || "").trim();
+  const targetBoard = String(notification?.audience?.board || "").trim();
+  const studentBoard = String(user.board || "").trim();
+
+  const classOk = !targetClass || studentClassCandidates.includes(targetClass);
+  const boardOk = !targetBoard || (studentBoard && studentBoard === targetBoard);
+  return classOk && boardOk;
+}
+
 /* ---------------- ADMIN: CREATE NOTIFICATION ---------------- */
 router.post("/", requireAuth, requireAdmin, async (req, res) => {
   const { title, message, role } = req.body;
@@ -43,9 +95,15 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
 
 /* ---------------- USER: GET NOTIFICATIONS ---------------- */
 router.get("/", requireAuth, async (req, res) => {
-  const notifications = await Notification.find({
+  const baseQuery = {
     $or: [{ role: req.user.role }, { role: "all" }],
-  })
+  };
+
+  if (req.user.role === "student") {
+    baseQuery.$and = buildStudentAudienceFilter(req.user);
+  }
+
+  const notifications = await Notification.find(baseQuery)
     .sort({ createdAt: -1 })
     .populate("createdBy", "name role");
 
@@ -77,6 +135,9 @@ router.get("/:id", requireAuth, async (req, res) => {
   const notification = await Notification.findById(req.params.id);
   if (!notification) {
     return res.status(404).json({ message: "Not found" });
+  }
+  if (!isVisibleToUser(notification, req.user)) {
+    return res.status(403).json({ message: "Forbidden" });
   }
   res.json(notification);
 });

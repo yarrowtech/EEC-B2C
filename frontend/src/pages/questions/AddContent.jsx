@@ -7,6 +7,17 @@ import "jodit/es2021/jodit.min.css";
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function AddContent() {
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  })();
+  const isAdmin = String(currentUser?.role || "").toLowerCase() === "admin";
+  const isTeacher = String(currentUser?.role || "").toLowerCase() === "teacher";
+  const currentUserId = String(currentUser?._id || currentUser?.id || "");
+
   const [boards, setBoards] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -83,10 +94,25 @@ export default function AddContent() {
   }, [subject]);
 
   function handleTopicChange(nextTopicId) {
+    const selected = topics.find((t) => t._id === nextTopicId);
+    if (!nextTopicId) {
+      setTopicId("");
+      setTopicSummary("");
+      setLearningOutcome("");
+      return;
+    }
+
+    if (!canManageTopicContent(selected)) {
+      toast.warn("Not permitted. This content belongs to another user.");
+      setTopicId("");
+      setTopicSummary("");
+      setLearningOutcome("");
+      return;
+    }
+
     setTopicId(nextTopicId);
-    const selectedTopic = topics.find((t) => t._id === nextTopicId);
-    setTopicSummary(normalizeRichContent(selectedTopic?.topicSummary || ""));
-    setLearningOutcome(normalizeRichContent(selectedTopic?.learningOutcome || ""));
+    setTopicSummary(normalizeRichContent(selected?.topicSummary || ""));
+    setLearningOutcome(normalizeRichContent(selected?.learningOutcome || ""));
   }
 
   function getPlainText(html) {
@@ -116,6 +142,41 @@ export default function AddContent() {
   function hasContent(topic) {
     return Boolean(getPlainText(topic?.topicSummary) || getPlainText(topic?.learningOutcome));
   }
+
+  function getContentOwnerId(topic) {
+    const owner = topic?.contentUpdatedBy;
+    if (owner) {
+      return String(typeof owner === "string" ? owner : owner?._id || owner?.id || "");
+    }
+    if (hasContent(topic)) {
+      const creator = topic?.createdBy;
+      if (creator) {
+        return String(typeof creator === "string" ? creator : creator?._id || creator?.id || "");
+      }
+    }
+    return "";
+  }
+
+  function canManageTopicContent(topic) {
+    if (!topic?._id) return false;
+    if (isAdmin) return true;
+    if (!isTeacher) return false;
+    const ownerId = getContentOwnerId(topic);
+    return !ownerId || ownerId === currentUserId;
+  }
+
+  const selectedTopic = useMemo(
+    () => topics.find((t) => t._id === topicId) || null,
+    [topics, topicId]
+  );
+  const canEditSelectedTopic = topicId ? canManageTopicContent(selectedTopic) : false;
+
+  const visibleTopicsWithContent = useMemo(() => {
+    const withContent = topics.filter((t) => hasContent(t));
+    if (isAdmin) return withContent;
+    if (isTeacher) return withContent.filter((t) => getContentOwnerId(t) === currentUserId);
+    return [];
+  }, [topics, isAdmin, isTeacher, currentUserId]);
 
   function previewText(html, max = 100) {
     const txt = getPlainText(html);
@@ -213,6 +274,11 @@ export default function AddContent() {
       return;
     }
 
+    if (!canEditSelectedTopic) {
+      toast.error("Not permitted to edit this topic content");
+      return;
+    }
+
     setSaving(true);
     try {
       await axios.put(
@@ -236,6 +302,10 @@ export default function AddContent() {
 
   async function deleteContent(topic) {
     if (!topic?._id) return;
+    if (!canManageTopicContent(topic)) {
+      toast.error("Not permitted to delete this content");
+      return;
+    }
     if (!window.confirm(`Delete saved content for "${topic.name}"?`)) return;
 
     setDeletingId(topic._id);
@@ -348,7 +418,7 @@ export default function AddContent() {
             <div className="mb-2">
               <label
                 className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold ${
-                  !topicId || insertingImage
+                  !topicId || !canEditSelectedTopic || insertingImage
                     ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                     : "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
                 }`}
@@ -357,13 +427,13 @@ export default function AddContent() {
                 <input
                   type="file"
                   accept="image/*"
-                  disabled={!topicId || insertingImage}
+                  disabled={!topicId || !canEditSelectedTopic || insertingImage}
                   className="hidden"
                   onChange={(e) => insertImageIntoContent(e.target.files?.[0])}
                 />
               </label>
             </div>
-            <div className={`${!topicId ? "opacity-70 pointer-events-none" : ""}`}>
+            <div className={`${!topicId || !canEditSelectedTopic ? "opacity-70 pointer-events-none" : ""}`}>
               <JoditEditor
                 value={topicSummary}
                 config={editorConfig}
@@ -376,12 +446,17 @@ export default function AddContent() {
                 Select a topic to enable content editing.
               </p>
             )}
+            {topicId && !canEditSelectedTopic && (
+              <p className="text-xs text-red-500 mt-2">
+                Not permitted. This topic content belongs to another user.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Learning Outcome
             </label>
-            <div className={`${!topicId ? "opacity-70 pointer-events-none" : ""}`}>
+            <div className={`${!topicId || !canEditSelectedTopic ? "opacity-70 pointer-events-none" : ""}`}>
               <JoditEditor
                 value={learningOutcome}
                 config={editorConfig}
@@ -403,11 +478,12 @@ export default function AddContent() {
             disabled={
               saving ||
               !topicId ||
+              !canEditSelectedTopic ||
               !getPlainText(topicSummary) ||
               !getPlainText(learningOutcome)
             }
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-              saving || !topicId || !getPlainText(topicSummary) || !getPlainText(learningOutcome)
+              saving || !topicId || !canEditSelectedTopic || !getPlainText(topicSummary) || !getPlainText(learningOutcome)
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700"
             }`}
@@ -421,7 +497,7 @@ export default function AddContent() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-800">Stored Topic Content</h2>
           <span className="text-sm text-gray-500">
-            {topics.filter((t) => hasContent(t)).length} with content
+            {visibleTopicsWithContent.length} with content
           </span>
         </div>
 
@@ -431,7 +507,7 @@ export default function AddContent() {
           </p>
         ) : topics.length === 0 ? (
           <p className="text-sm text-gray-500">No topics found for this selection.</p>
-        ) : topics.filter((t) => hasContent(t)).length === 0 ? (
+        ) : visibleTopicsWithContent.length === 0 ? (
           <p className="text-sm text-gray-500">No saved content yet for these topics.</p>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-xl">
@@ -448,8 +524,7 @@ export default function AddContent() {
                 </tr>
               </thead>
               <tbody>
-                {topics
-                  .filter((t) => hasContent(t))
+                {visibleTopicsWithContent
                   .map((t) => (
                     <tr key={t._id} className="border-t border-gray-200 align-top">
                       <td className="px-3 py-2 text-gray-600 whitespace-nowrap">

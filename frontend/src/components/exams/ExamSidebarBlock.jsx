@@ -26,7 +26,7 @@ const stageNames = {
   3: "Advanced Level",
 };
 
-export default function ExamSidebarBlock({ role = "student" }) {
+export default function ExamSidebarBlock({ role = "student", studyMaterialsUnreadCount = 0 }) {
   const [open, setOpen] = useState(false);
   const [stages, setStages] = useState([]);
   const [gamesOpen, setGamesOpen] = useState(false);
@@ -193,7 +193,14 @@ export default function ExamSidebarBlock({ role = "student" }) {
           }`
         }
       >
-        <GraduationCapIcon size={18} />
+        <span className="relative inline-flex">
+          <GraduationCapIcon size={18} />
+          {studyMaterialsUnreadCount > 0 && (
+            <span className="absolute -right-2 -top-2 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] leading-4 text-center font-bold shadow">
+              {studyMaterialsUnreadCount > 99 ? "99+" : studyMaterialsUnreadCount}
+            </span>
+          )}
+        </span>
         <span>Study Materials</span>
       </NavLink>
       <NavLink

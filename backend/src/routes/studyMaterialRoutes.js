@@ -8,7 +8,9 @@ import { razorpay } from "../utils/razorpay.js";
 import User from "../models/User.js";
 import Purchase from "../models/Purchase.js";
 import Subscription from "../models/Subscription.js";
+import Notification from "../models/Notification.js";
 import { sendPurchaseConfirmationEmail } from "../utils/sendMail.js";
+import { sendPushNotification } from "./pushNotificationRoutes.js";
 
 const router = express.Router();
 
@@ -37,6 +39,19 @@ function normalizeAccessLevel(rawAccessLevel, rawIsFree) {
   const normalized = String(rawAccessLevel || "").toLowerCase();
   if (["free", "limited", "premium"].includes(normalized)) return normalized;
   return rawIsFree === "true" ? "free" : "premium";
+}
+
+function getClassCandidates(rawClass) {
+  const trimmed = String(rawClass || "").trim();
+  if (!trimmed) return [];
+
+  const candidates = new Set([trimmed]);
+  const withoutPrefix = trimmed.replace(/^class\s*/i, "").trim();
+  if (withoutPrefix) {
+    candidates.add(withoutPrefix);
+    candidates.add(`Class ${withoutPrefix}`);
+  }
+  return Array.from(candidates);
 }
 
 async function resolveStudyMaterialsAccessForUser(userDoc) {
@@ -108,6 +123,45 @@ router.post(
 
         createdBy: req.user.id,
       });
+
+      try {
+        const audienceBoard = String(material.board || "").trim();
+        const audienceClass = String(material.class || "").trim();
+        const classCandidates = getClassCandidates(audienceClass);
+
+        const notification = await Notification.create({
+          title: "New Study Material Added",
+          message: `${material.title} is now available for ${audienceBoard} ${audienceClass}${material.subject ? ` (${material.subject})` : ""}.`,
+          role: "student",
+          createdBy: req.user.id,
+          source: "study-material",
+          materialId: material._id,
+          audience: {
+            board: audienceBoard,
+            class: audienceClass,
+            subject: String(material.subject || "").trim(),
+          },
+        });
+
+        const targetStudents = await User.find({
+          role: "student",
+          board: audienceBoard,
+          $or: [{ class: { $in: classCandidates } }, { className: { $in: classCandidates } }],
+        }).select("_id");
+
+        await Promise.all(
+          targetStudents.map((student) =>
+            sendPushNotification(
+              student._id,
+              notification.title,
+              notification.message,
+              notification._id.toString()
+            )
+          )
+        );
+      } catch (notificationErr) {
+        console.error("Study material notification error:", notificationErr);
+      }
 
       res.status(201).json(material);
     } catch (err) {

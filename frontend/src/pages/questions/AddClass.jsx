@@ -5,6 +5,15 @@ import { Pencil, Trash2 } from "lucide-react";
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function AddClass() {
+    const currentUser = (() => {
+        try {
+            return JSON.parse(localStorage.getItem("user") || "{}");
+        } catch {
+            return {};
+        }
+    })();
+    const isTeacher = String(currentUser?.role || "").toLowerCase() === "teacher";
+
     const [name, setName] = useState("");
     const [classes, setClasses] = useState([]);
     const [editingId, setEditingId] = useState(null);
@@ -98,41 +107,43 @@ export default function AddClass() {
             </div>
 
             {/* ADD / EDIT FORM - Enhanced */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                    <span className="text-xl">{editingId ? "" : ""}</span>
-                    {editingId ? "Edit Class" : "Add New Class"}
-                </h3>
-                <form
-                    onSubmit={handleSubmit}
-                    className="flex gap-3 max-w-2xl"
-                >
-                    <input
-                        className="flex-1 rounded-xl border-2 border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                        placeholder="e.g., Class 10, Grade 5, Standard 12"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                    />
-                    <button
-                        disabled={loading}
-                        className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            {!isTeacher && (
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                        <span className="text-xl">{editingId ? "" : ""}</span>
+                        {editingId ? "Edit Class" : "Add New Class"}
+                    </h3>
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex gap-3 max-w-2xl"
                     >
-                        {loading ? "Processing..." : editingId ? "Update Class" : "Add Class"}
-                    </button>
-                    {editingId && (
+                        <input
+                            className="flex-1 rounded-xl border-2 border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                            placeholder="e.g., Class 10, Grade 5, Standard 12"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
                         <button
-                            type="button"
-                            onClick={() => {
-                                setEditingId(null);
-                                setName("");
-                            }}
-                            className="px-4 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-all"
+                            disabled={loading}
+                            className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Cancel
+                            {loading ? "Processing..." : editingId ? "Update Class" : "Add Class"}
                         </button>
-                    )}
-                </form>
-            </div>
+                        {editingId && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingId(null);
+                                    setName("");
+                                }}
+                                className="px-4 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </form>
+                </div>
+            )}
 
             {/* LIST - Enhanced */}
             <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
@@ -180,26 +191,32 @@ export default function AddClass() {
                                     </td>
 
                                     <td className="p-4">
-                                        <div className="flex gap-2 justify-center">
-                                            <button
-                                                onClick={() => {
-                                                    setName(c.name);
-                                                    setEditingId(c._id);
-                                                }}
-                                                className="p-2 rounded-lg bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 hover:from-yellow-200 hover:to-amber-200 transition-all shadow-sm hover:shadow-md"
-                                                title="Edit"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
+                                        {isTeacher ? (
+                                            <div className="text-center text-xs font-semibold text-red-600">
+                                                Not permitted
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => {
+                                                        setName(c.name);
+                                                        setEditingId(c._id);
+                                                    }}
+                                                    className="p-2 rounded-lg bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 hover:from-yellow-200 hover:to-amber-200 transition-all shadow-sm hover:shadow-md"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
 
-                                            <button
-                                                onClick={() => remove(c._id)}
-                                                className="p-2 rounded-lg bg-gradient-to-r from-red-100 to-pink-100 text-red-700 hover:from-red-200 hover:to-pink-200 transition-all shadow-sm hover:shadow-md"
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
+                                                <button
+                                                    onClick={() => remove(c._id)}
+                                                    className="p-2 rounded-lg bg-gradient-to-r from-red-100 to-pink-100 text-red-700 hover:from-red-200 hover:to-pink-200 transition-all shadow-sm hover:shadow-md"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

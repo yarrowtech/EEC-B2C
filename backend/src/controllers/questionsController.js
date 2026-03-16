@@ -1,6 +1,11 @@
 // src/controllers/questionsController.js
 import Question from "../models/Question.js";
 import User from "../models/User.js";
+import Board from "../models/Board.js";
+import Class from "../models/Class.js";
+import Subject from "../models/Subject.js";
+import Topic from "../models/Topic.js";
+import Attempt from "../models/Attempt.js";
 import * as XLSX from "xlsx";
 
 // Helpers
@@ -1047,7 +1052,88 @@ export const update = async (req, res) => {
     const existing = await Question.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: "Not found" });
 
-    const merged = { ...existing.toObject(), ...req.body };
+    const role = String(req.user?.role || "").toLowerCase();
+    const isTeacher = role === "teacher";
+
+    let merged;
+    if (!isTeacher) {
+      merged = { ...existing.toObject(), ...req.body };
+    } else {
+      // Teachers are allowed to edit only the main question text/prompt.
+      const incoming = req.body || {};
+      merged = { ...existing.toObject() };
+
+      switch (existing.type) {
+        case "mcq-single":
+        case "mcq-multi":
+        case "true-false": {
+          const nextQuestion = String(
+            incoming.question ?? incoming.statement ?? merged.question ?? ""
+          ).trim();
+          if (nextQuestion) merged.question = nextQuestion;
+          break;
+        }
+        case "choice-matrix": {
+          const nextPrompt = String(incoming?.choiceMatrix?.prompt ?? "").trim();
+          if (nextPrompt) {
+            merged.choiceMatrix = {
+              ...(merged.choiceMatrix || {}),
+              prompt: nextPrompt,
+            };
+          }
+          break;
+        }
+        case "cloze-drag": {
+          const nextText = String(incoming?.clozeDrag?.text ?? "").trim();
+          if (nextText) {
+            merged.clozeDrag = {
+              ...(merged.clozeDrag || {}),
+              text: nextText,
+            };
+          }
+          break;
+        }
+        case "cloze-select": {
+          const nextText = String(incoming?.clozeSelect?.text ?? "").trim();
+          if (nextText) {
+            merged.clozeSelect = {
+              ...(merged.clozeSelect || {}),
+              text: nextText,
+            };
+          }
+          break;
+        }
+        case "cloze-text": {
+          const nextText = String(incoming?.clozeText?.text ?? "").trim();
+          if (nextText) {
+            merged.clozeText = {
+              ...(merged.clozeText || {}),
+              text: nextText,
+            };
+          }
+          break;
+        }
+        case "match-list": {
+          const nextPrompt = String(incoming?.matchList?.prompt ?? "").trim();
+          if (nextPrompt) {
+            merged.matchList = {
+              ...(merged.matchList || {}),
+              prompt: nextPrompt,
+            };
+          }
+          break;
+        }
+        case "essay-rich":
+        case "essay-plain": {
+          const nextPrompt = String(incoming.prompt ?? "").trim();
+          if (nextPrompt) merged.prompt = nextPrompt;
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
     const { ok, doc, message } = shapeByType(
       existing.type,
       merged,
@@ -1304,6 +1390,273 @@ export const getQuestionTypes = async (req, res) => {
   } catch (err) {
     console.error("Failed to fetch question types", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const uploadPerformanceAnalytics = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    const role = String(req.user?.role || "").toLowerCase();
+    const passPercentRaw = Number(req.query.passPercent);
+    const passPercent = Number.isFinite(passPercentRaw)
+      ? Math.min(100, Math.max(0, passPercentRaw))
+      : 60;
+
+    const teacherFilter =
+      role === "teacher"
+        ? { _id: req.user.id, role: { $regex: /^teacher$/i } }
+        : { role: { $regex: /^teacher$/i } };
+
+    const teachers = await User.find(teacherFilter).select("_id name email role").lean();
+    const teacherIds = teachers.map((t) => t._id);
+
+    if (!teacherIds.length) {
+      return res.json({
+        passPercent,
+        scope: role === "teacher" ? "self" : "all-teachers",
+        teacherSummaries: [],
+        setRows: [],
+      });
+    }
+
+    const teacherById = new Map(
+      teachers.map((t) => [String(t._id), { name: t.name || "Unknown", email: t.email || "" }])
+    );
+
+    const [uploadRows, attemptRows, boards, classes, subjects, topics] = await Promise.all([
+      Question.aggregate([
+        { $match: { createdBy: { $in: teacherIds } } },
+        {
+          $group: {
+            _id: {
+              teacherId: "$createdBy",
+              board: "$board",
+              className: "$class",
+              subject: "$subject",
+              topic: "$topic",
+              type: "$type",
+            },
+            uploadedQuestions: { $sum: 1 },
+            lastUploadedAt: { $max: "$createdAt" },
+          },
+        },
+      ]),
+      Attempt.aggregate([
+        {
+          $match: {
+            attemptType: "mcq",
+            submittedAt: { $ne: null },
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "student",
+          },
+        },
+        { $unwind: "$student" },
+        { $match: { "student.role": "student" } },
+        { $unwind: "$questions" },
+        {
+          $lookup: {
+            from: "questions",
+            localField: "questions",
+            foreignField: "_id",
+            as: "q",
+          },
+        },
+        { $unwind: "$q" },
+        { $match: { "q.createdBy": { $in: teacherIds } } },
+        {
+          $group: {
+            _id: {
+              teacherId: "$q.createdBy",
+              board: "$q.board",
+              className: "$q.class",
+              subject: "$q.subject",
+              topic: "$q.topic",
+              type: "$q.type",
+              attemptId: "$_id",
+              userId: "$userId",
+            },
+            percent: { $first: { $ifNull: ["$percent", 0] } },
+            questionsAttemptedInAttempt: { $sum: 1 },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              teacherId: "$_id.teacherId",
+              board: "$_id.board",
+              className: "$_id.className",
+              subject: "$_id.subject",
+              topic: "$_id.topic",
+              type: "$_id.type",
+            },
+            attemptsCount: { $sum: 1 },
+            uniqueStudentIds: { $addToSet: "$_id.userId" },
+            successfulAttemptsCount: {
+              $sum: {
+                $cond: [{ $gte: ["$percent", passPercent] }, 1, 0],
+              },
+            },
+            questionsAttemptedCount: { $sum: "$questionsAttemptedInAttempt" },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            attemptsCount: 1,
+            successfulAttemptsCount: 1,
+            questionsAttemptedCount: 1,
+            uniqueStudentsCount: { $size: "$uniqueStudentIds" },
+          },
+        },
+      ]),
+      Board.find({}).select("_id name").lean(),
+      Class.find({}).select("_id name").lean(),
+      Subject.find({}).select("_id name").lean(),
+      Topic.find({}).select("_id name").lean(),
+    ]);
+
+    const boardNameById = new Map(boards.map((x) => [String(x._id), x.name]));
+    const classNameById = new Map(classes.map((x) => [String(x._id), x.name]));
+    const subjectNameById = new Map(subjects.map((x) => [String(x._id), x.name]));
+    const topicNameById = new Map(topics.map((x) => [String(x._id), x.name]));
+
+    const toLabel = (rawValue, map) => {
+      const raw = String(rawValue || "").trim();
+      if (!raw) return "";
+      return map.get(raw) || raw;
+    };
+
+    const keyOf = (idObj) => {
+      const id = idObj || {};
+      return [
+        String(id.teacherId || ""),
+        String(id.board || ""),
+        String(id.className || ""),
+        String(id.subject || ""),
+        String(id.topic || ""),
+        String(id.type || ""),
+      ].join("__");
+    };
+
+    const combined = new Map();
+
+    for (const r of uploadRows) {
+      const key = keyOf(r._id);
+      combined.set(key, {
+        teacherId: String(r._id.teacherId || ""),
+        board: String(r._id.board || ""),
+        className: String(r._id.className || ""),
+        subject: String(r._id.subject || ""),
+        topic: String(r._id.topic || ""),
+        type: String(r._id.type || ""),
+        uploadedQuestions: Number(r.uploadedQuestions || 0),
+        attemptsCount: 0,
+        uniqueStudentsCount: 0,
+        successfulAttemptsCount: 0,
+        questionsAttemptedCount: 0,
+        lastUploadedAt: r.lastUploadedAt || null,
+      });
+    }
+
+    for (const r of attemptRows) {
+      const key = keyOf(r._id);
+      const existing = combined.get(key) || {
+        teacherId: String(r._id.teacherId || ""),
+        board: String(r._id.board || ""),
+        className: String(r._id.className || ""),
+        subject: String(r._id.subject || ""),
+        topic: String(r._id.topic || ""),
+        type: String(r._id.type || ""),
+        uploadedQuestions: 0,
+        attemptsCount: 0,
+        uniqueStudentsCount: 0,
+        successfulAttemptsCount: 0,
+        questionsAttemptedCount: 0,
+        lastUploadedAt: null,
+      };
+      existing.attemptsCount = Number(r.attemptsCount || 0);
+      existing.uniqueStudentsCount = Number(r.uniqueStudentsCount || 0);
+      existing.successfulAttemptsCount = Number(r.successfulAttemptsCount || 0);
+      existing.questionsAttemptedCount = Number(r.questionsAttemptedCount || 0);
+      combined.set(key, existing);
+    }
+
+    const setRows = Array.from(combined.values())
+      .map((row) => {
+        const teacher = teacherById.get(row.teacherId) || { name: "Unknown", email: "" };
+        const successRate = row.attemptsCount
+          ? Math.round((row.successfulAttemptsCount / row.attemptsCount) * 100)
+          : 0;
+        return {
+          ...row,
+          teacherName: teacher.name,
+          teacherEmail: teacher.email,
+          boardLabel: toLabel(row.board, boardNameById),
+          classLabel: toLabel(row.className, classNameById),
+          subjectLabel: toLabel(row.subject, subjectNameById),
+          topicLabel: toLabel(row.topic, topicNameById),
+          successRate,
+        };
+      })
+      .sort((a, b) => {
+        if (b.attemptsCount !== a.attemptsCount) return b.attemptsCount - a.attemptsCount;
+        if (b.uploadedQuestions !== a.uploadedQuestions) return b.uploadedQuestions - a.uploadedQuestions;
+        return String(a.teacherName || "").localeCompare(String(b.teacherName || ""));
+      });
+
+    const teacherAgg = new Map();
+    for (const row of setRows) {
+      const id = String(row.teacherId || "");
+      if (!id) continue;
+      if (!teacherAgg.has(id)) {
+        teacherAgg.set(id, {
+          teacherId: id,
+          teacherName: row.teacherName,
+          teacherEmail: row.teacherEmail,
+          uploadedQuestions: 0,
+          attemptsCount: 0,
+          successfulAttemptsCount: 0,
+          questionsAttemptedCount: 0,
+          uniqueStudentsCount: 0,
+        });
+      }
+      const agg = teacherAgg.get(id);
+      agg.uploadedQuestions += Number(row.uploadedQuestions || 0);
+      agg.attemptsCount += Number(row.attemptsCount || 0);
+      agg.successfulAttemptsCount += Number(row.successfulAttemptsCount || 0);
+      agg.questionsAttemptedCount += Number(row.questionsAttemptedCount || 0);
+      agg.uniqueStudentsCount += Number(row.uniqueStudentsCount || 0);
+    }
+
+    const teacherSummaries = Array.from(teacherAgg.values())
+      .map((row) => ({
+        ...row,
+        successRate: row.attemptsCount
+          ? Math.round((row.successfulAttemptsCount / row.attemptsCount) * 100)
+          : 0,
+      }))
+      .sort((a, b) => {
+        if (b.attemptsCount !== a.attemptsCount) return b.attemptsCount - a.attemptsCount;
+        if (b.uploadedQuestions !== a.uploadedQuestions) return b.uploadedQuestions - a.uploadedQuestions;
+        return String(a.teacherName || "").localeCompare(String(b.teacherName || ""));
+      });
+
+    res.json({
+      passPercent,
+      scope: role === "teacher" ? "self" : "all-teachers",
+      teacherSummaries,
+      setRows,
+    });
+  } catch (e) {
+    console.error("uploadPerformanceAnalytics error", e);
+    res.status(500).json({ message: "Failed to load upload performance analytics" });
   }
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Upload, FileText, Trash2, Pencil } from "lucide-react";
+import { Upload, FileText, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 
@@ -32,6 +32,7 @@ export default function UploadStudyMaterial() {
     const [form, setForm] = useState(emptyForm);
     const [pdf, setPdf] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
     const [materials, setMaterials] = useState([]);
     const [editId, setEditId] = useState(null);
     const ITEMS_PER_PAGE = 6;
@@ -176,6 +177,8 @@ export default function UploadStudyMaterial() {
     // }
 
     async function deleteMaterial(id) {
+        if (deletingId) return;
+
         const result = await Swal.fire({
             title: "Delete study material?",
             text: "This material will be permanently removed.",
@@ -191,6 +194,7 @@ export default function UploadStudyMaterial() {
         if (!result.isConfirmed) return;
 
         try {
+            setDeletingId(id);
             const res = await fetch(`${API}/api/study-materials/${id}`, {
                 method: "DELETE",
                 headers: {
@@ -228,6 +232,8 @@ export default function UploadStudyMaterial() {
                 title: "Delete failed",
                 text: err.message || "Something went wrong",
             });
+        } finally {
+            setDeletingId(null);
         }
     }
 
@@ -619,10 +625,11 @@ export default function UploadStudyMaterial() {
                             <div className="mt-5 flex justify-end gap-2">
                                 <button
                                     onClick={() => editMaterial(m)}
+                                    disabled={deletingId === m._id}
                                     className="p-2.5 rounded-xl
                        bg-blue-50 text-blue-600
                        hover:bg-blue-100
-                       hover:scale-105 transition"
+                       hover:scale-105 transition disabled:opacity-60 disabled:cursor-not-allowed"
                                     title="Edit material"
                                 >
                                     <Pencil size={16} />
@@ -630,13 +637,21 @@ export default function UploadStudyMaterial() {
 
                                 <button
                                     onClick={() => deleteMaterial(m._id)}
-                                    className="p-2.5 rounded-xl
+                                    disabled={deletingId === m._id}
+                                    className="inline-flex items-center gap-1.5 p-2.5 rounded-xl
                        bg-red-50 text-red-600
                        hover:bg-red-100
-                       hover:scale-105 transition"
+                       hover:scale-105 transition disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
                                     title="Delete material"
                                 >
-                                    <Trash2 size={16} />
+                                    {deletingId === m._id ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            <span className="text-xs font-semibold">Deleting...</span>
+                                        </>
+                                    ) : (
+                                        <Trash2 size={16} />
+                                    )}
                                 </button>
                             </div>
                         </div>

@@ -216,6 +216,7 @@ router.get("/topic/:subjectId", requireAuth, async (req, res) => {
       .populate("board", "name")
       .populate("class", "name")
       .populate("createdBy", "name")
+      .populate("contentUpdatedBy", "name role")
       .sort({ createdAt: -1 });
 
     const stageNumber = normalizeStageQuery(stage);
@@ -271,6 +272,11 @@ router.delete("/subject/:id", requireAuth, async (req, res) => {
 // UPDATE TOPIC
 router.put("/topic/:id", requireAuth, async (req, res) => {
   try {
+    const existingTopic = await Topic.findById(req.params.id);
+    if (!existingTopic) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
     const {
       name,
       subject,
@@ -281,6 +287,29 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
       topicSummary,
       learningOutcome,
     } = req.body;
+    const role = String(req.user?.role || "").toLowerCase();
+    const isTeacher = role === "teacher";
+
+    const isContentUpdate =
+      typeof topicSummary === "string" || typeof learningOutcome === "string";
+
+    if (isTeacher && isContentUpdate) {
+      const hasExistingContent = Boolean(
+        String(existingTopic.topicSummary || "").trim() ||
+        String(existingTopic.learningOutcome || "").trim()
+      );
+      const ownerId = existingTopic.contentUpdatedBy
+        ? String(existingTopic.contentUpdatedBy)
+        : hasExistingContent && existingTopic.createdBy
+          ? String(existingTopic.createdBy)
+          : "";
+      if (ownerId && ownerId !== String(req.user.id)) {
+        return res
+          .status(403)
+          .json({ message: "Not permitted. This content belongs to another user." });
+      }
+    }
+
     const updateData = {};
     if (name) updateData.name = name;
     if (subject) updateData.subject = subject;
@@ -290,12 +319,16 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
     if (typeof shortDescription === "string") updateData.shortDescription = shortDescription;
     if (typeof topicSummary === "string") updateData.topicSummary = topicSummary;
     if (typeof learningOutcome === "string") updateData.learningOutcome = learningOutcome;
+    if (isContentUpdate) updateData.contentUpdatedBy = req.user.id;
 
     const updated = await Topic.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
-    ).populate("board", "name").populate("class", "name");
+    )
+      .populate("board", "name")
+      .populate("class", "name")
+      .populate("contentUpdatedBy", "name role");
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -18,6 +18,7 @@ import {
   metaStages,
   getQuestionTypes,
   getTryoutSummary,
+  uploadPerformanceAnalytics,
 } from "../controllers/questionsController.js";
 import {requireAuth} from "../middleware/auth.js";
 
@@ -64,6 +65,7 @@ router.get("/meta/topics", requireAuth, metaTopics);
 
 // Get question types with counts (MUST be before /:id route)
 router.get("/types", requireAuth, getQuestionTypes);
+router.get("/upload-performance", requireAuth, uploadPerformanceAnalytics);
 
 // Dynamic routes (place these LAST)
 router.get("/:id", requireAuth, getOne);
