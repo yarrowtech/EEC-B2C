@@ -540,11 +540,11 @@ const Hero = () => {
                 {/* Row 2: Email grows, button self-end — from code.html */}
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="grow space-y-1">
-                    <label className="text-xs font-bold text-slate-500 ml-2"> Email</label>
+                    <label className="text-xs font-bold text-slate-500 ml-2">Explorer's Email</label>
                     <input
                       className={inputCls + " w-full"}
                       name="email"
-                      placeholder="demo@demo.com"
+                      placeholder="example@gmail.com"
                       type="email"
                     />
                   </div>
