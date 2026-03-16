@@ -6,6 +6,7 @@ import { useLocation } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const CACHE_PREFIX = "eec:study-materials";
+const STUDY_MATERIALS_TOAST_ID = "study-materials-toast";
 
 function getCacheKey(section, userKey = "anonymous") {
     return `${CACHE_PREFIX}:${userKey}:${section}`;
@@ -83,15 +84,17 @@ export default function StudyMaterialsPage() {
 
     /* ---------------- FAVORITES HANDLERS ---------------- */
     function toggleFavorite(materialId) {
-        setFavorites(prev => {
-            const newFavorites = prev.includes(materialId)
-                ? prev.filter(id => id !== materialId)
-                : [...prev, materialId];
+        const wasFavorite = favorites.includes(materialId);
+        const newFavorites = wasFavorite
+            ? favorites.filter((id) => id !== materialId)
+            : [...favorites, materialId];
 
-            localStorage.setItem("studyMaterialFavorites", JSON.stringify(newFavorites));
-            toast.success(prev.includes(materialId) ? "Removed from favorites" : "Added to favorites");
-            return newFavorites;
-        });
+        setFavorites(newFavorites);
+        localStorage.setItem("studyMaterialFavorites", JSON.stringify(newFavorites));
+        toast.success(
+            wasFavorite ? "Removed from favorites" : "Added to favorites",
+            { containerId: STUDY_MATERIALS_TOAST_ID }
+        );
     }
 
     function isFavorite(materialId) {
@@ -472,8 +475,7 @@ export default function StudyMaterialsPage() {
 
     return (
         <div className="min-h-screen space-y-3 md:space-y-8 p-3 sm:p-6 md:p-8 pb-24 md:pb-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
-            <ToastContainer />
-
+            <ToastContainer containerId={STUDY_MATERIALS_TOAST_ID} position="bottom-right" />
             {/* Animated background blobs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
                 <div className="absolute -top-20 -right-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
@@ -654,13 +656,13 @@ export default function StudyMaterialsPage() {
                                 {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
-                        <div>
+                        {/* <div>
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><span className="text-green-600">💰</span> Price</label>
                             <select value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}
                                 className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer">
                                 {priceFilters.map((p) => <option key={p} value={p}>{p === "Free" && "✨ "}{p === "Paid" && "💎 "}{p}</option>)}
                             </select>
-                        </div>
+                        </div> */}
                     </div>
                     <div className="mt-4 pt-4 border-t border-gray-200">
                         <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
