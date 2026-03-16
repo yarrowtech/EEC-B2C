@@ -720,8 +720,6 @@ export default function DashboardLayout() {
                                     localStorage.removeItem("jwt");
                                     localStorage.removeItem("user");
                                     window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
-                                    toast.success("Logged out successfully");
-                                    navigate("/", { replace: true });
                                 }}
                                 className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all duration-300 hover:bg-[#FF6B6B] hover:text-white hover:scale-[1.02] active:scale-[0.98]"
                             >

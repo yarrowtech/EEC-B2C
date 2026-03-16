@@ -24,7 +24,7 @@ import EECMarketing from "./pages/EECMarketing";
 import SupportCenter from "./pages/SupportCenter";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import GlobalLoginModal from "./components/GlobalLoginModal";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Dashboard from "./pages/Dashboard";
 import StudentsList from "./pages/StudentsList";
@@ -374,7 +374,13 @@ function ShellLayout() {
 
   return (
     <div className="min-h-screen bg-white text-blue-950">
-      <ToastContainer position="bottom-right" />
+      <ToastContainer
+        position="bottom-right"
+        closeOnClick
+        closeButton
+        draggable
+        pauseOnHover
+      />
       {showHeader && (
         <>
           <Topbar />
@@ -602,7 +608,13 @@ export default function App() {
         }
         // For manual logout, just navigate without showing modal
         else if (e?.detail?.type === "manual-logout") {
-          // Do nothing, Header already handles navigation and toast
+          toast.success("Logged out successfully", {
+            position: "bottom-right",
+            closeOnClick: true,
+            closeButton: true,
+            toastId: "manual-logout-success",
+          });
+          navigate("/", { replace: true });
         }
       };
 

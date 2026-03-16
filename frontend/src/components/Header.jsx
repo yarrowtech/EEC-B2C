@@ -234,7 +234,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Bell, Menu, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
     /* ---------------- CONFIG ---------------- */
@@ -574,8 +573,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                                                 window.dispatchEvent(
                                                     new CustomEvent("eec:auth", { detail: { type: "manual-logout" } })
                                                 );
-                                                toast.success("Logged out successfully");
-                                                navigate("/", { replace: true });
                                             }}
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

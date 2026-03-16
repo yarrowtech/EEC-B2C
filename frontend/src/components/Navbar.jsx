@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Menu, User, X, LogOut, LayoutDashboard } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 
 /* -------- Router-styled link with active underline -------- */
@@ -132,8 +131,6 @@ export default function Navbar() {
       localStorage.removeItem("user");
       // notify the app (Navbar listens to this in your earlier setup)
       window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
-      navigate("/", { replace: true });
-      toast.success("Logged out successfully");
     } finally {
       setUserMenuOpen(false);
     }

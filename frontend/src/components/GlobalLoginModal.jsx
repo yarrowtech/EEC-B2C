@@ -142,7 +142,13 @@ export default function GlobalLoginModal() {
     setShowForgot(false);
     setShowLogin(false);
     setShowGoogleProfile(false);
-    toast.success(toastMessage || `Welcome back, ${hydratedUser.name}!`);
+    toast.success(toastMessage || `Welcome back, ${hydratedUser.name}!`, {
+      position: "bottom-right",
+      closeOnClick: true,
+      closeButton: true,
+      draggable: true,
+      toastId: "login-success-toast",
+    });
     const redirectPath = sessionStorage.getItem("redirectAfterLogin");
     if (redirectPath) {
       sessionStorage.removeItem("redirectAfterLogin");
