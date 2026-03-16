@@ -86,39 +86,44 @@ export default function Topbar() {
   const shouldHide = location.pathname.startsWith("/dashboard");
   return shouldHide ? null : (
     <div className="w-full bg-orange-50 border-b border-orange-100 text-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-1.5">
 
-        {/* Left: contact info */}
-        <div className="flex items-center gap-1 md:gap-3">
-          {/* Phone */}
-          <a
-            href={`tel:${phone}`}
-            title="Call us"
-            className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 text-pink-600 px-2.5 py-1 font-medium transition hover:bg-pink-200 focus:outline-none"
+        {/* Left: contact marquee with edge blur */}
+        <div className="relative min-w-0 flex-1 overflow-hidden">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-orange-50 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-orange-50 to-transparent" />
+          <div
+            className="flex w-max items-center gap-3 pr-6 whitespace-nowrap"
+            style={{ animation: "topbar-rtl 18s linear infinite" }}
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-white">
-              <Phone className="h-3 w-3" />
-            </span>
-            <span className="hidden sm:inline">{phone}</span>
-          </a>
+            <a
+              href={`tel:${phone}`}
+              title="Call us"
+              className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 text-pink-600 px-2.5 py-1 font-medium transition hover:bg-pink-200 focus:outline-none"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-white">
+                <Phone className="h-3 w-3" />
+              </span>
+              <span>{phone}</span>
+            </a>
 
-          <span className="hidden sm:block text-orange-200 select-none">|</span>
+            <span className="text-orange-200 select-none">|</span>
 
-          {/* Email */}
-          <a
-            href={`mailto:${email}`}
-            title="Email us"
-            className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 text-violet-600 px-2.5 py-1 font-medium transition hover:bg-violet-200 focus:outline-none"
-          >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-white">
-              <Mail className="h-3 w-3" />
-            </span>
-            <span className="hidden md:inline">{email}</span>
-          </a>
+            <a
+              href={`mailto:${email}`}
+              title="Email us"
+              className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 text-violet-600 px-2.5 py-1 font-medium transition hover:bg-violet-200 focus:outline-none"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-white">
+                <Mail className="h-3 w-3" />
+              </span>
+              <span>{email}</span>
+            </a>
+          </div>
         </div>
 
         {/* Right: socials + WhatsApp */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {socialLinks.facebook && (
             <a
               href={socialLinks.facebook}
@@ -168,6 +173,12 @@ export default function Topbar() {
         </div>
 
       </div>
+      <style>{`
+        @keyframes topbar-rtl {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+      `}</style>
     </div>
   );
 }
