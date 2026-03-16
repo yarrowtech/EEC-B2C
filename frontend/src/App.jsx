@@ -93,6 +93,7 @@ import SyllabusTopicContentPage from "./pages/syllabus/SyllabusTopicContentPage"
 import ManagePackages from "./pages/admin/ManagePackages";
 import Packages from "./pages/Packages";
 import DailyChallengeExam from "./pages/DailyChallengeExam";
+import MeetTheDeveloper from "./pages/MeetTheDeveloper";
 
 
 function getToken() {
@@ -221,6 +222,11 @@ function getSeoForPath(pathname) {
       title: "EEC Support Center | Help for Students and Parents",
       description: "Get help with EEC accounts, subscriptions, and learning workflows.",
       keywords: "EEC help center, student support, education app support",
+    },
+    "/meet-the-developer": {
+      title: "Meet The Developers | EEC",
+      description: "Meet the developers behind EEC and connect with them on LinkedIn.",
+      keywords: "EEC developers, development team, meet the developer, EEC engineering team",
     },
     "/marketing": {
       title: "EEC Partner and Outreach Programs",
@@ -632,6 +638,7 @@ export default function App() {
           <Route path="/boards" element={<EECLearningBoards />} />
           <Route path="/learn/topic/:subjectId/:topicId" element={<LearnTopicContentPage />} />
           <Route path="/support" element={<SupportCenter />} />
+          <Route path="/meet-the-developer" element={<MeetTheDeveloper />} />
           <Route path="/marketing" element={<EECMarketing />} />
           <Route path="/eec-b2c" element={<B2B />} />
           <Route path="/dashboard" element={<QuestionScopeProvider>
