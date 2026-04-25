@@ -17,7 +17,7 @@ export default function QuestionsAnswersSection() {
             open
           >
             <summary className="flex justify-between items-center p-8 cursor-pointer font-bold list-none text-lg text-slate-900">
-              Is this the latest 2025-26 syllabus?
+              Is there the latest syllabus?
               <span className="material-symbols-outlined group-open:rotate-180 transition-transform bg-[#FFD23F] text-white p-1 rounded-full">
                 expand_more
               </span>
@@ -37,8 +37,7 @@ export default function QuestionsAnswersSection() {
               </span>
             </summary>
             <div className="px-8 pb-8 text-slate-600 font-medium">
-              You bet! Every paper is a high-quality PDF. Print them out, get
-              your favorite pen, and practice just like a real exam. It&apos;s the
+              No! Every paper is a high-quality PDF. It&apos;s the
               best way to train your brain!
             </div>
           </details>

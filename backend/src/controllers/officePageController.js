@@ -8,7 +8,7 @@ export const getOfficePage = async (req, res) => {
       doc = await OfficePage.create({
         hero: {
           badge: "Our Office",
-          title: "Visit EEC Office",
+          title: "Visit Edify Eight Office",
           subtitle: "We are open Monday to Friday",
           image: "",
         },

@@ -272,7 +272,7 @@ export default function PaprIqFooterSection() {
                 <span className="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
               </div>
               <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                EEC<span className="text-[#FFD23F]"></span>
+                Edify Eight<span className="text-[#FFD23F]"></span>
               </span>
             </div>
             <p className="text-sm leading-relaxed mb-8 font-medium">
@@ -348,7 +348,7 @@ export default function PaprIqFooterSection() {
         </div>
 
         <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold text-slate-500">
-          <p>© {new Date().getFullYear()} Electronic Educare</p>
+          <p>© {new Date().getFullYear()} Edify Eight</p>
           {/* <p className="flex items-center gap-2">
             Built with{" "} & Care
             <span className="material-symbols-outlined text-[#FF6B6B] text-sm fill-icon">favorite</span>

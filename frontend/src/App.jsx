@@ -159,83 +159,83 @@ function RoleRedirect() {
 function getSeoForPath(pathname) {
   const staticSeoMap = {
     "/": {
-      title: "Personalized Learning Platform for Students | EEC",
+      title: "Personalized Learning Platform for Students | Edify Eight",
       description: "Empowering students with adaptive learning, analytics, and exam-ready resources.",
-      keywords: "personalized learning platform, online learning for students, adaptive education, EEC",
+      keywords: "personalized learning platform, online learning for students, adaptive education, Edify Eight",
     },
     "/about": {
-      title: "About EEC | EdTech Learning Platform India",
-      description: "Learn about EEC's mission, values, and commitment to student success.",
-      keywords: "about EEC, edtech company, student success platform, digital education India",
+      title: "About Edify Eight | EdTech Learning Platform India",
+      description: "Learn about Edify Eight's mission, values, and commitment to student success.",
+      keywords: "about Edify Eight, edtech learning platform company, student success platform, digital education India",
     },
     "/analytics": {
-      title: "Student Learning Analytics Dashboard | EEC",
-      description: "Track performance with EEC analytics to improve outcomes and study efficiency.",
+      title: "Student Learning Analytics Dashboard | Edify Eight",
+      description: "Track performance with Edify Eight analytics to improve outcomes and study efficiency.",
       keywords: "learning analytics, student performance tracking, education analytics dashboard",
     },
     "/ai": {
-      title: "AI Learning Solutions for Schools and Students | EEC",
+      title: "AI Learning Solutions for Schools and Students | Edify Eight",
       description: "Explore AI-powered educational tools that personalize and accelerate learning.",
       keywords: "AI learning solutions, AI in education, personalized AI tutoring, edtech AI tools",
     },
     "/product-advantages": {
-      title: "EEC Product Advantages for Schools, Parents and Students",
-      description: "Discover how EEC products help schools, teachers, parents, and students.",
+      title: "Edify Eight Product Advantages for Schools, Parents and Students",
+      description: "Discover how Edify Eight products help schools, teachers, parents, and students.",
       keywords: "education platform benefits, school management tools, student learning app",
     },
     "/tollered": {
-      title: "Tailored Learning Paths for Better Exam Results | EEC",
+      title: "Tailored Learning Paths for Better Exam Results | Edify Eight",
       description: "Tailored learning experiences designed to match every student's pace and goals.",
       keywords: "tailored learning, personalized study plan, adaptive exam preparation",
     },
     "/e-learn-well": {
-      title: "Digital Learning and Student Wellbeing | EEC",
+      title: "Digital Learning and Student Wellbeing | Edify Eight",
       description: "Balanced digital learning with wellbeing-focused educational support.",
       keywords: "student wellbeing, balanced digital learning, healthy study habits",
     },
     "/aim": {
-      title: "EEC Mission and Commitment to Quality Education",
-      description: "Read about EEC's commitment to quality, accessibility, and measurable progress.",
-      keywords: "quality education platform, EEC mission, learning outcomes improvement",
+      title: "Edify Eight Mission and Commitment to Quality Education",
+      description: "Read about Edify Eight's commitment to quality, accessibility, and measurable progress.",
+      keywords: "quality education platform, Edify Eight mission, learning outcomes improvement",
     },
     "/tryouts": {
-      title: "Free Tryouts and Practice Tests for Students | EEC",
-      description: "Try EEC practice experiences and discover the right learning pathway.",
-      keywords: "free tryout tests, student practice tests, online mock tests, EEC tryouts",
+      title: "Free Tryouts and Practice Tests for Students | Edify Eight",
+      description: "Try Edify Eight practice experiences and discover the right learning pathway.",
+      keywords: "free tryout tests, student practice tests, online mock tests, Edify Eight tryouts",
     },
     "/careers": {
-      title: "Careers at EEC | Join Our EdTech Team",
-      description: "Join EEC and help build impactful education technology products.",
-      keywords: "EEC careers, edtech jobs, education technology jobs, join EEC team",
+      title: "Careers at Edify Eight | Join Our EdTech Team",
+      description: "Join Edify Eight and help build impactful education technology products.",
+      keywords: "Edify Eight careers, edtech jobs, education technology jobs, join Edify Eight team",
     },
     "/contact-us": {
-      title: "Contact EEC | Support, Sales and Partnership Enquiries",
-      description: "Contact EEC for support, partnerships, and product inquiries.",
-      keywords: "contact EEC, EEC support, education platform contact, partnership enquiry",
+      title: "Contact Edify Eight | Support, Sales and Partnership Enquiries",
+      description: "Contact Edify Eight for support, partnerships, and product inquiries.",
+      keywords: "contact Edify Eight, Edify Eight support, education platform contact, partnership enquiry",
     },
     "/boards": {
-      title: "CBSE ICSE IB Board Learning Resources | EEC",
-      description: "Explore board-focused learning tracks and resources on EEC.",
+      title: "CBSE ICSE IB Board Learning Resources | Edify Eight",
+      description: "Explore board-focused learning tracks and resources on Edify Eight.",
       keywords: "CBSE learning platform, ICSE resources, IB study material, board exam preparation",
     },
     "/support": {
-      title: "EEC Support Center | Help for Students and Parents",
-      description: "Get help with EEC accounts, subscriptions, and learning workflows.",
-      keywords: "EEC help center, student support, education app support",
+      title: "Edify Eight Support Center | Help for Students and Parents",
+      description: "Get help with Edify Eight accounts, subscriptions, and learning workflows.",
+      keywords: "Edify Eight help center, student support, education app support",
     },
     "/meet-the-developer": {
-      title: "Meet The Developers | EEC",
-      description: "Meet the developers behind EEC and connect with them on LinkedIn.",
-      keywords: "EEC developers, development team, meet the developer, EEC engineering team",
+      title: "Meet The Developers | Edify Eight",
+      description: "Meet the developers behind Edify Eight and connect with them on LinkedIn.",
+      keywords: "Edify Eight developers, development team, meet the developer, Edify Eight engineering team",
     },
     "/marketing": {
-      title: "EEC Partner and Outreach Programs",
-      description: "Explore EEC marketing programs and partner opportunities.",
-      keywords: "education partner program, school outreach, EEC partner opportunities",
+      title: "Edify Eight Partner and Outreach Programs",
+      description: "Explore Edify Eight marketing programs and partner opportunities.",
+      keywords: "education partner program, school outreach, Edify Eight partner opportunities",
     },
     "/eec-b2c": {
-      title: "EEC B2C Learning Solutions for Families",
-      description: "Direct-to-student learning products and offers from EEC.",
+      title: "Edify Eight B2C Learning Solutions for Families",
+      description: "Direct-to-student learning products and offers from Edify Eight.",
       keywords: "B2C education platform, family learning app, direct student learning products",
     },
   };
@@ -244,7 +244,7 @@ function getSeoForPath(pathname) {
 
   if (pathname.startsWith("/tryouts/")) {
     return {
-      title: "Subject Tryout Tests and Practice Modules | EEC",
+      title: "Subject Tryout Tests and Practice Modules | Edify Eight",
       description: "Choose subject-specific tryouts to evaluate and improve your readiness.",
       keywords: "subject tryout tests, practice modules, online subject preparation",
     };
@@ -252,42 +252,42 @@ function getSeoForPath(pathname) {
 
   if (pathname.startsWith("/careers/")) {
     return {
-      title: "Job Role Details and Application | EEC Careers",
-      description: "Explore role details, responsibilities, and application requirements at EEC.",
-      keywords: "job description EEC, apply edtech jobs, career opportunities EEC",
+      title: "Job Role Details and Application | Edify Eight Careers",
+      description: "Explore role details, responsibilities, and application requirements at Edify Eight.",
+      keywords: "job description Edify Eight, apply edtech jobs, career opportunities Edify Eight",
     };
   }
 
   if (pathname.startsWith("/reset-password/")) {
     return {
-      title: "Reset Password - EEC",
-      description: "Securely reset your EEC account password.",
-      keywords: "reset EEC password, account recovery, secure login",
+      title: "Reset Password - Edify Eight",
+      description: "Securely reset your Edify Eight account password.",
+      keywords: "reset Edify Eight password, account recovery, secure login",
     };
   }
 
   if (pathname === "/dashboard") {
     return {
-      title: "Student Dashboard | EEC Learning Portal",
-      description: "Access your EEC dashboard for classes, exams, results, and learning progress.",
-      keywords: "student dashboard, EEC learning portal, exam and study dashboard",
+      title: "Student Dashboard | Edify Eight Learning Portal",
+      description: "Access your Edify Eight dashboard for classes, exams, results, and learning progress.",
+      keywords: "student dashboard, Edify Eight learning portal, exam and study dashboard",
       noindex: true,
     };
   }
 
   if (pathname.startsWith("/dashboard/")) {
     return {
-      title: "Dashboard Tools and Learning Management | EEC",
-      description: "Manage learning, classes, exams, notifications, and analytics inside your EEC dashboard.",
+      title: "Dashboard Tools and Learning Management | Edify Eight",
+      description: "Manage learning, classes, exams, notifications, and analytics inside your Edify Eight dashboard.",
       keywords: "learning management dashboard, student exam dashboard, teacher admin dashboard",
       noindex: true,
     };
   }
 
   return {
-    title: "EEC",
-    description: "EEC learning platform for students, teachers, and institutions.",
-    keywords: "EEC learning platform, online education, exam preparation",
+    title: "Edify Eight",
+    description: "Edify Eight learning platform for students, teachers, and institutions.",
+    keywords: "Edify Eight learning platform, online education, exam preparation",
   };
 }
 

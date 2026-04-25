@@ -272,11 +272,11 @@ export default function EECCareers() {
         : ""
     ) ||
     normalizeTextValue(officeData?.email) ||
-    "careers@eec.edu";
+    "careers@edifyeight.com";
 
   const introText =
     careerData?.introText ||
-    "At EEC, we're on a mission to transform education for the next generation. We blend technology, pedagogy, and empathy to build tools that genuinely help students thrive — academically and personally. If you're driven by purpose and want your work to matter, you've found the right place.";
+    "At Edify Eight, we're on a mission to transform education for the next generation. We blend technology, pedagogy, and empathy to build tools that genuinely help students thrive — academically and personally. If you're driven by purpose and want your work to matter, you've found the right place.";
 
   const jobSectionTitle = careerData?.jobSectionTitle || "Open Positions";
 
@@ -487,7 +487,7 @@ export default function EECCareers() {
         <div className="mx-auto max-w-4xl text-center">
           <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ duration: 0.55 }}>
             <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#f0b429]">Our Mission</p>
-            <h2 className="mt-4 text-3xl font-black text-[#0f1828] md:text-4xl">We build education that puts students first.</h2>
+            <h2 className="mt-4 text-3xl font-black text-[#0f1828] md:text-4xl">We build education that puts students first</h2>
             <p className="mt-5 text-lg leading-relaxed text-[#485067]">{introText}</p>
           </motion.div>
         </div>

@@ -23,7 +23,7 @@ export const getAboutUs = async (req, res) => {
             bullets: [
               "Personalized progression & holistic growth",
               "Teacher enablement & workload relief",
-              "Parent visibility & engagement"
+              // "Parent visibility & engagement"
             ],
             image: "/goal1.jpg"
           },

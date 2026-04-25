@@ -5,7 +5,7 @@ const OfficePageSchema = new mongoose.Schema(
   {
     hero: {
       badge: { type: String, default: "Our Office" },
-      title: { type: String, default: "Visit EEC Office" },
+      title: { type: String, default: "Visit Edify Eight Office" },
       subtitle: { type: String, default: "We are open Monday to Friday" },
       image: { type: String, default: "" }, // Cloudinary URL
     },

@@ -183,7 +183,7 @@ export default function Navbar() {
           <div className="flex items-center justify-center rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
             <span className="material-symbols-outlined text-2xl font-bold" style={{ fontFamily: "'Material Symbols Outlined'", fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>auto_stories</span>
           </div>
-          <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>EEC</span>
+          <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>Edify <span className="text-[#F4736E]">Eight</span></span>
         </Link>
 
         {/* Desktop nav links — centered */}
@@ -303,7 +303,7 @@ export default function Navbar() {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F4736E] text-white">
               <span className="text-base leading-none">📖</span>
             </div>
-            <span className="text-base font-extrabold text-[#1B1F3B]">EEC</span>
+            <span className="text-base font-extrabold text-[#1B1F3B]">EdifyEight</span>
           </Link>
           <button
             className="rounded-xl border border-slate-200 bg-white p-2"

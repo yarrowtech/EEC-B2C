@@ -71,7 +71,7 @@ export default function AboutUs() {
 
   const visionDesc =
     vision?.description ||
-    "Our vision is to reach out to every student across different states and districts, solving the educational challenges they face. We aim to meet their learning requirements, especially for those unable to access proper education due to lack of guidance or attention in schools. EEC bridges the gap between parents, students, and educators — ensuring collaborative, value-based growth and holistic development.";
+    "Our vision is to reach out to every student across different states and districts, solving the educational challenges they face. We aim to meet their learning requirements, especially for those unable to access proper education due to lack of guidance or attention in schools. Edify Eight bridges the gap between parents, students, and educators — ensuring collaborative, value-based growth and holistic development.";
 
   const visionBullets = vision?.bullets?.length
     ? vision.bullets
@@ -82,7 +82,7 @@ export default function AboutUs() {
 
   const brandDesc =
     brand?.description ||
-    "EEC is a digital learning platform designed to deliver high-quality education to all learners. We help students adapt to modern learning methods while empowering them to develop skills, confidence, and curiosity for their bright futures.";
+    "Edify Eight is a digital learning platform designed to deliver high-quality education to all learners. We help students adapt to modern learning methods while empowering them to develop skills, confidence, and curiosity for their bright futures.";
 
   const brandChips = brand?.chips?.length
     ? brand.chips
@@ -90,7 +90,7 @@ export default function AboutUs() {
 
   const valuesDesc =
     values?.description ||
-    "EEC doesn’t just upgrade academic performance — it builds stronger bonds between parents, children, and teachers. The platform helps teachers manage workloads efficiently, giving them more time to focus on each learner’s unique needs and helping them truly understand and support every student.";
+    "Edify Eight doesn’t just upgrade academic performance — it builds stronger bonds between parents, children, and teachers. The platform helps teachers manage workloads efficiently, giving them more time to focus on each learner’s unique needs and helping them truly understand and support every student.";
 
   const valuesChips = values?.chips?.length
     ? values.chips
@@ -122,7 +122,7 @@ export default function AboutUs() {
 
   const missionDesc2 =
     mission?.subtitle ||
-    "We go beyond traditional education. EEC strives to be a transformative solution provider, supporting institutions with real-time insights, AI-driven feedback, and simplified digital-age learning systems.";
+    "We go beyond traditional education. Edify Eight strives to be a transformative solution provider, supporting institutions with real-time insights, AI-driven feedback, and simplified digital-age learning systems.";
 
   const missionChips = mission?.chips?.length
     ? mission.chips
@@ -137,7 +137,7 @@ export default function AboutUs() {
 
   const introLoading = usePageIntroLoader("eec:intro:about", 800);
   if (introLoading) {
-    return <PageIntroLoader message="Discovering About EEC..." />;
+    return <PageIntroLoader message="Discovering About Edify Eight..." />;
   }
 
   if (loading) {
@@ -336,7 +336,7 @@ export default function AboutUs() {
                 className="mt-4 text-3xl font-bold text-[#0f1f32]"
                 style={{ fontFamily: "'Balsamiq Sans', cursive" }}
               >
-                The Mission of EEC
+                The Mission of Edify Eight
               </h2>
               <p className="mt-4 text-base text-[#4c5b73]">{missionDesc1}</p>
               <p className="mt-3 text-sm text-[#51607a]">{missionDesc2}</p>
