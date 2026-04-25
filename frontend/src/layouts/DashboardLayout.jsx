@@ -238,6 +238,7 @@ import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
 import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
+import { confirmAndLogout } from "../lib/confirmLogout";
 
 /* ---- auth helpers (UNCHANGED) ---- */
 function getToken() {
@@ -514,6 +515,13 @@ export default function DashboardLayout() {
         toast.warn("You are offline. Try to connect to the internet.");
     };
 
+    async function handleLogout() {
+        const didLogout = await confirmAndLogout();
+        if (didLogout) {
+            setOpen(false);
+        }
+    }
+
     const challengeProgress = dailyChallenge.loading
         ? 0
         : dailyChallenge.alreadyAttempted
@@ -716,11 +724,7 @@ export default function DashboardLayout() {
 
                             {/* LOGOUT BUTTON */}
                             <button
-                                onClick={() => {
-                                    localStorage.removeItem("jwt");
-                                    localStorage.removeItem("user");
-                                    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
-                                }}
+                                onClick={handleLogout}
                                 className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all duration-300 hover:bg-[#FF6B6B] hover:text-white hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <span className="material-symbols-outlined text-lg">logout</span>

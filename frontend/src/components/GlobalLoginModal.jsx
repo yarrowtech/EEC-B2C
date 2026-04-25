@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Login from "./Login";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { toast as hotToast } from "react-hot-toast";
 
 const PROFILE_CACHE_KEY = "eec:user-profile-cache:v1";
 const PROFILE_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -142,12 +143,10 @@ export default function GlobalLoginModal() {
     setShowForgot(false);
     setShowLogin(false);
     setShowGoogleProfile(false);
-    toast.success(toastMessage || `Welcome back, ${hydratedUser.name}!`, {
-      position: "bottom-right",
-      closeOnClick: true,
-      closeButton: true,
-      draggable: true,
-      toastId: "login-success-toast",
+    hotToast.dismiss("login-success-toast");
+    hotToast.success(toastMessage || `Welcome back, ${hydratedUser.name}!`, {
+      id: "login-success-toast",
+      duration: 3000,
     });
     const redirectPath = sessionStorage.getItem("redirectAfterLogin");
     if (redirectPath) {
@@ -258,6 +257,7 @@ export default function GlobalLoginModal() {
       script.removeEventListener("load", initGoogleButton);
     };
   }, [showLogin, showForgot, GOOGLE_CLIENT_ID, API_BASE]);
+
 
   useEffect(() => {
     if (!showGoogleProfile) return;

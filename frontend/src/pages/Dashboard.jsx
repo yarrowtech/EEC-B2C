@@ -23,6 +23,7 @@ import WelcomeModal from "../components/WelcomeModal";
 import AdventureStatCard from '../components/student/AdventureStatCard';
 import DailyQuestCard from '../components/student/DailyQuestCard';
 import SubscriptionSpotlight from '../components/student/SubscriptionSpotlight';
+import { confirmAndLogout } from "../lib/confirmLogout";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -700,10 +701,8 @@ function StudentContent() {
   const [dailyStreak, setDailyStreak] = useState(0);
   const [dailyHistory, setDailyHistory] = useState([]);
 
-  function handleLogout() {
-    localStorage.removeItem("jwt");
-    localStorage.removeItem("user");
-    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
+  async function handleLogout() {
+    await confirmAndLogout();
   }
 
   useEffect(() => {

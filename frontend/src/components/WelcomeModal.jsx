@@ -2,31 +2,60 @@ import React, { useState, useEffect } from "react";
 import { X, BookOpen, GraduationCap, CheckCircle } from "lucide-react";
 import { myAttempts } from "../lib/api";
 
+const WELCOME_MODAL_DISMISSED_PREFIX = "eec:welcome-modal-dismissed";
+
+function getCurrentUserId() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    return String(user?._id || user?.id || user?.email || "anonymous");
+  } catch {
+    return "anonymous";
+  }
+}
+
+function getDismissKey() {
+  return `${WELCOME_MODAL_DISMISSED_PREFIX}:${getCurrentUserId()}`;
+}
+
 export default function WelcomeModal() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
+    let isDisposed = false;
+    let showTimer = null;
+
     checkIfNewUser();
+
+    return () => {
+      isDisposed = true;
+      if (showTimer) clearTimeout(showTimer);
+    };
+
+    async function checkIfNewUser() {
+      try {
+        if (sessionStorage.getItem(getDismissKey()) === "1") return;
+
+        // Check if user has taken any exams
+        const { items } = await myAttempts();
+        if (isDisposed) return;
+
+        // Only show modal if user has NO exam attempts (truly new user)
+        if (!items || items.length === 0) {
+          // Show modal after a short delay for better UX
+          showTimer = setTimeout(() => {
+            if (isDisposed) return;
+            if (sessionStorage.getItem(getDismissKey()) === "1") return;
+            setShowModal(true);
+          }, 500);
+        }
+      } catch (err) {
+        console.error("Failed to check user attempts", err);
+      }
+    }
   }, []);
 
-  async function checkIfNewUser() {
-    try {
-      // Check if user has taken any exams
-      const { items } = await myAttempts();
-
-      // Only show modal if user has NO exam attempts (truly new user)
-      if (!items || items.length === 0) {
-        // Show modal after a short delay for better UX
-        setTimeout(() => {
-          setShowModal(true);
-        }, 500);
-      }
-    } catch (err) {
-      console.error("Failed to check user attempts", err);
-    }
-  }
-
   function handleClose() {
+    sessionStorage.setItem(getDismissKey(), "1");
     setShowModal(false);
   }
 

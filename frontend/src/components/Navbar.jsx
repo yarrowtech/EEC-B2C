@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Menu, User, X, LogOut, LayoutDashboard } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { confirmAndLogout } from "../lib/confirmLogout";
 
 
 /* -------- Router-styled link with active underline -------- */
@@ -125,12 +126,9 @@ export default function Navbar() {
     setUserMenuOpen(false);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     try {
-      localStorage.removeItem("jwt");
-      localStorage.removeItem("user");
-      // notify the app (Navbar listens to this in your earlier setup)
-      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "manual-logout" } }));
+      await confirmAndLogout();
     } finally {
       setUserMenuOpen(false);
     }

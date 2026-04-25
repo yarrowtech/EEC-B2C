@@ -378,6 +378,32 @@ function getUser() {
 }
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const BIO_MAX_WORDS = 30;
+
+function countWords(text) {
+  return String(text || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+function trimToWordLimit(text, maxWords) {
+  const tokens = String(text || "").match(/\S+|\s+/g) || [];
+  const out = [];
+  let words = 0;
+
+  for (const token of tokens) {
+    if (/\S/.test(token)) {
+      if (words >= maxWords) break;
+      words += 1;
+      out.push(token);
+    } else {
+      out.push(token);
+    }
+  }
+
+  return out.join("").replace(/^\s+/, "");
+}
 
 function showPromotionPopup(newClass) {
   toast(
@@ -681,6 +707,13 @@ export default function ProfilePage() {
           delete newErrors[name];
         }
         break;
+      case "bio":
+        if (countWords(value) > BIO_MAX_WORDS) {
+          newErrors[name] = `Bio can have up to ${BIO_MAX_WORDS} words`;
+        } else {
+          delete newErrors[name];
+        }
+        break;
       default:
         // keep other fields unvalidated for now
         break;
@@ -692,8 +725,10 @@ export default function ProfilePage() {
   /* ------------------- change handlers ------------------- */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    validateField(name, value);
+    const nextValue =
+      name === "bio" ? trimToWordLimit(value, BIO_MAX_WORDS) : value;
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
+    validateField(name, nextValue);
   };
 
   /* ------------------- image upload handler ------------------- */
@@ -1169,6 +1204,11 @@ export default function ProfilePage() {
           <div>
             <h2 className="text-xl font-bold text-white leading-tight">{form.name || "Student"}</h2>
             <p className="text-white/80 text-xs mt-0.5 capitalize">{user?.role} Account</p>
+            {form.bio && (
+              <p className="text-white/90 text-sm mt-1.5 max-w-xs leading-snug font-medium italic">
+                {form.bio}
+              </p>
+            )}
           </div>
           {/* Quick stats */}
           <div className="flex flex-wrap justify-center gap-2 mt-1">
@@ -1823,9 +1863,14 @@ export default function ProfilePage() {
 
                       {/* About / Bio */}
                       <div className="md:col-span-2">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          About / Bio
-                        </label>
+                        <div className="mb-1.5 md:mb-2 flex items-center justify-between gap-2">
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700">
+                            About / Bio
+                          </label>
+                          <span className={`text-[11px] sm:text-xs font-semibold ${countWords(form.bio) >= BIO_MAX_WORDS ? "text-amber-600" : "text-slate-500"}`}>
+                            {countWords(form.bio)}/{BIO_MAX_WORDS} words
+                          </span>
+                        </div>
                         <div className="relative">
                           <textarea
                             name="bio"
@@ -1836,6 +1881,9 @@ export default function ProfilePage() {
                             className="w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 focus:ring-4 bg-white"
                           />
                         </div>
+                        <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
+                          Keep it short like social bios. Maximum {BIO_MAX_WORDS} words.
+                        </p>
                       </div>
                     </div>
                   </div>
