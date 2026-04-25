@@ -1028,1312 +1028,300 @@ export default function ProfilePage() {
 
   /* ------------------- End of Part 1 ------------------- */
   // Next: JSX UI layout (tabs, forms, preview) — I will send Part 2 now if you want.
-  // Part 2 of 3 — JSX layout (header, sidebar, avatar preview, Personal tab UI)
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#fff9ec] via-[#fffef9] to-[#fef2d8]">
+    <div className="min-h-screen bg-slate-50">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(251,191,36,0.22),transparent_28%),radial-gradient(circle_at_85%_15%,rgba(59,130,246,0.08),transparent_25%),radial-gradient(circle_at_70%_85%,rgba(16,185,129,0.12),transparent_30%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-[-16%] h-72 bg-gradient-to-t from-amber-200/40 to-transparent blur-3xl" />
       <ToastContainer position="bottom-right" />
       {/* Header */}
-      <header className="hidden md:block relative z-10 bg-white/85 backdrop-blur border-b border-amber-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-400 to-yellow-500 shadow-lg flex items-center justify-center text-white">
-              <User className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">
-                Profile
-              </p>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900">
-                {form.name || "Profile settings"}
-              </h1>
-            </div>
+      <ToastContainer position="bottom-right" />
+      <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 pb-20">
+
+        {/* ── Profile Hero Card ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-4">
+          {/* Cover */}
+          <div className="h-28 bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400 relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full" />
+            <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-black/5 rounded-full" />
           </div>
-          <div className="hidden sm:flex items-center gap-2 sm:gap-3">
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-200">
-              {user?.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)} Account` : "User"}
-            </span>
-            {user.role === "student" && (
-              <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-semibold shadow-sm">
-                {/* {form._id ? `Class • ${form.class}` : "ID Pending"} */}
-                {form._id ? `${form.class}` : "ID Pending"}
-              </span>
+
+          {/* Avatar + Name */}
+          <div className="px-5 pb-5">
+            <div className="flex items-end gap-4 -mt-12 mb-3">
+              <div className="relative flex-shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-amber-100">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500">
+                      <span className="text-3xl font-bold text-white">{getInitial()}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute -bottom-1 -right-1 bg-slate-900 hover:bg-slate-700 text-white p-1.5 rounded-lg shadow-md disabled:opacity-50 transition-colors"
+                  title="Change photo"
+                >
+                  {uploadingAvatar
+                    ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <Camera className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <div className="pt-14 min-w-0">
+                <h2 className="text-xl font-bold text-slate-900 leading-tight truncate">{form.name || "Your Name"}</h2>
+                <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-md capitalize mt-0.5">
+                  {user?.role}
+                </span>
+              </div>
+            </div>
+
+            {form.bio && (
+              <p className="text-sm text-slate-600 leading-relaxed mb-3">{form.bio}</p>
             )}
+
+            <div className="flex flex-wrap gap-2">
+              {form.email && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg font-medium">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />{form.email}
+                </span>
+              )}
+              {form.phone && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg font-medium">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />{form.phone}
+                </span>
+              )}
+              {user?.role === "student" && form.className && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg font-medium">
+                  <BookOpen className="w-3.5 h-3.5 text-slate-400" />{form.className}
+                </span>
+              )}
+              {user?.role === "student" && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg font-semibold">
+                  <Coins className="w-3.5 h-3.5" />{points} coins
+                </span>
+              )}
+            </div>
+            {errors.avatar && <p className="mt-2 text-xs text-red-500">{errors.avatar}</p>}
           </div>
         </div>
-      </header>
 
-      {/* Intro / Highlight */}
-      <section className="hidden md:block relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-10 space-y-4 md:space-y-6">
-        <div className="grid lg:grid-cols-[1.05fr,0.95fr] gap-4 md:gap-6">
-          <div className="rounded-3xl bg-white/85 backdrop-blur border border-amber-100 shadow-xl p-5 md:p-6">
-            <div className="flex flex-col gap-3 md:gap-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm text-amber-700 font-semibold">Welcome back</p>
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">
-                    {form.name || "Complete your profile"}
-                  </h2>
-                  <p className="text-sm md:text-base text-slate-600 mt-1 md:mt-2">
-                    Keep your information fresh so we can personalise your learning journey.
-                  </p>
-                </div>
-                <div className="hidden md:flex flex-col items-end text-right gap-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Last updated</span>
-                  <span className="text-sm font-semibold text-slate-800">
-                    {form.updatedAt ? new Date(form.updatedAt).toLocaleDateString() : "Not yet"}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
-                  <Mail className="w-4 h-4 text-amber-600" />
-                  {form.email || "Add your email"}
-                </span>
-                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
-                  <Phone className="w-4 h-4 text-amber-600" />
-                  {form.phone || "Add a phone"}
-                </span>
-                {/* <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
-                  <MapPin className="w-4 h-4 text-amber-600" />
-                  {form.address || "Add address"}
-                </span> */}
-              </div>
-            </div>
+        {/* ── Tabs + Form Card ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          {/* Tab Bar */}
+          <div className="flex border-b border-slate-100 overflow-x-auto">
+            {[
+              { key: "personal", label: "Personal" },
+              { key: "security", label: "Security" },
+              ...(user?.role === "student" ? [{ key: "rewards", label: "Rewards" }] : []),
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`shrink-0 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
+                  activeTab === key
+                    ? "border-amber-500 text-amber-600"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
-          <div className="rounded-3xl bg-slate-900 text-white p-5 md:p-6 shadow-2xl border border-slate-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-200/80 font-semibold">Account snapshot</p>
-                <h3 className="text-2xl font-bold">{user?.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}` : "User"}</h3>
-                <p className="text-sm text-slate-200/90 mt-1">Stay on top of your profile in one glance.</p>
-              </div>
-              <div className="h-11 w-11 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-amber-200" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-5">
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6">
+            {/* PERSONAL TAB */}
+            {activeTab === "personal" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <PField label="Full Name" required error={errors.name}>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="text" name="name" value={form.name} onChange={handleChange}
+                        placeholder="Full name" className={iCls(errors.name) + " pl-9"} required />
+                    </div>
+                  </PField>
 
-              {user.role === "student" && (
-                <div className="rounded-2xl bg-white/10 border border-white/10 p-3 flex flex-col gap-1">
-                  <p className="text-[11px] uppercase tracking-wide text-amber-100/80 font-semibold">Class</p>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-amber-200" />
-                    <span className="text-lg font-semibold">
-                      {user?.role === "teacher" ? (form.department || "Add dept") : (form.className || "—")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-100/80">{user?.role === "teacher" ? "Teaching department" : ""}</p>
-                </div>
-              )}
+                  <PField label="Email Address" required error={errors.email}>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="email" name="email" value={form.email} onChange={handleChange}
+                        placeholder="Email address" className={iCls(errors.email) + " pl-9"} required />
+                    </div>
+                  </PField>
 
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-3 flex flex-col gap-1">
-                <p className="text-[11px] uppercase tracking-wide text-amber-100/80 font-semibold">
-                  {user?.role === "student" ? "Board" : "Account Age"}
-                </p>
-                <div className="flex items-center gap-2">
-                  {user?.role === "student" ? (
+                  <PField label="Phone Number" error={errors.phone}>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="tel" name="phone" value={form.phone} onChange={handleChange}
+                        placeholder="Phone number" className={iCls(errors.phone) + " pl-9"} />
+                    </div>
+                  </PField>
+
+                  <PField label="Date of Birth">
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="date" name="dob" value={form.dob} onChange={handleChange}
+                        className={iCls() + " pl-9"} />
+                    </div>
+                  </PField>
+
+                  <PField label="Gender">
+                    <select name="gender" value={form.gender} onChange={handleChange} className={iCls()}>
+                      <option value="">Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </PField>
+
+                  <PField label="State">
+                    <select name="state" value={form.state} onChange={handleChange} disabled={loadingStates} className={iCls()}>
+                      <option value="">{loadingStates ? "Loading..." : "Select State"}</option>
+                      {states.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </PField>
+
+                  {user?.role === "student" && (
                     <>
-                      <Shield className="w-4 h-4 text-amber-200" />
-                      <span className="text-lg font-semibold">{form.board || "—"}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="w-4 h-4 text-amber-200" />
-                      <span className="text-lg font-semibold">
-                        {form.createdAt ? new Date(form.createdAt).toLocaleDateString() : "Not set"}
-                      </span>
+                      <PField label="Class" error={errors.className}>
+                        <div className="relative">
+                          <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                          <select name="className" value={form.className} onChange={handleChange}
+                            className={iCls(errors.className) + " pl-9"}>
+                            <option value="">Select Class</option>
+                            {classOptions.length > 0
+                              ? classOptions.map(c => <option key={c._id} value={c.name}>{c.name}</option>)
+                              : Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={`Class ${i + 1}`}>Class {i + 1}</option>)}
+                          </select>
+                        </div>
+                      </PField>
+
+                      <PField label="Board" error={errors.board}>
+                        <select name="board" value={form.board} onChange={handleChange} className={iCls(errors.board)}>
+                          <option value="">Select Board</option>
+                          {boardOptions.length > 0
+                            ? boardOptions.map(b => <option key={b._id} value={b.name}>{b.name}</option>)
+                            : <>
+                                <option value="CBSE">CBSE</option>
+                                <option value="ICSE">ICSE</option>
+                                <option value="WB">West Bengal Board</option>
+                                <option value="STATE">State Board</option>
+                              </>}
+                        </select>
+                      </PField>
                     </>
                   )}
                 </div>
-                <p className="text-xs text-amber-100/80">
-                  {user?.role === "student" ? "" : "Joined the platform"}
-                </p>
-              </div>
 
-              {user.role === "student" && (
-                <div className="rounded-2xl bg-white/10 border border-white/10 p-3 col-span-2 flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-amber-100/80 font-semibold">Points</p>
-                    <div className="flex items-center gap-2">
-                      <Coins className="w-4 h-4 text-amber-200" />
-                      <span className="text-xl font-bold">{user?.role === "student" ? points : "—"}</span>
-                    </div>
-                    <p className="text-xs text-amber-100/80">
-                      {user?.role === "student" ? "Earn more by completing your profile" : "Secure profile keeps data safe"}
-                    </p>
+                <PField label="About / Bio">
+                  <div className="relative">
+                    <textarea name="bio" value={form.bio} onChange={handleChange} rows={3}
+                      placeholder="Tell us a bit about yourself"
+                      className={iCls() + " resize-none"} />
+                    <span className={`absolute bottom-2.5 right-3 text-xs font-medium pointer-events-none ${countWords(form.bio) >= BIO_MAX_WORDS ? "text-amber-500" : "text-slate-400"}`}>
+                      {countWords(form.bio)}/{BIO_MAX_WORDS}
+                    </span>
                   </div>
-                  <div className="hidden sm:block w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                    {/* <Check className="w-6 h-6 text-amber-200" /> */}
-                    <img src="/coin.png" alt="coin" />
+                </PField>
+              </div>
+            )}
+
+            {/* SECURITY TAB */}
+            {activeTab === "security" && (
+              <div className="space-y-4 max-w-sm">
+                <PField label="Current Password">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                    <input type="password" value={form.oldPassword || ""}
+                      onChange={e => setForm(p => ({ ...p, oldPassword: e.target.value }))}
+                      placeholder="Current password" className={iCls() + " pl-9"} />
                   </div>
+                </PField>
+                <PField label="New Password">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                    <input type="password" value={form.newPassword || ""}
+                      onChange={e => setForm(p => ({ ...p, newPassword: e.target.value }))}
+                      placeholder="New password" className={iCls() + " pl-9"} />
+                  </div>
+                </PField>
+                <PField label="Confirm New Password">
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                    <input type="password" value={form.confirmPassword || ""}
+                      onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password" className={iCls() + " pl-9"} />
+                  </div>
+                </PField>
+              </div>
+            )}
+
+            {/* REWARDS TAB */}
+            {activeTab === "rewards" && user?.role === "student" && (
+              <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center">
+                  <Coins className="w-7 h-7 text-amber-500" />
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── MOBILE PROFILE BANNER (hidden md+) ── */}
-      <div className="md:hidden relative bg-gradient-to-br from-amber-400 via-orange-400 to-yellow-500 px-4 pt-10 pb-20 overflow-hidden">
-        <div className="absolute top-0 right-0 w-44 h-44 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rounded-full translate-y-10 -translate-x-10" />
-        <div className="relative z-10 flex flex-col items-center text-center gap-2">
-          {/* Avatar */}
-          <div className="relative w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden bg-amber-100">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-200 to-amber-300">
-                <span className="text-3xl font-bold text-amber-700">{getInitial()}</span>
+                <h3 className="text-lg font-bold text-slate-800">Rewards Coming Soon</h3>
+                <p className="text-sm text-slate-500 max-w-xs">Keep learning and earning coins. Rewards will be available shortly.</p>
+                <div className="px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl mt-1">
+                  <span className="text-sm font-bold text-amber-700">{points} coins earned</span>
+                </div>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
-              className="absolute -bottom-1 -right-1 bg-slate-900 hover:bg-slate-800 text-white p-1.5 rounded-full shadow-lg disabled:opacity-60"
-              title="Change profile photo"
-            >
-              <Camera className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          {/* Name + Role */}
-          <div>
-            <h2 className="text-xl font-bold text-white leading-tight">{form.name || "Student"}</h2>
-            <p className="text-white/80 text-xs mt-0.5 capitalize">{user?.role} Account</p>
-            {form.bio && (
-              <p className="text-white/90 text-sm mt-1.5 max-w-xs leading-snug font-medium italic">
-                {form.bio}
-              </p>
+
+            {/* Submit */}
+            {activeTab !== "rewards" && (
+              <div className="mt-6 pt-5 border-t border-slate-100">
+                <button
+                  type={activeTab === "security" ? "button" : "submit"}
+                  onClick={activeTab === "security" ? changePassword : undefined}
+                  disabled={saving}
+                  className="px-7 py-2.5 bg-slate-900 hover:bg-slate-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-semibold text-sm transition-all shadow-sm active:scale-95"
+                >
+                  {saving ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      {activeTab === "security" ? "Changing..." : "Saving..."}
+                    </span>
+                  ) : activeTab === "security" ? "Change Password" : "Save Changes"}
+                </button>
+              </div>
             )}
-          </div>
-          {/* Quick stats */}
-          <div className="flex flex-wrap justify-center gap-2 mt-1">
-            {user?.role === "student" && (
-              <span className="flex items-center gap-1 bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-semibold">
-                <Coins size={11} /> {points} pts
-              </span>
-            )}
-            {form.className && (
-              <span className="flex items-center gap-1 bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-semibold">
-                <BookOpen size={11} /> {form.className}
-              </span>
-            )}
-            {form.board && (
-              <span className="bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-semibold">
-                {form.board}
-              </span>
-            )}
-          </div>
+          </form>
         </div>
       </div>
-
-      {/* Main Content */}
-      <main className="relative z-20 max-w-7xl mx-auto px-0 md:px-4 lg:px-8 pb-10 md:pb-16 -mt-10 md:mt-0">
-        <form onSubmit={handleSubmit} className="bg-white backdrop-blur-xl rounded-t-3xl md:rounded-3xl shadow-2xl border-0 md:border border-amber-100/80 overflow-hidden">
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-            className="hidden"
-          />
-          <div className="flex flex-col lg:grid lg:grid-cols-[340px,1fr]">
-            {/* Sidebar Navigation */}
-            <aside className="bg-white md:bg-gradient-to-b from-white via-amber-50/70 to-white border-b lg:border-b-0 lg:border-r border-amber-100 p-4 md:p-6">
-              <div className="hidden md:flex flex-col items-center space-y-3 md:space-y-4">
-                <div className="relative group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-amber-200 shadow-xl bg-gray-100">
-                    {imagePreview ? (
-                      <img src={imagePreview} alt="Profile Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200">
-                        <div className="text-amber-700 text-3xl sm:text-4xl font-bold">
-                          {getInitial()}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-slate-900 hover:bg-slate-800 text-white p-2 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 disabled:opacity-60"
-                    title="Change profile picture"
-                  >
-                    <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                </div>
-                {uploadingAvatar && (
-                  <p className="text-xs text-amber-700 font-semibold">Uploading photo...</p>
-                )}
-                {errors.avatar && (
-                  <p className="text-xs text-red-500">{errors.avatar}</p>
-                )}
-
-                <div className="text-center space-y-1">
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-900">{form.name || "—"}</h3>
-                  <p className="text-slate-500 text-xs sm:text-sm">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)} account</p>
-                </div>
-
-                <div className="w-full bg-white/70 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-md border border-amber-100 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="px-2 py-1 bg-amber-100 rounded-lg text-amber-800 text-[11px] font-bold uppercase tracking-wide">Bio</span>
-                    <span className="text-[11px] text-amber-700 font-semibold">
-                      {form.updatedAt ? `Updated ${new Date(form.updatedAt).toLocaleDateString()}` : "Keep it fresh"}
-                    </span>
-                  </div>
-
-                  {form.bio ? (
-                    <p className="text-sm sm:text-base text-slate-700 leading-relaxed mt-2">{form.bio}</p>
-                  ) : (
-                    <p className="text-sm sm:text-base text-slate-400 italic mt-2">Add a short note about yourself</p>
-                  )}
-                </div>
-
-                {/* <div className="grid grid-cols-2 gap-2 w-full">
-                  <div className="rounded-xl border border-amber-100 bg-white/80 p-3 flex flex-col">
-                    <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide">ID</span>
-                    <span className="text-sm font-semibold text-slate-900 truncate">{form._id || "Pending"}</span>
-                  </div>
-                  <div className="rounded-xl border border-amber-100 bg-white/80 p-3 flex flex-col">
-                    <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide">Role</span>
-                    <span className="text-sm font-semibold text-slate-900">
-                      {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "—"}
-                    </span>
-                  </div>
-                </div> */}
-              </div>
-
-              <nav className="mt-0 md:mt-6">
-                <div className={`flex bg-amber-100/60 rounded-2xl p-1 gap-1 ${user?.role === "student" ? "grid grid-cols-3" : "grid grid-cols-2"}`}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("personal")}
-                    className={`flex-1 px-2 md:px-4 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 ${activeTab === "personal"
-                      ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow text-white"
-                      : "text-amber-800/70 hover:bg-white/70"
-                      }`}
-                  >
-                    Personal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("security")}
-                    className={`flex-1 px-2 md:px-4 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 ${activeTab === "security"
-                      ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow text-white"
-                      : "text-amber-800/70 hover:bg-white/70"
-                      }`}
-                  >
-                    Security
-                  </button>
-                  {user?.role === "student" && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("rewards")}
-                      className={`flex-1 px-2 md:px-4 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 ${activeTab === "rewards"
-                        ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow text-white"
-                        : "text-amber-800/70 hover:bg-white/70"
-                        }`}
-                    >
-                      Rewards
-                    </button>
-                  )}
-                </div>
-              </nav>
-            </aside>
-
-            {/* Main Form Content */}
-            <section className="flex-1 w-full bg-white/60 p-4 md:p-6 lg:p-8">
-              {/* PERSONAL TAB */}
-              {activeTab === 'personal' && (
-                <div className="space-y-5 md:space-y-7">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
-                        <User className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Personal</p>
-                        <h3 className="text-xl md:text-2xl font-semibold text-slate-900">Information</h3>
-                      </div>
-                    </div>
-                    <div className="hidden md:flex items-center gap-2 text-xs text-slate-500">
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                      Fields marked * are required
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 md:p-5 shadow-sm space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                      {/* Name Field */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Full Name <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="text"
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                            placeholder="Enter your full name"
-                            className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                            required
-                          />
-                        </div>
-                        {errors.name && (
-                          <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                            {errors.name}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Email Field */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Email Address <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="email"
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            placeholder="Enter your email address"
-                            className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                            required
-                          />
-                        </div>
-                        {errors.email && (
-                          <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                            {errors.email}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Phone Field */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Phone Number
-                        </label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="tel"
-                            name="phone"
-                            value={form.phone}
-                            onChange={handleChange}
-                            placeholder="Enter your phone number"
-                            className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.phone ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                          />
-                        </div>
-                        {errors.phone && (
-                          <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                            {errors.phone}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Semester / Class Field */}
-                      {/* Class / Semester + Board (Student only) */}
-                      {user.role === "student" && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-
-                          {/* Class / Semester */}
-                          <div>
-                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                              Class
-                            </label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-
-                              <select
-                                name="className"
-                                value={form.className}
-                                onChange={handleChange}
-                                className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.className
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                                  : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
-                                  } focus:ring-4 bg-white`}
-                              >
-                                <option value="">Select Class</option>
-                                {classOptions.length > 0 ? (
-                                  classOptions.map((cls) => (
-                                    <option key={cls._id} value={cls.name}>
-                                      {cls.name}
-                                    </option>
-                                  ))
-                                ) : (
-                                  Array.from({ length: 12 }, (_, i) => (
-                                    <option key={i + 1} value={`Class ${i + 1}`}>
-                                      Class {i + 1}
-                                    </option>
-                                  ))
-                                )}
-                              </select>
-                              {/* <select
-                                name="className"
-                                value={form.className}
-                                disabled
-                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl bg-gray-100 text-sm sm:text-base"
-                              >
-                                <option>{form.className}</option>
-                              </select> */}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">You can update your class from here.</p>
-
-                            {errors.className && (
-                              <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                {errors.className}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Board */}
-                          <div>
-                            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                              Board
-                            </label>
-                            <div className="relative">
-                              <BookOpen className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-
-                              <select
-                                name="board"
-                                value={form.board}
-                                onChange={handleChange}
-                                className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.board
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                                  : "border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100"
-                                  } focus:ring-4 bg-white`}
-                              >
-                                <option value="">Select Board</option>
-                                {boardOptions.length > 0 ? (
-                                  boardOptions.map((board) => (
-                                    <option key={board._id} value={board.name}>
-                                      {board.name}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <>
-                                    <option value="CBSE">CBSE</option>
-                                    <option value="ICSE">ICSE</option>
-                                    <option value="WB">West Bengal Board</option>
-                                    <option value="STATE">State Board</option>
-                                  </>
-                                )}
-                              </select>
-                              {/* <select
-                                name="board"
-                                value={form.board}
-                                disabled
-                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl bg-gray-100 cursor-not-allowed text-sm sm:text-base"
-                              >
-                                <option>{form.board}</option>
-                              </select> */}
-                            </div>
-
-                            {errors.board && (
-                              <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                {errors.board}
-                              </p>
-                            )}
-                          </div>
-
-                        </div>
-                      )}
-
-
-
-                      {/* Address Field */}
-                      {/* <div className="md:col-span-2">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                          Address
-                        </label>
-                        <div className="relative">
-                          <MapPin className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="text"
-                            name="address"
-                            value={form.address}
-                            onChange={handleChange}
-                            placeholder="Enter your address"
-                            className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.address ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                          />
-                        </div>
-                      </div> */}
-
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                        {/* DOB Field */}
-                        <div>
-                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                            Date of Birth
-                          </label>
-                          <div className="relative">
-                            <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                            <input
-                              type="date"
-                              name="dob"
-                              value={form.dob}
-                              onChange={handleChange}
-                              className={`w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.dob ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Gender Field */}
-                        <div>
-                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                            Gender
-                          </label>
-                          <div className="relative">
-                            <select
-                              name="gender"
-                              value={form.gender}
-                              onChange={handleChange}
-                              className={`w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.gender ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                            >
-                              <option value="">Select gender</option>
-                              <option value="male">Male</option>
-                              <option value="female">Female</option>
-                              <option value="other">Other</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* State Field */}
-                        <div>
-                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                            State
-                          </label>
-                          <div className="relative">
-                            <select
-                              name="state"
-                              value={form.state}
-                              onChange={handleChange}
-                              disabled={loadingStates}
-                              className={`w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base ${errors.state ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                            >
-                              <option value="">{loadingStates ? "Loading states..." : "Select State"}</option>
-                              {states.map((state) => (
-                                <option key={state} value={state}>
-                                  {state}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Department (for teachers) */}
-                      {/* <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Department
-                      </label>
-                      <div className="relative">
-                        <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="text"
-                          name="department"
-                          value={form.department}
-                          onChange={handleChange}
-                          placeholder="Department (for teachers)"
-                          className={`w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none ${errors.department ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100'} focus:ring-4 bg-white`}
-                        />
-                      </div>
-                    </div> */}
-                      {/* ---------------- Parent Details Section ---------------- */}
-                      {/* {user.role === "student" && (
-                        <div className="md:col-span-2 mt-3 md:mt-4">
-                          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 md:mb-3 border-b pb-2">
-                            Parent Details
-                          </h3>
-                        </div>
-                      )} */}
-
-                      {/* ---------------------- FATHER SECTION ---------------------- */}
-                      {/* {user.role === "student" && (
-                        <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4 mb-4 md:mb-6">
-                          <h4 className="text-sm sm:text-md font-semibold text-gray-800 mb-2 md:mb-3">Father Information</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                            <div>
-                              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                                Father Name
-                              </label>
-                              <div className="relative">
-                                <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
-                          text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                                <input
-                                  type="text"
-                                  name="fatherName"
-                                  value={form.fatherName}
-                                  onChange={handleChange}
-                                  placeholder="Enter father's name"
-                                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                                Father Occupation
-                              </label>
-                              <div className="relative">
-                                <Briefcase className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
-                              text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                                <select
-                                  name="fatherOccupation"
-                                  value={
-                                    occupationOptions.includes(form.fatherOccupation)
-                                      ? form.fatherOccupation
-                                      : "Others"
-                                  }
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === "Others") {
-                                      setForm((prev) => ({ ...prev, fatherOccupation: "" }));
-                                    } else {
-                                      setForm((prev) => ({ ...prev, fatherOccupation: value }));
-                                    }
-                                  }}
-                                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                >
-                                  <option value="">Select Occupation</option>
-                                  {occupationOptions.map((job) => (
-                                    <option key={job} value={job}>
-                                      {job}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              {(!occupationOptions.includes(form.fatherOccupation) ||
-                                form.fatherOccupation === "") && (
-                                  <input
-                                    type="text"
-                                    name="fatherOccupation"
-                                    value={form.fatherOccupation}
-                                    onChange={handleChange}
-                                    placeholder="Enter custom occupation"
-                                    className="mt-2 w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                  />
-                                )}
-                            </div>
-                            <div>
-                              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                                Father Contact Number
-                              </label>
-                              <div className="relative">
-                                <Phone className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
-                          text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                                <input
-                                  type="tel"
-                                  name="fatherContact"
-                                  value={form.fatherContact}
-                                  onChange={handleChange}
-                                  placeholder="Enter father's mobile number"
-                                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )} */}
-
-                      {/* ---------------------- MOTHER SECTION ---------------------- */}
-                      {/* {user.role === "student" && (
-                        <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4">
-                          <h4 className="text-sm sm:text-md font-semibold text-gray-800 mb-2 md:mb-3">Mother Information</h4>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                            <div>
-                              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                                Mother Name
-                              </label>
-                              <div className="relative">
-                                <User className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
-                        text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                                <input
-                                  type="text"
-                                  name="motherName"
-                                  value={form.motherName}
-                                  onChange={handleChange}
-                                  placeholder="Enter mother's name"
-                                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                                Mother Occupation
-                              </label>
-                              <div className="relative">
-                                <Briefcase className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
-                              text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-
-                                <select
-                                  name="motherOccupation"
-                                  value={
-                                    occupationOptions.includes(form.motherOccupation)
-                                      ? form.motherOccupation
-                                      : "Others"
-                                  }
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === "Others") {
-                                      setForm((prev) => ({ ...prev, motherOccupation: "" }));
-                                    } else {
-                                      setForm((prev) => ({ ...prev, motherOccupation: value }));
-                                    }
-                                  }}
-                                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                >
-                                  <option value="">Select Occupation</option>
-                                  {occupationOptions.map((job) => (
-                                    <option key={job} value={job}>
-                                      {job}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {(!occupationOptions.includes(form.motherOccupation) ||
-                                form.motherOccupation === "") && (
-                                  <input
-                                    type="text"
-                                    name="motherOccupation"
-                                    value={form.motherOccupation}
-                                    onChange={handleChange}
-                                    placeholder="Enter custom occupation"
-                                    className="mt-2 w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                  />
-                                )}
-                            </div>
-
-                            <div>
-                              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">
-                                Mother Contact Number
-                              </label>
-                              <div className="relative">
-                                <Phone className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2
-                          text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                                <input
-                                  type="tel"
-                                  name="motherContact"
-                                  value={form.motherContact}
-                                  onChange={handleChange}
-                                  placeholder="Enter mother's mobile number"
-                                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base
-                     border-gray-300 hover:border-yellow-400 focus:border-yellow-500
-                     focus:ring-yellow-100 focus:ring-4 bg-white"
-                                />
-                              </div>
-                            </div>
-
-                          </div>
-                        </div>
-                      )} */}
-
-
-
-
-
-                      {/* About / Bio */}
-                      <div className="md:col-span-2">
-                        <div className="mb-1.5 md:mb-2 flex items-center justify-between gap-2">
-                          <label className="block text-xs sm:text-sm font-semibold text-gray-700">
-                            About / Bio
-                          </label>
-                          <span className={`text-[11px] sm:text-xs font-semibold ${countWords(form.bio) >= BIO_MAX_WORDS ? "text-amber-600" : "text-slate-500"}`}>
-                            {countWords(form.bio)}/{BIO_MAX_WORDS} words
-                          </span>
-                        </div>
-                        <div className="relative">
-                          <textarea
-                            name="bio"
-                            value={form.bio}
-                            onChange={handleChange}
-                            rows={4}
-                            placeholder="Tell us a bit about yourself"
-                            className="w-full pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 focus:ring-4 bg-white"
-                          />
-                        </div>
-                        <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
-                          Keep it short like social bios. Maximum {BIO_MAX_WORDS} words.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ACCOUNT TAB (UI-only fields per Option A) */}
-              {activeTab === 'account' && (
-                <div className="space-y-5 md:space-y-7">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
-                      <AtSign className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Account</p>
-                      <h3 className="text-xl md:text-2xl font-semibold text-slate-900">Preferences</h3>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 md:p-5 shadow-sm space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Username (UI-only) */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
-                        <div className="relative">
-                          <AtSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                          <input
-                            type="text"
-                            name="username"
-                            value={form.username || ""}
-                            onChange={(e) => setForm(prev => ({ ...prev, username: e.target.value }))}
-                            placeholder="Choose a username"
-                            className="w-full pl-12 pr-4 py-3 border rounded-xl shadow-sm transition-all duration-200 outline-none border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Language Preference (UI-only) */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Language Preference</label>
-                        <select
-                          className="mt-1 w-full rounded-xl border bg-white px-3 py-3 shadow-sm outline-none"
-                          value={form.language || "en"}
-                          onChange={(e) => setForm(prev => ({ ...prev, language: e.target.value }))}
-                        >
-                          <option value="en">English</option>
-                          <option value="bn">Bengali</option>
-                          <option value="hi">Hindi</option>
-                          <option value="ta">Tamil</option>
-                        </select>
-                      </div>
-
-                      {/* Notification Preferences (UI-only) */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          Notification Preferences
-                        </label>
-                        <div className="space-y-3">
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="email-notifications"
-                              className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
-                              checked={form.emailNotifications ?? true}
-                              onChange={(e) => setForm(prev => ({ ...prev, emailNotifications: e.target.checked }))}
-                            />
-                            <label htmlFor="email-notifications" className="ml-2 block text-sm text-gray-700">
-                              Email Notifications
-                            </label>
-                          </div>
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="sms-notifications"
-                              className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
-                              checked={form.smsNotifications ?? false}
-                              onChange={(e) => setForm(prev => ({ ...prev, smsNotifications: e.target.checked }))}
-                            />
-                            <label htmlFor="sms-notifications" className="ml-2 block text-sm text-gray-700">
-                              SMS Notifications
-                            </label>
-                          </div>
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="push-notifications"
-                              className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
-                              checked={form.pushNotifications ?? true}
-                              onChange={(e) => setForm(prev => ({ ...prev, pushNotifications: e.target.checked }))}
-                            />
-                            <label htmlFor="push-notifications" className="ml-2 block text-sm text-gray-700">
-                              Push Notifications
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SECURITY TAB */}
-              {activeTab === 'security' && (
-                <div className="space-y-5 md:space-y-7">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-slate-900 text-amber-200 flex items-center justify-center shadow-sm">
-                      <Shield className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Security</p>
-                      <h3 className="text-xl md:text-2xl font-semibold text-slate-900">Password & access</h3>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 md:p-5 shadow-sm space-y-4 md:space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-
-                      {/* Old Password */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">Old Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="password"
-                            name="oldPassword"
-                            value={form.oldPassword || ""}
-                            onChange={(e) => setForm(prev => ({ ...prev, oldPassword: e.target.value }))}
-                            placeholder="Enter old password"
-                            className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* New Password */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">New Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="password"
-                            name="newPassword"
-                            value={form.newPassword || ""}
-                            onChange={(e) => setForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                            placeholder="Enter new password"
-                            className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Confirm Password */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 md:mb-2">Confirm New Password</label>
-                        <div className="relative">
-                          <Shield className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                          <input
-                            type="password"
-                            name="confirmPassword"
-                            value={form.confirmPassword || ""}
-                            onChange={(e) => setForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                            placeholder="Confirm new password"
-                            className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border rounded-xl shadow-sm outline-none text-sm sm:text-base border-gray-300 hover:border-yellow-400 focus:border-yellow-500 focus:ring-yellow-100 bg-white"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* REWARDS TAB */}
-              {activeTab === 'rewards' && user?.role === "student" && (
-                <div className="space-y-4 md:space-y-6">
-                  <p>Rewards is comming soon. Keep learning ☺️</p>
-                </div>
-                // <div className="space-y-4 md:space-y-6">
-
-                //   {/* ── Balance Card ── */}
-                //   <div className="rounded-2xl md:rounded-3xl bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-500 p-4 md:p-6 shadow-xl relative overflow-hidden">
-                //     <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full" />
-                //     <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/10 rounded-full" />
-                //     <div className="relative z-10">
-                //       <p className="text-xs font-semibold text-white/80 uppercase tracking-widest mb-1">Coin Balance</p>
-                //       <div className="flex items-end gap-2 mb-3">
-                //         <span className="text-4xl md:text-5xl font-black text-white leading-none">{points.toLocaleString()}</span>
-                //         <span className="text-sm font-bold text-white/80 mb-1">coins</span>
-                //       </div>
-                //       {/* Progress bar to 20 000 */}
-                //       <div className="bg-white/30 rounded-full h-2 overflow-hidden mb-1">
-                //         <div
-                //           className="h-full bg-white rounded-full transition-all duration-700"
-                //           style={{ width: `${Math.min((points / 20000) * 100, 100)}%` }}
-                //         />
-                //       </div>
-                //       <p className="text-[11px] text-white/80 font-medium">
-                //         {points >= 20000
-                //           ? "🎉 Max tier reached — all rewards unlocked!"
-                //           : `${(20000 - points).toLocaleString()} coins to ₹1000 gift card`}
-                //       </p>
-                //       {/* Stats row */}
-                //       <div className="mt-3 flex gap-3">
-                //         <div className="flex-1 bg-white/20 backdrop-blur rounded-xl px-3 py-2">
-                //           <p className="text-[10px] text-white/70 font-semibold">Wallet Value</p>
-                //           <p className="text-base font-black text-white">₹{(points / 20).toFixed(2)}</p>
-                //         </div>
-                //         <div className="flex-1 bg-white/20 backdrop-blur rounded-xl px-3 py-2">
-                //           <p className="text-[10px] text-white/70 font-semibold">Rate</p>
-                //           <p className="text-base font-black text-white">20 = ₹1</p>
-                //         </div>
-                //         <div className="hidden sm:flex flex-1 bg-white/20 backdrop-blur rounded-xl px-3 py-2">
-                //           <div>
-                //             <p className="text-[10px] text-white/70 font-semibold">Total Earned</p>
-                //             <p className="text-base font-black text-white">{points.toLocaleString()}</p>
-                //           </div>
-                //         </div>
-                //       </div>
-                //     </div>
-                //   </div>
-
-                //   {/* ── Redeem Options label ── */}
-                //   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Redeem Options</p>
-
-                //   {/* ── Study Materials ── */}
-                //   <div className="rounded-2xl border border-amber-100 bg-white shadow-sm overflow-hidden">
-                //     <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-50 bg-green-50/60">
-                //       <div className="h-9 w-9 rounded-xl bg-green-500 flex items-center justify-center flex-shrink-0">
-                //         <ShoppingBag className="w-4 h-4 text-white" />
-                //       </div>
-                //       <div>
-                //         <h5 className="text-sm font-bold text-slate-900">Study Material Credit</h5>
-                //         <p className="text-[11px] text-slate-500">Use coins as wallet credit on purchases</p>
-                //       </div>
-                //     </div>
-                //     <div className="p-4 space-y-3">
-                //       <div className="flex gap-2">
-                //         <div className="flex-1 relative">
-                //           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">₹</span>
-                //           <input
-                //             type="number"
-                //             value={redeemAmount}
-                //             onChange={(e) => setRedeemAmount(e.target.value)}
-                //             placeholder="Amount"
-                //             className="w-full pl-7 pr-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 text-sm bg-slate-50"
-                //             min="0.5"
-                //             step="0.5"
-                //           />
-                //         </div>
-                //         <button
-                //           type="button"
-                //           onClick={() => redeemCoins("cash", parseFloat(redeemAmount))}
-                //           disabled={redeeming || !redeemAmount || parseFloat(redeemAmount) < 0.5}
-                //           className="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-500 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl font-semibold text-sm shadow-md disabled:cursor-not-allowed transition-all active:scale-95"
-                //         >
-                //           {redeeming ? "..." : "Redeem"}
-                //         </button>
-                //       </div>
-                //       {redeemAmount && (
-                //         <p className="text-xs text-slate-500">
-                //           Costs <span className="font-semibold text-amber-600">{Math.ceil(parseFloat(redeemAmount) * 20)} coins</span>
-                //         </p>
-                //       )}
-                //     </div>
-                //   </div>
-
-                //   {/* ── Gift Cards ── */}
-                //   <div className="rounded-2xl border border-amber-100 bg-white shadow-sm overflow-hidden">
-                //     <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-50 bg-orange-50/60">
-                //       <div className="h-9 w-9 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
-                //         <Gift className="w-4 h-4 text-white" />
-                //       </div>
-                //       <div>
-                //         <h5 className="text-sm font-bold text-slate-900">Amazon Gift Card</h5>
-                //         <p className="text-[11px] text-slate-500">Tap a card to redeem instantly</p>
-                //       </div>
-                //     </div>
-                //     <div className="p-4 grid grid-cols-2 gap-3">
-                //       {[
-                //         { amount: 100, coins: 2000 },
-                //         { amount: 250, coins: 5000 },
-                //         { amount: 500, coins: 10000 },
-                //         { amount: 1000, coins: 20000 },
-                //       ].map((option) => {
-                //         const isAvailable = giftCardAvailability[option.amount]?.available;
-                //         const availableCount = giftCardAvailability[option.amount]?.count || 0;
-                //         const canRedeem = points >= option.coins && isAvailable;
-
-                //         return (
-                //           <button
-                //             key={option.amount}
-                //             type="button"
-                //             onClick={() => redeemCoins("giftcard", option.amount)}
-                //             disabled={redeeming || !canRedeem}
-                //             className={`relative rounded-2xl p-3.5 border-2 text-left transition-all active:scale-95 ${canRedeem
-                //                 ? "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 hover:border-amber-400 hover:shadow-md"
-                //                 : "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                //               }`}
-                //           >
-                //             {isAvailable && availableCount <= 5 && availableCount > 0 && (
-                //               <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-tight">
-                //                 {availableCount} left
-                //               </span>
-                //             )}
-                //             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-2 shadow-sm">
-                //               <Gift className="w-4 h-4 text-white" />
-                //             </div>
-                //             <p className="text-lg font-black text-slate-900">₹{option.amount}</p>
-                //             <p className="text-[11px] text-slate-500 mt-0.5">{option.coins.toLocaleString()} coins</p>
-                //             {!isAvailable && (
-                //               <p className="text-[10px] text-red-500 font-semibold mt-1">Out of stock</p>
-                //             )}
-                //             {isAvailable && points < option.coins && (
-                //               <p className="text-[10px] text-red-500 mt-1">Need {(option.coins - points).toLocaleString()} more</p>
-                //             )}
-                //           </button>
-                //         );
-                //       })}
-                //     </div>
-                //   </div>
-
-                //   {/* ── Redemption History ── */}
-                //   <div>
-                //     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1 mb-3">History</p>
-                //     {redemptionHistory.length === 0 ? (
-                //       <div className="rounded-2xl bg-slate-50 border border-slate-100 p-6 text-center">
-                //         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
-                //           <Gift className="w-5 h-5 text-slate-400" />
-                //         </div>
-                //         <p className="text-sm font-semibold text-slate-500">No redemptions yet</p>
-                //         <p className="text-xs text-slate-400 mt-1">Your history will appear here</p>
-                //       </div>
-                //     ) : (
-                //       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden divide-y divide-slate-50 max-h-96 overflow-y-auto">
-                //         {redemptionHistory.map((redemption) => (
-                //           <div key={redemption._id} className="flex items-center gap-3 px-4 py-3">
-                //             <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${redemption.type === "cash" ? "bg-green-100" : "bg-orange-100"
-                //               }`}>
-                //               {redemption.type === "cash"
-                //                 ? <ShoppingBag className="w-4 h-4 text-green-600" />
-                //                 : <Gift className="w-4 h-4 text-orange-600" />}
-                //             </div>
-                //             <div className="flex-1 min-w-0">
-                //               <div className="flex items-center gap-1.5">
-                //                 <p className="text-sm font-semibold text-slate-900 truncate">
-                //                   {redemption.type === "cash" ? "Wallet Credit" : "Amazon Gift Card"}
-                //                 </p>
-                //                 <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${redemption.status === "completed"
-                //                     ? "bg-green-100 text-green-700"
-                //                     : redemption.status === "pending"
-                //                       ? "bg-yellow-100 text-yellow-700"
-                //                       : "bg-red-100 text-red-700"
-                //                   }`}>{redemption.status}</span>
-                //               </div>
-                //               {redemption.giftCardCode && (
-                //                 <p className="text-xs font-mono text-orange-600 truncate mt-0.5">{redemption.giftCardCode}</p>
-                //               )}
-                //               <p className="text-[11px] text-slate-400 mt-0.5">
-                //                 {new Date(redemption.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                //               </p>
-                //             </div>
-                //             <div className="text-right flex-shrink-0">
-                //               <p className="text-sm font-black text-slate-900">₹{redemption.amount}</p>
-                //               <p className="text-[11px] text-slate-400">{redemption.coinsUsed} coins</p>
-                //             </div>
-                //           </div>
-                //         ))}
-                //       </div>
-                //     )}
-                //   </div>
-
-                //   {/* ── Note ── */}
-                //   <div className="flex gap-2.5 bg-amber-50 border border-amber-100 rounded-2xl p-3.5">
-                //     <div className="h-5 w-5 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                //       <span className="text-white text-[10px] font-black">i</span>
-                //     </div>
-                //     <p className="text-xs text-amber-800 leading-relaxed">
-                //       Wallet credits apply during checkout. Gift card codes are sent to your registered email within 24 hours.
-                //     </p>
-                //   </div>
-
-                // </div>
-
-              )}
-
-              {/* SUBMIT BUTTON (all tabs share same button except rewards) */}
-              {activeTab !== 'rewards' && (
-                <div className="pt-4 md:pt-6 mt-4 md:mt-6 border-t border-amber-100">
-                  {activeTab === 'security' ? (
-                    <button
-                      type="button"
-                      onClick={changePassword}
-                      disabled={saving}
-                      className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      {saving ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Changing Password...
-                        </div>
-                      ) : (
-                        "Change Password"
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={saving || Object.keys(errors).length > 0}
-                      className="w-full md:w-auto px-6 sm:px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-2.5 sm:py-3 rounded-xl transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      {saving ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Saving Changes...
-                        </div>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </button>
-                  )}
-
-                  {/* SUCCESS MESSAGE */}
-                  {success && (
-                    <div className="mt-3 md:mt-4 bg-green-50 border border-green-200 rounded-xl p-3 md:p-4 flex items-center gap-2 md:gap-3 animate-fade-in">
-                      <div className="bg-green-500 rounded-full p-1">
-                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-green-800 font-semibold text-sm sm:text-base">Profile Updated Successfully!</p>
-                        <p className="text-green-700 text-xs sm:text-sm">Your changes have been saved.</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          </div>
-        </form>
-      </main>
-
-      {/* FOOTER */}
-      <footer className="hidden md:block bg-white/80 backdrop-blur border-t border-amber-100 mt-8 md:mt-12">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-amber-500 flex items-center justify-center shadow-sm">
-                <User className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
-              </div>
-              <p className="text-xs sm:text-sm md:text-base text-slate-600 text-center">© 2025 Student Portal. All rights reserved to EEC.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
+
+function PField({ label, required, error, children }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {children}
+      {error && (
+        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3 flex-shrink-0" />{error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function iCls(hasError) {
+  return `w-full px-3 py-2.5 border rounded-xl text-sm outline-none transition-all bg-white ${
+    hasError
+      ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+      : "border-slate-200 hover:border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+  }`;
+}
+

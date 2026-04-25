@@ -640,17 +640,17 @@ export default function StudyMaterialsPage() {
                                 title="List View"><List className="w-5 h-5" /></button>
                         </div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="text-2xl">🔍</span> Filter Materials</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="text-2xl"></span> Filter Materials</h3>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><span className="text-indigo-600">📚</span> Subject</label>
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><span className="text-indigo-600"> </span> Subject</label>
                             <select value={subject} onChange={(e) => setSubject(e.target.value)}
                                 className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-700 font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer">
                                 {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><span className="text-blue-600">🏷️</span> Category</label>
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><span className="text-blue-600"></span> Category</label>
                             <select value={category} onChange={(e) => setCategory(e.target.value)}
                                 className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-700 font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer">
                                 {categories.map((c) => <option key={c} value={c}>{c}</option>)}
