@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText,
@@ -30,6 +30,17 @@ import { getJSON } from '../lib/api';
 
 const RESULTS_CACHE_PREFIX = "eec:results-cache:v2";
 const ANALYTICS_ORDER = { none: 0, basic: 1, full: 2 };
+
+function resolveStageNumber(stageValue, examName = "") {
+  if (typeof stageValue === "number" && Number.isFinite(stageValue)) {
+    return Math.max(1, Math.trunc(stageValue));
+  }
+  const fromStage = String(stageValue || "").match(/(\d+)/);
+  if (fromStage) return Math.max(1, Number(fromStage[1]));
+  const fromTitle = String(examName || "").match(/(\d+)/);
+  if (fromTitle) return Math.max(1, Number(fromTitle[1]));
+  return 1;
+}
 
 function getCacheKey(section, userKey = "anonymous") {
   return `${RESULTS_CACHE_PREFIX}:${userKey}:${section}`;
@@ -368,6 +379,9 @@ const ResultsView = () => {
   function formatResults(attempts) {
     return attempts.map(att => ({
       id: att._id,
+      stage: att.stage,
+      subjectId: att.subject || "",
+      topicId: att.topic || "",
 
       subjectName: att.subjectName || "Unknown Subject",
       topicName: att.topicName || "Unknown Topic",
@@ -764,6 +778,72 @@ const ResultsView = () => {
   const canViewAnalytics = ANALYTICS_ORDER[analyticsAccess] >= ANALYTICS_ORDER.basic;
   const canViewDetails = ANALYTICS_ORDER[analyticsAccess] >= ANALYTICS_ORDER.full;
 
+  const weakTopicBooster = useMemo(() => {
+    if (!examResults.length) return null;
+
+    const bucket = new Map();
+    for (const exam of examResults) {
+      const percent = Number(exam?.percentage);
+      if (!Number.isFinite(percent)) continue;
+
+      const subjectName = String(exam?.subjectName || exam?.subjects?.[0]?.name || "").trim() || "Unknown Subject";
+      const topicName = String(exam?.topicName || exam?.subjects?.[0]?.topicName || "").trim() || "Unknown Topic";
+      const stageNumber = resolveStageNumber(exam?.stage, exam?.examName);
+      const key = `${stageNumber}::${subjectName}::${topicName}`;
+
+      const prev = bucket.get(key) || {
+        subjectName,
+        topicName,
+        stageNumber,
+        subjectId: exam?.subjectId || "",
+        topicId: exam?.topicId || "",
+        totalPercent: 0,
+        count: 0,
+        lastDate: 0,
+      };
+
+      prev.totalPercent += percent;
+      prev.count += 1;
+      prev.lastDate = Math.max(prev.lastDate, new Date(exam?.date || 0).getTime() || 0);
+      if (!prev.subjectId && exam?.subjectId) prev.subjectId = exam.subjectId;
+      if (!prev.topicId && exam?.topicId) prev.topicId = exam.topicId;
+      bucket.set(key, prev);
+    }
+
+    const scored = [...bucket.values()]
+      .map((row) => ({ ...row, avgPercent: row.count ? row.totalPercent / row.count : 0 }))
+      .sort((a, b) => {
+        if (a.avgPercent !== b.avgPercent) return a.avgPercent - b.avgPercent;
+        if (a.count !== b.count) return b.count - a.count;
+        return b.lastDate - a.lastDate;
+      });
+
+    return scored[0] || null;
+  }, [examResults]);
+
+  function startWeakTopicPractice() {
+    if (!weakTopicBooster) return;
+
+    const stageNum = weakTopicBooster.stageNumber || 1;
+    const subjectId = String(weakTopicBooster.subjectId || "");
+    const topicId = String(weakTopicBooster.topicId || "");
+
+    if (subjectId && topicId && subjectId !== "undefined" && topicId !== "undefined") {
+      navigate(
+        `/dashboard/syllabus/topic/${subjectId}/${topicId}?stage=${stageNum}&openPractice=1`,
+        {
+          state: {
+            subject: { _id: subjectId, name: weakTopicBooster.subjectName },
+            topic: { _id: topicId, name: weakTopicBooster.topicName },
+          },
+        }
+      );
+      return;
+    }
+
+    navigate(`/dashboard/syllabus?stage=${stageNum}`);
+  }
+
 
   return (
     <div className="min-h-screen space-y-4 md:space-y-8 p-3 md:p-8 bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100">
@@ -940,6 +1020,35 @@ const ResultsView = () => {
         </div>
       )}
       </div>
+
+      {canViewAnalytics && weakTopicBooster && (
+        <div className="relative z-10 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 md:p-5 shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)]">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+                <Lightbulb className="w-3.5 h-3.5" />
+                Weak Topic Booster
+              </p>
+              <h3 className="mt-2 text-base md:text-lg font-extrabold text-slate-900">
+                Practice {weakTopicBooster.topicName} ({weakTopicBooster.subjectName})
+              </h3>
+              <p className="mt-1 text-xs md:text-sm text-slate-600">
+                Avg score: <span className="font-bold text-rose-600">{weakTopicBooster.avgPercent.toFixed(1)}%</span>
+                {" "}· Stage {weakTopicBooster.stageNumber}
+                {" "}· Attempts {weakTopicBooster.count}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={startWeakTopicPractice}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
+            >
+              <BookPlus className="w-4 h-4" />
+              Start Practice
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Exam Results */}
       <div className="relative">

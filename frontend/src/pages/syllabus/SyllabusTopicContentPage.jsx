@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BookOpen, ChevronRight, Clock, FileText, ListChecks, Loader2, Lock, Sparkles, Trophy, X, Zap } from "lucide-react";
-import { getJSON, startExam } from "../../lib/api";
+import { getJSON, myAttempts, startExam } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
+import { resolveStageNumber } from "../../lib/studentLearning";
 
 export default function SyllabusTopicContentPage() {
   const { subjectId, topicId } = useParams();
@@ -27,6 +28,7 @@ export default function SyllabusTopicContentPage() {
   const [questionTypes, setQuestionTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [didAutoOpenPractice, setDidAutoOpenPractice] = useState(false);
+  const [topicAttempts, setTopicAttempts] = useState([]);
   const [levelAccess, setLevelAccess] = useState({
     freeLevels: ["basic"],
     allowedLevels: ["basic"],
@@ -75,6 +77,31 @@ export default function SyllabusTopicContentPage() {
     const match = questionTypes.find((item) => item?.type === selectedType.type);
     return Number(match?.count ?? selectedType.count ?? 0);
   }, [questionTypes, selectedType]);
+  const topicProgress = useMemo(() => {
+    const hasSummary = Boolean(String(topic?.topicSummary || "").trim());
+    const hasOutcome = Boolean(String(topic?.learningOutcome || "").trim());
+    const hasStartedExam = topicAttempts.length > 0;
+    const submittedAttempts = topicAttempts.filter((attempt) => Boolean(attempt?.submittedAt));
+    const hasResult = submittedAttempts.length > 0;
+    const bestPercent = submittedAttempts.reduce(
+      (best, attempt) => Math.max(best, Number(attempt?.percent || 0)),
+      0
+    );
+
+    return {
+      hasSummary,
+      hasOutcome,
+      hasStartedExam,
+      hasResult,
+      bestPercent,
+      completedCount: [
+        hasSummary || hasOutcome,
+        hasStartedExam,
+        hasStartedExam,
+        hasResult,
+      ].filter(Boolean).length,
+    };
+  }, [topic, topicAttempts]);
 
   function getStoredUser() {
     try {
@@ -120,9 +147,13 @@ export default function SyllabusTopicContentPage() {
 
       const stateSubject = location.state?.subject;
       const stateTopic = location.state?.topic;
+      const stateTopicHasContent =
+        Boolean(String(stateTopic?.topicSummary || "").trim()) ||
+        Boolean(String(stateTopic?.learningOutcome || "").trim());
       if (
         stateSubject?._id === subjectId &&
-        stateTopic?._id === topicId
+        stateTopic?._id === topicId &&
+        stateTopicHasContent
       ) {
         setSubject(stateSubject);
         setTopic(stateTopic);
@@ -167,6 +198,35 @@ export default function SyllabusTopicContentPage() {
   useEffect(() => {
     fetchLevelAccess();
   }, []);
+
+  useEffect(() => {
+    if (!subject?._id || !topic?._id) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        const data = await myAttempts();
+        if (!mounted) return;
+        const filtered = (data?.items || []).filter((attempt) => {
+          const attemptSubjectId = String(attempt?.subject?._id || attempt?.subject || "");
+          const attemptTopicId = String(attempt?.topic?._id || attempt?.topic || "");
+          const attemptStage = resolveStageNumber(attempt?.stage);
+          return (
+            attemptSubjectId === String(subject._id) &&
+            attemptTopicId === String(topic._id) &&
+            attemptStage === resolveStageNumber(stage)
+          );
+        });
+        setTopicAttempts(filtered);
+      } catch {
+        if (mounted) setTopicAttempts([]);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [subject?._id, topic?._id, stage]);
 
   async function fetchLevelAccess() {
     try {
@@ -362,6 +422,36 @@ export default function SyllabusTopicContentPage() {
 
       {/* ── Main Content ── */}
       <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 md:px-6 md:py-8">
+        <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-indigo-100 bg-indigo-50/60 px-5 py-3">
+            <h2 className="text-sm font-bold text-indigo-900">Learning Path Progress</h2>
+            <span className="text-xs font-semibold text-indigo-700">
+              {topicProgress.completedCount}/4 completed
+            </span>
+          </div>
+          <div className="px-5 py-4">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-500"
+                style={{ width: `${Math.round((topicProgress.completedCount / 4) * 100)}%` }}
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+              <div className={`rounded-lg border px-2.5 py-2 ${topicProgress.hasSummary || topicProgress.hasOutcome ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                1. Topic Summary
+              </div>
+              <div className={`rounded-lg border px-2.5 py-2 ${topicProgress.hasStartedExam ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                2. Practice
+              </div>
+              <div className={`rounded-lg border px-2.5 py-2 ${topicProgress.hasStartedExam ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                3. Exam
+              </div>
+              <div className={`rounded-lg border px-2.5 py-2 ${topicProgress.hasResult ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                4. Result {topicProgress.hasResult ? `(${topicProgress.bestPercent}%)` : ""}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Topic Summary */}
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">

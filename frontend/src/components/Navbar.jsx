@@ -215,9 +215,17 @@ export default function Navbar() {
                 onClick={() => setUserMenuOpen((s) => !s)}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1B1F3B] transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
-                  <User className="h-3.5 w-3.5" />
-                </span>
+                {currentUser?.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt="Profile"
+                    className="h-6 w-6 rounded-full object-cover border border-slate-200"
+                  />
+                ) : (
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
+                    <User className="h-3.5 w-3.5" />
+                  </span>
+                )}
                 <span className="max-w-[10rem] truncate">{currentUser.name}</span>
                 <ChevronDown className={`h-4 w-4 transition ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>
@@ -245,24 +253,28 @@ export default function Navbar() {
             </div>
           ) : null}
           {/* Claim Free Gift — exact code.html style: rounded-2xl, 3D shadow, wiggle */}
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
-            className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
-          >
-            Join Now 🎁
-          </button>
+          {!currentUser && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
+              className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
+            >
+              Join Now 🎁
+            </button>
+          )}
         </div>
 
         {/* Mobile: Claim Free Gift + Hamburger */}
         <div className="flex items-center gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
-            className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-xs hover:bg-yellow-400 transition-all hover:scale-105"
-          >
-            Claim Free Gift! 🎁
-          </button>
+          {!currentUser && (
+            <button
+              type="button"
+              onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
+              className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-xs hover:bg-yellow-400 transition-all hover:scale-105"
+            >
+              Claim Free Gift! 🎁
+            </button>
+          )}
           <button
             className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
             onClick={() => setMobileOpen((s) => !s)}
@@ -370,20 +382,30 @@ export default function Navbar() {
           </button> */}
           {currentUser ? (
             <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
-                <User className="h-4 w-4" />
-              </span>
+              {currentUser?.avatar ? (
+                <img
+                  src={currentUser.avatar}
+                  alt="Profile"
+                  className="h-7 w-7 rounded-full object-cover border border-slate-200"
+                />
+              ) : (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
+                  <User className="h-4 w-4" />
+                </span>
+              )}
               <span className="text-sm font-semibold text-[#1B1F3B] truncate">{currentUser.name}</span>
             </div>
           ) : null}
 
-          <button
-            type="button"
-            onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
-            className="mt-2 flex w-full items-center justify-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm transition-all hover:scale-105"
-          >
-            Claim Free Gift! 🎁
-          </button>
+          {!currentUser && (
+            <button
+              type="button"
+              onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
+              className="mt-2 flex w-full items-center justify-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm transition-all hover:scale-105"
+            >
+              Claim Free Gift! 🎁
+            </button>
+          )}
 
         </div>
       </aside>

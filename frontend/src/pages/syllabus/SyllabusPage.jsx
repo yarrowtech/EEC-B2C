@@ -959,7 +959,16 @@ export default function SyllabusPage() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-900">{topic.name}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTopicInfoClick(selectedSubject, topic, e);
+                                }}
+                                className="font-semibold text-slate-900 hover:underline text-left"
+                              >
+                                {topic.name}
+                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -1297,7 +1306,7 @@ export default function SyllabusPage() {
             className="w-full max-w-5xl bg-[#f8f7f6] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
           >
             {/* Syllabus Hero Section */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-[#e7c555]/20 to-[#e7c555]/5 rounded-t-[3rem] p-8 border border-[#e7c555]/20">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#e7c555]/20 to-[#e7c555]/5 rounded-t-[3rem] p-8 border border-[#e7c555]/20 flex-shrink-0">
               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="flex flex-col gap-2">
                   <span className="bg-[#e7c555]/30 text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
@@ -1325,7 +1334,7 @@ export default function SyllabusPage() {
             </div>
 
             {/* Body - Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-10">
+            <div className="min-h-0 flex-1 overflow-y-auto p-6 md:p-10">
               <div className="flex flex-col gap-4">
                 <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900">
                   <MIcon name="map" className="text-[#e7c555]" />
@@ -1428,7 +1437,7 @@ export default function SyllabusPage() {
             </div>
 
             {/* Footer - Close button */}
-            <div className="border-t border-[#e7c555]/10 bg-white/60 p-5 flex justify-between items-center">
+            <div className="border-t border-[#e7c555]/10 bg-white/60 p-5 flex justify-between items-center flex-shrink-0">
               <div className="text-sm text-slate-500">
                 Press ESC to close
               </div>

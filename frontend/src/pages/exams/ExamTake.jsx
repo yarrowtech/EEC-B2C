@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getJSON, submitExam } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
+import {
+  createWeakAreaEntries,
+  readWeakAreas,
+  saveWeakAreas,
+  upsertWeakAreas,
+} from "../../lib/studentLearning";
 
 export default function ExamTake() {
   const { attemptId } = useParams();
@@ -99,6 +105,13 @@ export default function ExamTake() {
     if (result) return;
 
     function blockEvent(e) {
+      if (
+        e.type === "dragstart" &&
+        e.target instanceof Element &&
+        e.target.closest("[data-allow-drag='true']")
+      ) {
+        return;
+      }
       e.preventDefault();
     }
 
@@ -375,6 +388,17 @@ export default function ExamTake() {
       const res = await submitExam(attemptId, arr);
       setResult(res); // {score,total,percent}
 
+      const weakRows = createWeakAreaEntries({
+        meta,
+        questions,
+        result: res,
+        attemptId,
+      });
+      if (weakRows.length > 0) {
+        const merged = upsertWeakAreas(readWeakAreas(), weakRows);
+        saveWeakAreas(merged);
+      }
+
       // Show feedback message based on score
       const percentage = res.percent || 0;
       if (percentage >= 80) {
@@ -504,6 +528,27 @@ export default function ExamTake() {
       return;
     }
     nav("/dashboard/syllabus?stage=1");
+  }
+
+  function resolveStageNumber(stageValue) {
+    if (typeof stageValue === "number" && Number.isFinite(stageValue)) {
+      return Math.max(1, Math.trunc(stageValue));
+    }
+    const match = String(stageValue || "").match(/(\d+)/);
+    return match ? Math.max(1, Number(match[1])) : 1;
+  }
+
+  function goToTopicPracticeAfterSubmit() {
+    const stageNum = resolveStageNumber(meta?.stage);
+    const subjectId = String(meta?.subject || "");
+    const topicId = String(meta?.topic || "");
+
+    if (subjectId && topicId && subjectId !== "undefined" && topicId !== "undefined") {
+      nav(`/dashboard/syllabus/topic/${subjectId}/${topicId}?stage=${stageNum}&openPractice=1`);
+      return;
+    }
+
+    nav(`/dashboard/syllabus?stage=${stageNum}`);
   }
 
   function plainText(input) {
@@ -1352,6 +1397,7 @@ export default function ExamTake() {
                     <div
                       key={opt}
                       draggable
+                      data-allow-drag="true"
                       onDragStart={(e) => {
                         e.dataTransfer.setData("text/plain", opt);
                       }}
@@ -1751,6 +1797,7 @@ export default function ExamTake() {
                                 key={`ml-token-${q._id}-${ri}`}
                                 type="button"
                                 draggable
+                                data-allow-drag="true"
                                 onDragStart={(e) => e.dataTransfer.setData("match-right-index", String(ri))}
                                 onClick={() =>
                                   setMatchTokenSelection((prev) => ({
@@ -1808,6 +1855,15 @@ export default function ExamTake() {
               className="bg-white border-2 border-slate-300 hover:border-indigo-400 text-slate-700 font-semibold px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
             >
               Back
+            </button>
+          )}
+          {result && (
+            <button
+              type="button"
+              onClick={goToTopicPracticeAfterSubmit}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+            >
+              Practice This Topic
             </button>
           )}
         </div>

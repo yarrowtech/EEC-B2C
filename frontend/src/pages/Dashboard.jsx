@@ -24,6 +24,12 @@ import AdventureStatCard from '../components/student/AdventureStatCard';
 import DailyQuestCard from '../components/student/DailyQuestCard';
 import SubscriptionSpotlight from '../components/student/SubscriptionSpotlight';
 import { confirmAndLogout } from "../lib/confirmLogout";
+import {
+  buildTopicPracticePath,
+  buildTopicSummaryPath,
+  deriveNextAction,
+  readWeakAreas,
+} from "../lib/studentLearning";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -700,6 +706,7 @@ function StudentContent() {
   const [dailyBadge, setDailyBadge] = useState("none");
   const [dailyStreak, setDailyStreak] = useState(0);
   const [dailyHistory, setDailyHistory] = useState([]);
+  const [weakAreas, setWeakAreas] = useState([]);
 
   async function handleLogout() {
     await confirmAndLogout();
@@ -741,6 +748,10 @@ function StudentContent() {
 
     loadNotifications();
   }, [API]);
+
+  useEffect(() => {
+    setWeakAreas(readWeakAreas());
+  }, []);
 
   useEffect(() => {
     async function loadDailyBadge() {
@@ -1030,6 +1041,50 @@ function StudentContent() {
   // average percent
   const averagePercent =
     totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0;
+  const attemptNameMaps = useMemo(() => {
+    const subjectMap = new Map();
+    const topicMap = new Map();
+
+    for (const attempt of attempts || []) {
+      const subjectId = String(attempt?.subject?._id || attempt?.subject || "");
+      const topicId = String(attempt?.topic?._id || attempt?.topic || "");
+      const subjectName = String(attempt?.subject?.name || attempt?.subjectName || "").trim();
+      const topicName = String(attempt?.topic?.name || attempt?.topicName || "").trim();
+
+      if (subjectId && subjectName && !subjectMap.has(subjectId)) {
+        subjectMap.set(subjectId, subjectName);
+      }
+      if (topicId && topicName && !topicMap.has(topicId)) {
+        topicMap.set(topicId, topicName);
+      }
+    }
+
+    return { subjectMap, topicMap };
+  }, [attempts]);
+
+  function resolveWeakAreaNames(row) {
+    const subjectId = String(row?.subjectId || "");
+    const topicId = String(row?.topicId || "");
+
+    const subjectFromRow = String(row?.subjectName || "").trim();
+    const topicFromRow = String(row?.topicName || "").trim();
+
+    const subjectName =
+      (subjectFromRow && subjectFromRow.toLowerCase() !== "subject" && subjectFromRow) ||
+      attemptNameMaps.subjectMap.get(subjectId) ||
+      "Subject";
+    const topicName =
+      (topicFromRow && topicFromRow.toLowerCase() !== "topic" && topicFromRow) ||
+      attemptNameMaps.topicMap.get(topicId) ||
+      "Topic";
+
+    return { subjectName, topicName };
+  }
+
+  const nextAction = useMemo(
+    () => deriveNextAction({ attempts, weakAreas }),
+    [attempts, weakAreas]
+  );
 
   return (
     <div className="student-adventure-theme relative p-4 md:p-6 space-y-6">
@@ -1204,6 +1259,77 @@ function StudentContent() {
           />
         </div>
         {err && <div className="text-xs text-rose-600 mt-2">{err}</div>}
+      </Section>
+
+      <Section title={nextAction.title}>
+        <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 p-4 md:p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-base md:text-lg font-black text-slate-900">{nextAction.subtitle}</p>
+              <p className="mt-1 text-sm text-slate-600 line-clamp-2">{nextAction.description}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(nextAction.to)}
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
+            >
+              {nextAction.ctaLabel}
+            </button>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Weak Areas Auto-Revision" subtitle={`${Math.min(3, weakAreas.length)} of ${weakAreas.length}`}>
+        <div className="grid gap-3">
+          {weakAreas.slice(0, 3).map((row) => {
+            const summaryTo = buildTopicSummaryPath({
+              subjectId: row.subjectId,
+              topicId: row.topicId,
+              stage: row.stage,
+            });
+            const practiceTo = buildTopicPracticePath({
+              subjectId: row.subjectId,
+              topicId: row.topicId,
+              stage: row.stage,
+            });
+            const { subjectName, topicName } = resolveWeakAreaNames(row);
+
+            return (
+              <div key={row.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                    row.status === "wrong" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {row.status === "wrong" ? "Need Revision" : "Partially Correct"}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {subjectName} • {topicName}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-slate-700 line-clamp-2">{row.questionText}</p>
+                <div className="mt-3 flex gap-2 flex-wrap">
+                  <Link
+                    to={summaryTo}
+                    className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Topic Summary
+                  </Link>
+                  <Link
+                    to={practiceTo}
+                    className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                  >
+                    Practice Basic
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+          {weakAreas.length === 0 && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+              No weak areas saved yet. Complete an exam and revision suggestions will appear here.
+            </div>
+          )}
+        </div>
       </Section>
 
       <Section title="Daily Streak Tracker" subtitle={monthLabel}>
