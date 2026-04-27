@@ -42,9 +42,9 @@ const Home = () => {
       <VictoryPathSection />
       <FeatureCardsSection />
       <StatsStripSection />
-      <HeroRankSection />
+      {/* <HeroRankSection /> */}
       <QuickBundleSection />
-     <StarExplorersSection />
+      <StarExplorersSection />
       <QuestionsAnswersSection />
       {/* <PaprIqFooterSection />  */}
       {/* <WhatIsEEC />
