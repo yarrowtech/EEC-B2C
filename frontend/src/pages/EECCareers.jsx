@@ -300,68 +300,7 @@ export default function EECCareers() {
             salary: j.salary || "",
             slug: toJobSlug(j.title, index),
           }))
-      : [
-          // {
-          //   title: "Frontend Developer",
-          //   badge: "Full-time",
-          //   desc: "Build beautiful, fast, and accessible interfaces for our EEC learning platform using modern web technologies.",
-          //   reqs: [
-          //     "Proficiency in React and TypeScript",
-          //     "Strong eye for design and UX detail",
-          //     "2+ years of frontend experience",
-          //   ],
-          //   form: "",
-          //   buttonLabel: "Apply Now",
-          //   experience: "2+ Years",
-          //   department: "Engineering",
-          //   location: "Kolkata, India",
-          //   workMode: "Hybrid",
-          //   salary: "₹6-10 LPA",
-          //   fullDescription:
-          //     "You will work closely with product and design teams to build scalable, accessible, and high-performing user interfaces for students and educators.",
-          //   slug: toJobSlug("Frontend Developer", 0),
-          // },
-          // {
-          //   title: "Backend Developer",
-          //   badge: "Full-time",
-          //   desc: "Design and scale the APIs and infrastructure that power EEC's learning engine for thousands of students.",
-          //   reqs: [
-          //     "Experience with Node.js or Python",
-          //     "Familiarity with SQL and NoSQL databases",
-          //     "3+ years of backend experience",
-          //   ],
-          //   form: "",
-          //   buttonLabel: "Apply Now",
-          //   experience: "3+ Years",
-          //   department: "Engineering",
-          //   location: "Kolkata, India",
-          //   workMode: "Hybrid",
-          //   salary: "₹8-14 LPA",
-          //   fullDescription:
-          //     "You will design secure APIs, optimize data models, and improve platform reliability for large-scale learning workflows.",
-          //   slug: toJobSlug("Backend Developer", 1),
-          // },
-          // {
-          //   title: "UX/UI Designer",
-          //   badge: "Full-time",
-          //   desc: "Craft intuitive, beautiful experiences that make complex educational content simple and engaging for students.",
-          //   reqs: [
-          //     "Portfolio showcasing product design work",
-          //     "Expertise in Figma and design systems",
-          //     "2+ years of product design experience",
-          //   ],
-          //   form: "",
-          //   buttonLabel: "Apply Now",
-          //   experience: "2+ Years",
-          //   department: "Design",
-          //   location: "Kolkata, India",
-          //   workMode: "On-site",
-          //   salary: "₹5-9 LPA",
-          //   fullDescription:
-          //     "You will drive user research, create design systems, and craft intuitive learning experiences across web and mobile touchpoints.",
-          //   slug: toJobSlug("UX/UI Designer", 2),
-          // },
-        ];
+      : [];
 
   const whyJoinTitle = careerData?.whyJoinTitle || "Why Join Edify Eight?";
 
@@ -595,17 +534,29 @@ export default function EECCareers() {
             </motion.div>
 
             <div className="rounded-[32px] border border-[#f0f0f0] bg-[#fffefa] p-8 shadow-[0_25px_60px_rgba(16,25,40,0.08)]">
-              {jobs.map((job, i) => (
-                <JobRow
-                  key={job.title + i}
-                  job={job}
-                  index={i}
-                  onApply={(title) => {
-                    setSelectedJobTitle(title);
-                    setApplyOpen(true);
-                  }}
-                />
-              ))}
+              {jobs.length > 0 ? (
+                jobs.map((job, i) => (
+                  <JobRow
+                    key={job.title + i}
+                    job={job}
+                    index={i}
+                    onApply={(title) => {
+                      setSelectedJobTitle(title);
+                      setApplyOpen(true);
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+                  <p className="text-lg font-bold text-slate-900">No jobs available right now</p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Please check back later or send your CV to{" "}
+                    <a href={`mailto:${careersEmail}`} className="font-semibold text-blue-600 hover:underline">
+                      {careersEmail}
+                    </a>.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
