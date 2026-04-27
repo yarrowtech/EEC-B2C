@@ -10,26 +10,26 @@ export const getCareerPageSettings = async (req, res) => {
       doc = await CareerPage.create({
         whyJoinTitle: "Why Join EEC?",
         whyJoinItems: [
-          {
-            title: "Growth-focused environment",
-            description: "Work with a team that values innovation and impact.",
-            icon: "growth",
-          },
-          {
-            title: "Student-first culture",
-            description: "Everything we build is for better learning outcomes.",
-            icon: "student",
-          },
-          {
-            title: "Collaborative teams",
-            description: "Cross-functional teams that learn and grow together.",
-            icon: "team",
-          },
+          // {
+          //   title: "Growth-focused environment",
+          //   description: "Work with a team that values innovation and impact.",
+          //   icon: "growth",
+          // },
+          // {
+          //   title: "Student-first culture",
+          //   description: "Everything we build is for better learning outcomes.",
+          //   icon: "student",
+          // },
+          // {
+          //   title: "Collaborative teams",
+          //   description: "Cross-functional teams that learn and grow together.",
+          //   icon: "team",
+          // },
         ],
-        introText:
-          "Welcome to EEC, where innovation meets education! We’re always looking for passionate educators, technologists, and creators who want to shape the future of learning.",
-        jobSectionTitle: "Current Job Openings",
-        jobOpenings: [],
+        // introText:
+        //   "Welcome to EEC, where innovation meets education! We’re always looking for passionate educators, technologists, and creators who want to shape the future of learning.",
+        // jobSectionTitle: "Current Job Openings",
+        // jobOpenings: [],
       });
     }
 
