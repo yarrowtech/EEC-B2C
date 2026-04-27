@@ -256,7 +256,7 @@ export default function HeroFilterBar() {
     <div className="w-full bg-[#FEF4E8] flex justify-center px-4 py-10">
       <div className="w-full max-w-6xl">
         <div className="bg-[#e6e8ec] rounded-[2rem] shadow-[0_10px_0_0_#d5d9e0,0_14px_24px_rgba(15,23,42,0.12)] px-5 py-5 flex flex-wrap items-center gap-4 w-full">
-          <div className="flex items-center gap-2 bg-[#d9dde3] p-2 rounded-full">
+          <div className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#d9dde3] p-2 rounded-full">
             {BOARD_OPTIONS.map((board) => (
               <button
                 key={board.value}

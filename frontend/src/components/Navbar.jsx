@@ -134,6 +134,11 @@ export default function Navbar() {
     }
   }
 
+  async function handleMobileLogout() {
+    closeMobile();
+    await handleLogout();
+  }
+
 
   // close on outside click
   useEffect(() => {
@@ -299,6 +304,8 @@ export default function Navbar() {
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
         onClick={closeMobile}
+        onPointerDown={closeMobile}
+        onTouchStart={closeMobile}
       />
 
       {/* Drawer */}
@@ -386,19 +393,53 @@ export default function Navbar() {
             Login
           </button> */}
           {currentUser ? (
-            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
-              {currentUser?.avatar ? (
-                <img
-                  src={currentUser.avatar}
-                  alt="Profile"
-                  className="h-7 w-7 rounded-full object-cover border border-slate-200"
-                />
-              ) : (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
-                  <User className="h-4 w-4" />
-                </span>
-              )}
-              <span className="text-sm font-semibold text-[#1B1F3B] truncate">{currentUser.name}</span>
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-2.5">
+              <div className="flex items-center gap-3 px-1.5 py-1">
+                {currentUser?.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt="Profile"
+                    className="h-7 w-7 rounded-full object-cover border border-slate-200"
+                  />
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
+                    <User className="h-4 w-4" />
+                  </span>
+                )}
+                <span className="text-sm font-semibold text-[#1B1F3B] truncate">{currentUser.name}</span>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMobile();
+                    navigate(currentUser?.role === "admin" ? "/admin-dashboard" : "/student-dashboard");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#1B1F3B] hover:bg-slate-50"
+                >
+                  <LayoutDashboard className="h-4 w-4 text-slate-400" />
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMobile();
+                    navigate("/dashboard/profile");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#1B1F3B] hover:bg-slate-50"
+                >
+                  <User className="h-4 w-4 text-slate-400" />
+                  Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMobileLogout}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
             </div>
           ) : null}
 
