@@ -14,19 +14,19 @@ export const getAboutUs = async (req, res) => {
             subtitle: "High-quality education — all through a digital media platform.",
             image: "/about-hero.jpg"
           },
-          {
-            id: 2,
-            type: "vision",
-            title: "Vision Goals",
-            description:
-              "Our vision is to reach out to every student across different states...",
-            bullets: [
-              "Personalized progression & holistic growth",
-              "Teacher enablement & workload relief",
-              // "Parent visibility & engagement"
-            ],
-            image: "/goal1.jpg"
-          },
+          // {
+          //   id: 2,
+          //   type: "vision",
+          //   title: "Vision Goals",
+          //   description:
+          //     "Our vision is to reach out to every student across different states...",
+          //   bullets: [
+          //     "Personalized progression & holistic growth",
+          //     "Teacher enablement & workload relief",
+          //     // "Parent visibility & engagement"
+          //   ],
+          //   image: "/goal1.jpg"
+          // },
           {
             id: 3,
             type: "brand",

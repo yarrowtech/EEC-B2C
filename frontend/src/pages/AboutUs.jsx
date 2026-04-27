@@ -126,7 +126,7 @@ export default function AboutUs() {
 
   const missionChips = mission?.chips?.length
     ? mission.chips
-    : ["Real-time Insights", "AI Feedback Loops"];
+    : [""];
 
   const visionImg = vision?.image || "/goal1.jpg";
   const brandImg = brand?.image || "/brandvalue.jpg";
