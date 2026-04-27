@@ -11,7 +11,11 @@ export default function AboutUs() {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = import.meta.env.VITE_API_URL || "";
+  const API_BASE =
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL ||
+    "";
 
   useEffect(() => {
     async function loadAbout() {
@@ -39,6 +43,9 @@ export default function AboutUs() {
 
         // Fetch from API
         const res = await fetch(`${API_BASE}/api/about-us`);
+        if (!res.ok) {
+          throw new Error(`About API failed (${res.status})`);
+        }
         const data = await res.json();
 
         // Cache the data

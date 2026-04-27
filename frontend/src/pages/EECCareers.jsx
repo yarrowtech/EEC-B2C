@@ -62,7 +62,7 @@ const VALUES = [
   {
     icon: <ChartLine className="h-6 w-6" />,
     title: "Growth Mindset",
-    body: "We invest in our people because when you grow, EEC grows.",
+    body: "We invest in our people because when you grow, Edify Eight grows.",
     color: "bg-violet-50 text-violet-600 border-violet-100",
   },
   {
@@ -301,69 +301,69 @@ export default function EECCareers() {
             slug: toJobSlug(j.title, index),
           }))
       : [
-          {
-            title: "Frontend Developer",
-            badge: "Full-time",
-            desc: "Build beautiful, fast, and accessible interfaces for our EEC learning platform using modern web technologies.",
-            reqs: [
-              "Proficiency in React and TypeScript",
-              "Strong eye for design and UX detail",
-              "2+ years of frontend experience",
-            ],
-            form: "",
-            buttonLabel: "Apply Now",
-            experience: "2+ Years",
-            department: "Engineering",
-            location: "Kolkata, India",
-            workMode: "Hybrid",
-            salary: "₹6-10 LPA",
-            fullDescription:
-              "You will work closely with product and design teams to build scalable, accessible, and high-performing user interfaces for students and educators.",
-            slug: toJobSlug("Frontend Developer", 0),
-          },
-          {
-            title: "Backend Developer",
-            badge: "Full-time",
-            desc: "Design and scale the APIs and infrastructure that power EEC's learning engine for thousands of students.",
-            reqs: [
-              "Experience with Node.js or Python",
-              "Familiarity with SQL and NoSQL databases",
-              "3+ years of backend experience",
-            ],
-            form: "",
-            buttonLabel: "Apply Now",
-            experience: "3+ Years",
-            department: "Engineering",
-            location: "Kolkata, India",
-            workMode: "Hybrid",
-            salary: "₹8-14 LPA",
-            fullDescription:
-              "You will design secure APIs, optimize data models, and improve platform reliability for large-scale learning workflows.",
-            slug: toJobSlug("Backend Developer", 1),
-          },
-          {
-            title: "UX/UI Designer",
-            badge: "Full-time",
-            desc: "Craft intuitive, beautiful experiences that make complex educational content simple and engaging for students.",
-            reqs: [
-              "Portfolio showcasing product design work",
-              "Expertise in Figma and design systems",
-              "2+ years of product design experience",
-            ],
-            form: "",
-            buttonLabel: "Apply Now",
-            experience: "2+ Years",
-            department: "Design",
-            location: "Kolkata, India",
-            workMode: "On-site",
-            salary: "₹5-9 LPA",
-            fullDescription:
-              "You will drive user research, create design systems, and craft intuitive learning experiences across web and mobile touchpoints.",
-            slug: toJobSlug("UX/UI Designer", 2),
-          },
+          // {
+          //   title: "Frontend Developer",
+          //   badge: "Full-time",
+          //   desc: "Build beautiful, fast, and accessible interfaces for our EEC learning platform using modern web technologies.",
+          //   reqs: [
+          //     "Proficiency in React and TypeScript",
+          //     "Strong eye for design and UX detail",
+          //     "2+ years of frontend experience",
+          //   ],
+          //   form: "",
+          //   buttonLabel: "Apply Now",
+          //   experience: "2+ Years",
+          //   department: "Engineering",
+          //   location: "Kolkata, India",
+          //   workMode: "Hybrid",
+          //   salary: "₹6-10 LPA",
+          //   fullDescription:
+          //     "You will work closely with product and design teams to build scalable, accessible, and high-performing user interfaces for students and educators.",
+          //   slug: toJobSlug("Frontend Developer", 0),
+          // },
+          // {
+          //   title: "Backend Developer",
+          //   badge: "Full-time",
+          //   desc: "Design and scale the APIs and infrastructure that power EEC's learning engine for thousands of students.",
+          //   reqs: [
+          //     "Experience with Node.js or Python",
+          //     "Familiarity with SQL and NoSQL databases",
+          //     "3+ years of backend experience",
+          //   ],
+          //   form: "",
+          //   buttonLabel: "Apply Now",
+          //   experience: "3+ Years",
+          //   department: "Engineering",
+          //   location: "Kolkata, India",
+          //   workMode: "Hybrid",
+          //   salary: "₹8-14 LPA",
+          //   fullDescription:
+          //     "You will design secure APIs, optimize data models, and improve platform reliability for large-scale learning workflows.",
+          //   slug: toJobSlug("Backend Developer", 1),
+          // },
+          // {
+          //   title: "UX/UI Designer",
+          //   badge: "Full-time",
+          //   desc: "Craft intuitive, beautiful experiences that make complex educational content simple and engaging for students.",
+          //   reqs: [
+          //     "Portfolio showcasing product design work",
+          //     "Expertise in Figma and design systems",
+          //     "2+ years of product design experience",
+          //   ],
+          //   form: "",
+          //   buttonLabel: "Apply Now",
+          //   experience: "2+ Years",
+          //   department: "Design",
+          //   location: "Kolkata, India",
+          //   workMode: "On-site",
+          //   salary: "₹5-9 LPA",
+          //   fullDescription:
+          //     "You will drive user research, create design systems, and craft intuitive learning experiences across web and mobile touchpoints.",
+          //   slug: toJobSlug("UX/UI Designer", 2),
+          // },
         ];
 
-  const whyJoinTitle = careerData?.whyJoinTitle || "Why Join EEC?";
+  const whyJoinTitle = careerData?.whyJoinTitle || "Why Join Edify Eight?";
 
   const whyItems =
     careerData?.whyJoinItems && careerData.whyJoinItems.length
@@ -437,7 +437,7 @@ export default function EECCareers() {
               Shape the Future of <span className="text-[#f0b429]">Education</span>
             </h1>
             <p className="text-base leading-relaxed text-[#414965] md:text-lg">
-              Join a team dedicated to transforming the learning experience through innovation, compassion, and bold ideas. Everything you build at EEC reaches a student who needs it.
+              Join a team dedicated to transforming the learning experience through innovation, compassion, and bold ideas. Everything you build at Edify Eight reaches a student who needs it.
             </p>
             <div className="flex flex-wrap gap-4">
               <button
@@ -472,7 +472,7 @@ export default function EECCareers() {
             <div className="absolute -top-6 -left-6 h-24 w-24 rounded-full bg-[#ffd23f]/30 blur-3xl" />
             <img
               src={careerData?.heroImage || "/join.jpeg"}
-              alt="Careers at EEC"
+              alt="Careers at Edify Eight"
               className="h-full w-full rounded-[24px] object-cover"
             />
             <div className="absolute bottom-6 left-6 rounded-2xl bg-white/95 px-4 py-3 text-sm font-semibold text-[#1d2a3c] shadow-lg">
@@ -543,7 +543,7 @@ export default function EECCareers() {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#d77e32]">Life at EEC</p>
+            <p className="text-xs font-bold uppercase tracking-[0.45em] text-[#d77e32]">Life at Edify Eight</p>
             <h3 className="mt-3 text-3xl font-black text-[#1a2235]">{whyJoinTitle}</h3>
           </motion.div>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
