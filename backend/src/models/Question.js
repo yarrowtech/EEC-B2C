@@ -119,6 +119,7 @@ const QuestionSchema = new mongoose.Schema(
     // Shared fields
     question: { type: String, trim: true }, // MCQ / TrueFalse / essays
     explanation: { type: String, trim: true },
+    explanationImage: { type: String, trim: true },
 
     // MCQ
     options: { type: [OptionSchema], default: [] }, // for mcq-* (keys for single-correct can be "A"|"B" etc.)

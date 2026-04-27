@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import { FiEdit3, FiCheckCircle, FiFileText, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -13,6 +14,8 @@ export default function QuestionsEssayPlain() {
   const [form, setForm] = useState({
     prompt: "Explain Newton's First Law.",
     plainText: "",
+    explanation: "",
+    explanationImage: "",
   });
 
   async function submit(e) {
@@ -42,12 +45,14 @@ export default function QuestionsEssayPlain() {
         ...buildQuestionStagePayload(scope.stage),
         difficulty: scope.difficulty.toLowerCase(),
         questionType: scope.questionType,
+        explanation: form.explanation,
+        explanationImage: form.explanationImage,
       };
 
       const out = await postQuestion("essay-plain", payload);
       // alert(`Saved! id=${out.id}`);
       toast.success("Question saved!");
-      setForm({ prompt: "", plainText: "" });
+      setForm({ prompt: "", plainText: "", explanation: "", explanationImage: "" });
     } catch (err) {
       // alert(err.message);
       toast.error(err.message || "Failed to save question.");
@@ -132,6 +137,19 @@ export default function QuestionsEssayPlain() {
                 value={form.plainText}
                 onChange={(e) =>
                   setForm((s) => ({ ...s, plainText: e.target.value }))
+                }
+              />
+            </div>
+
+            <div className="rounded-2xl backdrop-blur-lg p-6">
+              <ExplanationEditor
+                explanation={form.explanation}
+                explanationImage={form.explanationImage}
+                onExplanationChange={(value) =>
+                  setForm((s) => ({ ...s, explanation: value }))
+                }
+                onExplanationImageChange={(value) =>
+                  setForm((s) => ({ ...s, explanationImage: value }))
                 }
               />
             </div>

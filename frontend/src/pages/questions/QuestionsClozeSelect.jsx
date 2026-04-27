@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import { FiFileText, FiList, FiUpload, FiSettings, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -16,6 +17,7 @@ export default function QuestionsClozeSelect() {
       blank1: { options: ["50", "70", "100"], correct: "100" },
     },
     explanation: "",
+    explanationImage: "",
   });
 
   async function submit(e) {
@@ -45,6 +47,7 @@ export default function QuestionsClozeSelect() {
         subject: scope.subject,
         topic: scope.topic,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
         ...buildQuestionStagePayload(scope.stage),
         difficulty: scope.difficulty.toLowerCase(),
         questionType: scope.questionType,
@@ -63,6 +66,7 @@ export default function QuestionsClozeSelect() {
           blank1: { options: ["50", "70", "100"], correct: "100" },
         },
         explanation: "",
+        explanationImage: "",
       });
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
@@ -206,18 +210,14 @@ export default function QuestionsClozeSelect() {
             </div>
 
             <div className="rounded-2xl backdrop-blur-lg p-6">
-              <label className="font-semibold text-slate-800 mb-2 block">
-                Explanation (optional)
-              </label>
-              <textarea
-                className="
-                w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28 
-                focus:ring-2 focus:ring-blue-500
-              "
-                placeholder="Write explanation if needed…"
-                value={form.explanation}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, explanation: e.target.value }))
+              <ExplanationEditor
+                explanation={form.explanation}
+                explanationImage={form.explanationImage}
+                onExplanationChange={(value) =>
+                  setForm((s) => ({ ...s, explanation: value }))
+                }
+                onExplanationImageChange={(value) =>
+                  setForm((s) => ({ ...s, explanationImage: value }))
                 }
               />
             </div>

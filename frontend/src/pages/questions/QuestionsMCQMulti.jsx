@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postMCQMultiBulk, postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import {
   FiEdit3,
   FiCheckCircle,
@@ -24,6 +25,7 @@ export default function QuestionsMCQMulti() {
     options: ["", "", "", ""],
     correct: { A: false, B: false, C: false, D: false },
     explanation: "",
+    explanationImage: "",
     tags: "",
   });
 
@@ -135,6 +137,7 @@ export default function QuestionsMCQMulti() {
         options: form.options,
         correct,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
       };
 
       await postQuestion("mcq-multi", payload);
@@ -145,6 +148,7 @@ export default function QuestionsMCQMulti() {
         options: ["", "", "", ""],
         correct: { A: false, B: false, C: false, D: false },
         explanation: "",
+        explanationImage: "",
         tags: "",
       });
     } catch (err) {
@@ -327,17 +331,11 @@ export default function QuestionsMCQMulti() {
               </div>
 
               <div className="rounded-2xl backdrop-blur-lg p-6">
-                <label className="font-medium text-slate-700 mb-2 block">
-                  Explanation (optional)
-                </label>
-                <textarea
-                  className="
-                  w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-24 
-                  focus:ring-2 focus:ring-purple-500
-                "
-                  placeholder="Add explanation if needed..."
-                  value={form.explanation}
-                  onChange={(e) => update("explanation", e.target.value)}
+                <ExplanationEditor
+                  explanation={form.explanation}
+                  explanationImage={form.explanationImage}
+                  onExplanationChange={(value) => update("explanation", value)}
+                  onExplanationImageChange={(value) => update("explanationImage", value)}
                 />
               </div>
 

@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postChoiceMatrixBulk, postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import {
   FiGrid,
   FiPlus,
@@ -25,6 +26,8 @@ export default function QuestionsChoiceMatrix() {
     rows: ["Statement 1"],
     cols: ["True", "False"],
     correct: {},
+    explanation: "",
+    explanationImage: "",
   });
 
   const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
@@ -132,6 +135,8 @@ export default function QuestionsChoiceMatrix() {
         ...buildQuestionStagePayload(scope.stage),
         difficulty: scope.difficulty.toLowerCase(),
         questionType: scope.questionType,
+        explanation: form.explanation,
+        explanationImage: form.explanationImage,
         choiceMatrix: {
           prompt: form.prompt,
           rows: form.rows,
@@ -148,6 +153,8 @@ export default function QuestionsChoiceMatrix() {
         rows: ["Statement 1"],
         cols: ["True", "False"],
         correct: {},
+        explanation: "",
+        explanationImage: "",
       });
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
@@ -333,6 +340,15 @@ export default function QuestionsChoiceMatrix() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="rounded-2xl backdrop-blur-lg p-6">
+                <ExplanationEditor
+                  explanation={form.explanation}
+                  explanationImage={form.explanationImage}
+                  onExplanationChange={(value) => update("explanation", value)}
+                  onExplanationImageChange={(value) => update("explanationImage", value)}
+                />
               </div>
 
               <button

@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import { FiFileText, FiEdit3, FiUpload, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -21,6 +22,7 @@ export default function QuestionsClozeText() {
     text: "",
     answers: {},
     explanation: "",
+    explanationImage: "",
     tags: "",
   });
 
@@ -80,6 +82,7 @@ export default function QuestionsClozeText() {
         difficulty: scope.difficulty.toLowerCase(),
         questionType: scope.questionType,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
         tags: form.tags,
         clozeText: {
           text: form.text,
@@ -89,7 +92,7 @@ export default function QuestionsClozeText() {
 
       await postQuestion("cloze-text", payload);
       toast.success("Question saved successfully!");
-      setForm({ text: "", answers: {}, explanation: "", tags: "" });
+      setForm({ text: "", answers: {}, explanation: "", explanationImage: "", tags: "" });
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -175,15 +178,12 @@ export default function QuestionsClozeText() {
                   onChange={(e) => update("tags", e.target.value)}
                 />
               </div>
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">Explanation (optional)</label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="Explain expected answers..."
-                  value={form.explanation}
-                  onChange={(e) => update("explanation", e.target.value)}
-                />
-              </div>
+              <ExplanationEditor
+                explanation={form.explanation}
+                explanationImage={form.explanationImage}
+                onExplanationChange={(value) => update("explanation", value)}
+                onExplanationImageChange={(value) => update("explanationImage", value)}
+              />
             </div>
 
             <button

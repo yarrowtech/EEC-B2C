@@ -4,6 +4,7 @@ import { FiSave, FiEdit3, FiChevronLeft } from "react-icons/fi";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { getJSON, updateQuestion } from "../../lib/api";
 import { buildQuestionStagePayload, buildStageOptions, formatStageLabel, normalizeStageNumber } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -622,6 +623,7 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
     correct: (doc.correct && doc.correct[0]) || "A",
     tags: (doc.tags || []).join(","),
     explanation: doc.explanation || "",
+    explanationImage: doc.explanationImage || "",
   }));
 
   const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
@@ -646,6 +648,7 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
         correct: form.correct,
         tags: form.tags,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
       });
       toast.success("Question updated successfully!");
     } catch (err) {
@@ -719,15 +722,12 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
           </div>
         </div>
 
-        {/* Explanation */}
         <div className="mb-6">
-          <FieldLabel>Explanation (optional)</FieldLabel>
-          <textarea
-            value={form.explanation}
-            onChange={(e) => update("explanation", e.target.value)}
-            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
-                     focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-            placeholder="Explain why this is the correct answer..."
+          <ExplanationEditor
+            explanation={form.explanation}
+            explanationImage={form.explanationImage}
+            onExplanationChange={(value) => update("explanation", value)}
+            onExplanationImageChange={(value) => update("explanationImage", value)}
           />
         </div>
 

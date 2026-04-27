@@ -202,6 +202,7 @@ function shapeByType(type, body, userId) {
       .map((s) => s.trim())
       .filter(Boolean),
     explanation: body.explanation || "",
+    explanationImage: body.explanationImage || "",
     stage: normalizeStageValue(body.stage),
     level: normalizeLevel(body.level, body.stage),
     createdBy: userId,
@@ -441,6 +442,12 @@ export const bulkCreateMcqSingle = async (req, res) => {
         [optionA, optionB, optionC, optionD]
       );
       const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
       const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
 
       const rowNumber = i + 2; // header on row 1
@@ -466,6 +473,7 @@ export const bulkCreateMcqSingle = async (req, res) => {
           options: [optionA, optionB, optionC, optionD],
           correct,
           explanation,
+          explanationImage,
           tags,
         },
         req.user.id
@@ -563,6 +571,12 @@ export const bulkCreateMcqMulti = async (req, res) => {
         [optionA, optionB, optionC, optionD]
       );
       const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
       const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
 
       const rowNumber = i + 2; // header on row 1
@@ -588,6 +602,7 @@ export const bulkCreateMcqMulti = async (req, res) => {
           options: [optionA, optionB, optionC, optionD],
           correct,
           explanation,
+          explanationImage,
           tags,
         },
         req.user.id
@@ -688,6 +703,12 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
         matrixCols
       );
       const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
       const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
 
       const rowNumber = i + 2; // header on row 1
@@ -710,6 +731,7 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
           level,
           difficulty,
           explanation,
+          explanationImage,
           tags,
           choiceMatrix: {
             prompt,
@@ -813,6 +835,12 @@ export const bulkCreateTrueFalse = async (req, res) => {
         getBulkCellValue(normalizedRow, ["answer", "correct", "correct_answer"])
       );
       const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
       const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
 
       const rowNumber = i + 2; // header on row 1
@@ -837,6 +865,7 @@ export const bulkCreateTrueFalse = async (req, res) => {
           question: statement,
           answer,
           explanation,
+          explanationImage,
           tags,
         },
         req.user.id

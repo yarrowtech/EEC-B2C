@@ -182,19 +182,21 @@ export default function ExamTake() {
     }
   }, [meta]);
 
-  // Hydrate legacy/incomplete match-list payloads with full question docs.
+  // Hydrate legacy/incomplete question payloads with full question docs.
   useEffect(() => {
     if (!meta?.questions?.length) return;
     let mounted = true;
 
-    async function hydrateMatchListQuestions() {
+    async function hydrateQuestions() {
       const needsHydration = meta.questions.filter((q) => {
         const qType = q?.type || meta.type;
-        if (qType !== "match-list") return false;
+        const missingExplanationImage =
+          q?.explanationImage === undefined || q?.explanationImage === null;
+        if (qType !== "match-list") return missingExplanationImage;
 
         const left = Array.isArray(q?.matchList?.left) ? q.matchList.left : [];
         const right = Array.isArray(q?.matchList?.right) ? q.matchList.right : [];
-        return left.length === 0 || right.length === 0;
+        return left.length === 0 || right.length === 0 || missingExplanationImage;
       });
 
       if (!needsHydration.length) return;
@@ -217,6 +219,7 @@ export default function ExamTake() {
           prompt: q.prompt || full.prompt || full.matchList?.prompt,
           matchList: full.matchList || q.matchList || {},
           explanation: q.explanation || full.explanation,
+          explanationImage: q.explanationImage || full.explanationImage,
         };
       });
 
@@ -225,7 +228,7 @@ export default function ExamTake() {
       }
     }
 
-    hydrateMatchListQuestions();
+    hydrateQuestions();
     return () => {
       mounted = false;
     };
@@ -911,6 +914,15 @@ export default function ExamTake() {
                     </div>
                   </div>
                 )}
+                {result && q.explanationImage && (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                    <img
+                      src={q.explanationImage}
+                      alt="Explanation"
+                      className="max-h-64 w-full rounded-lg object-contain bg-white"
+                    />
+                  </div>
+                )}
                 {result && (
                   <div className="relative mt-2 text-sm h-12">
 
@@ -998,6 +1010,11 @@ export default function ExamTake() {
                 {result && q.explanation && (
                   <div className="mt-2 text-sm bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-3 py-2 shadow-sm">
                     <strong>Explanation:</strong> {q.explanation}
+                  </div>
+                )}
+                {result && q.explanationImage && (
+                  <div className="mt-2 rounded-lg border border-yellow-200 bg-yellow-50 p-2">
+                    <img src={q.explanationImage} alt="Explanation" className="max-h-56 w-full rounded object-contain bg-white" />
                   </div>
                 )}
 
@@ -1124,6 +1141,11 @@ export default function ExamTake() {
                 {result && q.explanation && (
                   <div className="mt-2 text-sm bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-3 py-2 shadow-sm">
                     <strong>Explanation:</strong> {q.explanation}
+                  </div>
+                )}
+                {result && q.explanationImage && (
+                  <div className="mt-2 rounded-lg border border-yellow-200 bg-yellow-50 p-2">
+                    <img src={q.explanationImage} alt="Explanation" className="max-h-56 w-full rounded object-contain bg-white" />
                   </div>
                 )}
 
@@ -1419,6 +1441,11 @@ export default function ExamTake() {
                     <strong>Explanation:</strong> {q.explanation}
                   </div>
                 )}
+                {result && q.explanationImage && (
+                  <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2">
+                    <img src={q.explanationImage} alt="Explanation" className="max-h-56 w-full rounded object-contain bg-white" />
+                  </div>
+                )}
 
                 {/* Feedback */}
                 {result && (
@@ -1513,6 +1540,11 @@ export default function ExamTake() {
                 {result && q.explanation && (
                   <div className="mt-2 text-sm bg-yellow-50 border border-yellow-200 text-yellow-800 rounded px-3 py-2">
                     <strong>Explanation:</strong> {q.explanation}
+                  </div>
+                )}
+                {result && q.explanationImage && (
+                  <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2">
+                    <img src={q.explanationImage} alt="Explanation" className="max-h-56 w-full rounded object-contain bg-white" />
                   </div>
                 )}
 
@@ -1612,6 +1644,11 @@ export default function ExamTake() {
                 {result && q.explanation && (
                   <div className="mt-2 text-sm bg-yellow-50 border border-yellow-200 text-yellow-800 rounded px-3 py-2">
                     <strong>Explanation:</strong> {q.explanation}
+                  </div>
+                )}
+                {result && q.explanationImage && (
+                  <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2">
+                    <img src={q.explanationImage} alt="Explanation" className="max-h-56 w-full rounded object-contain bg-white" />
                   </div>
                 )}
               </div>
@@ -1827,6 +1864,11 @@ export default function ExamTake() {
                 {result && q.explanation && (
                   <div className="mt-2 text-sm bg-yellow-50 border border-yellow-200 text-yellow-800 rounded px-3 py-2">
                     <strong>Explanation:</strong> {q.explanation}
+                  </div>
+                )}
+                {result && q.explanationImage && (
+                  <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2">
+                    <img src={q.explanationImage} alt="Explanation" className="max-h-56 w-full rounded object-contain bg-white" />
                   </div>
                 )}
               </div>

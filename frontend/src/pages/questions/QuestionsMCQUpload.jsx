@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postMCQSingleBulk, postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import { FiCheckCircle, FiUpload, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 import * as XLSX from "xlsx";
@@ -18,6 +19,7 @@ export default function QuestionsMCQUpload() {
     options: ["", "", "", ""],
     correct: "A",
     explanation: "",
+    explanationImage: "",
     tags: "",
   });
 
@@ -121,6 +123,7 @@ export default function QuestionsMCQUpload() {
         options: form.options,
         correct: form.correct,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
         tags: form.tags,
       };
 
@@ -133,6 +136,7 @@ export default function QuestionsMCQUpload() {
         options: ["", "", "", ""],
         correct: "A",
         explanation: "",
+        explanationImage: "",
         tags: "",
       });
     } catch (err) {
@@ -307,19 +311,12 @@ export default function QuestionsMCQUpload() {
                 </div>
               </div>
 
-              {/* Explanation */}
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">
-                  Explanation (optional)
-                </label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
-                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                  placeholder="Explain why this is the correct answer..."
-                  value={form.explanation}
-                  onChange={(e) => update("explanation", e.target.value)}
-                />
-              </div>
+              <ExplanationEditor
+                explanation={form.explanation}
+                explanationImage={form.explanationImage}
+                onExplanationChange={(value) => update("explanation", value)}
+                onExplanationImageChange={(value) => update("explanationImage", value)}
+              />
 
               {/* Save Button */}
               <button

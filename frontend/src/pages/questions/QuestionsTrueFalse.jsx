@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion, postTrueFalseBulk } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import { FiCheckSquare, FiAlertCircle, FiUpload } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 import * as XLSX from "xlsx";
@@ -17,6 +18,7 @@ export default function QuestionsTrueFalse() {
     statement: "",
     answer: "true",
     explanation: "",
+    explanationImage: "",
     tags: "",
   });
 
@@ -116,13 +118,14 @@ export default function QuestionsTrueFalse() {
         question: form.statement,
         answer: form.answer,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
         tags: form.tags,
       };
 
       await postQuestion("true-false", payload);
       toast.success("Question saved successfully!");
 
-      setForm({ statement: "", answer: "true", explanation: "", tags: "" });
+      setForm({ statement: "", answer: "true", explanation: "", explanationImage: "", tags: "" });
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -254,15 +257,12 @@ export default function QuestionsTrueFalse() {
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">Explanation (optional)</label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                  placeholder="Explain why the statement is true or false..."
-                  value={form.explanation}
-                  onChange={(e) => update("explanation", e.target.value)}
-                />
-              </div>
+              <ExplanationEditor
+                explanation={form.explanation}
+                explanationImage={form.explanationImage}
+                onExplanationChange={(value) => update("explanation", value)}
+                onExplanationImageChange={(value) => update("explanationImage", value)}
+              />
 
               <button
                 type="submit"

@@ -91,6 +91,19 @@ export async function postTrueFalseBulk(formData) {
   return json;
 }
 
+export async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  const res = await fetch(`${API_BASE}/api/upload/image`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Upload failed (${res.status})`);
+  return json?.url || "";
+}
+
 export async function updateQuestion(id, data) {
   const res = await fetch(`${API_BASE}/api/questions/${id}`, {
     method: "PUT",

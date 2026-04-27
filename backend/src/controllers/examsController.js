@@ -484,6 +484,7 @@ export const startExam = async (req, res) => {
           plainText: 1,
           richHtml: 1,
           explanation: 1,
+          explanationImage: 1,
           clozeDrag: 1,
           clozeSelect: 1,
           clozeText: 1,
@@ -532,6 +533,7 @@ export const startExam = async (req, res) => {
           options: parsed.options,
           correct: parsed.correct,
           explanation: q.explanation,
+          explanationImage: q.explanationImage,
         };
       }
 
@@ -541,6 +543,7 @@ export const startExam = async (req, res) => {
           type: q.type,
           clozeSelect: q.clozeSelect,
           explanation: q.explanation,
+          explanationImage: q.explanationImage,
         };
       }
 
@@ -550,6 +553,7 @@ export const startExam = async (req, res) => {
           type: q.type,
           clozeText: q.clozeText || {},
           explanation: q.explanation,
+          explanationImage: q.explanationImage,
         };
       }
 
@@ -560,6 +564,7 @@ export const startExam = async (req, res) => {
           matchList: q.matchList || {},
           prompt: q.matchList?.prompt || q.prompt || "",
           explanation: q.explanation,
+          explanationImage: q.explanationImage,
         };
       }
 
@@ -570,6 +575,7 @@ export const startExam = async (req, res) => {
           prompt: q.prompt || "",
           plainText: q.plainText || "",
           explanation: q.explanation,
+          explanationImage: q.explanationImage,
         };
       }
 
@@ -580,6 +586,7 @@ export const startExam = async (req, res) => {
           prompt: q.prompt || "",
           richHtml: q.richHtml || "",
           explanation: q.explanation,
+          explanationImage: q.explanationImage,
         };
       }
 
@@ -589,6 +596,7 @@ export const startExam = async (req, res) => {
         question: q.question,
         prompt: q.prompt,
         explanation: q.explanation,
+        explanationImage: q.explanationImage,
         choiceMatrix: q.choiceMatrix || {},
         matrix: q.matrix || {},
         rows: q.choiceMatrix?.rows || [],
@@ -1741,7 +1749,7 @@ export const getUserResults = async (req, res) => {
           _id: { $in: att.questions },
         })
           .select(
-            "question prompt plainText richHtml options correct type choiceMatrix matchList clozeDrag clozeSelect clozeText explanation"
+            "question prompt plainText richHtml options correct type choiceMatrix matchList clozeDrag clozeSelect clozeText explanation explanationImage"
           )
           .lean();
 

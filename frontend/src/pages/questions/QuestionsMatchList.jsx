@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import {
   FiGitBranch,
   FiPlus,
@@ -22,6 +23,7 @@ export default function QuestionsMatchList() {
     right: ["", ""],
     pairs: {},
     explanation: "",
+    explanationImage: "",
     tags: "",
   });
 
@@ -114,6 +116,7 @@ export default function QuestionsMatchList() {
         difficulty: scope.difficulty.toLowerCase(),
         questionType: scope.questionType,
         explanation: form.explanation,
+        explanationImage: form.explanationImage,
         tags: form.tags,
         matchList: {
           prompt: form.prompt,
@@ -131,6 +134,7 @@ export default function QuestionsMatchList() {
         right: ["", ""],
         pairs: {},
         explanation: "",
+        explanationImage: "",
         tags: "",
       });
     } catch (err) {
@@ -275,15 +279,12 @@ export default function QuestionsMatchList() {
                   onChange={(e) => update("tags", e.target.value)}
                 />
               </div>
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">Explanation (optional)</label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="Explain the match logic..."
-                  value={form.explanation}
-                  onChange={(e) => update("explanation", e.target.value)}
-                />
-              </div>
+              <ExplanationEditor
+                explanation={form.explanation}
+                explanationImage={form.explanationImage}
+                onExplanationChange={(value) => update("explanation", value)}
+                onExplanationImageChange={(value) => update("explanationImage", value)}
+              />
             </div>
 
             <button

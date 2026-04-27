@@ -3,6 +3,7 @@ import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
+import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import {
   FiEdit3,
   FiBold,
@@ -19,6 +20,7 @@ export default function QuestionsEssayRich() {
   const [prompt, setPrompt] = useState("");
   const [tags, setTags] = useState("");
   const [explanation, setExplanation] = useState("");
+  const [explanationImage, setExplanationImage] = useState("");
   const editorRef = useRef(null);
 
   const applyCmd = (cmd) => document.execCommand(cmd, false, null);
@@ -58,6 +60,7 @@ export default function QuestionsEssayRich() {
         richHtml: html,
         tags,
         explanation,
+        explanationImage,
       };
 
       await postQuestion("essay-rich", payload);
@@ -66,6 +69,7 @@ export default function QuestionsEssayRich() {
       setPrompt("");
       setTags("");
       setExplanation("");
+      setExplanationImage("");
       if (editorRef.current) editorRef.current.innerHTML = "";
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
@@ -152,15 +156,12 @@ export default function QuestionsEssayRich() {
                   onChange={(e) => setTags(e.target.value)}
                 />
               </div>
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block">Explanation (optional)</label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="Add evaluation hint or rubric note..."
-                  value={explanation}
-                  onChange={(e) => setExplanation(e.target.value)}
-                />
-              </div>
+              <ExplanationEditor
+                explanation={explanation}
+                explanationImage={explanationImage}
+                onExplanationChange={setExplanation}
+                onExplanationImageChange={setExplanationImage}
+              />
             </div>
 
             <button
