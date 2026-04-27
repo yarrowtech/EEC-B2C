@@ -96,6 +96,8 @@ import ManagePackages from "./pages/admin/ManagePackages";
 import Packages from "./pages/Packages";
 import DailyChallengeExam from "./pages/DailyChallengeExam";
 import MeetTheDeveloper from "./pages/MeetTheDeveloper";
+import FlashcardsPage from "./pages/FlashcardsPage";
+import FlashcardsManage from "./pages/admin/FlashcardsManage";
 
 
 function getToken() {
@@ -722,6 +724,8 @@ export default function App() {
             <Route path="self-study/results/:id" element={<SelfStudyResultDetail />} />
             <Route path="syllabus" element={<SyllabusPage />} />
             <Route path="syllabus/topic/:subjectId/:topicId" element={<SyllabusTopicContentPage />} />
+            <Route path="flashcards" element={<FlashcardsPage />} />
+            <Route path="flashcards/manage" element={<RequireAdmin><FlashcardsManage /></RequireAdmin>} />
             <Route path="daily-challenge" element={<DailyChallengeExam />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>

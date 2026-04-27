@@ -154,3 +154,65 @@ export async function adminAttempt(id) {
   if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
   return json; // { ...attempt, user, items: [{ qid, question, studentAnswer, correctAnswer, isCorrect }] }
 }
+
+export async function listFlashcards(params = {}) {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && String(v).trim() !== "") {
+      qs.set(k, String(v));
+    }
+  });
+  const path = `/api/flashcards${qs.toString() ? `?${qs.toString()}` : ""}`;
+  return getJSON(path);
+}
+
+export async function getFlashcardSet(id) {
+  return getJSON(`/api/flashcards/${encodeURIComponent(id)}`);
+}
+
+export async function createFlashcardSet(payload) {
+  const res = await fetch(`${API_BASE}/api/flashcards`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function updateFlashcardSet(id, payload) {
+  const res = await fetch(`${API_BASE}/api/flashcards/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function deleteFlashcardSet(id) {
+  const res = await fetch(`${API_BASE}/api/flashcards/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function participateFlashcardSet(id, payload) {
+  const res = await fetch(`${API_BASE}/api/flashcards/${encodeURIComponent(id)}/participate`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload || {}),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function myFlashcardAttempts(id) {
+  return getJSON(`/api/flashcards/${encodeURIComponent(id)}/my-attempts`);
+}

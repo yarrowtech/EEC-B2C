@@ -481,6 +481,7 @@ export default function DashboardLayout() {
                 { to: "/dashboard/teacher-analytics", label: "Teacher Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/job-applications", label: "Job Applications", icon: <BriefcaseBusiness size={18} /> },
                 { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> },
+                { to: "/dashboard/flashcards/manage", label: "Flashcards", icon: <BookOpen size={18} /> },
                 { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },
                 { to: "/dashboard/notifications/create", label: "Send Notifications", icon: <LayoutGrid size={18} /> },
                 { to : "/dashboard/gift-cards", label: "Gift Cards", icon: <Gift size={18} /> },
@@ -606,6 +607,7 @@ export default function DashboardLayout() {
                                                              item.to.includes('student') ? 'groups' :
                                                              item.to.includes('teacher') ? 'school' :
                                                              item.to.includes('result') ? 'leaderboard' :
+                                                             item.to.includes('flashcards') ? 'style' :
                                                              item.to.includes('package') ? 'inventory_2' :
                                                              item.to.includes('gift') ? 'card_giftcard' :
                                                              item.to.includes('purchase') ? 'shopping_cart' :

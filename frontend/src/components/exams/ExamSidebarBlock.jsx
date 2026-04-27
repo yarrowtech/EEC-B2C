@@ -163,6 +163,18 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
 
       {/* MY RESULTS */}
       <NavLink
+        to="/dashboard/flashcards"
+        className={({ isActive }) =>
+          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+          }`
+        }
+      >
+        <Brain size={18} />
+        <span>Flashcards</span>
+      </NavLink>
+
+      {/* MY RESULTS */}
+      <NavLink
         to="/dashboard/result"
         className={({ isActive }) =>
           `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
