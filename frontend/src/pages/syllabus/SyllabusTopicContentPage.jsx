@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, ChevronRight, Clock, FileText, ListChecks, Loader2, Sparkles, Trophy, X, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Clock, FileText, ListChecks, Loader2, Lock, Sparkles, Trophy, X, Zap } from "lucide-react";
 import { getJSON, startExam } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
 
@@ -27,6 +27,11 @@ export default function SyllabusTopicContentPage() {
   const [questionTypes, setQuestionTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [didAutoOpenPractice, setDidAutoOpenPractice] = useState(false);
+  const [levelAccess, setLevelAccess] = useState({
+    freeLevels: ["basic"],
+    allowedLevels: ["basic"],
+    levelPackagesMap: {},
+  });
 
   const levelOptions = [
     {
@@ -160,6 +165,27 @@ export default function SyllabusTopicContentPage() {
   }, [subjectId, topicId, stage]);
 
   useEffect(() => {
+    fetchLevelAccess();
+  }, []);
+
+  async function fetchLevelAccess() {
+    try {
+      const data = await getJSON("/api/questions/level-access");
+      setLevelAccess({
+        freeLevels: Array.isArray(data?.freeLevels) && data.freeLevels.length > 0 ? data.freeLevels : ["basic"],
+        allowedLevels: Array.isArray(data?.allowedLevels) && data.allowedLevels.length > 0 ? data.allowedLevels : ["basic"],
+        levelPackagesMap: data?.levelPackagesMap || {},
+      });
+    } catch {
+      setLevelAccess({
+        freeLevels: ["basic"],
+        allowedLevels: ["basic"],
+        levelPackagesMap: {},
+      });
+    }
+  }
+
+  useEffect(() => {
     if (
       !loading &&
       !didAutoOpenPractice &&
@@ -185,17 +211,30 @@ export default function SyllabusTopicContentPage() {
         `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${stage}&level=${encodeURIComponent(level)}`
       );
       setQuestionTypes((response.types || []).filter((t) => t?.type !== "all"));
+      return true;
     } catch (err) {
       console.error("Failed to fetch question types", err);
+      if (String(err?.message || "").toLowerCase().includes("unlock")) {
+        toast.error(err.message);
+        navigate("/dashboard/packages");
+      }
       setQuestionTypes([]);
+      return false;
     } finally {
       setLoadingTypes(false);
     }
   }
 
   async function handleLevelSelection(level) {
+    const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+    if (!allowedLevelSet.has(level)) {
+      toast.error(`The ${level} level is locked in your current package.`);
+      navigate("/dashboard/packages");
+      return;
+    }
     setSelectedLevel(level);
-    await fetchQuestionTypesForLevel(level);
+    const loaded = await fetchQuestionTypesForLevel(level);
+    if (!loaded) return;
     setShowLevelSelector(false);
     setShowTypeSelector(true);
   }
@@ -232,7 +271,7 @@ export default function SyllabusTopicContentPage() {
       });
     } catch (err) {
       console.error("Failed to start exam", err);
-      toast.error("Failed to start exam. Please try again.");
+      toast.error(err.message || "Failed to start exam. Please try again.");
       setStartingExam(false);
     }
   }
@@ -448,21 +487,53 @@ export default function SyllabusTopicContentPage() {
             {/* Level cards */}
             <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {levelOptions.map((level) => (
-                  <button
-                    key={level.key}
-                    onClick={() => handleLevelSelection(level.key)}
-                    className={`group flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition hover:shadow-md active:scale-[.98] sm:flex-col sm:items-start md:p-5 ${level.border} hover:border-orange-400`}
-                  >
-                    <div className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-2xl shadow-md ${level.tone}`}>
-                      {level.icon}
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-gray-900 group-hover:text-orange-700">{level.label}</p>
-                      <p className="mt-0.5 text-xs text-gray-500">{level.subtitle}</p>
-                    </div>
-                  </button>
-                ))}
+                {levelOptions.map((level) => {
+                  const freeLevelSet = new Set(levelAccess.freeLevels || []);
+                  const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+                  const isFree = freeLevelSet.has(level.key);
+                  const isAllowed = allowedLevelSet.has(level.key);
+                  const packageRows = Array.isArray(levelAccess.levelPackagesMap?.[level.key])
+                    ? levelAccess.levelPackagesMap[level.key]
+                    : [];
+                  const packageLabel = packageRows
+                    .map((pkg) => pkg?.displayName || pkg?.name)
+                    .filter(Boolean)
+                    .join(", ");
+
+                  return (
+                    <button
+                      key={level.key}
+                      onClick={() => handleLevelSelection(level.key)}
+                      className={`group flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition sm:flex-col sm:items-start md:p-5 ${
+                        isAllowed
+                          ? `${level.border} hover:border-orange-400 hover:shadow-md active:scale-[.98]`
+                          : "border-slate-200 bg-slate-50 opacity-80"
+                      }`}
+                    >
+                      <div className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-2xl shadow-md ${level.tone}`}>
+                        {level.icon}
+                      </div>
+                      <div className="w-full">
+                        <p className="text-base font-bold text-gray-900 group-hover:text-orange-700 flex items-center gap-2">
+                          {level.label}
+                          {!isAllowed && <Lock className="h-4 w-4 text-slate-500" />}
+                        </p>
+                        <p className="mt-0.5 text-xs text-gray-500">{level.subtitle}</p>
+                        <div className="mt-2">
+                          {isFree ? (
+                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+                              Free level
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+                              {packageLabel ? `Paid · ${packageLabel}` : "Paid level"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

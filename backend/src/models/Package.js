@@ -13,6 +13,8 @@ const TRYOUT_TYPES = [
   "essay-rich",
 ];
 
+const LEVEL_OPTIONS = ["basic", "intermediate", "advanced"];
+
 const packageSchema = new mongoose.Schema(
   {
     name: {
@@ -62,6 +64,16 @@ const packageSchema = new mongoose.Schema(
         },
       ],
       default: ["mcq-single", "mcq-multi", "choice-matrix", "true-false"],
+    },
+    // Practice level access
+    allowedLevels: {
+      type: [
+        {
+          type: String,
+          enum: LEVEL_OPTIONS,
+        },
+      ],
+      default: ["basic"],
     },
     // Subject content access
     subjectContentAccess: {

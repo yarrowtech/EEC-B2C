@@ -115,6 +115,11 @@ export default function SyllabusPage() {
   const [currentStage, setCurrentStage] = useState(1);
   const [unlockedStages, setUnlockedStages] = useState([1]);
   const [allStages, setAllStages] = useState([1]);
+  const [levelAccess, setLevelAccess] = useState({
+    freeLevels: ["basic"],
+    allowedLevels: ["basic"],
+    levelPackagesMap: {},
+  });
 
   const levelOptions = [
     {
@@ -151,7 +156,25 @@ export default function SyllabusPage() {
   useEffect(() => {
     fetchUnlockedStages();
     fetchAllStages();
+    fetchLevelAccess();
   }, []);
+
+  async function fetchLevelAccess() {
+    try {
+      const data = await getJSON("/api/questions/level-access");
+      setLevelAccess({
+        freeLevels: Array.isArray(data?.freeLevels) && data.freeLevels.length > 0 ? data.freeLevels : ["basic"],
+        allowedLevels: Array.isArray(data?.allowedLevels) && data.allowedLevels.length > 0 ? data.allowedLevels : ["basic"],
+        levelPackagesMap: data?.levelPackagesMap || {},
+      });
+    } catch (err) {
+      setLevelAccess({
+        freeLevels: ["basic"],
+        allowedLevels: ["basic"],
+        levelPackagesMap: {},
+      });
+    }
+  }
 
   // Handle ESC key to close topic details modal
   useEffect(() => {
@@ -423,9 +446,15 @@ export default function SyllabusPage() {
         `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${currentStage}&level=${encodeURIComponent(level)}`
       );
       setQuestionTypes((response.types || []).filter((t) => t?.type !== "all"));
+      return true;
     } catch (err) {
       console.error("Failed to fetch question types", err);
+      if (String(err?.message || "").toLowerCase().includes("unlock")) {
+        toast.error(err.message);
+        navigate("/dashboard/packages");
+      }
       setQuestionTypes([]);
+      return false;
     } finally {
       setLoadingTypes(false);
     }
@@ -480,8 +509,15 @@ export default function SyllabusPage() {
 
   async function handleLevelSelection(level) {
     if (!selectedTopic) return;
+    const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+    if (!allowedLevelSet.has(level)) {
+      toast.error(`The ${level} level is locked in your current package.`);
+      navigate("/dashboard/packages");
+      return;
+    }
     setSelectedLevel(level);
-    await fetchQuestionTypesForLevel(selectedTopic.subject, selectedTopic.topic, level);
+    const loaded = await fetchQuestionTypesForLevel(selectedTopic.subject, selectedTopic.topic, level);
+    if (!loaded) return;
     setShowLevelSelector(false);
     setShowTypeSelector(true);
   }
@@ -525,7 +561,7 @@ export default function SyllabusPage() {
       });
     } catch (err) {
       console.error("Failed to start exam", err);
-      toast.error("Failed to start exam. Please try again.");
+      toast.error(err.message || "Failed to start exam. Please try again.");
     } finally {
       setStartingExam(null);
       setSelectedTopic(null);
@@ -812,7 +848,7 @@ export default function SyllabusPage() {
       {/* ── TOPICS MODAL (Syllabus View) ──                    */}
       {/* ═══════════════════════════════════════════════════════ */}
       {showTopicsModal && selectedSubject && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f8f7f6]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <div className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 z-50 overflow-y-auto bg-[#f8f7f6]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {/* Top Header */}
           <header className="flex items-center justify-between px-6 py-4 border-b border-[#e7c555]/10 bg-white/80 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -1011,21 +1047,53 @@ export default function SyllabusPage() {
             {/* Body */}
             <div className="px-4 pt-4 pb-24 md:p-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                {levelOptions.map((level) => (
-                  <button
-                    key={level.key}
-                    onClick={() => handleLevelSelection(level.key)}
-                    className="rounded-[3rem] border-2 border-slate-200 hover:border-[#e7c555] hover:shadow-lg active:scale-[0.98] transition-all p-4 md:p-5 text-left flex items-center gap-3 sm:flex-col sm:items-start group"
-                  >
-                    <div className={`w-12 h-12 rounded-[3rem] bg-gradient-to-br ${level.tone} flex items-center justify-center text-2xl shadow-md flex-shrink-0`}>
-                      {level.icon}
-                    </div>
-                    <div>
-                      <h4 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-[#c5a832]">{level.label}</h4>
-                      <p className="mt-0.5 text-xs md:text-sm text-slate-600">{level.subtitle}</p>
-                    </div>
-                  </button>
-                ))}
+                {levelOptions.map((level) => {
+                  const freeLevelSet = new Set(levelAccess.freeLevels || []);
+                  const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+                  const isFree = freeLevelSet.has(level.key);
+                  const isAllowed = allowedLevelSet.has(level.key);
+                  const packageRows = Array.isArray(levelAccess.levelPackagesMap?.[level.key])
+                    ? levelAccess.levelPackagesMap[level.key]
+                    : [];
+                  const packageLabel = packageRows
+                    .map((pkg) => pkg?.displayName || pkg?.name)
+                    .filter(Boolean)
+                    .join(", ");
+
+                  return (
+                    <button
+                      key={level.key}
+                      onClick={() => handleLevelSelection(level.key)}
+                      className={`rounded-[3rem] border-2 transition-all p-4 md:p-5 text-left flex items-center gap-3 sm:flex-col sm:items-start group ${
+                        isAllowed
+                          ? "border-slate-200 hover:border-[#e7c555] hover:shadow-lg active:scale-[0.98]"
+                          : "border-slate-200 bg-slate-50 opacity-80"
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-[3rem] bg-gradient-to-br ${level.tone} flex items-center justify-center text-2xl shadow-md flex-shrink-0`}>
+                        {level.icon}
+                      </div>
+                      <div className="w-full">
+                        <h4 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-[#c5a832] flex items-center gap-2">
+                          {level.label}
+                          {!isAllowed && <Lock className="w-4 h-4 text-slate-500" />}
+                        </h4>
+                        <p className="mt-0.5 text-xs md:text-sm text-slate-600">{level.subtitle}</p>
+                        <div className="mt-2">
+                          {isFree ? (
+                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+                              Free level
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+                              {packageLabel ? `Paid · ${packageLabel}` : "Paid level"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1232,10 +1300,10 @@ export default function SyllabusPage() {
             <div className="relative overflow-hidden bg-gradient-to-br from-[#e7c555]/20 to-[#e7c555]/5 rounded-t-[3rem] p-8 border border-[#e7c555]/20">
               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="flex flex-col gap-2">
-                  <span className="bg-[#e7c555]/30 text-[#211d11] text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
+                  <span className="bg-[#e7c555]/30 text-slate-900 px-3 py-1 rounded-full text-xs font-bold w-fit uppercase">
                     Stage {currentStage} • {selectedTopicForDetails.subject.name}
                   </span>
-                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 text-white">
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">
                     {selectedTopicForDetails.topic.name}
                   </h1>
                   <p className="text-slate-600 max-w-md">
@@ -1259,7 +1327,7 @@ export default function SyllabusPage() {
             {/* Body - Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 md:p-10">
               <div className="flex flex-col gap-4">
-                <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900 text-white">
+                <h2 className="text-xl font-bold px-2 flex items-center gap-2 text-slate-900">
                   <MIcon name="map" className="text-[#e7c555]" />
                   Adventure Path
                 </h2>
@@ -1268,12 +1336,12 @@ export default function SyllabusPage() {
                 <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm" open>
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-blue-100 bg-blue-900/30 flex items-center justify-center text-blue-600">
+                      <div className="size-12 rounded-[3rem] bg-blue-100 flex items-center justify-center text-blue-600">
                         <MIcon name="pin_drop" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 text-white">Topic Summary</h3>
-                        <p className="text-sm text-slate-500 text-slate-400">Core concepts and key ideas</p>
+                        <h3 className="font-bold text-lg text-slate-900">Topic Summary</h3>
+                        <p className="text-sm text-slate-500">Core concepts and key ideas</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -1298,12 +1366,12 @@ export default function SyllabusPage() {
                 <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm">
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-emerald-100 bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+                      <div className="size-12 rounded-[3rem] bg-emerald-100 flex items-center justify-center text-emerald-600">
                         <MIcon name="category" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 text-white">Learning Outcomes</h3>
-                        <p className="text-sm text-slate-500 text-slate-400">What you will achieve</p>
+                        <h3 className="font-bold text-lg text-slate-900">Learning Outcomes</h3>
+                        <p className="text-sm text-slate-500">What you will achieve</p>
                       </div>
                     </div>
                     <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600" />
@@ -1322,12 +1390,12 @@ export default function SyllabusPage() {
                 <details className="group bg-white border border-[#e7c555]/10 rounded-[3rem] overflow-hidden shadow-sm">
                   <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-[#e7c555]/5 transition-colors list-none">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-[3rem] bg-purple-100 bg-purple-900/30 flex items-center justify-center text-purple-600">
+                      <div className="size-12 rounded-[3rem] bg-purple-100 flex items-center justify-center text-purple-600">
                         <MIcon name="calculate" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 text-white">Start Practice</h3>
-                        <p className="text-sm text-slate-500 text-slate-400">Ready to test your knowledge?</p>
+                        <h3 className="font-bold text-lg text-slate-900">Start Practice</h3>
+                        <p className="text-sm text-slate-500">Ready to test your knowledge?</p>
                       </div>
                     </div>
                     <MIcon name="expand_more" className="rotate-icon transition-transform text-slate-600" />
@@ -1338,7 +1406,7 @@ export default function SyllabusPage() {
                         <div className="size-8 rounded-full bg-[#e7c555]/20 flex items-center justify-center text-[#e7c555]">
                           <MIcon name="play_arrow" className="text-sm" />
                         </div>
-                        <span className="font-semibold text-slate-900 text-white">Begin Quest</span>
+                        <span className="font-semibold text-slate-900">Begin Quest</span>
                       </div>
                       <button
                         onClick={() => {
@@ -1349,7 +1417,7 @@ export default function SyllabusPage() {
                           });
                           setShowLevelSelector(true);
                         }}
-                        className="px-4 py-2 rounded-full bg-[#e7c555] text-[#211d11] text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md"
+                        className="px-4 py-2 rounded-full bg-[#e7c555] text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md"
                       >
                         Start Learning
                       </button>
@@ -1361,7 +1429,7 @@ export default function SyllabusPage() {
 
             {/* Footer - Close button */}
             <div className="border-t border-[#e7c555]/10 bg-white/60 p-5 flex justify-between items-center">
-              <div className="text-sm text-slate-500 text-slate-400">
+              <div className="text-sm text-slate-500">
                 Press ESC to close
               </div>
               <button

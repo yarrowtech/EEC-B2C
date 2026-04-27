@@ -753,45 +753,80 @@ export default function DashboardLayout() {
             {/* MOBILE / TABLET FOOTER NAV — students only, visible below md */}
             {role === "student" && !isExamTakeRoute && (
                 <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
-                    <div className="flex items-stretch h-16">
+                    <div className="flex items-stretch h-[72px]">
                         {[
                             { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true },
-                            { to: "/dashboard/syllabus?stage=1", label: "Exam", icon: <BookOpen size={22} /> },
                             { to: "/dashboard/study-materials", label: "Study", icon: <Library size={22} /> },
                             { to: "/dashboard/result", label: "Results", icon: <ListChecks size={22} /> },
+                            { to: "/dashboard/syllabus?stage=1", label: "Practice", icon: <BookOpen size={26} />, isExam: true },
                             { to: "/dashboard/leaderboard", label: "Ranks", icon: <Trophy size={22} /> },
                             { to: "/dashboard/profile", label: "Profile", icon: <User size={22} /> },
+                            { label: "Logout", icon: <LogOut size={22} />, isAction: true },
                         ].map((item) => (
-                            <NavLink
-                                key={item.to}
-                                to={item.to}
-                                end={item.end}
-                                onClick={blockOfflineNavigation}
-                                className={({ isActive }) =>
-                                    `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 ${
-                                        !online
-                                            ? "text-slate-400"
-                                            : isActive
-                                            ? "text-orange-600"
-                                            : "text-orange-800/50 hover:text-orange-700 active:scale-95"
-                                    }`
-                                }
-                            >
-                                {({ isActive }) => (
-                                    <>
-                                        <span className={`relative transition-transform duration-300 ${isActive ? "scale-110" : ""}`}>
-                                            {item.icon}
-                                            {item.to === "/dashboard/study-materials" &&
-                                                studyMaterialsUnreadIds.length > 0 && (
-                                                    <span className="absolute -right-2 -top-2 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] leading-4 text-center font-bold shadow">
-                                                        {studyMaterialsUnreadIds.length > 99 ? "99+" : studyMaterialsUnreadIds.length}
-                                                    </span>
+                            item.isAction ? (
+                                <button
+                                    key={item.label}
+                                    type="button"
+                                    onPointerUp={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        void handleLogout();
+                                    }}
+                                    className="relative z-30 flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 text-orange-800/50 hover:text-orange-700 active:scale-95 touch-manipulation"
+                                >
+                                    <span className="relative transition-transform duration-300 pointer-events-none">{item.icon}</span>
+                                    <span className="transition-all duration-300 pointer-events-none">{item.label}</span>
+                                </button>
+                            ) : (
+                                <NavLink
+                                    key={item.to}
+                                    to={item.to}
+                                    end={item.end}
+                                    onClick={blockOfflineNavigation}
+                                    className={({ isActive }) =>
+                                        `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 ${
+                                            item.isExam
+                                                ? "text-orange-900"
+                                                : !online
+                                                ? "text-slate-400"
+                                                : isActive
+                                                ? "text-orange-600"
+                                                : "text-orange-800/50 hover:text-orange-700 active:scale-95"
+                                        }`
+                                    }
+                                >
+                                    {({ isActive }) => (
+                                        <>
+                                            <span
+                                                className={`relative transition-transform duration-300 ${
+                                                    item.isExam
+                                                        ? `-mt-7 inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-yellow-300 bg-orange-500 text-white shadow-[0_0_0_4px_rgba(251,191,36,0.25),0_8px_20px_rgba(249,115,22,0.45)] ${
+                                                              isActive ? "scale-110" : "scale-100"
+                                                          }`
+                                                        : isActive
+                                                        ? "scale-110"
+                                                        : ""
+                                                }`}
+                                            >
+                                                {item.isExam && (
+                                                    <>
+                                                        <span className="absolute inset-0 rounded-full bg-orange-400/35 blur-md animate-pulse pointer-events-none" />
+                                                        <span className="absolute inset-0 rounded-full border-2 border-orange-300/70 animate-[ping_2.2s_ease-out_infinite] pointer-events-none" />
+                                                    </>
                                                 )}
-                                        </span>
-                                        <span className="transition-all duration-300">{item.label}</span>
-                                    </>
-                                )}
-                            </NavLink>
+                                                <span className="relative z-10 pointer-events-none">{item.icon}</span>
+                                                {item.to === "/dashboard/study-materials" &&
+                                                    studyMaterialsUnreadIds.length > 0 && (
+                                                        <span className="absolute -right-2 -top-2 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] leading-4 text-center font-bold shadow">
+                                                            {studyMaterialsUnreadIds.length > 99 ? "99+" : studyMaterialsUnreadIds.length}
+                                                        </span>
+                                                    )}
+                                            </span>
+                                            <span className={`transition-all duration-300 pointer-events-none ${item.isExam ? "-mt-1" : ""}`}>{item.label}</span>
+                                        </>
+                                    )}
+                                </NavLink>
+                            )
                         ))}
                     </div>
                 </nav>

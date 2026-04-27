@@ -6,6 +6,7 @@ import Class from "../models/Class.js";
 import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
 import Attempt from "../models/Attempt.js";
+import { resolveLevelAccessForUser } from "../utils/levelAccess.js";
 import * as XLSX from "xlsx";
 
 // Helpers
@@ -1295,6 +1296,15 @@ export const getQuestionTypes = async (req, res) => {
     if (stage) filter.stage = normalizeStageValue(stage);
     if (level) {
       const normalizedLevel = normalizeLevel(level, stage);
+      if (String(req.user?.role || "").toLowerCase() === "student") {
+        const access = await resolveLevelAccessForUser(req.user?.id, req.user?.role);
+        const allowedSet = new Set(access.allowedLevels || []);
+        if (!allowedSet.has(normalizedLevel)) {
+          return res.status(403).json({
+            message: `Upgrade your package to unlock ${normalizedLevel} level`,
+          });
+        }
+      }
       const mappedDifficulty = levelToDifficulty(normalizedLevel);
       if (mappedDifficulty) {
         filter.$or = [
@@ -1389,6 +1399,23 @@ export const getQuestionTypes = async (req, res) => {
     res.json({ types });
   } catch (err) {
     console.error("Failed to fetch question types", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getLevelAccess = async (req, res) => {
+  try {
+    const access = await resolveLevelAccessForUser(req.user?.id, req.user?.role);
+    res.json({
+      allLevels: access.allLevels,
+      freeLevels: access.freeLevels,
+      allowedLevels: access.allowedLevels,
+      levelPackagesMap: access.levelPackagesMap,
+      hasActiveSubscription: access.hasActiveSubscription,
+      activePackage: access.activePackage,
+    });
+  } catch (e) {
+    console.error(e);
     res.status(500).json({ message: "Server error" });
   }
 };

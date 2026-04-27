@@ -550,7 +550,7 @@ export default function StudyMaterialsPage() {
 
                 {/* ── MOBILE: search row + filter selects ── */}
                 <div className="md:hidden space-y-2.5">
-                    {/* Search + sort + view toggle in one row */}
+                    {/* Search row */}
                     <div className="flex gap-2">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -567,28 +567,30 @@ export default function StudyMaterialsPage() {
                                 </button>
                             )}
                         </div>
-                        <button
-                            onClick={() => setViewMode(v => v === "grid" ? "list" : "grid")}
-                            className="p-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-600 active:scale-95 transition-all"
-                            title={viewMode === "grid" ? "Switch to list" : "Switch to grid"}
-                        >
-                            {viewMode === "grid" ? <List className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
-                        </button>
                     </div>
                     {/* Filter selects in a 3-col compact grid */}
-                    <div className="grid grid-cols-3 gap-2">
-                        <select value={subject} onChange={(e) => setSubject(e.target.value)}
-                            className="w-full px-2 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-xs font-medium focus:border-indigo-500 focus:outline-none cursor-pointer truncate">
-                            {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <select value={category} onChange={(e) => setCategory(e.target.value)}
-                            className="w-full px-2 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-xs font-medium focus:border-blue-500 focus:outline-none cursor-pointer truncate">
-                            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <select value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}
-                            className="w-full px-2 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-xs font-medium focus:border-green-500 focus:outline-none cursor-pointer">
-                            {priceFilters.map((p) => <option key={p} value={p}>{p}</option>)}
-                        </select>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="mb-1 block text-[10px] font-semibold text-gray-500">Subject</label>
+                            <select value={subject} onChange={(e) => setSubject(e.target.value)}
+                                className="w-full px-2 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-xs font-medium focus:border-indigo-500 focus:outline-none cursor-pointer truncate">
+                                {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-[10px] font-semibold text-gray-500">Category</label>
+                            <select value={category} onChange={(e) => setCategory(e.target.value)}
+                                className="w-full px-2 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-xs font-medium focus:border-blue-500 focus:outline-none cursor-pointer truncate">
+                                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        {/* <div>
+                            <label className="mb-1 block text-[10px] font-semibold text-gray-500">Price</label>
+                            <select value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}
+                                className="w-full px-2 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-xs font-medium focus:border-green-500 focus:outline-none cursor-pointer">
+                                {priceFilters.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                        </div> */}
                     </div>
                     {/* Result count + clear */}
                     <div className="flex items-center justify-between">
@@ -675,9 +677,9 @@ export default function StudyMaterialsPage() {
                         {(subject !== "All" || category !== "All" || priceFilter !== "All") && (
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm font-semibold text-gray-600">Active Filters:</span>
-                                {subject !== "All" && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">📚 {subject}<button onClick={() => setSubject("All")} className="ml-1 hover:bg-indigo-200 rounded-full p-0.5 transition-colors">✕</button></span>}
-                                {category !== "All" && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">🏷️ {category}<button onClick={() => setCategory("All")} className="ml-1 hover:bg-blue-200 rounded-full p-0.5 transition-colors">✕</button></span>}
-                                {priceFilter !== "All" && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">💰 {priceFilter}<button onClick={() => setPriceFilter("All")} className="ml-1 hover:bg-green-200 rounded-full p-0.5 transition-colors">✕</button></span>}
+                                {subject !== "All" && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200"> {subject}<button onClick={() => setSubject("All")} className="ml-1 hover:bg-indigo-200 rounded-full p-0.5 transition-colors">✕</button></span>}
+                                {category !== "All" && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200"> {category}<button onClick={() => setCategory("All")} className="ml-1 hover:bg-blue-200 rounded-full p-0.5 transition-colors">✕</button></span>}
+                                {priceFilter !== "All" && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200"> {priceFilter}<button onClick={() => setPriceFilter("All")} className="ml-1 hover:bg-green-200 rounded-full p-0.5 transition-colors">✕</button></span>}
                                 <button onClick={() => { setSubject("All"); setCategory("All"); setPriceFilter("All"); }} className="ml-2 px-3 py-1 rounded-full text-xs font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all">Clear All</button>
                             </div>
                         )}
@@ -760,7 +762,7 @@ export default function StudyMaterialsPage() {
                                     <h3 className="font-bold text-sm text-gray-900 line-clamp-1">{m.title}</h3>
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                         <span className="text-xs text-gray-500 truncate max-w-[100px]">{m.subject}</span>
-                                        {m.category && <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">🏷️ {m.category}</span>}
+                                        {m.category && <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100"> {m.category}</span>}
                                     </div>
                                     <span className={`text-xs font-bold mt-0.5 block ${isMaterialFree(m) ? "text-green-600" : getAccessState(m) === "package" ? "text-sky-600" : hasAccess(m) ? "text-indigo-600" : "text-yellow-700"}`}>
                                         {isMaterialFree(m) ? "✨ Free" : getAccessState(m) === "owned" ? "✓ Purchased" : getAccessState(m) === "package" ? "🔓 Package Access" : `₹${m.price}`}
@@ -772,7 +774,7 @@ export default function StudyMaterialsPage() {
                                         <>
                                             <button onClick={() => handleOpenMaterial(m)}
                                                 className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs active:scale-95 transition-all shadow-sm whitespace-nowrap">
-                                                📖 View
+                                                View Material
                                             </button>
                                             <button onClick={() => { setPreviewMaterial(m); setShowPreviewModal(true); }}
                                                 className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 font-semibold text-xs active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-1">
@@ -879,8 +881,14 @@ export default function StudyMaterialsPage() {
 
             {/* PREVIEW MODAL → bottom sheet on mobile */}
             {showPreviewModal && previewMaterial && (
-                <div className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[80] p-2 md:p-4">
-                    <div className="bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100%-0.5rem)] md:max-h-[92vh]">
+                <div
+                    className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-40 md:z-[80] p-2 md:p-4"
+                    onClick={() => { setShowPreviewModal(false); setPreviewMaterial(null); }}
+                >
+                    <div
+                        className="bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100%-0.5rem)] md:max-h-[92vh]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Drag handle */}
                         <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
                             <div className="w-10 h-1 rounded-full bg-gray-300" />
@@ -944,8 +952,14 @@ export default function StudyMaterialsPage() {
 
             {/* PAYMENT MODAL → bottom sheet on mobile */}
             {showPaymentModal && selectedMaterial && (
-                <div className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[80] p-2 md:p-4">
-                    <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100%-0.5rem)] md:max-h-[92vh]">
+                <div
+                    className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[80] p-2 md:p-4"
+                    onClick={() => { setShowPaymentModal(false); setSelectedMaterial(null); }}
+                >
+                    <div
+                        className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100%-0.5rem)] md:max-h-[92vh]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Drag handle */}
                         <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
                             <div className="w-10 h-1 rounded-full bg-gray-300" />

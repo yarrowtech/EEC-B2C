@@ -579,14 +579,13 @@ const Hero = () => {
           initial={{ opacity: 0, x: 26, scale: 0.98 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="hidden md:block flex-1 relative"
+          className="block flex-1 relative w-full max-w-md mx-auto md:max-w-none md:mx-0"
         >
-          {/* aspect-square, rounded-[3rem], overflow-hidden, border-8 border-white — exact from code.html */}
-          <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden">
+          <div className="relative z-10 w-full">
             <img
-              src="/hero-png.png"
+              src="/her-main.png"
               alt="Hero"
-              className="h-full w-full object-cover"
+              className="block w-full h-auto object-contain origin-center md:scale-110 lg:scale-150"
             />
           </div>
         </motion.div>

@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
@@ -598,13 +598,33 @@ export default function App() {
   function AuthExpiryHandler() {
     const navigate = useNavigate();
     const location = useLocation();
+    const isSessionModalOpenRef = useRef(false);
 
     useEffect(() => {
+      const redirectToHome = () => {
+        const currentPath = window.location.pathname;
+        if (currentPath === "/") {
+          window.location.reload();
+          return;
+        }
+        navigate("/", { replace: true });
+        // Fallback in case router navigation is interrupted by modal/render races.
+        setTimeout(() => {
+          if (window.location.pathname !== "/") {
+            window.location.replace("/");
+          }
+        }, 50);
+      };
+
       const onAuthEvent = (e) => {
         // Only show session expired modal for automatic logout (token expired)
         if (e?.detail?.type === "logout") {
+          if (isSessionModalOpenRef.current) {
+            return;
+          }
           // Only show modal if user is in dashboard/protected route
           if (location.pathname.startsWith("/dashboard")) {
+            isSessionModalOpenRef.current = true;
             Swal.fire({
               icon: "warning",
               title: "Session Expired",
@@ -613,10 +633,12 @@ export default function App() {
               confirmButtonText: "OK",
               allowOutsideClick: false,
             }).then(() => {
-              navigate("/", { replace: true });
+              redirectToHome();
+            }).finally(() => {
+              isSessionModalOpenRef.current = false;
             });
           } else {
-            navigate("/", { replace: true });
+            redirectToHome();
           }
         }
         // For manual logout, just navigate without showing modal
@@ -626,7 +648,7 @@ export default function App() {
             id: "manual-logout-success",
             duration: 3000,
           });
-          navigate("/", { replace: true });
+          redirectToHome();
         }
       };
 

@@ -89,7 +89,7 @@ export default function SyllabusSidebarBlock({ role = "student" }) {
         aria-controls="attempt-exam-menu"
       >
         <BookOpen size={18} />
-        <span className="flex-1 truncate">Attempt Exam</span>
+        <span className="flex-1 truncate">Practice Now</span>
         <ChevronDown
           size={16}
           className={`transition-transform ${open ? "rotate-180" : ""}`}

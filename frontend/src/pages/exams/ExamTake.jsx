@@ -498,6 +498,14 @@ export default function ExamTake() {
       .slice(0, limit);
   }
 
+  function goBackAfterSubmit() {
+    if (window.history.length > 1) {
+      nav(-1);
+      return;
+    }
+    nav("/dashboard/syllabus?stage=1");
+  }
+
   function plainText(input) {
     return String(input || "")
       .replace(/<[^>]*>/g, " ")
@@ -1793,15 +1801,15 @@ export default function ExamTake() {
           >
             {busy ? "Submitting…" : result ? "✓ Submitted" : "Submit Exam"}
           </button>
-          {/* {result && (
+          {result && (
             <button
               type="button"
-              onClick={() => window.location.assign("/dashboard/exams")}
+              onClick={goBackAfterSubmit}
               className="bg-white border-2 border-slate-300 hover:border-indigo-400 text-slate-700 font-semibold px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
             >
-              Back to Stage 1
+              Back
             </button>
-          )} */}
+          )}
         </div>
       </div>
       </form>

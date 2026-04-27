@@ -5,6 +5,7 @@ import Topic from "../models/Topic.js";
 import Subject from "../models/Subject.js";
 import Package from "../models/Package.js";
 import Subscription from "../models/Subscription.js";
+import { resolveLevelAccessForUser } from "../utils/levelAccess.js";
 import mongoose from "mongoose";
 
 const DEFAULT_FREE_TRYOUT_TYPES = new Set(["mcq-single", "mcq-multi", "choice-matrix", "true-false"]);
@@ -407,6 +408,15 @@ export const startExam = async (req, res) => {
       match.stage = stageNumber;
     }
     const normalizedLevel = normalizeLevel(level);
+    if (normalizedLevel && String(req.user?.role || "").toLowerCase() === "student") {
+      const levelAccess = await resolveLevelAccessForUser(userId, req.user?.role);
+      const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+      if (!allowedLevelSet.has(normalizedLevel)) {
+        return res.status(403).json({
+          message: `Upgrade your package to unlock ${normalizedLevel} level`,
+        });
+      }
+    }
     if (normalizedLevel) {
       const mappedDifficulty = levelToDifficulty(normalizedLevel);
       match.$or = mappedDifficulty
