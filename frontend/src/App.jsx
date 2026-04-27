@@ -98,6 +98,7 @@ import DailyChallengeExam from "./pages/DailyChallengeExam";
 import MeetTheDeveloper from "./pages/MeetTheDeveloper";
 import FlashcardsPage from "./pages/FlashcardsPage";
 import FlashcardsManage from "./pages/admin/FlashcardsManage";
+import FlashcardsCatalogPage from "./pages/FlashcardsCatalogPage";
 
 
 function getToken() {
@@ -684,6 +685,7 @@ export default function App() {
           <Route path="/contact-us" element={<EECOffice />} />
           <Route path="/office" element={<Navigate to="/contact-us" replace />} />
           <Route path="/boards" element={<EECLearningBoards />} />
+          <Route path="/flashcards" element={<FlashcardsCatalogPage />} />
           <Route path="/learn/topic/:subjectId/:topicId" element={<LearnTopicContentPage />} />
           <Route path="/support" element={<SupportCenter />} />
           <Route path="/meet-the-developer" element={<MeetTheDeveloper />} />

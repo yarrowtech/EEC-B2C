@@ -2,6 +2,11 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import FlashcardSet from "../models/FlashcardSet.js";
 import FlashcardAttempt from "../models/FlashcardAttempt.js";
+import Board from "../models/Board.js";
+import ClassModel from "../models/Class.js";
+import Subject from "../models/Subject.js";
+import Topic from "../models/Topic.js";
+import mongoose from "mongoose";
 
 const router = Router();
 
@@ -21,6 +26,38 @@ function sanitizeCards(cards = []) {
 function normalizeScopeValue(v) {
   const s = String(v || "").trim();
   return s || undefined;
+}
+
+async function enrichScopeNames(items = []) {
+  const rows = Array.isArray(items) ? items : [];
+  const idsFor = (key) =>
+    [
+      ...new Set(
+        rows
+          .map((row) => String(row?.[key] || ""))
+          .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      ),
+    ];
+
+  const [boardRows, classRows, subjectRows, topicRows] = await Promise.all([
+    Board.find({ _id: { $in: idsFor("board") } }).select("_id name").lean(),
+    ClassModel.find({ _id: { $in: idsFor("class") } }).select("_id name").lean(),
+    Subject.find({ _id: { $in: idsFor("subject") } }).select("_id name").lean(),
+    Topic.find({ _id: { $in: idsFor("topic") } }).select("_id name").lean(),
+  ]);
+
+  const boardMap = new Map(boardRows.map((x) => [String(x._id), x.name]));
+  const classMap = new Map(classRows.map((x) => [String(x._id), x.name]));
+  const subjectMap = new Map(subjectRows.map((x) => [String(x._id), x.name]));
+  const topicMap = new Map(topicRows.map((x) => [String(x._id), x.name]));
+
+  return rows.map((row) => ({
+    ...row,
+    boardName: boardMap.get(String(row.board || "")) || String(row.board || ""),
+    className: classMap.get(String(row.class || "")) || String(row.class || ""),
+    subjectName: subjectMap.get(String(row.subject || "")) || String(row.subject || ""),
+    topicName: topicMap.get(String(row.topic || "")) || String(row.topic || ""),
+  }));
 }
 
 router.get("/", requireAuth, async (req, res) => {
@@ -78,11 +115,12 @@ router.get("/", requireAuth, async (req, res) => {
       FlashcardSet.countDocuments(filter),
     ]);
 
-    const mapped = items.map((row) => ({
+    const mappedBase = items.map((row) => ({
       ...row,
       cardsCount: Array.isArray(row.cards) ? row.cards.length : 0,
       participantsCount: Array.isArray(row.participants) ? row.participants.length : Number(row.participantsCount || 0),
     }));
+    const mapped = await enrichScopeNames(mappedBase);
 
     res.json({
       items: mapped,
@@ -92,6 +130,64 @@ router.get("/", requireAuth, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message || "Failed to load flashcards" });
+  }
+});
+
+router.get("/public", async (req, res) => {
+  try {
+    const {
+      board,
+      class: className,
+      subject,
+      topic,
+      stage,
+      q,
+      limit = "60",
+      page = "1",
+    } = req.query;
+
+    const filter = { isActive: true };
+    if (normalizeScopeValue(board)) filter.board = normalizeScopeValue(board);
+    if (normalizeScopeValue(className)) filter.class = normalizeScopeValue(className);
+    if (normalizeScopeValue(subject)) filter.subject = normalizeScopeValue(subject);
+    if (normalizeScopeValue(topic)) filter.topic = normalizeScopeValue(topic);
+
+    const stageNum = Number(stage);
+    if (Number.isFinite(stageNum) && stageNum > 0) {
+      filter.stage = Math.trunc(stageNum);
+    }
+
+    const search = String(q || "").trim();
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.max(1, Math.min(100, Number(limit) || 60));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [items, total] = await Promise.all([
+      FlashcardSet.find(filter)
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      FlashcardSet.countDocuments(filter),
+    ]);
+
+    const mappedBase = items.map((row) => ({
+      ...row,
+      cardsCount: Array.isArray(row.cards) ? row.cards.length : 0,
+      participantsCount: Array.isArray(row.participants) ? row.participants.length : Number(row.participantsCount || 0),
+    }));
+    const mapped = await enrichScopeNames(mappedBase);
+
+    res.json({ items: mapped, page: pageNum, limit: limitNum, total });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to load public flashcards" });
   }
 });
 

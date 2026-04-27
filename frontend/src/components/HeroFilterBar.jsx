@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const BOARD_OPTIONS = [
@@ -116,20 +116,82 @@ export default function HeroFilterBar() {
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const [activeBoard, setActiveBoard] = useState("CBSE");
-  const [activeGrade, setActiveGrade] = useState("Class 6");
+  const [activeGrade, setActiveGrade] = useState("Class 3");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [cards, setCards] = useState([]);
+  const [prefsReady, setPrefsReady] = useState(false);
+  const autoLoadedRef = useRef(false);
 
   const visibleCards = useMemo(() => cards, [cards]);
 
-  async function handleFindQuest() {
+  function normalizeBoard(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    if (!raw) return "CBSE";
+    if (raw === "cbse") return "CBSE";
+    if (raw === "icse") return "ICSE";
+    if (raw.includes("state")) return "State Board";
+    return "CBSE";
+  }
+
+  function normalizeGrade(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "Class 3";
+    const classMatch = raw.match(/class\s*(\d+)/i);
+    if (classMatch) return `Class ${classMatch[1]}`;
+    const numberMatch = raw.match(/^(\d+)$/);
+    if (numberMatch) return `Class ${numberMatch[1]}`;
+    return GRADES.includes(raw) ? raw : "Class 3";
+  }
+
+  function applyUserPreferences() {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      if (user && (user.board || user.class || user.className)) {
+        const board = normalizeBoard(user.board);
+        const grade = normalizeGrade(user.className || user.class);
+        setActiveBoard(board);
+        setActiveGrade(grade);
+      } else {
+        setActiveBoard("CBSE");
+        setActiveGrade("Class 3");
+      }
+    } catch {
+      setActiveBoard("CBSE");
+      setActiveGrade("Class 3");
+    } finally {
+      setPrefsReady(true);
+    }
+  }
+
+  useEffect(() => {
+    applyUserPreferences();
+
+    const syncPrefs = () => {
+      autoLoadedRef.current = false;
+      applyUserPreferences();
+    };
+    window.addEventListener("eec:auth", syncPrefs);
+    window.addEventListener("storage", syncPrefs);
+    return () => {
+      window.removeEventListener("eec:auth", syncPrefs);
+      window.removeEventListener("storage", syncPrefs);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!prefsReady || autoLoadedRef.current) return;
+    autoLoadedRef.current = true;
+    handleFindQuest(activeBoard, activeGrade);
+  }, [prefsReady, activeBoard, activeGrade]);
+
+  async function handleFindQuest(board = activeBoard, grade = activeGrade) {
     setLoading(true);
     setSearched(true);
     try {
       const summaryUrl = `${API}/api/questions/tryout-summary?board=${encodeURIComponent(
-        activeBoard
-      )}&class=${encodeURIComponent(activeGrade)}`;
+        board
+      )}&class=${encodeURIComponent(grade)}`;
       const res = await fetch(summaryUrl);
       const data = await res.json();
       const summaryItems = Array.isArray(data?.items) ? data.items : [];

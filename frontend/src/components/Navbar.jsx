@@ -134,6 +134,7 @@ export default function Navbar() {
     }
   }
 
+
   // close on outside click
   useEffect(() => {
     const onDocClick = (e) => {
@@ -196,6 +197,7 @@ export default function Navbar() {
           <Dropdown label="Study Tools">
             <DropItem to="/tryouts">Tryouts</DropItem>
             <DropItem to="/boards">Learn</DropItem>
+            <DropItem to="/flashcards">Flashcards</DropItem>
           </Dropdown>
 
           <RouterLink to="/contact-us" active={isActive("/contact-us") || isActive("/office")}>
@@ -349,6 +351,9 @@ export default function Navbar() {
               </DropItem>
               <DropItem to="/boards" onClick={closeMobile}>
                 Learn
+              </DropItem>
+              <DropItem to="/flashcards" onClick={closeMobile}>
+                Flashcards
               </DropItem>
             </div>
           </details>

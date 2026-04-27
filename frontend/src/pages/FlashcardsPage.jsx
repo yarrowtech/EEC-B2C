@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   getJSON,
   listFlashcards,
@@ -46,6 +47,8 @@ function SkeletonList() {
 }
 
 export default function FlashcardsPage() {
+  const [searchParams] = useSearchParams();
+  const selectedSetId = String(searchParams.get("set") || "");
   const user = useMemo(() => readUser(), []);
   const [board, setBoard] = useState(String(user?.board || ""));
   const [className, setClassName] = useState(String(user?.class || user?.className || ""));
@@ -108,6 +111,12 @@ export default function FlashcardsPage() {
   }, [subject]);
 
   useEffect(() => { loadSets(); }, [board, className, subject, topic, stage]);
+
+  useEffect(() => {
+    if (!selectedSetId || sets.length === 0) return;
+    const found = sets.find((row) => String(row._id) === selectedSetId);
+    if (found) selectSet(found);
+  }, [selectedSetId, sets]);
 
   useEffect(() => {
     if (!selected?._id) { setAttempts([]); return; }

@@ -13,7 +13,7 @@ export default function VictoryPathSection() {
           </h2>
         </div>
 
-        <div className="relative flex flex-col md:flex-row justify-between items-start gap-16">
+        <div className="relative flex flex-col md:flex-row justify-between items-center md:items-start gap-16">
           <div className="pointer-events-none absolute left-0 right-0 top-24 z-0 hidden md:block">
             <svg
               className="w-full h-10"
