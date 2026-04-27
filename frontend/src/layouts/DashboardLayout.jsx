@@ -269,6 +269,7 @@ export default function DashboardLayout() {
     const location = useLocation();
     const isExamTakeRoute = location.pathname.startsWith("/dashboard/exams/take/");
     const [open, setOpen] = useState(false);
+    const [practiceMenuOpen, setPracticeMenuOpen] = useState(false);
     const [online, setOnline] = useState(
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
@@ -508,6 +509,7 @@ export default function DashboardLayout() {
 
     useEffect(() => {
         setOpen(false);
+        setPracticeMenuOpen(false);
     }, [location.pathname]);
 
     const blockOfflineNavigation = (e) => {
@@ -760,7 +762,7 @@ export default function DashboardLayout() {
                             { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true },
                             { to: "/dashboard/study-materials", label: "Study", icon: <Library size={22} /> },
                             { to: "/dashboard/result", label: "Results", icon: <ListChecks size={22} /> },
-                            { to: "/dashboard/syllabus?stage=1", label: "Practice", icon: <BookOpen size={26} />, isExam: true },
+                            { label: "Practice", icon: <BookOpen size={26} />, isPractice: true },
                             { to: "/dashboard/leaderboard", label: "Ranks", icon: <Trophy size={22} /> },
                             { to: "/dashboard/profile", label: "Profile", icon: <User size={22} /> },
                             { label: "Logout", icon: <LogOut size={22} />, isAction: true },
@@ -779,6 +781,76 @@ export default function DashboardLayout() {
                                     <span className="relative transition-transform duration-300 pointer-events-none">{item.icon}</span>
                                     <span className="transition-all duration-300 pointer-events-none">{item.label}</span>
                                 </button>
+                            ) : item.isPractice ? (
+                                <div key={item.label} className="relative z-40 flex-1 flex flex-col items-center justify-center gap-0.5">
+                                    <AnimatePresence>
+                                        {practiceMenuOpen && (
+                                            <>
+                                                <motion.button
+                                                    type="button"
+                                                    initial={{ opacity: 0, scale: 0.6, x: 0, y: 0 }}
+                                                    animate={{ opacity: 1, scale: 1, x: -52, y: -62 }}
+                                                    exit={{ opacity: 0, scale: 0.6, x: 0, y: 0 }}
+                                                    transition={{ duration: 0.22 }}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setPracticeMenuOpen(false);
+                                                        if (!online) return;
+                                                        navigate("/dashboard/syllabus?stage=1");
+                                                    }}
+                                                    className={`absolute inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-yellow-200 bg-amber-500 text-white shadow-[0_8px_18px_rgba(245,158,11,0.45)] ${
+                                                        !online ? "opacity-50" : ""
+                                                    }`}
+                                                    title={online ? "Tests" : "Offline"}
+                                                >
+                                                    <ListChecks size={18} />
+                                                </motion.button>
+                                                <motion.button
+                                                    type="button"
+                                                    initial={{ opacity: 0, scale: 0.6, x: 0, y: 0 }}
+                                                    animate={{ opacity: 1, scale: 1, x: 52, y: -62 }}
+                                                    exit={{ opacity: 0, scale: 0.6, x: 0, y: 0 }}
+                                                    transition={{ duration: 0.22, delay: 0.04 }}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setPracticeMenuOpen(false);
+                                                        if (!online) return;
+                                                        navigate("/dashboard/flashcards");
+                                                    }}
+                                                    className={`absolute inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-yellow-200 bg-orange-500 text-white shadow-[0_8px_18px_rgba(249,115,22,0.45)] ${
+                                                        !online ? "opacity-50" : ""
+                                                    }`}
+                                                    title={online ? "Flashcards" : "Offline"}
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">style</span>
+                                                </motion.button>
+                                            </>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setPracticeMenuOpen((prev) => !prev);
+                                        }}
+                                        className="flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-orange-900"
+                                    >
+                                        <span
+                                            className={`relative -mt-7 inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-yellow-300 bg-orange-500 text-white shadow-[0_0_0_4px_rgba(251,191,36,0.25),0_8px_20px_rgba(249,115,22,0.45)] transition-transform duration-300 ${
+                                                practiceMenuOpen ? "scale-110" : "scale-100"
+                                            }`}
+                                        >
+                                            <span className="absolute inset-0 rounded-full bg-orange-400/35 blur-md animate-pulse pointer-events-none" />
+                                            <span className="absolute inset-0 rounded-full border-2 border-orange-300/70 animate-[ping_2.2s_ease-out_infinite] pointer-events-none" />
+                                            <span className="relative z-10 pointer-events-none">{item.icon}</span>
+                                        </span>
+                                        <span className="transition-all duration-300 -mt-1 pointer-events-none">{item.label}</span>
+                                    </button>
+                                </div>
                             ) : (
                                 <NavLink
                                     key={item.to}
@@ -787,9 +859,7 @@ export default function DashboardLayout() {
                                     onClick={blockOfflineNavigation}
                                     className={({ isActive }) =>
                                         `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 ${
-                                            item.isExam
-                                                ? "text-orange-900"
-                                                : !online
+                                            !online
                                                 ? "text-slate-400"
                                                 : isActive
                                                 ? "text-orange-600"
@@ -801,21 +871,11 @@ export default function DashboardLayout() {
                                         <>
                                             <span
                                                 className={`relative transition-transform duration-300 ${
-                                                    item.isExam
-                                                        ? `-mt-7 inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-yellow-300 bg-orange-500 text-white shadow-[0_0_0_4px_rgba(251,191,36,0.25),0_8px_20px_rgba(249,115,22,0.45)] ${
-                                                              isActive ? "scale-110" : "scale-100"
-                                                          }`
-                                                        : isActive
+                                                    isActive
                                                         ? "scale-110"
                                                         : ""
                                                 }`}
                                             >
-                                                {item.isExam && (
-                                                    <>
-                                                        <span className="absolute inset-0 rounded-full bg-orange-400/35 blur-md animate-pulse pointer-events-none" />
-                                                        <span className="absolute inset-0 rounded-full border-2 border-orange-300/70 animate-[ping_2.2s_ease-out_infinite] pointer-events-none" />
-                                                    </>
-                                                )}
                                                 <span className="relative z-10 pointer-events-none">{item.icon}</span>
                                                 {item.to === "/dashboard/study-materials" &&
                                                     studyMaterialsUnreadIds.length > 0 && (
@@ -824,7 +884,7 @@ export default function DashboardLayout() {
                                                         </span>
                                                     )}
                                             </span>
-                                            <span className={`transition-all duration-300 pointer-events-none ${item.isExam ? "-mt-1" : ""}`}>{item.label}</span>
+                                            <span className="transition-all duration-300 pointer-events-none">{item.label}</span>
                                         </>
                                     )}
                                 </NavLink>
