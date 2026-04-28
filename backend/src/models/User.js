@@ -13,6 +13,7 @@ const UserSchema = new mongoose.Schema(
 
     // New fields used by frontend
     className: { type: String, default: "" },
+    schoolName: { type: String, default: "" },
     gender: { type: String, default: "" },
     dob: { type: String, default: "" },
     address: { type: String, default: "" },

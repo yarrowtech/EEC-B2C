@@ -42,6 +42,17 @@ function resolveStageNumber(stageValue, examName = "") {
   return 1;
 }
 
+function normalizePercent(att) {
+  const raw = Number(att?.percent);
+  if (Number.isFinite(raw)) return Math.max(0, Math.min(100, raw));
+  const score = Number(att?.score);
+  const total = Number(att?.total);
+  if (Number.isFinite(score) && Number.isFinite(total) && total > 0) {
+    return Math.max(0, Math.min(100, Math.round((score / total) * 100)));
+  }
+  return 0;
+}
+
 function getCacheKey(section, userKey = "anonymous") {
   return `${RESULTS_CACHE_PREFIX}:${userKey}:${section}`;
 }
@@ -82,7 +93,53 @@ const ResultsView = () => {
   const [activeExam, setActiveExam] = useState(null);
   const [analyticsAccess, setAnalyticsAccess] = useState("none");
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [subjectNameById, setSubjectNameById] = useState({});
+  const [topicNameById, setTopicNameById] = useState({});
+  const [rawAttempts, setRawAttempts] = useState([]);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadNameMaps() {
+      try {
+        const [subjectsRes, topicsRes] = await Promise.all([
+          fetch(`${API}/api/subjects`),
+          fetch(`${API}/api/topics`),
+        ]);
+        const [subjectsData, topicsData] = await Promise.all([
+          subjectsRes.json().catch(() => ({})),
+          topicsRes.json().catch(() => ({})),
+        ]);
+        if (cancelled) return;
+
+        const subjectRows = Array.isArray(subjectsData?.items) ? subjectsData.items : [];
+        const topicRows = Array.isArray(topicsData?.items) ? topicsData.items : [];
+
+        const sMap = {};
+        const tMap = {};
+        subjectRows.forEach((s) => {
+          const id = String(s?._id || "").trim();
+          const name = String(s?.name || "").trim();
+          if (id && name) sMap[id] = name;
+        });
+        topicRows.forEach((t) => {
+          const id = String(t?._id || "").trim();
+          const name = String(t?.name || "").trim();
+          if (id && name) tMap[id] = name;
+        });
+        setSubjectNameById(sMap);
+        setTopicNameById(tMap);
+      } catch {
+        // keep empty maps; fallback logic will still work
+      }
+    }
+
+    loadNameMaps();
+    return () => {
+      cancelled = true;
+    };
+  }, [API]);
   useEffect(() => {
     if (!showModal || !activeExam) return;
     let mounted = true;
@@ -274,7 +331,7 @@ const ResultsView = () => {
     let cancelled = false;
     const cachedAttempts = readCache("attempts", String(userId), 2 * 60 * 1000);
     if (cachedAttempts) {
-      setExamResults(formatResults(cachedAttempts));
+      setRawAttempts(Array.isArray(cachedAttempts) ? cachedAttempts : []);
     }
 
     fetch(`${API}/api/exams/user-results/${userId}`, {
@@ -283,7 +340,8 @@ const ResultsView = () => {
       .then(res => res.json())
       .then(data => {
         if (!data.success || cancelled) return;
-        setExamResults(formatResults(data.results));
+        const rows = Array.isArray(data.results) ? data.results : [];
+        setRawAttempts(rows);
         const resolvedAccess = String(data?.analyticsAccess || "").toLowerCase();
         if (["none", "basic", "full"].includes(resolvedAccess)) {
           setAnalyticsAccess(resolvedAccess);
@@ -376,55 +434,81 @@ const ResultsView = () => {
   //   }));
   // }
 
-  function formatResults(attempts) {
-    return attempts.map(att => ({
+  useEffect(() => {
+    setExamResults(formatResults(rawAttempts, subjectNameById, topicNameById));
+  }, [rawAttempts, subjectNameById, topicNameById]);
+
+  function formatResults(attempts, subjectMap = {}, topicMap = {}) {
+    return attempts.map((att) => {
+      const scoreNum = Number(att?.score);
+      const totalNum = Number(att?.total);
+      const safeScore = Number.isFinite(scoreNum) ? scoreNum : 0;
+      const safeTotal = Number.isFinite(totalNum) ? totalNum : 0;
+      const percentage = normalizePercent(att);
+      const subjectId = String(att?.subject?._id || att?.subject || "").trim();
+      const topicId = String(att?.topic?._id || att?.topic || "").trim();
+      const rawSubject = String(att?.subject || "").trim();
+      const rawTopic = String(att?.topic || "").trim();
+      const objectIdLike = /^[a-f\d]{24}$/i;
+
+      const subjectName =
+        String(att?.subjectName || att?.subject?.name || subjectMap[subjectId] || "").trim() ||
+        (!objectIdLike.test(rawSubject) ? rawSubject : "") ||
+        "Unknown Subject";
+      const topicName =
+        String(att?.topicName || att?.topic?.name || topicMap[topicId] || "").trim() ||
+        (!objectIdLike.test(rawTopic) ? rawTopic : "") ||
+        "Unknown Topic";
+
+      return {
       id: att._id,
       stage: att.stage,
-      subjectId: att.subject || "",
-      topicId: att.topic || "",
+      subjectId,
+      topicId,
 
-      subjectName: att.subjectName || "Unknown Subject",
-      topicName: att.topicName || "Unknown Topic",
+      subjectName,
+      topicName,
 
       examName: `Stage Test - ${att.stage}`,
       date: att.createdAt,
       type: "test",
-      totalMarks: att.total,
-      obtainedMarks: att.score,
-      percentage: att.percent ?? Math.round((att.score / att.total) * 100),  // FIXED
+      totalMarks: safeTotal,
+      obtainedMarks: safeScore,
+      percentage,
       questions: att.questions || [],
       answers: att.answers || [],
 
       subjects: [
         {
-          name: att.subjectName || att.subject?.name || att.subject || "Unknown Subject",
-          topicName: att.topicName || att.topic?.name || att.topic || "Unknown Topic",
-          marks: att.score,
-          maxMarks: att.total,
+          name: subjectName,
+          topicName,
+          marks: safeScore,
+          maxMarks: safeTotal,
 
           // FIXED: always compute percentage correctly
-          percentage: att.percent ?? Math.round((att.score / att.total) * 100),
+          percentage,
 
           grade:
-            (att.percent ?? (att.score / att.total) * 100) >= 90 ? "A+" :
-              (att.percent ?? (att.score / att.total) * 100) >= 80 ? "A" : "B",
+            percentage >= 90 ? "A+" :
+              percentage >= 80 ? "A" : "B",
 
           remarks:
-            (att.percent ?? (att.score / att.total) * 100) >= 90 ? "Excellent" :
-              (att.percent ?? (att.score / att.total) * 100) >= 80 ? "Very Good" :
+            percentage >= 90 ? "Excellent" :
+              percentage >= 80 ? "Very Good" :
                 "Good"
         }
       ],
 
       topics: [
         {
-          subject: att.subjectName || "Unknown Subject",
-          topic: att.topicName || "Unknown Topic",
-          correct: att.score,
-          wrong: att.total - att.score
+          subject: subjectName,
+          topic: topicName,
+          correct: safeScore,
+          wrong: Math.max(0, safeTotal - safeScore)
         }
       ]
-    }));
+    };
+    });
   }
 
   function getSmartTip(percent) {
@@ -745,10 +829,14 @@ const ResultsView = () => {
     if (selectedExam === 'all') return true;
     return exam.type === selectedExam;
   });
+  const numericPercentages = examResults
+    .map((e) => Number(e?.percentage))
+    .filter((v) => Number.isFinite(v));
+
   const overallPercentage =
-    examResults.length > 0
-      ? (examResults.reduce((acc, e) => acc + e.percentage, 0) / examResults.length).toFixed(2)
-      : 0;
+    numericPercentages.length > 0
+      ? (numericPercentages.reduce((acc, v) => acc + v, 0) / numericPercentages.length).toFixed(2)
+      : "0.00";
   // Pagination for exam tables
   const [examPage, setExamPage] = useState(1);
   const examsPerPage = 3;
@@ -759,17 +847,17 @@ const ResultsView = () => {
     (examPage - 1) * examsPerPage,
     examPage * examsPerPage
   );
-  const hasResults = examResults.length > 0;
+  const hasResults = numericPercentages.length > 0;
 
   const avgScore = hasResults
     ? (
-      examResults.reduce((acc, exam) => acc + exam.percentage, 0) /
-      examResults.length
+      numericPercentages.reduce((acc, v) => acc + v, 0) /
+      numericPercentages.length
     ).toFixed(1)
     : "0.0";
 
   const bestScore = hasResults
-    ? Math.max(...examResults.map(exam => exam.percentage)).toFixed()
+    ? Math.max(...numericPercentages).toFixed()
     : "0.0";
 
   const excellentCount = hasResults
@@ -786,17 +874,23 @@ const ResultsView = () => {
       const percent = Number(exam?.percentage);
       if (!Number.isFinite(percent)) continue;
 
-      const subjectName = String(exam?.subjectName || exam?.subjects?.[0]?.name || "").trim() || "Unknown Subject";
-      const topicName = String(exam?.topicName || exam?.subjects?.[0]?.topicName || "").trim() || "Unknown Topic";
-      const stageNumber = resolveStageNumber(exam?.stage, exam?.examName);
-      const key = `${stageNumber}::${subjectName}::${topicName}`;
+      const subjectId = String(exam?.subjectId || "").trim();
+      const topicId = String(exam?.topicId || "").trim();
+      const subjectName = String(exam?.subjectName || exam?.subjects?.[0]?.name || "").trim();
+      const topicName = String(exam?.topicName || exam?.subjects?.[0]?.topicName || "").trim();
+      const isUnknownSubject = subjectName.toLowerCase().startsWith("unknown");
+      const isUnknownTopic = topicName.toLowerCase().startsWith("unknown");
+      if (!subjectId || !topicId || !subjectName || !topicName || isUnknownSubject || isUnknownTopic) continue;
+
+      const stageNumber = resolveStageNumber(exam?.stage, "");
+      const key = `${stageNumber}::${subjectId}::${topicId}`;
 
       const prev = bucket.get(key) || {
         subjectName,
         topicName,
         stageNumber,
-        subjectId: exam?.subjectId || "",
-        topicId: exam?.topicId || "",
+        subjectId,
+        topicId,
         totalPercent: 0,
         count: 0,
         lastDate: 0,
@@ -805,8 +899,6 @@ const ResultsView = () => {
       prev.totalPercent += percent;
       prev.count += 1;
       prev.lastDate = Math.max(prev.lastDate, new Date(exam?.date || 0).getTime() || 0);
-      if (!prev.subjectId && exam?.subjectId) prev.subjectId = exam.subjectId;
-      if (!prev.topicId && exam?.topicId) prev.topicId = exam.topicId;
       bucket.set(key, prev);
     }
 
@@ -1021,34 +1113,128 @@ const ResultsView = () => {
       )}
       </div>
 
-      {canViewAnalytics && weakTopicBooster && (
-        <div className="relative z-10 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 md:p-5 shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)]">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="min-w-0">
-              <p className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
-                <Lightbulb className="w-3.5 h-3.5" />
-                Weak Topic Booster
-              </p>
-              <h3 className="mt-2 text-base md:text-lg font-extrabold text-slate-900">
-                Practice {weakTopicBooster.topicName} ({weakTopicBooster.subjectName})
-              </h3>
-              <p className="mt-1 text-xs md:text-sm text-slate-600">
-                Avg score: <span className="font-bold text-rose-600">{weakTopicBooster.avgPercent.toFixed(1)}%</span>
-                {" "}· Stage {weakTopicBooster.stageNumber}
-                {" "}· Attempts {weakTopicBooster.count}
-              </p>
+      {canViewAnalytics && weakTopicBooster && (() => {
+        const score = weakTopicBooster.avgPercent;
+        const scorePct = Math.min(100, Math.max(0, score));
+        const scoreColor = score < 40 ? "#ef4444" : score < 65 ? "#f97316" : "#eab308";
+        const subjectLower = String(weakTopicBooster.subjectName || "").toLowerCase();
+        const subjectIcon =
+          subjectLower.includes("math") ? "calculate" :
+          subjectLower.includes("science") ? "science" :
+          subjectLower.includes("english") || subjectLower.includes("lang") ? "menu_book" :
+          subjectLower.includes("history") ? "history_edu" :
+          subjectLower.includes("geo") ? "public" :
+          subjectLower.includes("bio") ? "biotech" :
+          subjectLower.includes("phys") ? "bolt" :
+          subjectLower.includes("chem") ? "experiment" :
+          "school";
+
+        return (
+          <div className="relative z-10 overflow-hidden rounded-2xl shadow-md" style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fffbeb 50%, #fef9c3 100%)" }}>
+            {/* Dot-grid texture */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.08]"
+              style={{ backgroundImage: "radial-gradient(circle, #92400e 1.3px, transparent 1.3px)", backgroundSize: "20px 20px" }}
+            />
+
+            {/* Decorative SVG — brain/lightning bolt graphic */}
+            <div className="absolute right-0 top-0 bottom-0 flex items-center pr-4 pointer-events-none select-none opacity-[0.12]">
+              <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
+                {/* Brain outline */}
+                <ellipse cx="70" cy="65" rx="48" ry="44" stroke="#92400e" strokeWidth="4"/>
+                <path d="M70 21 C70 21 58 30 58 44 C58 52 64 58 70 60 C76 58 82 52 82 44 C82 30 70 21 70 21Z" stroke="#92400e" strokeWidth="3" fill="none"/>
+                <path d="M22 65 C22 52 30 42 40 38" stroke="#92400e" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M118 65 C118 52 110 42 100 38" stroke="#92400e" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M35 80 C28 74 24 68 24 62" stroke="#92400e" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M105 80 C112 74 116 68 116 62" stroke="#92400e" strokeWidth="3" strokeLinecap="round"/>
+                {/* Lightning bolt */}
+                <path d="M78 52 L62 74 L72 74 L60 96 L80 68 L70 68 Z" fill="#92400e" opacity="0.7"/>
+              </svg>
             </div>
-            <button
-              type="button"
-              onClick={startWeakTopicPractice}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
-            >
-              <BookPlus className="w-4 h-4" />
-              Start Practice
-            </button>
+
+            {/* Decorative blobs */}
+            <div className="absolute -top-6 -left-6 w-28 h-28 rounded-full bg-amber-300/20 pointer-events-none" />
+            <div className="absolute bottom-0 left-1/2 w-16 h-16 rounded-full bg-orange-300/15 pointer-events-none" />
+
+            <div className="relative z-10 p-5 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-5">
+
+                {/* Left: info */}
+                <div className="flex-1 min-w-0">
+                  {/* Badge */}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-200/80 border border-amber-300/60 px-3 py-1 text-[11px] font-black text-amber-800 uppercase tracking-wide">
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    Weak Topic Booster
+                  </span>
+
+                  {/* Title */}
+                  <h3 className="mt-3 text-lg md:text-xl font-black text-slate-900 leading-snug pr-0 md:pr-16">
+                    Practice{" "}
+                    <span className="text-amber-700">{weakTopicBooster.topicName}</span>
+                  </h3>
+                  <p className="mt-0.5 text-sm text-slate-600 font-medium">
+                    {weakTopicBooster.subjectName}
+                  </p>
+
+                  {/* Stats row */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 border border-rose-200 px-3 py-1 text-xs font-bold text-rose-700">
+                      <span className="material-symbols-outlined text-[14px]">trending_down</span>
+                      {score.toFixed(1)}% avg
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600">
+                      <span className="material-symbols-outlined text-[14px]">layers</span>
+                      Stage {weakTopicBooster.stageNumber}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600">
+                      <span className="material-symbols-outlined text-[14px]">replay</span>
+                      {weakTopicBooster.count} attempt{weakTopicBooster.count !== 1 ? "s" : ""}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600">
+                      <span className={`material-symbols-outlined text-[14px]`}>{subjectIcon}</span>
+                      {weakTopicBooster.subjectName}
+                    </span>
+                  </div>
+
+                  {/* Score bar */}
+                  <div className="mt-4 max-w-xs">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
+                      <span>Current Score</span>
+                      <span style={{ color: scoreColor }}>{score.toFixed(1)}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-white/60 rounded-full overflow-hidden border border-amber-200">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${scorePct}%`, background: `linear-gradient(90deg, #ef4444, ${scoreColor})` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {score < 40 ? "Needs urgent attention" : score < 65 ? "Below target — keep revising" : "Getting better!"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: subject icon + CTA */}
+                <div className="flex md:flex-col items-center gap-4 md:gap-3 md:flex-shrink-0">
+                  {/* Subject icon bubble */}
+                  <div className="hidden md:flex w-16 h-16 rounded-2xl bg-amber-100 border border-amber-200 items-center justify-center shadow-sm">
+                    <span className="material-symbols-outlined text-amber-600 text-3xl">{subjectIcon}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={startWeakTopicPractice}
+                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-sm font-black text-white shadow-md hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
+                  >
+                    <BookPlus className="w-4 h-4" />
+                    Start Practice
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Exam Results */}
       <div className="relative">

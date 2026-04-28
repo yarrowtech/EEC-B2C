@@ -1081,10 +1081,13 @@ function StudentContent() {
     return { subjectName, topicName };
   }
 
-  const nextAction = useMemo(
-    () => deriveNextAction({ attempts, weakAreas }),
-    [attempts, weakAreas]
-  );
+  const nextAction = useMemo(() => {
+    const namedWeakAreas = (weakAreas || []).map((row) => {
+      const { subjectName, topicName } = resolveWeakAreaNames(row);
+      return { ...row, subjectName, topicName };
+    });
+    return deriveNextAction({ attempts, weakAreas: namedWeakAreas });
+  }, [attempts, weakAreas, attemptNameMaps]);
 
   return (
     <div className="student-adventure-theme relative p-4 md:p-6 space-y-6">
@@ -1261,27 +1264,56 @@ function StudentContent() {
         {err && <div className="text-xs text-rose-600 mt-2">{err}</div>}
       </Section>
 
+      {/* ── Recommended Next Step ── */}
       <Section title={nextAction.title}>
-        <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 p-4 md:p-5 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <p className="text-base md:text-lg font-black text-slate-900">{nextAction.subtitle}</p>
-              <p className="mt-1 text-sm text-slate-600 line-clamp-2">{nextAction.description}</p>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e7c555] via-[#f0d265] to-[#fde68a] p-5 md:p-6 shadow-md">
+          {/* Dot-grid texture */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.12]"
+            style={{ backgroundImage: "radial-gradient(circle, #1e293b 1.2px, transparent 1.2px)", backgroundSize: "18px 18px" }}
+          />
+          {/* Decorative bullseye SVG */}
+          <div className="absolute right-0 top-0 bottom-0 flex items-center pr-4 pointer-events-none select-none">
+            <svg width="130" height="130" viewBox="0 0 130 130" fill="none" className="opacity-[0.15]">
+              <circle cx="65" cy="65" r="58" stroke="#1e293b" strokeWidth="5"/>
+              <circle cx="65" cy="65" r="40" stroke="#1e293b" strokeWidth="5"/>
+              <circle cx="65" cy="65" r="22" stroke="#1e293b" strokeWidth="5"/>
+              <circle cx="65" cy="65" r="7" fill="#1e293b"/>
+              <line x1="65" y1="7" x2="65" y2="0" stroke="#1e293b" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="65" y1="130" x2="65" y2="123" stroke="#1e293b" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="7" y1="65" x2="0" y2="65" stroke="#1e293b" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="130" y1="65" x2="123" y2="65" stroke="#1e293b" strokeWidth="4" strokeLinecap="round"/>
+            </svg>
+          </div>
+          {/* Decorative arc blob */}
+          <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-white/20 pointer-events-none" />
+          <div className="absolute -bottom-6 left-1/3 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0 flex-1 pr-0 md:pr-16">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-slate-800 text-[18px]">my_location</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">What to do next</span>
+              </div>
+              <p className="text-lg md:text-xl font-black text-slate-900 leading-snug">{nextAction.subtitle}</p>
+              <p className="mt-1.5 text-sm text-slate-800 line-clamp-2 opacity-80">{nextAction.description}</p>
             </div>
             <button
               type="button"
               onClick={() => navigate(nextAction.to)}
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
+              className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 active:scale-95"
             >
               {nextAction.ctaLabel}
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>
         </div>
       </Section>
 
+      {/* ── Weak Areas Auto-Revision ── */}
       <Section title="Weak Areas Auto-Revision" subtitle={`${Math.min(3, weakAreas.length)} of ${weakAreas.length}`}>
         <div className="grid gap-3">
-          {weakAreas.slice(0, 3).map((row) => {
+          {weakAreas.slice(0, 3).map((row, idx) => {
             const summaryTo = buildTopicSummaryPath({
               subjectId: row.subjectId,
               topicId: row.topicId,
@@ -1293,40 +1325,97 @@ function StudentContent() {
               stage: row.stage,
             });
             const { subjectName, topicName } = resolveWeakAreaNames(row);
+            const isWrong = row.status === "wrong";
+            const subjectLower = String(subjectName || "").toLowerCase();
+            const subjectIcon =
+              subjectLower.includes("math") ? "calculate" :
+              subjectLower.includes("science") ? "science" :
+              subjectLower.includes("english") || subjectLower.includes("lang") ? "menu_book" :
+              subjectLower.includes("history") ? "history_edu" :
+              subjectLower.includes("geo") ? "public" :
+              subjectLower.includes("bio") ? "biotech" :
+              subjectLower.includes("phys") ? "bolt" :
+              subjectLower.includes("chem") ? "experiment" :
+              "school";
+
+            const accentBg = isWrong ? "bg-rose-50" : "bg-amber-50";
+            const accentBorder = isWrong ? "border-rose-200" : "border-amber-200";
+            const accentBar = isWrong ? "bg-rose-400" : "bg-amber-400";
+            const badgeBg = isWrong ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700";
+            const iconColor = isWrong ? "text-rose-400" : "text-amber-500";
+            const iconBg = isWrong ? "bg-rose-100" : "bg-amber-100";
+            const ctaBg = isWrong ? "bg-rose-500 hover:bg-rose-600" : "bg-amber-500 hover:bg-amber-600";
 
             return (
-              <div key={row.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                    row.status === "wrong" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
-                  }`}>
-                    {row.status === "wrong" ? "Need Revision" : "Partially Correct"}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {subjectName} • {topicName}
-                  </span>
+              <div key={row.key} className={`relative overflow-hidden rounded-2xl border ${accentBorder} bg-white shadow-sm`}>
+                {/* Left accent bar */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl ${accentBar}`} />
+
+                {/* Faint number watermark */}
+                <div className="absolute right-4 bottom-2 text-[64px] font-black text-slate-100 select-none pointer-events-none leading-none">
+                  {idx + 1}
                 </div>
-                <p className="mt-2 text-sm text-slate-700 line-clamp-2">{row.questionText}</p>
-                <div className="mt-3 flex gap-2 flex-wrap">
-                  <Link
-                    to={summaryTo}
-                    className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    Topic Summary
-                  </Link>
-                  <Link
-                    to={practiceTo}
-                    className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
-                  >
-                    Practice Basic
-                  </Link>
+
+                <div className="pl-5 pr-4 py-4 relative z-10">
+                  {/* Header row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${badgeBg}`}>
+                        <span className="material-symbols-outlined text-[12px]">
+                          {isWrong ? "cancel" : "pending"}
+                        </span>
+                        {isWrong ? "Need Revision" : "Partially Correct"}
+                      </span>
+                      <span className="text-xs text-slate-400 font-semibold">
+                        {subjectName} • {topicName}
+                      </span>
+                    </div>
+                    {/* Subject icon bubble */}
+                    <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${iconBg}`}>
+                      <span className={`material-symbols-outlined text-[20px] ${iconColor}`}>{subjectIcon}</span>
+                    </div>
+                  </div>
+
+                  {/* Question preview */}
+                  <p className="mt-2.5 text-sm text-slate-700 line-clamp-2 leading-relaxed">{row.questionText}</p>
+
+                  {/* Action buttons */}
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <Link
+                      to={summaryTo}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">menu_book</span>
+                      Topic Summary
+                    </Link>
+                    <Link
+                      to={practiceTo}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-white transition ${ctaBg}`}
+                    >
+                      <span className="material-symbols-outlined text-[13px]">bolt</span>
+                      Practice Basic
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
           })}
+
           {weakAreas.length === 0 && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-              No weak areas saved yet. Complete an exam and revision suggestions will appear here.
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 flex items-center gap-4">
+              <div className="absolute right-4 top-0 bottom-0 flex items-center pointer-events-none opacity-10">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" stroke="#059669" strokeWidth="4"/>
+                  <path d="M24 40l12 12 20-24" stroke="#059669" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-emerald-500 text-2xl">verified</span>
+              </div>
+              <div>
+                <p className="font-black text-emerald-800">All clear!</p>
+                <p className="text-sm text-emerald-700 mt-0.5">No weak areas saved yet. Complete an exam and revision suggestions will appear here.</p>
+              </div>
             </div>
           )}
         </div>

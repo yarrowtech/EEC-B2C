@@ -249,6 +249,7 @@ router.get("/profile", requireAuth, async (req, res) => {
       dob: user.dob || "",
       address: user.address || "",
       state: user.state || "",
+      schoolName: user.schoolName || "",
       department: user.department || "",
       bio: user.bio || "",
       avatar: user.avatar || "",
@@ -379,6 +380,7 @@ router.put("/update-profile", requireAuth, async (req, res) => {
       "fatherContact",
       "motherContact",
       "board",
+      "schoolName",
     ];
 
     // Allow class update from profile for students/admins
@@ -409,6 +411,7 @@ router.put("/update-profile", requireAuth, async (req, res) => {
     const mappedUser = {
       ...updated._doc,
       className: updated.className || updated.class || "",
+      schoolName: updated.schoolName || "",
     };
 
     res.json({

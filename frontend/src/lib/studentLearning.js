@@ -143,15 +143,17 @@ export function deriveNextAction({ attempts, weakAreas }) {
 
   if (weakList.length > 0) {
     const top = weakList[0];
-    const to = buildTopicPracticePath({
+    const topicName = top.topicName || "this topic";
+    const subjectName = top.subjectName || "this subject";
+    const to = buildTopicSummaryPath({
       subjectId: top.subjectId,
       topicId: top.topicId,
       stage: top.stage,
     });
     return {
       title: "Recommended Next Step",
-      subtitle: `Revise ${top.topicName || "this topic"} and retry practice`,
-      description: top.questionText,
+      subtitle: `Revise ${topicName} (${subjectName}) and retry practice`,
+      description: `${subjectName} • ${topicName} • ${top.questionText || "Review this concept"}`,
       ctaLabel: "Revise Now",
       to,
     };

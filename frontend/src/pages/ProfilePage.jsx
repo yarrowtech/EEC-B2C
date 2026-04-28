@@ -448,6 +448,7 @@ export default function ProfilePage() {
     state: user?.state || "",
     className: user?.className || "",
     board: user?.board || "",
+    schoolName: user?.schoolName || "",
     department: user?.department || "",
     bio: user?.bio || "",
     avatar: user?.avatar || "",
@@ -1100,6 +1101,11 @@ export default function ProfilePage() {
                   <BookOpen className="w-3.5 h-3.5 text-slate-400" />{form.className}
                 </span>
               )}
+              {user?.role === "student" && form.schoolName && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />{form.schoolName}
+                </span>
+              )}
               {user?.role === "student" && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg font-semibold">
                   <Coins className="w-3.5 h-3.5" />{points} coins
@@ -1214,6 +1220,17 @@ export default function ProfilePage() {
                                 <option value="STATE">State Board</option>
                               </>}
                         </select>
+                      </PField>
+
+                      <PField label="School Name">
+                        <input
+                          type="text"
+                          name="schoolName"
+                          value={form.schoolName}
+                          onChange={handleChange}
+                          placeholder="Enter school name"
+                          className={iCls()}
+                        />
                       </PField>
                     </>
                   )}
