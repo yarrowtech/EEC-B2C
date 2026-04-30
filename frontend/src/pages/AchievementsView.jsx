@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Award, Medal, Target, Lock, Calendar, BookOpen, CheckCircle, XCircle, Star, TrendingUp } from 'lucide-react';
+import { Trophy, Award, Medal, Target, Lock, Calendar, BookOpen, CheckCircle, XCircle, Star, TrendingUp, Info } from 'lucide-react';
 
-const ACHIEVEMENTS_CACHE_PREFIX = "eec:achievements-cache:v1";
+const ACHIEVEMENTS_CACHE_PREFIX = "eec:achievements-cache:v2";
+
+const BADGE_TIERS = [
+  { id: "novice", title: "Novice", minStreak: 1, color: "text-slate-700 bg-slate-100 border-slate-200" },
+  { id: "bronze", title: "Bronze", minStreak: 3, color: "text-amber-800 bg-amber-50 border-amber-200" },
+  { id: "silver", title: "Silver", minStreak: 7, color: "text-gray-700 bg-gray-100 border-gray-300" },
+  { id: "gold", title: "Gold", minStreak: 14, color: "text-yellow-800 bg-yellow-50 border-yellow-300" },
+  { id: "legend", title: "Legend", minStreak: 30, color: "text-indigo-700 bg-indigo-50 border-indigo-200" },
+];
+
+function isObjectIdLike(value) {
+  return /^[0-9a-fA-F]{24}$/.test(String(value || "").trim());
+}
 
 function getCacheKey(section, userKey = "anonymous") {
   return `${ACHIEVEMENTS_CACHE_PREFIX}:${userKey}:${section}`;
@@ -105,8 +117,12 @@ const AchievementsView = () => {
     }),
     ...dailyAttempts.map((attempt) => ({
       exam: "Daily Challenge",
-      subject: attempt.subject || "Daily Practice",
-      topic: attempt.topic || "Board / Class Daily Question",
+      subject: isObjectIdLike(attempt.subjectName || attempt.subject)
+        ? "Daily Practice"
+        : (attempt.subjectName || attempt.subject || "Daily Practice"),
+      topic: isObjectIdLike(attempt.topicName || attempt.topic)
+        ? "Board / Class Daily Question"
+        : (attempt.topicName || attempt.topic || "Board / Class Daily Question"),
       pointsEarned: Number(attempt.pointsAwarded || 0),
       date: attempt.submittedAt || attempt.createdAt,
       isDaily: true,
@@ -122,8 +138,11 @@ const AchievementsView = () => {
   const earnedCount = pointsHistory.filter(item => item.pointsEarned > 0).length;
   const availableCount = totalAchievements - earnedCount;
 
-  const achievements = [];
-  const earnedAchievements = achievements.filter(a => a.earned);
+  const maxStreak = dailyAttempts.reduce((best, a) => {
+    const streak = Number(a?.streakAfter || 0);
+    return streak > best ? streak : best;
+  }, 0);
+  const earnedAchievements = BADGE_TIERS.filter((tier) => maxStreak >= tier.minStreak);
 
   const formatDate = (dateString) =>
     new Date(dateString).toLocaleDateString('en-US', {
@@ -342,6 +361,32 @@ const AchievementsView = () => {
         {/* ── EARNED BADGES ── */}
         {activeTab === "earned" && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div className="px-6 pt-6 pb-2">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-gray-800">Daily Challenge Badges</p>
+                <div className="relative group">
+                  <button
+                    type="button"
+                    aria-label="Badge info"
+                    className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-gray-200 text-gray-500 hover:text-indigo-600 hover:border-indigo-200 transition"
+                  >
+                    <Info size={12} />
+                  </button>
+                  <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100">
+                    <p className="font-semibold text-gray-800 mb-1">How badges unlock</p>
+                    <p>Badges are based on your highest Daily Challenge correct streak:</p>
+                    <ul className="mt-1 space-y-0.5">
+                      <li>Novice: 1 day</li>
+                      <li>Bronze: 3 days</li>
+                      <li>Silver: 7 days</li>
+                      <li>Gold: 14 days</li>
+                      <li>Legend: 30 days</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Current best streak: {maxStreak} day(s)</p>
+            </div>
             {earnedAchievements.length === 0 ? (
               <div className="p-12 text-center text-gray-400">
                 <Medal size={40} className="mx-auto mb-3 text-gray-200" />
@@ -351,26 +396,36 @@ const AchievementsView = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
                 {earnedAchievements.map((achievement) => {
-                  const IconComponent = achievement.icon;
                   return (
                     <div
                       key={achievement.id}
                       className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors"
                     >
                       <div className="p-3 bg-indigo-50 rounded-xl shrink-0">
-                        <IconComponent className="w-6 h-6 text-indigo-600" />
+                        <Medal className="w-6 h-6 text-indigo-600" />
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800">{achievement.title}</p>
-                        {achievement.description && (
-                          <p className="text-xs text-gray-500 mt-0.5">{achievement.description}</p>
-                        )}
+                        <p className="text-xs text-gray-500 mt-0.5">Unlocked at {achievement.minStreak}+ day streak</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
+            <div className="px-6 pb-6">
+              <p className="text-xs font-semibold text-gray-600 mb-2">All Badge Types</p>
+              <div className="flex flex-wrap gap-2">
+                {BADGE_TIERS.map((tier) => (
+                  <span
+                    key={tier.id}
+                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${tier.color}`}
+                  >
+                    {tier.title} ({tier.minStreak}+)
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

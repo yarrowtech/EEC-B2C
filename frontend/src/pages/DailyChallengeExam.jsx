@@ -144,6 +144,11 @@ export default function DailyChallengeExam() {
           window.dispatchEvent(new Event("storage"));
         } catch { /* ignore */ }
       }
+      try {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        const userKey = String(stored?._id || stored?.id || stored?.email || "anonymous");
+        localStorage.removeItem(`eec:achievements-cache:v1:${userKey}:daily-attempts`);
+      } catch { /* ignore */ }
     } catch (e) {
       setError(e.message || "Failed to submit daily challenge");
     } finally {

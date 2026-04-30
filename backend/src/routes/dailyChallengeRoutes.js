@@ -308,6 +308,7 @@ router.get("/today", requireAuth, async (req, res) => {
       dateKey: todayKey,
       alreadyAttempted: Boolean(existing),
       isCorrect: existing ? Boolean(existing.isCorrect) : null,
+      pointsAwarded: existing ? Number(existing.pointsAwarded || 0) : 0,
       streak: currentStreak,
       streakBroken: !existing && streakState.broken,
       badge: streakBadge(currentStreak),
@@ -436,7 +437,24 @@ router.get("/attempts", requireAuth, async (req, res) => {
       .select("dateKey questionType subject topic isCorrect pointsAwarded streakAfter badgeAfter submittedAt createdAt")
       .lean();
 
-    return res.json({ items });
+    const subjectIds = [...new Set(items.map((x) => String(x?.subject || "").trim()).filter(isObjectIdLike))];
+    const topicIds = [...new Set(items.map((x) => String(x?.topic || "").trim()).filter(isObjectIdLike))];
+
+    const [subjects, topics] = await Promise.all([
+      subjectIds.length ? Subject.find({ _id: { $in: subjectIds } }).select("_id name").lean() : [],
+      topicIds.length ? Topic.find({ _id: { $in: topicIds } }).select("_id name").lean() : [],
+    ]);
+
+    const subjectMap = new Map(subjects.map((s) => [String(s._id), String(s.name || "")]));
+    const topicMap = new Map(topics.map((t) => [String(t._id), String(t.name || "")]));
+
+    const enriched = items.map((row) => ({
+      ...row,
+      subjectName: subjectMap.get(String(row?.subject || "").trim()) || String(row?.subject || ""),
+      topicName: topicMap.get(String(row?.topic || "").trim()) || String(row?.topic || ""),
+    }));
+
+    return res.json({ items: enriched });
   } catch (err) {
     return res.status(500).json({ message: err.message || "Failed to load daily challenge attempts" });
   }

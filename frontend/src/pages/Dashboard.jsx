@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Clock,
   Bell,
+  Info,
   Sparkles,
   User,
 } from "lucide-react";
@@ -1112,6 +1113,26 @@ function StudentContent() {
             <div>
               <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Daily Badge</div>
               <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
+            </div>
+            <div className="relative group">
+              <button
+                type="button"
+                aria-label="Badge details"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition"
+              >
+                <Info size={12} />
+              </button>
+              <div className="pointer-events-none absolute right-0 top-full z-30 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100">
+                <p className="font-semibold text-slate-800 mb-1">Daily Badge Levels</p>
+                <p className="mb-1">Based on your highest correct daily streak:</p>
+                <ul className="space-y-0.5">
+                  <li>Novice: 1 day</li>
+                  <li>Bronze: 3 days</li>
+                  <li>Silver: 7 days</li>
+                  <li>Gold: 14 days</li>
+                  <li>Legend: 30 days</li>
+                </ul>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm">
