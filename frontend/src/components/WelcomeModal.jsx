@@ -19,8 +19,10 @@ function getDismissKey() {
 
 export default function WelcomeModal() {
   const [showModal, setShowModal] = useState(false);
+  const ENABLE_FIRST_LOGIN_WELCOME = false;
 
   useEffect(() => {
+    if (!ENABLE_FIRST_LOGIN_WELCOME) return;
     let isDisposed = false;
     let showTimer = null;
 
@@ -52,7 +54,7 @@ export default function WelcomeModal() {
         console.error("Failed to check user attempts", err);
       }
     }
-  }, []);
+  }, [ENABLE_FIRST_LOGIN_WELCOME]);
 
   function handleClose() {
     sessionStorage.setItem(getDismissKey(), "1");
