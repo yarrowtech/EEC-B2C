@@ -50,6 +50,8 @@ const allowedOrigins = [
   "https://eec-b2-c.vercel.app",
   "http://localhost:5173",
   "http://localhost:5000",
+  "https://edifyeight.com",
+  "https://www.edifyeight.com",
 ];
 app.use(
   cors({
@@ -123,7 +125,7 @@ connectDB(process.env.MONGO_URI).then(() => {
   /* ---------- Socket.io Server ---------- */
   const io = new Server(httpServer, {
     cors: {
-      origin: ["http://localhost:5173", "https://eec-b2-c.vercel.app"],
+      origin: ["http://localhost:5173", "https://eec-b2-c.vercel.app", "https://edifyeight.com", "https://www.edifyeight.com"],
       methods: ["GET", "POST"],
       credentials: true,
     },
