@@ -27,6 +27,7 @@ import GlobalLoginModal from "./components/GlobalLoginModal";
 import { ToastContainer } from "react-toastify";
 import { Toaster } from "react-hot-toast";
 import { toast as hotToast } from "react-hot-toast";
+import { consumeManualLogoutFlag } from "./lib/confirmLogout";
 import "react-toastify/dist/ReactToastify.css";
 import Dashboard from "./pages/Dashboard";
 import StudentsList from "./pages/StudentsList";
@@ -60,6 +61,7 @@ import FeaturesSettings from "./components/settings/FeaturesSettings";
 import AboutUsSettings from "./components/settings/AboutUsSettings";
 import CareerSettings from "./components/settings/CareerSettings";
 import OfficeSettings from "./components/settings/OfficeSettings";
+import WebsiteSettings from "./components/settings/WebsiteSettings";
 import B2B from "./pages/B2B/pages/B2B";
 import TeachersList from "./pages/TeachersList";
 import ProfilePage from "./pages/ProfilePage";
@@ -131,7 +133,11 @@ function AdminGuard({ children }) {
     // hard logout if token invalid/expired or role mismatch
     localStorage.removeItem("jwt");
     localStorage.removeItem("user");
-    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+    window.dispatchEvent(
+      new CustomEvent("eec:auth", {
+        detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+      })
+    );
     return <Navigate to="/" replace />;
   }
   return children;
@@ -145,7 +151,11 @@ function RoleGuard({ requireRole, children }) {
     // same hard logout behavior you already use
     localStorage.removeItem("jwt");
     localStorage.removeItem("user");
-    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+    window.dispatchEvent(
+      new CustomEvent("eec:auth", {
+        detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+      })
+    );
     return <Navigate to="/" replace />;
   }
   return children;
@@ -296,16 +306,23 @@ function getSeoForPath(pathname) {
   };
 }
 
-function RouteHelmet() {
+function RouteHelmet({ siteSettings }) {
   const location = useLocation();
   const { title, description, keywords, noindex } = getSeoForPath(location.pathname);
+  const siteName = String(siteSettings?.siteName || "Edify Eight").trim() || "Edify Eight";
+  const baseTitle = String(title || "").trim() || siteName;
+  const finalTitle = baseTitle.includes(siteName)
+    ? baseTitle
+    : baseTitle === "Edify Eight"
+      ? siteName
+      : `${baseTitle} | ${siteName}`;
   const canonical =
     typeof window !== "undefined"
       ? `${window.location.origin}${location.pathname}`
       : location.pathname;
 
   useEffect(() => {
-    document.title = title;
+    document.title = finalTitle;
 
     const upsertMeta = (attr, key, value) => {
       let node = document.head.querySelector(`meta[${attr}="${key}"]`);
@@ -320,13 +337,28 @@ function RouteHelmet() {
     upsertMeta("name", "description", description);
     upsertMeta("name", "keywords", keywords);
     upsertMeta("name", "twitter:card", "summary_large_image");
-    upsertMeta("name", "twitter:title", title);
+    upsertMeta("name", "twitter:title", finalTitle);
     upsertMeta("name", "twitter:description", description);
     upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");
-    upsertMeta("property", "og:title", title);
+    upsertMeta("property", "og:title", finalTitle);
     upsertMeta("property", "og:description", description);
     upsertMeta("property", "og:type", "website");
     upsertMeta("property", "og:url", canonical);
+
+    const faviconHref = String(siteSettings?.faviconUrl || "/logo_new.png").trim() || "/logo_new.png";
+    const upsertLink = (selector, rel) => {
+      let node = document.head.querySelector(selector);
+      if (!node) {
+        node = document.createElement("link");
+        node.setAttribute("rel", rel);
+        document.head.appendChild(node);
+      }
+      node.setAttribute("href", faviconHref);
+    };
+
+    upsertLink('link[rel="icon"]', "icon");
+    upsertLink('link[rel="shortcut icon"]', "shortcut icon");
+    upsertLink('link[rel="apple-touch-icon"]', "apple-touch-icon");
 
     let canonicalLink = document.head.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
@@ -335,19 +367,19 @@ function RouteHelmet() {
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute("href", canonical);
-  }, [title, description, keywords, noindex, canonical]);
+  }, [finalTitle, description, keywords, noindex, canonical, siteSettings?.faviconUrl]);
 
   return (
     <Helmet>
-      <title>{title}</title>
+      <title>{finalTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
-      <meta property="og:title" content={title} />
+      <meta property="og:title" content={finalTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
       <meta property="og:url" content={canonical} />
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
+      <meta name="twitter:title" content={finalTitle} />
       <meta name="twitter:description" content={description} />
       {noindex ? <meta name="robots" content="noindex,nofollow" /> : <meta name="robots" content="index,follow" />}
       <link rel="canonical" href={canonical} />
@@ -421,6 +453,40 @@ function ShellLayout() {
 }
 
 export default function App() {
+  const [siteSettings, setSiteSettings] = useState(null);
+
+  useEffect(() => {
+    const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    let cancelled = false;
+
+    async function loadWebsiteSettings() {
+      try {
+        const res = await fetch(`${API}/api/website-settings`);
+        const json = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok) {
+          setSiteSettings(json);
+        }
+      } catch (err) {
+        console.error("Failed to load website settings:", err);
+      }
+    }
+
+    loadWebsiteSettings();
+
+    const onWebsiteSettingsUpdated = (e) => {
+      if (e?.detail) {
+        setSiteSettings(e.detail);
+      } else {
+        loadWebsiteSettings();
+      }
+    };
+
+    window.addEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("jwt");
@@ -446,7 +512,11 @@ export default function App() {
     function logoutUser() {
       localStorage.removeItem("jwt");
       localStorage.removeItem("user");
-      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+      window.dispatchEvent(
+        new CustomEvent("eec:auth", {
+          detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+        })
+      );
     }
   }, []);
 
@@ -665,7 +735,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <RouteHelmet />
+      <RouteHelmet siteSettings={siteSettings} />
       <AuthExpiryHandler />
       <Routes>
         <Route element={<ShellLayout />}>
@@ -784,6 +854,7 @@ export default function App() {
 
             {/* Setttings */}
             <Route path="settings/home" element={<RequireAdmin><HeroSettings /></RequireAdmin>} />
+            <Route path="settings/website" element={<RequireAdmin><WebsiteSettings /></RequireAdmin>} />
             <Route path="settings/why-eec" element={<RequireAdmin><WhyEecSettings /></RequireAdmin>} />
             <Route path="settings/features" element={<RequireAdmin><FeaturesSettings /></RequireAdmin>} />
             <Route path="settings/about-us" element={<RequireAdmin><AboutUsSettings /></RequireAdmin>} />

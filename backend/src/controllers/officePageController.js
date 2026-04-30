@@ -1,5 +1,6 @@
 // backend/src/controllers/officePageController.js
 import OfficePage from "../models/officePageModel.js";
+import { clearWebsiteBrandingCache } from "../utils/websiteBranding.js";
 
 export const getOfficePage = async (req, res) => {
   try {
@@ -73,6 +74,8 @@ export const updateOfficePage = async (req, res) => {
       new: true,
       upsert: true,
     });
+
+    clearWebsiteBrandingCache();
 
     res.json(doc);
   } catch (err) {

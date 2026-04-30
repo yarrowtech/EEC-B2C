@@ -275,7 +275,12 @@ export async function forgotPassword(req, res) {
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({ email: email?.toLowerCase() });
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(200).json({
         message: "If the email exists, a reset link has been sent",
@@ -289,25 +294,29 @@ export async function forgotPassword(req, res) {
     user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
     await user.save();
 
-    const resetLink = `${process.env.CLIENT_ORIGIN}/reset-password/${token}`;
+    const appOrigin = String(
+      process.env.CLIENT_ORIGIN || req.get("origin") || req.headers.origin || ""
+    )
+      .trim()
+      .replace(/\/$/, "");
+    if (!appOrigin) {
+      throw new Error("CLIENT_ORIGIN is not configured");
+    }
 
-    // await sendResetPasswordEmail({
-    //   to: user.email,
-    //   name: user.name,
-    //   resetLink,
-    // });
+    const resetLink = `${appOrigin}/reset-password/${token}`;
 
-    // res.json({ message: "Reset link sent to your email" });
-    await sendResetPasswordEmail({
+    sendResetPasswordEmail({
       to: user.email,
       name: user.name,
       resetLink,
+    }).catch((mailErr) => {
+      console.error("forgot password email failed:", mailErr?.message || mailErr);
     });
 
     res.json({ message: "Reset link sent to your email" });
   } catch (err) {
     console.error("forgot password error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err?.message || "Server error" });
   }
 }
 

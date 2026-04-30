@@ -191,6 +191,10 @@ import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 
 export default function PaprIqFooterSection() {
   const API = import.meta.env.VITE_API_URL || "";
+  const [websiteSettings, setWebsiteSettings] = useState({
+    siteName: "Edify Eight",
+    logoUrl: "",
+  });
   const [dbSocialLinks, setDbSocialLinks] = useState({
     facebook: "",
     instagram: "",
@@ -239,6 +243,40 @@ export default function PaprIqFooterSection() {
     };
   }, [API]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWebsiteSettings() {
+      try {
+        const res = await fetch(`${API}/api/website-settings`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || cancelled) return;
+        setWebsiteSettings({
+          siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+          logoUrl: String(data?.logoUrl || "").trim(),
+        });
+      } catch {
+        // Keep footer fallback brand text.
+      }
+    }
+
+    loadWebsiteSettings();
+
+    const onWebsiteSettingsUpdated = (e) => {
+      const data = e?.detail || {};
+      setWebsiteSettings({
+        siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+        logoUrl: String(data?.logoUrl || "").trim(),
+      });
+    };
+
+    window.addEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    };
+  }, [API]);
+
   const socialLinks = useMemo(
     () => [
       { key: "facebook", label: "Facebook", href: dbSocialLinks.facebook, Icon: Facebook },
@@ -269,10 +307,18 @@ export default function PaprIqFooterSection() {
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-3 mb-8">
               <div className="bg-[#FFD23F] p-2 rounded-xl rotate-[-3deg] shadow-lg">
-                <span className="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
+                {websiteSettings.logoUrl ? (
+                  <img
+                    src={websiteSettings.logoUrl}
+                    alt={websiteSettings.siteName}
+                    className="h-6 w-6 object-contain"
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
+                )}
               </div>
               <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                Edify Eight<span className="text-[#FFD23F]"></span>
+                {websiteSettings.siteName}<span className="text-[#FFD23F]"></span>
               </span>
             </div>
             <p className="text-sm leading-relaxed mb-8 font-medium">
@@ -283,7 +329,7 @@ export default function PaprIqFooterSection() {
             <div className="flex gap-4">
               {socialLinks
                 .filter((item) => Boolean(String(item.href || "").trim()))
-                .map(({ key, label, href, Icon }) => (
+                .map(({ key, label, href }) => (
                 <a
                   key={key}
                   className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-[#4ECDC4] hover:text-white transition-all"
@@ -293,7 +339,7 @@ export default function PaprIqFooterSection() {
                   aria-label={label}
                   title={label}
                 >
-                  <Icon size={18} />
+                  <span className="text-xs font-bold">{label.slice(0, 1)}</span>
                 </a>
               ))}
             </div>
@@ -348,7 +394,7 @@ export default function PaprIqFooterSection() {
         </div>
 
         <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold text-slate-500">
-          <p>© {new Date().getFullYear()} Edify Eight</p>
+          <p>© {new Date().getFullYear()} {websiteSettings.siteName}</p>
           {/* <p className="flex items-center gap-2">
             Built with{" "} & Care
             <span className="material-symbols-outlined text-[#FF6B6B] text-sm fill-icon">favorite</span>

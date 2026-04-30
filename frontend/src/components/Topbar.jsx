@@ -25,6 +25,10 @@ export default function Topbar() {
   const location = useLocation();
   const API = import.meta.env.VITE_API_URL || "";
   const [officeData, setOfficeData] = useState(null);
+  const [websiteSettings, setWebsiteSettings] = useState({
+    supportEmail: "",
+    supportPhone: "",
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -44,26 +48,53 @@ export default function Topbar() {
     };
   }, [API]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWebsiteSettings() {
+      try {
+        const res = await fetch(`${API}/api/website-settings`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || cancelled) return;
+        setWebsiteSettings({
+          supportEmail: String(data?.supportEmail || "").trim(),
+          supportPhone: String(data?.supportPhone || "").trim(),
+        });
+      } catch {
+        // Keep office-data fallback.
+      }
+    }
+
+    loadWebsiteSettings();
+
+    const onWebsiteSettingsUpdated = (e) => {
+      const data = e?.detail || {};
+      setWebsiteSettings({
+        supportEmail: String(data?.supportEmail || "").trim(),
+        supportPhone: String(data?.supportPhone || "").trim(),
+      });
+    };
+
+    window.addEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    };
+  }, [API]);
+
   const phone = useMemo(() => {
     const contactPhone = Array.isArray(officeData?.contacts)
       ? officeData.contacts.find((c) => c?.type === "phone")?.value
       : "";
-    return String(contactPhone || officeData?.phone || "+91 9830590929").trim();
-  }, [officeData]);
+    return String(contactPhone || websiteSettings.supportPhone || officeData?.phone || "+91 9830590929").trim();
+  }, [officeData, websiteSettings.supportPhone]);
 
   const email = useMemo(() => {
     const contactEmail = Array.isArray(officeData?.contacts)
       ? officeData.contacts.find((c) => c?.type === "email")?.value
       : "";
-    return String(contactEmail || officeData?.email || "eec@electroniceducare.com").trim();
-  }, [officeData]);
-
-  const address = useMemo(() => {
-    const contactAddress = Array.isArray(officeData?.contacts)
-      ? officeData.contacts.find((c) => c?.type === "address")?.value
-      : "";
-    return String(contactAddress || officeData?.address || "").trim();
-  }, [officeData]);
+    return String(contactEmail || websiteSettings.supportEmail || officeData?.email || "eec@electroniceducare.com").trim();
+  }, [officeData, websiteSettings.supportEmail]);
 
   const socialLinks = useMemo(
     () => ({

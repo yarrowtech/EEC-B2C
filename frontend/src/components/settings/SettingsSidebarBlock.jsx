@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Settings,
   FileText,
+  Globe2,
 } from "lucide-react";
 
 /* MATCH DASHBOARD SIDEBAR STYLE */
@@ -52,6 +53,18 @@ export default function SettingsSidebarBlock({ role }) {
         }`}
       >
         <div className="ml-4 pl-3 border-l-2 border-yellow-300 space-y-1">
+
+          <NavLink
+            to="/dashboard/settings/website"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+            }
+          >
+            <span className="flex items-center gap-3">
+              <Globe2 size={16} />
+              Website Settings
+            </span>
+          </NavLink>
 
           {/* HOME SETTINGS */}
           <button

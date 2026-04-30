@@ -238,7 +238,7 @@ import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
 import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
-import { confirmAndLogout } from "../lib/confirmLogout";
+import { confirmAndLogout, consumeManualLogoutFlag } from "../lib/confirmLogout";
 
 /* ---- auth helpers (UNCHANGED) ---- */
 function getToken() {
@@ -459,7 +459,11 @@ export default function DashboardLayout() {
     if (!isTokenValid(token) || !user?.role) {
         localStorage.removeItem("jwt");
         localStorage.removeItem("user");
-        window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+        window.dispatchEvent(
+            new CustomEvent("eec:auth", {
+                detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+            })
+        );
         return <Navigate to="/" replace />;
     }
 

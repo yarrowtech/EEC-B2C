@@ -90,6 +90,11 @@ export default function Navbar() {
   const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const API = import.meta.env.VITE_API_URL || "";
+  const [websiteSettings, setWebsiteSettings] = useState({
+    siteName: "Edify Eight",
+    logoUrl: "",
+  });
   // Hide the Navbar on unified dashboard routes
   const shouldHide = location.pathname.startsWith("/dashboard");
 
@@ -120,6 +125,41 @@ export default function Navbar() {
       window.removeEventListener("storage", refreshUser);
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWebsiteSettings() {
+      try {
+        const res = await fetch(`${API}/api/website-settings`);
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok) {
+          setWebsiteSettings({
+            siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+            logoUrl: String(data?.logoUrl || "").trim(),
+          });
+        }
+      } catch {
+        // Keep defaults.
+      }
+    }
+
+    loadWebsiteSettings();
+
+    const onWebsiteSettingsUpdated = (e) => {
+      const data = e?.detail || {};
+      setWebsiteSettings({
+        siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+        logoUrl: String(data?.logoUrl || "").trim(),
+      });
+    };
+
+    window.addEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+    };
+  }, [API]);
 
   const proceedToDashboard = () => {
     navigate(currentUser?.role === "admin" ? "/admin-dashboard" : "/student-dashboard", { replace: true });
@@ -184,10 +224,20 @@ export default function Navbar() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
         {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
         <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-          <div className="flex items-center justify-center rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
-            <span className="material-symbols-outlined text-2xl font-bold" style={{ fontFamily: "'Material Symbols Outlined'", fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>auto_stories</span>
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
+            {websiteSettings.logoUrl ? (
+              <img
+                src={websiteSettings.logoUrl}
+                alt={websiteSettings.siteName}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <span className="material-symbols-outlined text-2xl font-bold" style={{ fontFamily: "'Material Symbols Outlined'", fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>auto_stories</span>
+            )}
           </div>
-          <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>Edify <span className="text-[#F4736E]">Eight</span></span>
+          <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+            {websiteSettings.siteName}
+          </span>
         </Link>
 
         {/* Desktop nav links — centered */}

@@ -23,7 +23,7 @@ import WelcomeModal from "../components/WelcomeModal";
 import AdventureStatCard from '../components/student/AdventureStatCard';
 import DailyQuestCard from '../components/student/DailyQuestCard';
 import SubscriptionSpotlight from '../components/student/SubscriptionSpotlight';
-import { confirmAndLogout } from "../lib/confirmLogout";
+import { confirmAndLogout, consumeManualLogoutFlag } from "../lib/confirmLogout";
 import {
   buildTopicPracticePath,
   buildTopicSummaryPath,
@@ -1677,7 +1677,11 @@ export default function Dashboard() {
     // mirror your guard behavior
     localStorage.removeItem("jwt");
     localStorage.removeItem("user");
-    window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "logout" } }));
+    window.dispatchEvent(
+      new CustomEvent("eec:auth", {
+        detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+      })
+    );
     return <Navigate to="/" replace />;
   }
 
