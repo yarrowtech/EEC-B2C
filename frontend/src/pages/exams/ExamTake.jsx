@@ -66,6 +66,33 @@ export default function ExamTake() {
     }
   }
 
+  async function exitFullscreen() {
+    try {
+      if (typeof document === "undefined") return;
+      if (!document.fullscreenElement) return;
+
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+        return;
+      }
+
+      const doc = document;
+      if (doc.webkitExitFullscreen) {
+        await doc.webkitExitFullscreen();
+        return;
+      }
+      if (doc.mozCancelFullScreen) {
+        await doc.mozCancelFullScreen();
+        return;
+      }
+      if (doc.msExitFullscreen) {
+        await doc.msExitFullscreen();
+      }
+    } catch {
+      // Ignore exit failures; browser can block based on gesture policy.
+    }
+  }
+
   // Save meta to localStorage when it changes
   useEffect(() => {
     if (meta) {
@@ -389,6 +416,7 @@ export default function ExamTake() {
 
 
       const res = await submitExam(attemptId, arr);
+      await exitFullscreen();
       setResult(res); // {score,total,percent}
 
       const weakRows = createWeakAreaEntries({
