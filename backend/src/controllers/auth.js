@@ -152,21 +152,15 @@ export async function register(req, res) {
       console.error("Welcome email failed:", err?.message)
     );
 
-    const token = signToken(user);
+    const payload = await buildLoginPayload(user);
     res.status(201).json({
       message: "Registered successfully",
+      ...payload,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        class: user.class,
-        state: user.state,
-        referral: user.referral,
-        points: user.points || 100,
+        ...payload.user,
+        referral: user.referral || "",
         createdAt: user.createdAt,
       },
-      token,
     });
   } catch (err) {
     console.error("register error:", err);

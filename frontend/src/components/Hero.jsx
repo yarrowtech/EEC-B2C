@@ -195,9 +195,22 @@ const Hero = () => {
     { key: "board",    icon: "menu_book",    question: "What is your study board?",  hint: "We'll personalise your content based on your board.", type: "select" },
     { key: "mobile",   icon: "smartphone",   question: "What's your mobile number?", hint: "We'll send you important updates here.",               type: "tel",           placeholder: "e.g. 9876543210" },
     { key: "state",    icon: "location_on",  question: "Which state are you from?",  hint: "Helps us match your regional curriculum.",             type: "select-search" },
-    { key: "password", icon: "lock",         question: "Create a secret password!",  hint: "Make it strong to protect your adventure.",            type: "password",      placeholder: "Min. 8 characters" },
-    { key: "confirm",  icon: "check_circle", question: "Confirm your password",      hint: "Type it once more to be sure.",                        type: "password",      placeholder: "Re-enter password" },
+    { key: "password", icon: "lock",         question: "Create a secret password!",  hint: "Enter password and confirm it to continue.",           type: "password-pair", placeholder: "Min. 8 characters" },
   ];
+
+  function getPasswordStrengthLabel(password) {
+    const pass = String(password || "");
+    if (!pass) return { label: "Enter password", tone: "text-slate-400", dot: "bg-slate-300" };
+    let score = 0;
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
+    if (/\d/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+    if (score <= 1) return { label: "Weak", tone: "text-rose-500", dot: "bg-rose-400" };
+    if (score <= 3) return { label: "Medium", tone: "text-amber-500", dot: "bg-amber-400" };
+    return { label: "Strong", tone: "text-emerald-600", dot: "bg-emerald-500" };
+  }
 
   useEffect(() => {
     async function loadMeta() {
@@ -237,9 +250,16 @@ const Hero = () => {
 
   function handleStepNext() {
     const step = STEPS[stepIdx];
-    const val = stepValues[step.key];
-    if (!val) { setStepError("Please fill in this field to continue."); return; }
-    if (step.key === "confirm" && val !== stepValues.password) { setStepError("Passwords don't match. Try again!"); return; }
+    if (step.type === "password-pair") {
+      const pass = String(stepValues.password || "");
+      const confirm = String(stepValues.confirm || "");
+      if (!pass || !confirm) { setStepError("Please fill in both password fields."); return; }
+      if (pass.length < 8) { setStepError("Password must be at least 8 characters."); return; }
+      if (confirm !== pass) { setStepError("Passwords don't match. Try again!"); return; }
+    } else {
+      const val = stepValues[step.key];
+      if (!val) { setStepError("Please fill in this field to continue."); return; }
+    }
     setStepError("");
     if (stepIdx < STEPS.length - 1) {
       setSlideDir("forward");
@@ -275,14 +295,42 @@ const Hero = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Registration failed");
       localStorage.setItem("jwt", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+
+      let tokenPayload = {};
+      try {
+        tokenPayload = JSON.parse(atob(String(data?.token || "").split(".")[1] || ""));
+      } catch {
+        tokenPayload = {};
+      }
+
+      let hydratedUser = data?.user || {};
+      try {
+        const profileRes = await fetch(`${API_BASE}/api/users/profile`, {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
+        const profileJson = await profileRes.json().catch(() => ({}));
+        if (profileRes.ok && profileJson?.user) {
+          hydratedUser = { ...hydratedUser, ...profileJson.user };
+        }
+      } catch {
+        // keep register payload user if profile fetch fails
+      }
+
+      hydratedUser = {
+        ...hydratedUser,
+        _id: hydratedUser?._id || hydratedUser?.id || tokenPayload?.sub || "",
+        id: hydratedUser?.id || hydratedUser?._id || tokenPayload?.sub || "",
+        role: hydratedUser?.role || tokenPayload?.role || "student",
+      };
+
+      localStorage.setItem("user", JSON.stringify(hydratedUser));
       setStepDone(true);
-      toast.success(`Welcome, ${data?.user?.name || "Explorer"}! 🎉`);
+      toast.success(`Welcome, ${hydratedUser?.name || data?.user?.name || "Explorer"}! 🎉`);
       setTimeout(() => {
         setShowStepper(false);
-        window.dispatchEvent(new Event("eec:open-login"));
+        window.location.replace("/dashboard");
       }, 1800);
-      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "register", user: data.user } }));
+      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "register", user: hydratedUser } }));
     } catch (err) {
       setStepError(err?.message || "Registration failed");
       toast.error(err?.message || "Registration failed");
@@ -862,6 +910,49 @@ const Hero = () => {
                           </option>
                         ))}
                       </select>
+                    ) : STEPS[stepIdx].type === "password-pair" ? (
+                      <div className="space-y-3">
+                        <input
+                          key="password-input"
+                          autoFocus
+                          type="password"
+                          placeholder="Min. 8 characters"
+                          value={stepValues.password}
+                          onChange={(e) => {
+                            setStepError("");
+                            setStepValues((prev) => ({ ...prev, password: e.target.value }));
+                          }}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
+                        />
+                        <div className="flex items-center justify-between text-xs px-1">
+                          <span className="text-slate-500">Password strength</span>
+                          <span className={`inline-flex items-center gap-1.5 font-semibold ${getPasswordStrengthLabel(stepValues.password).tone}`}>
+                            <span className={`h-2 w-2 rounded-full ${getPasswordStrengthLabel(stepValues.password).dot}`} />
+                            {getPasswordStrengthLabel(stepValues.password).label}
+                          </span>
+                        </div>
+                        <input
+                          key="confirm-input"
+                          type="password"
+                          placeholder="Re-enter password"
+                          value={stepValues.confirm}
+                          onChange={(e) => {
+                            setStepError("");
+                            setStepValues((prev) => ({ ...prev, confirm: e.target.value }));
+                          }}
+                          onKeyDown={(e) => e.key === "Enter" && handleStepNext()}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
+                        />
+                        {stepValues.confirm ? (
+                          <p className={`text-xs px-1 font-semibold ${
+                            stepValues.confirm === stepValues.password
+                              ? "text-emerald-600"
+                              : "text-rose-500"
+                          }`}>
+                            {stepValues.confirm === stepValues.password ? "Passwords match" : "Passwords do not match"}
+                          </p>
+                        ) : null}
+                      </div>
                     ) : (
                       <input
                         key={`input-${stepIdx}`}
