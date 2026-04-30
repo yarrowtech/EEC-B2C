@@ -335,7 +335,7 @@ export default function FlashcardsPage() {
       {/* ── Mobile Bottom Sheet ── */}
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] lg:hidden transition-opacity duration-300 ${
+        className={`fixed inset-x-0 top-0 bottom-[72px] z-40 bg-black/50 backdrop-blur-[2px] lg:hidden transition-opacity duration-300 ${
           drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setDrawerOpen(false)}
@@ -343,10 +343,10 @@ export default function FlashcardsPage() {
 
       {/* Sheet panel */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
+        className={`fixed bottom-[60px] left-0 right-0 z-40 lg:hidden bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
           drawerOpen ? "translate-y-0" : "translate-y-full"
         }`}
-        style={{ maxHeight: "78vh" }}
+        style={{ maxHeight: "calc(78vh - 72px)" }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
@@ -369,7 +369,7 @@ export default function FlashcardsPage() {
         </div>
 
         {/* Sheet body — scrollable */}
-        <div className="overflow-y-auto flex-1 p-3 space-y-2 pb-safe">
+        <div className="overflow-y-auto flex-1 p-3 space-y-2 pb-24">
           {loading && <SkeletonList />}
           {!loading && sets.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
