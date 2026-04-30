@@ -89,6 +89,8 @@ export default function FlashcardsPage() {
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [stage, setStage] = useState(1);
+  const [profileBoardLabel] = useState(String(user?.board || ""));
+  const [profileClassLabel] = useState(String(user?.class || user?.className || ""));
 
   const [boards, setBoards] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -174,7 +176,10 @@ export default function FlashcardsPage() {
       const [bData, cData] = await Promise.all([bRes.json(), cRes.json()]);
       setBoards(Array.isArray(bData) ? bData : []);
       setClasses(Array.isArray(cData) ? cData : []);
-    } catch { setBoards([]); setClasses([]); }
+    } catch {
+      setBoards([]);
+      setClasses([]);
+    }
   }
 
   async function loadSubjects() {
@@ -300,15 +305,17 @@ export default function FlashcardsPage() {
           <span className="material-symbols-outlined text-slate-400 text-[18px]">tune</span>
           <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Filters</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-          <select value={board} onChange={(e) => { setBoard(e.target.value); setSubject(""); setTopic(""); }} className={selectStyle}>
-            <option value="">All Boards</option>
-            {boards.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
-          </select>
-          <select value={className} onChange={(e) => { setClassName(e.target.value); setSubject(""); setTopic(""); }} className={selectStyle}>
-            <option value="">All Classes</option>
-            {classes.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="material-symbols-outlined text-[13px]">account_tree</span>
+            Board: {profileBoardLabel || "N/A"}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="material-symbols-outlined text-[13px]">school</span>
+            Class: {profileClassLabel || "N/A"}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-2">
           <select value={subject} onChange={(e) => { setSubject(e.target.value); setTopic(""); }} className={selectStyle}>
             <option value="">All Subjects</option>
             {subjects.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
