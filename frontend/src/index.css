@@ -1,5 +1,65 @@
 @import 'tailwindcss';
 
+/* ── Onboarding Tour (driver.js) custom styling ── */
+.driver-popover.eec-tour-popover {
+  border-radius: 16px !important;
+  border: 2px solid rgba(244, 115, 110, 0.18) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(244, 115, 110, 0.1) !important;
+  max-width: 300px !important;
+  font-family: "Plus Jakarta Sans", "Balsamiq Sans", sans-serif !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #1B1F3B !important;
+  margin-bottom: 6px !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-description {
+  font-size: 13px !important;
+  color: #475569 !important;
+  line-height: 1.65 !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-progress-text {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-next-btn {
+  background: #F4736E !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 7px 14px !important;
+  cursor: pointer !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-next-btn:hover {
+  background: #e05e5a !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-prev-btn {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 7px 14px !important;
+  cursor: pointer !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-prev-btn:hover {
+  background: #e2e8f0 !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-close-btn {
+  color: #94a3b8 !important;
+  font-size: 20px !important;
+}
+.driver-popover.eec-tour-popover .driver-popover-close-btn:hover {
+  color: #F4736E !important;
+}
+.driver-overlay {
+  background: rgba(15, 23, 42, 0.55) !important;
+}
+
 html,
 body,
 #root,

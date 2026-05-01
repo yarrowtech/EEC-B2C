@@ -239,6 +239,7 @@ import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
 import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
 import { confirmAndLogout, consumeManualLogoutFlag } from "../lib/confirmLogout";
+import OnboardingTour, { isTourDone, markTourDone } from "../components/OnboardingTour";
 
 /* ---- auth helpers (UNCHANGED) ---- */
 function getToken() {
@@ -274,6 +275,7 @@ export default function DashboardLayout() {
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
+    const [showTour, setShowTour] = useState(false);
     const [studyMaterialsUnreadIds, setStudyMaterialsUnreadIds] = useState([]);
     const [dailyChallenge, setDailyChallenge] = useState({
         loading: false,
@@ -399,6 +401,23 @@ export default function DashboardLayout() {
         }
     }, [user]);
 
+    // Auto-start onboarding tour for first-time users
+    useEffect(() => {
+        if (!isTourDone()) {
+            const t = setTimeout(() => setShowTour(true), 1200);
+            return () => clearTimeout(t);
+        }
+    }, []);
+
+    function handleTourEnd() {
+        setShowTour(false);
+        markTourDone();
+    }
+
+    function handleStartTour() {
+        setShowTour(true);
+    }
+
     useEffect(() => {
         if (role !== "student" || !token) return;
         let mounted = true;
@@ -470,7 +489,7 @@ export default function DashboardLayout() {
     /* ---- role-based nav (UNCHANGED) ---- */
     const NAV = useMemo(() => {
         const base = [
-            { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true },
+            { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true, id: "tour-nav-dashboard" },
         ];
 
         // Add Self Study for all users (students, teachers, admins)
@@ -480,8 +499,8 @@ export default function DashboardLayout() {
 
         if (role === "admin") {
             base.push(
-                { to: "/dashboard/students", label: "Students", icon: <Users size={18} /> },
-                { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} /> },
+                { to: "/dashboard/students", label: "Students", icon: <Users size={18} />, id: "tour-nav-students" },
+                { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} />, id: "tour-nav-teachers" },
                 { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/teacher-analytics", label: "Teacher Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/job-applications", label: "Job Applications", icon: <BriefcaseBusiness size={18} /> },
@@ -504,7 +523,7 @@ export default function DashboardLayout() {
 
         if (role === "teacher") {
             base.push(
-                { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> }
+                { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} />, id: "tour-nav-upload-materials" }
             );
         }
 
@@ -567,6 +586,7 @@ export default function DashboardLayout() {
 
                 {/* SIDEBAR */}
                 <aside
+                    id="tour-sidebar"
                     className={`fixed z-40 top-0 bottom-0 w-80
   bg-white border-r border-slate-200 shadow-sm
   transition-transform duration-300 ease-in-out
@@ -593,6 +613,7 @@ export default function DashboardLayout() {
                                         return (
                                             <NavLink
                                                 key={item.to}
+                                                id={item.id}
                                                 to={item.to}
                                                 end={item.end}
                                                 onClick={blockOfflineNavigation}
@@ -630,13 +651,21 @@ export default function DashboardLayout() {
                                     })}
 
                                     <div className={online ? "" : "opacity-40 pointer-events-none select-none"}>
-                                        <SyllabusSidebarBlock role={role} />
-                                        <ExamSidebarBlock
-                                            role={role}
-                                            studyMaterialsUnreadCount={studyMaterialsUnreadIds.length}
-                                        />
-                                        <QuestionsSidebarBlock role={role} />
-                                        <SettingsSidebarBlock role={role} />
+                                        <div id="tour-syllabus-block">
+                                            <SyllabusSidebarBlock role={role} />
+                                        </div>
+                                        <div id="tour-exam-block">
+                                            <ExamSidebarBlock
+                                                role={role}
+                                                studyMaterialsUnreadCount={studyMaterialsUnreadIds.length}
+                                            />
+                                        </div>
+                                        <div id="tour-questions-block">
+                                            <QuestionsSidebarBlock role={role} />
+                                        </div>
+                                        <div id="tour-settings-block">
+                                            <SettingsSidebarBlock role={role} />
+                                        </div>
                                     </div>
                                 </nav>
                         </div>
@@ -646,6 +675,7 @@ export default function DashboardLayout() {
                             {/* DAILY CHALLENGE - Students Only */}
                             {role === "student" && (
                                 <div
+                                    id="tour-daily-challenge"
                                     onClick={() => {
                                         if (dailyChallenge.hasQuestion && !dailyChallenge.alreadyAttempted) {
                                             navigate("/dashboard/daily-challenge");
@@ -706,7 +736,7 @@ export default function DashboardLayout() {
                             )}
 
                             {/* PROFILE CARD */}
-                            <div className="flex items-center gap-3 px-2">
+                            <div id="tour-profile-card" className="flex items-center gap-3 px-2">
                                 <div className="h-12 w-12 rounded-full border-4 border-[#4ECDC4] overflow-hidden">
                                     {user?.avatar ? (
                                         <img
@@ -729,6 +759,16 @@ export default function DashboardLayout() {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* TAKE A TOUR BUTTON */}
+                            <button
+                                type="button"
+                                onClick={handleStartTour}
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-50 py-2.5 text-xs font-semibold text-blue-500 transition-all hover:bg-blue-100 hover:text-blue-600"
+                            >
+                                <span className="material-symbols-outlined text-base">tour</span>
+                                <span>Take a Tour</span>
+                            </button>
 
                             {/* LOGOUT BUTTON */}
                             <button
@@ -760,7 +800,7 @@ export default function DashboardLayout() {
 
             {/* MOBILE / TABLET FOOTER NAV — students only, visible below md */}
             {role === "student" && !isExamTakeRoute && (
-                <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+                <nav id="tour-mobile-nav" className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
                     <div className="flex items-stretch h-[72px]">
                         {[
                             { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true },
@@ -909,6 +949,11 @@ export default function DashboardLayout() {
                         window.location.reload();
                     }}
                 />
+            )}
+
+            {/* Onboarding Tour */}
+            {showTour && (
+                <OnboardingTour role={role} onDone={handleTourEnd} />
             )}
 
         </div>
