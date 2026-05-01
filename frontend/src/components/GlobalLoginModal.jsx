@@ -82,6 +82,27 @@ function writeCachedProfile(user) {
   }
 }
 
+function clearAuthStorage() {
+  try {
+    localStorage.removeItem("jwt");
+    localStorage.removeItem("user");
+  } catch {
+    // Ignore storage clear failures.
+  }
+}
+
+function persistAuthSession(token, user) {
+  const userPayload = JSON.stringify(user || {});
+  try {
+    localStorage.setItem("jwt", token);
+    localStorage.setItem("user", userPayload);
+  } catch (err) {
+    // Roll back partial writes (for example, jwt written but user failed with QuotaExceededError).
+    clearAuthStorage();
+    throw err;
+  }
+}
+
 export default function GlobalLoginModal() {
   const [showLogin, setShowLogin] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
@@ -113,8 +134,6 @@ export default function GlobalLoginModal() {
   }
 
   async function completeLogin(data, toastMessage = null) {
-    localStorage.setItem("jwt", data.token);
-
     let hydratedUser = data.user;
     const cachedProfileUser = readCachedProfile(data.user);
     if (cachedProfileUser) {
@@ -139,7 +158,12 @@ export default function GlobalLoginModal() {
       writeCachedProfile(hydratedUser);
     }
 
-    localStorage.setItem("user", JSON.stringify(hydratedUser));
+    try {
+      persistAuthSession(data.token, hydratedUser);
+    } catch {
+      throw new Error("Browser storage is full. Clear site data and try again.");
+    }
+
     setShowForgot(false);
     setShowLogin(false);
     setShowGoogleProfile(false);

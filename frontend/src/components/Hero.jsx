@@ -15,9 +15,11 @@ function CustomSelect({
   searchable = false,
   searchPlaceholder = "Search…",
   btnClass,      // ← optional override for trigger button
+  value: controlledValue,
+  onChange,
 }) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
+  const [internalValue, setInternalValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const btnRef = useRef(null);
   const listRef = useRef(null);
@@ -60,6 +62,12 @@ function CustomSelect({
       return () => clearTimeout(t);
     }
   }, [open, searchable]);
+
+  const value = controlledValue !== undefined ? controlledValue : internalValue;
+  const setValue = (nextValue) => {
+    if (onChange) onChange(nextValue);
+    if (controlledValue === undefined) setInternalValue(nextValue);
+  };
 
   const currentLabel =
     value && options.find((o) => valueProp(o) === value)
@@ -167,6 +175,10 @@ function CustomSelect({
 
 const Hero = () => {
   const [hero, setHero] = useState(null);
+  const [websiteSettings, setWebsiteSettings] = useState({
+    siteName: "Edify Eight",
+    logoUrl: "",
+  });
   const [states, setStates] = useState([]);
   const [loadingStates, setLoadingStates] = useState(true);
 
@@ -188,6 +200,8 @@ const Hero = () => {
   const [stepError, setStepError] = useState("");
   const [slideDir, setSlideDir] = useState("forward");
   const [stepDone, setStepDone] = useState(false);
+  const [showStepPassword, setShowStepPassword] = useState(false);
+  const [showStepConfirmPassword, setShowStepConfirmPassword] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -230,6 +244,27 @@ const Hero = () => {
     loadMeta();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    async function loadWebsiteSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/api/website-settings`);
+        const data = await res.json().catch(() => ({}));
+        if (!mounted || !res.ok) return;
+        setWebsiteSettings({
+          siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+          logoUrl: String(data?.logoUrl || "").trim(),
+        });
+      } catch {
+        // Keep fallback brand values.
+      }
+    }
+    loadWebsiteSettings();
+    return () => {
+      mounted = false;
+    };
+  }, [API_BASE]);
+
   // Basic 3-field form → open stepper
   function handleBasicSubmit(e) {
     e.preventDefault();
@@ -245,6 +280,8 @@ const Hero = () => {
     setStepIdx(0);
     setStepError("");
     setStepDone(false);
+    setShowStepPassword(false);
+    setShowStepConfirmPassword(false);
     setShowStepper(true);
   }
 
@@ -259,6 +296,10 @@ const Hero = () => {
     } else {
       const val = stepValues[step.key];
       if (!val) { setStepError("Please fill in this field to continue."); return; }
+      if (step.key === "mobile" && !/^\d{10}$/.test(String(val || ""))) {
+        setStepError("Please enter a valid 10-digit mobile number.");
+        return;
+      }
     }
     setStepError("");
     if (stepIdx < STEPS.length - 1) {
@@ -818,10 +859,19 @@ const Hero = () => {
               {/* Top bar */}
               <div className="flex items-center justify-between bg-white/80 px-6 py-4 backdrop-blur">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#F4736E] text-white">
-                    <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>menu_book</span>
-                  </div>
-                  <span className="text-sm font-extrabold text-[#1B1F3B]">EEC</span>
+                  {websiteSettings.logoUrl ? (
+                    <img
+                      src={websiteSettings.logoUrl}
+                      alt={websiteSettings.siteName}
+                      className="h-7 w-auto max-w-[96px] object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#F4736E] text-white">
+                      <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>menu_book</span>
+                    </div>
+                  )}
+                  <span className="text-sm font-extrabold text-[#1B1F3B]">{websiteSettings.siteName}</span>
                 </div>
                 {!stepDone && (
                   <span className="text-xs font-bold text-slate-400">
@@ -892,38 +942,46 @@ const Hero = () => {
                         {boards.map((b) => <option key={b.name} value={b.name}>{b.name}</option>)}
                       </select>
                     ) : STEPS[stepIdx].type === "select-search" ? (
-                      /* State — controlled <select> for reliable dropdown display */
-                      <select
-                        key="state-select"
-                        autoFocus
+                      <CustomSelect
+                        name="state"
+                        placeholder={loadingStates ? "Loading states..." : "Choose your state..."}
+                        options={states}
                         value={stepValues.state}
-                        onChange={(e) => { setStepError(""); setStepValues((p) => ({ ...p, state: e.target.value })); }}
+                        onChange={(nextValue) => {
+                          setStepError("");
+                          setStepValues((p) => ({ ...p, state: nextValue }));
+                        }}
+                        searchable
+                        searchPlaceholder="Search state..."
                         disabled={loadingStates}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-                      >
-                        <option value="">
-                          {loadingStates ? "Loading states..." : "Choose your state..."}
-                        </option>
-                        {states.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
+                        btnClass="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      />
                     ) : STEPS[stepIdx].type === "password-pair" ? (
                       <div className="space-y-3">
-                        <input
-                          key="password-input"
-                          autoFocus
-                          type="password"
-                          placeholder="Min. 8 characters"
-                          value={stepValues.password}
-                          onChange={(e) => {
-                            setStepError("");
-                            setStepValues((prev) => ({ ...prev, password: e.target.value }));
-                          }}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
-                        />
+                        <div className="relative">
+                          <input
+                            key="password-input"
+                            autoFocus
+                            type={showStepPassword ? "text" : "password"}
+                            placeholder="Min. 8 characters"
+                            value={stepValues.password}
+                            onChange={(e) => {
+                              setStepError("");
+                              setStepValues((prev) => ({ ...prev, password: e.target.value }));
+                            }}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-12 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowStepPassword((s) => !s)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                            aria-label={showStepPassword ? "Hide password" : "Show password"}
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              {showStepPassword ? "visibility_off" : "visibility"}
+                            </span>
+                          </button>
+                        </div>
                         <div className="flex items-center justify-between text-xs px-1">
                           <span className="text-slate-500">Password strength</span>
                           <span className={`inline-flex items-center gap-1.5 font-semibold ${getPasswordStrengthLabel(stepValues.password).tone}`}>
@@ -931,18 +989,30 @@ const Hero = () => {
                             {getPasswordStrengthLabel(stepValues.password).label}
                           </span>
                         </div>
-                        <input
-                          key="confirm-input"
-                          type="password"
-                          placeholder="Re-enter password"
-                          value={stepValues.confirm}
-                          onChange={(e) => {
-                            setStepError("");
-                            setStepValues((prev) => ({ ...prev, confirm: e.target.value }));
-                          }}
-                          onKeyDown={(e) => e.key === "Enter" && handleStepNext()}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
-                        />
+                        <div className="relative">
+                          <input
+                            key="confirm-input"
+                            type={showStepConfirmPassword ? "text" : "password"}
+                            placeholder="Re-enter password"
+                            value={stepValues.confirm}
+                            onChange={(e) => {
+                              setStepError("");
+                              setStepValues((prev) => ({ ...prev, confirm: e.target.value }));
+                            }}
+                            onKeyDown={(e) => e.key === "Enter" && handleStepNext()}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-12 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowStepConfirmPassword((s) => !s)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                            aria-label={showStepConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              {showStepConfirmPassword ? "visibility_off" : "visibility"}
+                            </span>
+                          </button>
+                        </div>
                         {stepValues.confirm ? (
                           <p className={`text-xs px-1 font-semibold ${
                             stepValues.confirm === stepValues.password
@@ -962,9 +1032,16 @@ const Hero = () => {
                         value={stepValues[STEPS[stepIdx].key]}
                         onChange={(e) => {
                           setStepError("");
-                          setStepValues((prev) => ({ ...prev, [STEPS[stepIdx].key]: e.target.value }));
+                          let nextValue = e.target.value;
+                          if (STEPS[stepIdx].key === "mobile") {
+                            nextValue = nextValue.replace(/\D/g, "").slice(0, 10);
+                          }
+                          setStepValues((prev) => ({ ...prev, [STEPS[stepIdx].key]: nextValue }));
                         }}
                         onKeyDown={(e) => e.key === "Enter" && handleStepNext()}
+                        inputMode={STEPS[stepIdx].key === "mobile" ? "numeric" : undefined}
+                        pattern={STEPS[stepIdx].key === "mobile" ? "[0-9]{10}" : undefined}
+                        maxLength={STEPS[stepIdx].key === "mobile" ? 10 : undefined}
                         className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-[#1B1F3B] placeholder:text-slate-400 outline-none shadow-sm transition focus:border-[#F4736E]/60 focus:ring-2 focus:ring-[#F4736E]/20"
                       />
                     )}
