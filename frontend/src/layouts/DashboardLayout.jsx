@@ -815,12 +815,12 @@ export default function DashboardLayout() {
                                 <button
                                     key={item.label}
                                     type="button"
-                                    onPointerUp={(e) => {
+                                    onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         void handleLogout();
                                     }}
-                                    className="relative z-30 flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 text-orange-800/50 hover:text-orange-700 active:scale-95 touch-manipulation"
+                                    className="relative z-50 flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 text-orange-800/50 hover:text-orange-700 active:scale-95 touch-manipulation"
                                 >
                                     <span className="relative transition-transform duration-300 pointer-events-none">{item.icon}</span>
                                     <span className="transition-all duration-300 pointer-events-none">{item.label}</span>
@@ -903,7 +903,7 @@ export default function DashboardLayout() {
                                     end={item.end}
                                     onClick={blockOfflineNavigation}
                                     className={({ isActive }) =>
-                                        `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 ${
+                                        `relative z-50 flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-all duration-300 ${
                                             !online
                                                 ? "text-slate-400"
                                                 : isActive

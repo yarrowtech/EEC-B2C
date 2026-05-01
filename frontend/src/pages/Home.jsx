@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from "framer-motion";
 import Hero from "../components/Hero";
 import StudyGrumpySection from "../components/StudyGrumpySection";
@@ -25,9 +25,31 @@ import HeroFilterBar from "../components/HeroFilterBar";
 
 const Home = () => {
   const loading = usePageIntroLoader("eec:home:loaded");
+  const [siteName, setSiteName] = useState("Edify Eight");
+
+  useEffect(() => {
+    let mounted = true;
+    const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+    async function loadWebsiteSettings() {
+      try {
+        const res = await fetch(`${API}/api/website-settings`);
+        const data = await res.json().catch(() => ({}));
+        if (!mounted || !res.ok) return;
+        setSiteName(String(data?.siteName || "Edify Eight").trim() || "Edify Eight");
+      } catch {
+        // keep fallback
+      }
+    }
+
+    loadWebsiteSettings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (loading) {
-    return <PageIntroLoader message="Welcome to EEC..." />;
+    return <PageIntroLoader message={`Welcome to ${siteName}...`} />;
   }
   return (
     <motion.div
