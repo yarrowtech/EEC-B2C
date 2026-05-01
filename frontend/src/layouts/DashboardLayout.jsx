@@ -803,12 +803,12 @@ export default function DashboardLayout() {
                 <nav id="tour-mobile-nav" className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
                     <div className="flex items-stretch h-[72px]">
                         {[
-                            { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true },
-                            { to: "/dashboard/study-materials", label: "Study", icon: <Library size={22} /> },
-                            { to: "/dashboard/result", label: "Results", icon: <ListChecks size={22} /> },
-                            { label: "Practice", icon: <BookOpen size={26} />, isPractice: true },
-                            { to: "/dashboard/leaderboard", label: "Ranks", icon: <Trophy size={22} /> },
-                            { to: "/dashboard/profile", label: "Profile", icon: <User size={22} /> },
+                            { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true, id: "tour-mobile-home" },
+                            { to: "/dashboard/study-materials", label: "Study", icon: <Library size={22} />, id: "tour-mobile-study" },
+                            { to: "/dashboard/result", label: "Results", icon: <ListChecks size={22} />, id: "tour-mobile-results" },
+                            { label: "Practice", icon: <BookOpen size={26} />, isPractice: true, id: "tour-mobile-practice" },
+                            { to: "/dashboard/leaderboard", label: "Ranks", icon: <Trophy size={22} />, id: "tour-mobile-ranks" },
+                            { to: "/dashboard/profile", label: "Profile", icon: <User size={22} />, id: "tour-mobile-profile" },
                             { label: "Logout", icon: <LogOut size={22} />, isAction: true },
                         ].map((item) => (
                             item.isAction ? (
@@ -826,7 +826,7 @@ export default function DashboardLayout() {
                                     <span className="transition-all duration-300 pointer-events-none">{item.label}</span>
                                 </button>
                             ) : item.isPractice ? (
-                                <div key={item.label} className="relative z-40 flex-1 flex flex-col items-center justify-center gap-0.5">
+                                <div key={item.label} id={item.id} className="relative z-40 flex-1 flex flex-col items-center justify-center gap-0.5">
                                     <AnimatePresence>
                                         {practiceMenuOpen && (
                                             <>
@@ -898,6 +898,7 @@ export default function DashboardLayout() {
                             ) : (
                                 <NavLink
                                     key={item.to}
+                                    id={item.id}
                                     to={item.to}
                                     end={item.end}
                                     onClick={blockOfflineNavigation}

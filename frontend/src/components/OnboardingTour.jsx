@@ -203,13 +203,106 @@ const ADMIN_STEPS = [
   },
 ];
 
+/* ── Mobile-specific steps (sidebar is hidden off-screen on < md) ── */
+
+const MOBILE_STUDENT_STEPS = [
+  {
+    popover: {
+      title: "Welcome to your Dashboard! 🎉",
+      description: "Let me walk you through the navigation bar at the bottom — that's how you get around on mobile.",
+    },
+  },
+  {
+    element: "#tour-mobile-home",
+    popover: {
+      title: "Home 🏠",
+      description: "Tap here anytime to return to your main dashboard and see your stats, daily progress, and what's new.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#tour-mobile-study",
+    popover: {
+      title: "Study Materials 📚",
+      description: "Access notes, PDFs, and learning resources shared by your teachers.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#tour-mobile-results",
+    popover: {
+      title: "Results 📋",
+      description: "View all your past exam and practice results, scores, and performance history.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#tour-mobile-practice",
+    popover: {
+      title: "Practice 📖",
+      description: "Tap here to take subject-wise tests or practice with flashcards. Keep tapping to level up!",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#tour-mobile-ranks",
+    popover: {
+      title: "Leaderboard 🏆",
+      description: "See how you rank among other students and challenge yourself to climb higher.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#tour-mobile-profile",
+    popover: {
+      title: "Your Profile 👤",
+      description: "View your level, points, and manage your account settings from here.",
+      side: "top",
+      align: "center",
+    },
+  },
+];
+
+const MOBILE_TEACHER_STEPS = [
+  {
+    popover: {
+      title: "Welcome, Teacher! 👩‍🏫",
+      description: "Your full dashboard is best experienced on a larger screen. Open this on a desktop or tablet to access the sidebar with all your tools — upload materials, manage questions, and more.",
+    },
+  },
+];
+
+const MOBILE_ADMIN_STEPS = [
+  {
+    popover: {
+      title: "Welcome, Admin! 🛡️",
+      description: "Your admin control panel works best on a larger screen. Open this on a desktop or tablet to access the full sidebar — student management, analytics, settings, and more.",
+    },
+  },
+];
+
+function isMobile() {
+  return typeof window !== "undefined" && window.innerWidth < 768;
+}
+
 function getSteps(role) {
+  if (isMobile()) {
+    if (role === "teacher") return MOBILE_TEACHER_STEPS;
+    if (role === "admin") return MOBILE_ADMIN_STEPS;
+    return MOBILE_STUDENT_STEPS;
+  }
   if (role === "teacher") return TEACHER_STEPS;
   if (role === "admin") return ADMIN_STEPS;
   return STUDENT_STEPS;
 }
 
-// Fixed elements that sit below driver.js overlay (z-10000) and need z-boost when highlighted
+// Fixed elements that sit below driver.js overlay (z-10000) and need z-boost when highlighted.
+// tour-mobile-nav is the container — boosting it lifts all child items too.
 const FIXED_CONTAINER_IDS = ["tour-sidebar", "tour-mobile-nav"];
 
 function getFixedContainer(el) {
