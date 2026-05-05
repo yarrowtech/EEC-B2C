@@ -28,6 +28,33 @@ function normalizeScopeValue(v) {
   return s || undefined;
 }
 
+async function resolveScopeCandidates(rawValue, Model) {
+  const value = normalizeScopeValue(rawValue);
+  if (!value) return [];
+
+  const out = new Set([value]);
+
+  try {
+    const isId = mongoose.Types.ObjectId.isValid(value) && /^[0-9a-fA-F]{24}$/.test(value);
+    if (isId) {
+      const doc = await Model.findById(value).select("_id name").lean();
+      if (doc?._id) out.add(String(doc._id));
+      if (doc?.name) out.add(String(doc.name).trim());
+    } else {
+      const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const doc = await Model.findOne({ name: { $regex: `^${escaped}$`, $options: "i" } })
+        .select("_id name")
+        .lean();
+      if (doc?._id) out.add(String(doc._id));
+      if (doc?.name) out.add(String(doc.name).trim());
+    }
+  } catch {
+    // keep raw fallback
+  }
+
+  return [...out].filter(Boolean);
+}
+
 async function enrichScopeNames(items = []) {
   const rows = Array.isArray(items) ? items : [];
   const idsFor = (key) =>
@@ -82,10 +109,19 @@ router.get("/", requireAuth, async (req, res) => {
     }
 
     const boardVal = normalizeScopeValue(board) || normalizeScopeValue(req.user?.board);
-    const classVal = normalizeScopeValue(className) || normalizeScopeValue(req.user?.class) || normalizeScopeValue(req.user?.className);
+    const classVal =
+      normalizeScopeValue(className) ||
+      normalizeScopeValue(req.user?.class) ||
+      normalizeScopeValue(req.user?.className);
 
-    if (boardVal) filter.board = boardVal;
-    if (classVal) filter.class = classVal;
+    if (boardVal) {
+      const boardCandidates = await resolveScopeCandidates(boardVal, Board);
+      filter.board = { $in: boardCandidates.length ? boardCandidates : [boardVal] };
+    }
+    if (classVal) {
+      const classCandidates = await resolveScopeCandidates(classVal, ClassModel);
+      filter.class = { $in: classCandidates.length ? classCandidates : [classVal] };
+    }
     if (normalizeScopeValue(subject)) filter.subject = normalizeScopeValue(subject);
     if (normalizeScopeValue(topic)) filter.topic = normalizeScopeValue(topic);
 
@@ -147,8 +183,16 @@ router.get("/public", async (req, res) => {
     } = req.query;
 
     const filter = { isActive: true };
-    if (normalizeScopeValue(board)) filter.board = normalizeScopeValue(board);
-    if (normalizeScopeValue(className)) filter.class = normalizeScopeValue(className);
+    const boardVal = normalizeScopeValue(board);
+    const classVal = normalizeScopeValue(className);
+    if (boardVal) {
+      const boardCandidates = await resolveScopeCandidates(boardVal, Board);
+      filter.board = { $in: boardCandidates.length ? boardCandidates : [boardVal] };
+    }
+    if (classVal) {
+      const classCandidates = await resolveScopeCandidates(classVal, ClassModel);
+      filter.class = { $in: classCandidates.length ? classCandidates : [classVal] };
+    }
     if (normalizeScopeValue(subject)) filter.subject = normalizeScopeValue(subject);
     if (normalizeScopeValue(topic)) filter.topic = normalizeScopeValue(topic);
 

@@ -6,6 +6,48 @@ import { requireAuth } from "../middleware/auth.js"; // ✅ FIXED IMPORT
 
 const router = express.Router();
 
+async function resolveRefFilterValues(rawValue, modelPath) {
+  if (!rawValue) return [];
+  const value = String(rawValue).trim();
+  if (!value) return [];
+
+  const values = [];
+  const dedupe = new Set();
+  const pushValue = (v) => {
+    if (v === null || v === undefined) return;
+    const key = typeof v === "string" ? v : String(v);
+    if (dedupe.has(key)) return;
+    dedupe.add(key);
+    values.push(v);
+  };
+  try {
+    const mongoose = await import("mongoose");
+    const isObjectId =
+      mongoose.default.Types.ObjectId.isValid(value) && /^[0-9a-fA-F]{24}$/.test(value);
+    const Model = (await import(modelPath)).default;
+
+    if (isObjectId) {
+      pushValue(new mongoose.default.Types.ObjectId(value));
+      const doc = await Model.findById(value).select("_id name").lean();
+      if (doc?._id) {
+        pushValue(doc._id);
+      }
+    } else {
+      const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const doc = await Model.findOne({ name: { $regex: `^${escaped}$`, $options: "i" } })
+        .select("_id name")
+        .lean();
+      if (doc?._id) {
+        pushValue(doc._id);
+      }
+    }
+  } catch {
+    // ignore lookup failures and keep raw value fallback
+  }
+
+  return values.filter(Boolean);
+}
+
 function normalizeStageQuery(stageValue) {
   if (stageValue === null || stageValue === undefined || stageValue === "") {
     return null;
@@ -45,7 +87,7 @@ router.post("/subject", requireAuth, async (req, res) => {
 });
 
 // Get all subjects (filtered by board and class if provided)
-router.get("/subject", requireAuth, async (req, res) => {
+router.get("/subject", async (req, res) => {
   try {
     const { board, class: className, stage } = req.query;
     // console.log("GET /api/subject - board:", board, "class:", className);
@@ -53,41 +95,16 @@ router.get("/subject", requireAuth, async (req, res) => {
     // Build filter
     const filter = {};
 
-    // Handle board parameter (could be ObjectId or name)
     if (board) {
-      // Check if it's a valid ObjectId
-      const mongoose = await import("mongoose");
-      if (mongoose.default.Types.ObjectId.isValid(board) && /^[0-9a-fA-F]{24}$/.test(board)) {
-        filter.board = board;
-      } else {
-        // It's a board name, look up the ID
-        const Board = (await import("../models/Board.js")).default;
-        const boardDoc = await Board.findOne({ name: board });
-        if (boardDoc) {
-          filter.board = boardDoc._id;
-        } else {
-          // Board name not found, return empty array
-          return res.json([]);
-        }
-      }
+      const boardValues = await resolveRefFilterValues(board, "../models/Board.js");
+      if (boardValues.length === 0) return res.json([]);
+      filter.board = { $in: boardValues };
     }
 
-    // Handle class parameter (could be ObjectId or name)
     if (className) {
-      const mongoose = await import("mongoose");
-      if (mongoose.default.Types.ObjectId.isValid(className) && /^[0-9a-fA-F]{24}$/.test(className)) {
-        filter.class = className;
-      } else {
-        // It's a class name, look up the ID
-        const Class = (await import("../models/Class.js")).default;
-        const classDoc = await Class.findOne({ name: className });
-        if (classDoc) {
-          filter.class = classDoc._id;
-        } else {
-          // Class name not found, return empty array
-          return res.json([]);
-        }
-      }
+      const classValues = await resolveRefFilterValues(className, "../models/Class.js");
+      if (classValues.length === 0) return res.json([]);
+      filter.class = { $in: classValues };
     }
 
     // console.log("Final filter:", JSON.stringify(filter));
@@ -169,47 +186,23 @@ router.post("/topic", requireAuth, async (req, res) => {
 //   }
 // });
 
-router.get("/topic/:subjectId", requireAuth, async (req, res) => {
+router.get("/topic/:subjectId", async (req, res) => {
   try {
     const { board, class: className, stage } = req.query;
 
     // Build filter
     const filter = { subject: req.params.subjectId };
 
-    // Handle board parameter (could be ObjectId or name)
     if (board) {
-      const mongoose = await import("mongoose");
-      if (mongoose.default.Types.ObjectId.isValid(board) && /^[0-9a-fA-F]{24}$/.test(board)) {
-        filter.board = board;
-      } else {
-        // It's a board name, look up the ID
-        const Board = (await import("../models/Board.js")).default;
-        const boardDoc = await Board.findOne({ name: board });
-        if (boardDoc) {
-          filter.board = boardDoc._id;
-        } else {
-          // Board name not found, return empty array
-          return res.json([]);
-        }
-      }
+      const boardValues = await resolveRefFilterValues(board, "../models/Board.js");
+      if (boardValues.length === 0) return res.json([]);
+      filter.board = { $in: boardValues };
     }
 
-    // Handle class parameter (could be ObjectId or name)
     if (className) {
-      const mongoose = await import("mongoose");
-      if (mongoose.default.Types.ObjectId.isValid(className) && /^[0-9a-fA-F]{24}$/.test(className)) {
-        filter.class = className;
-      } else {
-        // It's a class name, look up the ID
-        const Class = (await import("../models/Class.js")).default;
-        const classDoc = await Class.findOne({ name: className });
-        if (classDoc) {
-          filter.class = classDoc._id;
-        } else {
-          // Class name not found, return empty array
-          return res.json([]);
-        }
-      }
+      const classValues = await resolveRefFilterValues(className, "../models/Class.js");
+      if (classValues.length === 0) return res.json([]);
+      filter.class = { $in: classValues };
     }
 
     let topics = await Topic.find(filter)

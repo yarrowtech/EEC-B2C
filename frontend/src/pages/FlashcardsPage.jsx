@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import {
   getJSON,
   listFlashcards,
+  getFlashcardSet,
   myFlashcardAttempts,
   participateFlashcardSet,
 } from "../lib/api";
@@ -83,14 +84,15 @@ export default function FlashcardsPage() {
   const [searchParams] = useSearchParams();
   const selectedSetId = String(searchParams.get("set") || "");
   const user = useMemo(() => readUser(), []);
+  const isLoggedIn = Boolean(localStorage.getItem("jwt"));
 
-  const [board, setBoard] = useState(String(user?.board || ""));
-  const [className, setClassName] = useState(String(user?.class || user?.className || ""));
+  const [board, setBoard] = useState(String(user?.boardId || user?.board || ""));
+  const [className, setClassName] = useState(String(user?.classId || user?.class || user?.className || ""));
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
-  const [stage, setStage] = useState(1);
-  const [profileBoardLabel] = useState(String(user?.board || ""));
-  const [profileClassLabel] = useState(String(user?.class || user?.className || ""));
+  const [stage, setStage] = useState("");
+  const [profileBoardLabel] = useState(String(user?.boardName || user?.board || ""));
+  const [profileClassLabel] = useState(String(user?.className || user?.class || ""));
 
   const [boards, setBoards] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -105,6 +107,8 @@ export default function FlashcardsPage() {
   const [result, setResult] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileReady, setProfileReady] = useState(!isLoggedIn);
+  const [profileScope, setProfileScope] = useState({ board: "", className: "" });
 
   const [index, setIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
@@ -118,6 +122,25 @@ export default function FlashcardsPage() {
   const progressPct = cards.length > 0 ? (index / cards.length) * 100 : 0;
 
   useEffect(() => { loadBoardsAndClasses(); }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    (async () => {
+      try {
+        const profile = await getJSON("/api/users/profile");
+        const u = profile?.user || {};
+        const nextBoard = String(u?.boardId || u?.board || u?.boardName || "").trim();
+        const nextClass = String(u?.classId || u?.class || u?.className || "").trim();
+        setProfileScope({ board: nextBoard, className: nextClass });
+        if (nextBoard) setBoard(nextBoard);
+        if (nextClass) setClassName(nextClass);
+      } catch {
+        // keep localStorage fallback
+      } finally {
+        setProfileReady(true);
+      }
+    })();
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!board || boards.length === 0) return;
@@ -147,7 +170,11 @@ export default function FlashcardsPage() {
     loadTopics();
   }, [subject]);
 
-  useEffect(() => { loadSets(); }, [board, className, subject, topic, stage]);
+  useEffect(() => {
+    if (!profileReady) return;
+    if (!board || !className) return;
+    loadSets();
+  }, [profileReady, board, className, subject, topic, stage]);
 
   useEffect(() => {
     if (!selectedSetId || sets.length === 0) return;
@@ -174,8 +201,30 @@ export default function FlashcardsPage() {
     try {
       const [bRes, cRes] = await Promise.all([fetch(`${API}/api/boards`), fetch(`${API}/api/classes`)]);
       const [bData, cData] = await Promise.all([bRes.json(), cRes.json()]);
-      setBoards(Array.isArray(bData) ? bData : []);
-      setClasses(Array.isArray(cData) ? cData : []);
+      const nextBoards = Array.isArray(bData) ? bData : [];
+      const nextClasses = Array.isArray(cData) ? cData : [];
+      setBoards(nextBoards);
+      setClasses(nextClasses);
+
+      if (isLoggedIn) {
+        const profileBoard = String(user?.boardId || user?.board || user?.boardName || "").toLowerCase();
+        const profileClass = String(user?.classId || user?.class || user?.className || "").toLowerCase();
+        const matchBoard = nextBoards.find(
+          (b) =>
+            String(b?._id || "").toLowerCase() === profileBoard ||
+            String(b?.name || "").toLowerCase() === profileBoard
+        );
+        const matchClass = nextClasses.find(
+          (c) =>
+            String(c?._id || "").toLowerCase() === profileClass ||
+            String(c?.name || "").toLowerCase() === profileClass
+        );
+        if (matchBoard?._id) setBoard(String(matchBoard._id));
+        if (matchClass?._id) setClassName(String(matchClass._id));
+      } else {
+        if (!board && nextBoards[0]?._id) setBoard(String(nextBoards[0]._id));
+        if (!className && nextClasses[0]?._id) setClassName(String(nextClasses[0]._id));
+      }
     } catch {
       setBoards([]);
       setClasses([]);
@@ -199,8 +248,22 @@ export default function FlashcardsPage() {
   async function loadSets() {
     setLoading(true); setError("");
     try {
-      const data = await listFlashcards({ board, class: className, subject, topic, stage, limit: 100 });
-      const rows = Array.isArray(data?.items) ? data.items : [];
+      const effectiveBoard = isLoggedIn ? (profileScope.board || board) : board;
+      const effectiveClass = isLoggedIn ? (profileScope.className || className) : className;
+      const params = { board: effectiveBoard, class: effectiveClass, subject, topic, limit: 100 };
+      if (stage) params.stage = stage;
+
+      let data = await listFlashcards(params);
+      let rows = Array.isArray(data?.items) ? data.items : [];
+
+      if (isLoggedIn && rows.length === 0) {
+        const boardLabel = boards.find((b) => String(b._id) === String(effectiveBoard))?.name || effectiveBoard;
+        const classLabel = classes.find((c) => String(c._id) === String(effectiveClass))?.name || effectiveClass;
+        const retryParams = { ...params, board: boardLabel, class: classLabel };
+        data = await listFlashcards(retryParams);
+        rows = Array.isArray(data?.items) ? data.items : [];
+      }
+
       setSets(rows);
       if (!selected || !rows.some((r) => r._id === selected._id)) setSelected(rows[0] || null);
     } catch (e) {
@@ -215,8 +278,22 @@ export default function FlashcardsPage() {
     } catch { setAttempts([]); }
   }
 
-  function selectSet(row) {
-    setSelected(row);
+  async function selectSet(row) {
+    let next = row;
+    try {
+      const full = await getFlashcardSet(row?._id);
+      if (full && full._id) {
+        next = {
+          ...row,
+          ...full,
+          cardsCount: Array.isArray(full.cards) ? full.cards.length : row.cardsCount,
+        };
+      }
+    } catch {
+      // fallback to list payload
+    }
+
+    setSelected(next);
     setDrawerOpen(false);
     setIndex(0); setShowBack(false);
     setKnownSet(new Set()); setUnknownSet(new Set());
@@ -315,7 +392,23 @@ export default function FlashcardsPage() {
             Class: {profileClassLabel || "N/A"}
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+          <select
+            value={board}
+            onChange={(e) => { if (!isLoggedIn) setBoard(e.target.value); }}
+            disabled={isLoggedIn}
+            className={selectStyle}
+          >
+            {boards.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
+          </select>
+          <select
+            value={className}
+            onChange={(e) => { if (!isLoggedIn) setClassName(e.target.value); }}
+            disabled={isLoggedIn}
+            className={selectStyle}
+          >
+            {classes.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </select>
           <select value={subject} onChange={(e) => { setSubject(e.target.value); setTopic(""); }} className={selectStyle}>
             <option value="">All Subjects</option>
             {subjects.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
@@ -324,11 +417,20 @@ export default function FlashcardsPage() {
             <option value="">All Topics</option>
             {topics.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
           </select>
-          <select value={stage} onChange={(e) => setStage(Number(e.target.value))} className={selectStyle}>
+          <select value={stage} onChange={(e) => setStage(e.target.value)} className={selectStyle}>
+            <option value="">All Stages</option>
             <option value={1}>Stage 1</option>
             <option value={2}>Stage 2</option>
             <option value={3}>Stage 3</option>
           </select>
+          <button
+            type="button"
+            onClick={loadSets}
+            disabled={!board || !className || loading}
+            className="rounded-full bg-[#e7c555] px-4 py-2 text-sm font-bold text-slate-900 disabled:opacity-60"
+          >
+            {loading ? "Loading..." : "Find Sets"}
+          </button>
         </div>
       </div>
 

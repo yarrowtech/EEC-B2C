@@ -27,9 +27,6 @@ const TYPE_META = {
 };
 
 const DEFAULT_FREE_TRYOUT_TYPES = ["mcq-single", "mcq-multi", "choice-matrix", "true-false"];
-const BOARDS = ["CBSE", "ICSE", "State Board", "IB"];
-const GRADES = ["Class 3","Class 4","Class 5","Class 6","Class 7","Class 8","Class 9","Class 10"];
-
 export default function EECTryouts() {
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -38,26 +35,74 @@ export default function EECTryouts() {
 
   const [activeBoard, setActiveBoard] = useState("CBSE");
   const [activeGrade, setActiveGrade] = useState("Class 6");
+  const [activeBoardQuery, setActiveBoardQuery] = useState("CBSE");
+  const [activeGradeQuery, setActiveGradeQuery] = useState("Class 6");
+  const [boards, setBoards] = useState([]);
+  const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(false);
   const [cards, setCards] = useState([]);
   const [allowedTryoutTypesState, setAllowedTryoutTypesState] = useState(new Set(DEFAULT_FREE_TRYOUT_TYPES));
+
+  function normalizeGrade(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "Class 6";
+    const classMatch = raw.match(/class\s*(\d+)/i);
+    if (classMatch) return `Class ${classMatch[1]}`;
+    const numberMatch = raw.match(/^(\d+)$/);
+    if (numberMatch) return `Class ${numberMatch[1]}`;
+    return raw;
+  }
+
+  function mapSummaryToCards(summaryItems) {
+    return summaryItems
+      .filter((stats) => Number(stats?.total || 0) > 0)
+      .map((stats, idx) => {
+        const type = String(stats?.type || "");
+        const meta = TYPE_META[type] || {};
+        const fallback = Object.values(TYPE_META)[idx % Object.values(TYPE_META).length];
+        const theme = meta.name ? meta : fallback;
+        return {
+          id: type, type,
+          name: theme.name || type,
+          description: theme.description || "Question type tryout",
+          questions: Number(stats.total || 0),
+          time: `${Math.max(10, Math.ceil(Number(stats.total || 0) * 0.8))} min`,
+          easy: Number(stats.easy || 0), moderate: Number(stats.moderate || 0), hard: Number(stats.hard || 0),
+          gradient: theme.gradient, gradientStyle: theme.gradientStyle,
+          icon: theme.icon || "quiz", color: theme.color || "#64748b",
+          tagBg: theme.tagBg || "bg-slate-100", tagText: theme.tagText || "text-slate-600",
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async function fetchTryoutSummary(boardValue, classValue) {
+    const params = new URLSearchParams();
+    if (boardValue) params.set("board", boardValue);
+    if (classValue) params.set("class", classValue);
+    const summaryUrl = `${API}/api/questions/tryout-summary${params.toString() ? `?${params.toString()}` : ""}`;
+    const summaryRes = await fetch(summaryUrl);
+    const summaryData = await summaryRes.json();
+    return Array.isArray(summaryData?.items) ? summaryData.items : [];
+  }
 
   useEffect(() => {
     let mounted = true;
     async function loadTryoutTypes() {
       setLoading(true);
       try {
-        let summaryUrl = `${API}/api/questions/tryout-summary`;
         if (isLoggedIn) {
           const profile = await getJSON("/api/users/profile");
           const user = profile?.user || {};
-          const boardLabel = user.boardName || user.board || BOARDS[0];
-          const classLabel = user.className || user.class || GRADES[3];
+          const boardLabel = user.boardName || user.board || "CBSE";
+          const classLabel = normalizeGrade(user.className || user.class || "Class 6");
           const boardValue = user.boardId || user.board || user.boardName || boardLabel;
           const classValue = user.classId || user.class || user.className || classLabel;
           if (!boardValue || !classValue) throw new Error("Please update profile board and class");
           setActiveBoard(boardLabel);
           setActiveGrade(classLabel);
+          setActiveBoardQuery(String(boardValue));
+          setActiveGradeQuery(String(classValue));
           const [packagesRes, subscriptionRes] = await Promise.all([
             fetch(`${API}/api/packages`),
             fetch(`${API}/api/subscriptions/current`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -73,35 +118,61 @@ export default function EECTryouts() {
               ? basicPackage.allowedTryoutTypes
               : DEFAULT_FREE_TRYOUT_TYPES;
           setAllowedTryoutTypesState(new Set(allowedFromPackage.map((t) => String(t).trim())));
-          summaryUrl = `${summaryUrl}?board=${encodeURIComponent(boardValue)}&class=${encodeURIComponent(classValue)}`;
+          const summaryItems = await fetchTryoutSummary(boardValue, classValue);
+          if (!mounted) return;
+          setCards(mapSummaryToCards(summaryItems));
         } else {
           setAllowedTryoutTypesState(new Set(DEFAULT_FREE_TRYOUT_TYPES));
+          const [boardsRes, classesRes] = await Promise.all([
+            fetch(`${API}/api/boards`),
+            fetch(`${API}/api/classes`),
+          ]);
+          const [boardsData, classesData] = await Promise.all([
+            boardsRes.json().catch(() => []),
+            classesRes.json().catch(() => []),
+          ]);
+          const boardRows = Array.isArray(boardsData)
+            ? boardsData
+            : Array.isArray(boardsData?.boards)
+            ? boardsData.boards
+            : [];
+          const classRows = Array.isArray(classesData)
+            ? classesData
+            : Array.isArray(classesData?.classes)
+            ? classesData.classes
+            : [];
+
+          const nextBoards = boardRows
+            .map((b) => ({
+              label: String(b?.name || "").trim(),
+              value: String(b?._id || b?.name || "").trim(),
+            }))
+            .filter((b) => b.label && b.value);
+          const nextGrades = classRows
+            .map((c) => ({
+              label: normalizeGrade(c?.name || ""),
+              value: String(c?._id || c?.name || "").trim(),
+            }))
+            .filter((c) => c.label && c.value);
+
+          if (!mounted) return;
+          setBoards(nextBoards);
+          setGrades(nextGrades);
+
+          if (nextBoards[0]) {
+            setActiveBoard(nextBoards[0].label);
+            setActiveBoardQuery(nextBoards[0].value);
+          }
+          if (nextGrades[0]) {
+            setActiveGrade(nextGrades[0].label);
+            setActiveGradeQuery(nextGrades[0].value);
+          }
+
+          // Guest default: show all available tryout types (unfiltered)
+          const summaryItems = await fetchTryoutSummary();
+          if (!mounted) return;
+          setCards(mapSummaryToCards(summaryItems));
         }
-        const summaryRes = await fetch(summaryUrl);
-        const summaryData = await summaryRes.json();
-        const summaryItems = Array.isArray(summaryData?.items) ? summaryData.items : [];
-        const nextCards = summaryItems
-          .filter((stats) => Number(stats?.total || 0) > 0)
-          .map((stats, idx) => {
-            const type = String(stats?.type || "");
-            const meta = TYPE_META[type] || {};
-            const fallback = Object.values(TYPE_META)[idx % Object.values(TYPE_META).length];
-            const theme = meta.name ? meta : fallback;
-            return {
-              id: type, type,
-              name: theme.name || type,
-              description: theme.description || "Question type tryout",
-              questions: Number(stats.total || 0),
-              time: `${Math.max(10, Math.ceil(Number(stats.total || 0) * 0.8))} min`,
-              easy: Number(stats.easy || 0), moderate: Number(stats.moderate || 0), hard: Number(stats.hard || 0),
-              gradient: theme.gradient, gradientStyle: theme.gradientStyle,
-              icon: theme.icon || "quiz", color: theme.color || "#64748b",
-              tagBg: theme.tagBg || "bg-slate-100", tagText: theme.tagText || "text-slate-600",
-            };
-          })
-          .sort((a, b) => a.name.localeCompare(b.name));
-        if (!mounted) return;
-        setCards(nextCards);
       } catch { if (mounted) setCards([]); }
       finally { if (mounted) setLoading(false); }
     }
@@ -110,6 +181,19 @@ export default function EECTryouts() {
   }, [API, isLoggedIn]);
 
   const allowedTryoutTypes = useMemo(() => allowedTryoutTypesState, [allowedTryoutTypesState]);
+
+  async function handleGuestFilter() {
+    if (isLoggedIn) return;
+    setLoading(true);
+    try {
+      const summaryItems = await fetchTryoutSummary(activeBoardQuery, activeGradeQuery);
+      setCards(mapSummaryToCards(summaryItems));
+    } catch {
+      setCards([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function handleCardClick(card) {
     if (!isLoggedIn) { window.dispatchEvent(new Event("eec:open-login")); return; }
@@ -157,32 +241,44 @@ export default function EECTryouts() {
         <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 overflow-x-auto">
           <div className="mx-auto max-w-6xl flex gap-2 flex-nowrap">
             <span className="text-xs font-bold text-slate-400 self-center shrink-0 mr-1">Board:</span>
-            {BOARDS.map((b) => (
+            {boards.map((b) => (
               <button
-                key={b}
-                onClick={() => setActiveBoard(b)}
+                key={b.value}
+                onClick={() => {
+                  setActiveBoard(b.label);
+                  setActiveBoardQuery(b.value);
+                }}
                 className="shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-all border"
-                style={activeBoard === b
+                style={activeBoardQuery === b.value
                   ? { background: "#1B1F3B", color: "#FFD23F", borderColor: "#1B1F3B" }
                   : { background: "white", color: "#475569", borderColor: "#e2e8f0" }}
               >
-                {b}
+                {b.label}
               </button>
             ))}
             <span className="mx-2 border-l border-slate-200 self-stretch" />
             <span className="text-xs font-bold text-slate-400 self-center shrink-0 mr-1">Grade:</span>
-            {GRADES.map((g) => (
+            {grades.map((g) => (
               <button
-                key={g}
-                onClick={() => setActiveGrade(g)}
+                key={g.value}
+                onClick={() => {
+                  setActiveGrade(g.label);
+                  setActiveGradeQuery(g.value);
+                }}
                 className="shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-all border"
-                style={activeGrade === g
+                style={activeGradeQuery === g.value
                   ? { background: "#F4736E", color: "white", borderColor: "#F4736E" }
                   : { background: "white", color: "#475569", borderColor: "#e2e8f0" }}
               >
-                {g}
+                {g.label}
               </button>
             ))}
+            <button
+              onClick={handleGuestFilter}
+              className="shrink-0 rounded-full px-5 py-1.5 text-sm font-black bg-[#F5C518] text-slate-900 border border-[#F5C518]"
+            >
+              Find My Quest
+            </button>
           </div>
         </div>
       )}
@@ -234,65 +330,72 @@ export default function EECTryouts() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cards.map((card) => {
                 const isLocked = isLoggedIn && !allowedTryoutTypes.has(card.type);
                 return (
                   <article
                     key={card.id}
-                    className="group flex flex-col rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                    className="group flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
                   >
-                    {/* Thin color top bar */}
-                    <div className="h-1 w-full" style={{ background: card.color }} />
-
-                    <div className="flex flex-col flex-1 p-5 gap-4">
-                      {/* Icon + title row */}
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
-                          style={{ background: card.color }}
-                        >
-                          <MIcon name={card.icon} className="text-2xl" fill />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-black text-slate-900 text-base leading-tight truncate" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                            {card.name}
-                          </h3>
-                          <span className="text-xs font-bold text-slate-400">{card.time}</span>
-                        </div>
-                        {isLocked && (
-                          <div className="ml-auto shrink-0">
-                            <MIcon name="lock" className="text-slate-400 text-lg" fill />
-                          </div>
-                        )}
+                    {/* ── Gradient header with large rotating icon (HeroFilterBar style) ── */}
+                    <div
+                      className={`h-40 relative overflow-hidden p-6 flex flex-col justify-end ${card.gradientStyle ? "" : `bg-gradient-to-br ${card.gradient}`}`}
+                      style={card.gradientStyle ? { backgroundImage: card.gradientStyle } : undefined}
+                    >
+                      {/* Time badge */}
+                      <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30">
+                        {card.time}
                       </div>
 
-                      <p className="text-sm text-slate-500 leading-relaxed flex-1">{card.description}</p>
+                      {/* Lock badge */}
+                      {isLocked && (
+                        <div className="absolute top-4 left-4 bg-black/30 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20 flex items-center gap-1">
+                          <MIcon name="lock" className="text-sm" fill /> Locked
+                        </div>
+                      )}
 
-                      {/* Stats row */}
+                      {/* Large background icon — rotates on hover */}
+                      <MIcon
+                        name={card.icon}
+                        className="absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform duration-500 text-white/20 pointer-events-none"
+                        style={{ fontSize: "100px" }}
+                        fill
+                      />
+
+                      {/* Card title */}
+                      <h3 className="text-white text-2xl font-black relative z-10 leading-tight" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+                        {card.name}
+                      </h3>
+                    </div>
+
+                    {/* ── Card body ── */}
+                    <div className="flex flex-col flex-1 p-5 gap-4">
+                      {/* Stats badges */}
                       <div className="flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center gap-1 ${card.tagBg} ${card.tagText} text-xs font-bold px-3 py-1 rounded-full`}>
+                        <span className={`inline-flex items-center gap-1.5 ${card.tagBg} ${card.tagText} text-xs font-bold px-3 py-1.5 rounded-full`}>
                           <MIcon name="format_list_numbered" className="text-sm" />
-                          {card.questions} Qs
+                          {card.questions} Questions
                         </span>
-                        <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
-                          <MIcon name="signal_cellular_alt" className="text-sm" />
+                        <span className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-600 text-xs font-bold px-3 py-1.5 rounded-full">
+                          <MIcon name="tune" className="text-sm" />
                           E:{card.easy} M:{card.moderate} H:{card.hard}
                         </span>
                       </div>
 
+                      <p className="text-sm text-slate-500 leading-relaxed flex-1">{card.description}</p>
+
                       <button
                         onClick={() => handleCardClick(card)}
-                        className="w-full rounded-xl py-2.5 text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                        className="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
                         style={isLocked
                           ? { background: "#f1f5f9", color: "#64748b" }
-                          : { background: card.color, color: "white" }}
+                          : { background: card.color, color: "white", boxShadow: `0 4px 14px ${card.color}50` }}
                       >
-                        {isLocked ? (
-                          <><MIcon name="lock" className="text-base" /> Unlock</>
-                        ) : (
-                          <><MIcon name="play_circle" className="text-base" fill /> Start Quest</>
-                        )}
+                        {isLocked
+                          ? <><MIcon name="lock" className="text-base" fill /> Unlock Tryout</>
+                          : <><MIcon name="play_circle" className="text-base" fill /> Start Quest</>
+                        }
                       </button>
                     </div>
                   </article>
