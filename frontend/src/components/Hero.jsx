@@ -1,6 +1,7 @@
 // src/components/Hero.jsx
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { Rocket, BookOpen, GraduationCap, Brain, PencilRuler, FlaskConical } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -518,16 +519,40 @@ const Hero = () => {
   const selectBtnCls =
     "w-full max-w-full box-border rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15 cursor-pointer";
   const heroHeadingCls = "text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.05] tracking-tight text-[#1B1F3B] break-words";
+  const floatingStudyIcons = [
+    { Icon: BookOpen, className: "left-[6%] top-[22%] hidden md:block text-[#4ECDC4]" },
+    { Icon: GraduationCap, className: "right-[8%] top-[20%] hidden lg:block text-[#3B82F6]" },
+    { Icon: Brain, className: "left-[10%] bottom-[20%] hidden md:block text-[#F59E0B]" },
+    { Icon: PencilRuler, className: "right-[12%] bottom-[18%] hidden md:block text-[#EC4899]" },
+    { Icon: FlaskConical, className: "right-[28%] top-[12%] hidden xl:block text-[#8B5CF6]" },
+  ];
 
   return (
     <section className="relative overflow-hidden bg-[#FEF4E8] w-full max-w-[100vw]" style={{ minHeight: "calc(100vh - 60px)" }}>
       {/* ── Decorative blobs ── */}
       <div className="pointer-events-none absolute -left-32 top-10 h-[500px] w-[500px] rounded-full bg-[#F4736E]/8 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 h-[600px] w-[600px] rounded-full bg-yellow-300/15 blur-3xl" />
+      {floatingStudyIcons.map(({ Icon, className }, idx) => (
+        <motion.div
+          key={`study-icon-${idx}`}
+          className={`pointer-events-none absolute z-[1] ${className}`}
+          animate={{ y: [0, -10, 0], rotate: [-2, 2, -2] }}
+          transition={{
+            duration: 3.4 + idx * 0.25,
+            delay: idx * 0.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <div className="rounded-2xl bg-white/70 p-2 shadow-md backdrop-blur-sm">
+            <Icon className="h-7 w-7" strokeWidth={2.1} />
+          </div>
+        </motion.div>
+      ))}
 
       {/* ── Floating rocket decor ── */}
       <div className="pointer-events-none absolute left-8 top-32 hidden opacity-15 md:block">
-        <span className="material-symbols-outlined text-[80px] text-[#F4736E]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48" }}>rocket_launch</span>
+        <Rocket className="h-[92px] w-[92px] text-[#F4736E]" strokeWidth={1.8} />
       </div>
 
       {/* ===== Main grid ===== */}
@@ -642,7 +667,7 @@ const Hero = () => {
                     className="self-end flex items-center justify-center gap-2 rounded-full bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none"
                   >
                     Launch Adventure!
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>rocket_launch</span>
+                    <Rocket className="h-6 w-6" strokeWidth={2.4} />
                   </button>
                 </div>
 
@@ -674,6 +699,11 @@ const Hero = () => {
             <img
               src="/her-main.png"
               alt="Hero"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              width="960"
+              height="960"
               className="block w-full h-auto object-contain origin-center md:scale-110 lg:scale-150"
             />
           </div>

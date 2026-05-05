@@ -191,6 +191,17 @@ import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 
 export default function PaprIqFooterSection() {
   const API = import.meta.env.VITE_API_URL || "";
+  const isLoggedIn = () => {
+    const token = localStorage.getItem("jwt") || "";
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1] || ""));
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      return typeof payload?.exp === "number" && Date.now() < payload.exp * 1000 && Boolean(user?.role);
+    } catch {
+      return false;
+    }
+  };
   const [websiteSettings, setWebsiteSettings] = useState({
     siteName: "Edify Eight",
     logoUrl: "",
@@ -287,6 +298,15 @@ export default function PaprIqFooterSection() {
     [dbSocialLinks]
   );
 
+  const guardedMenuLabels = new Set(["Study Materials", "Leaderboard", "Careers"]);
+
+  const handleImportantMenuClick = (event, item) => {
+    if (!guardedMenuLabels.has(item.label)) return;
+    if (isLoggedIn()) return;
+    event.preventDefault();
+    window.dispatchEvent(new Event("eec:open-login"));
+  };
+
   return (
     <footer className="relative mt-14 bg-slate-900 pb-20 pt-24 text-slate-300 border-t-8 border-[#FFD23F]">
       <div className="pointer-events-none absolute -top-14 left-0 right-0 h-14 overflow-hidden">
@@ -329,7 +349,7 @@ export default function PaprIqFooterSection() {
             <div className="flex gap-4">
               {socialLinks
                 .filter((item) => Boolean(String(item.href || "").trim()))
-                .map(({ key, label, href }) => (
+                .map(({ key, label, href, Icon }) => (
                 <a
                   key={key}
                   className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-[#4ECDC4] hover:text-white transition-all"
@@ -339,7 +359,7 @@ export default function PaprIqFooterSection() {
                   aria-label={label}
                   title={label}
                 >
-                  <span className="text-xs font-bold">{label.slice(0, 1)}</span>
+                  <Icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
@@ -364,7 +384,11 @@ export default function PaprIqFooterSection() {
             <ul className="space-y-4 text-sm font-medium">
               {importantMenus.map((item) => (
                 <li key={item.to}>
-                  <Link className="hover:text-[#FFD23F] transition-colors" to={item.to}>
+                  <Link
+                    className="hover:text-[#FFD23F] transition-colors"
+                    to={item.to}
+                    onClick={(event) => handleImportantMenuClick(event, item)}
+                  >
                     {item.label}
                   </Link>
                 </li>

@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Menu, User, X, LogOut, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Menu, User, X, LogOut, LayoutDashboard, BookOpen } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { confirmAndLogout } from "../lib/confirmLogout";
 
@@ -233,7 +233,7 @@ export default function Navbar() {
                 className="h-full w-full object-contain"
               />
             ) : (
-              <span className="material-symbols-outlined text-2xl font-bold" style={{ fontFamily: "'Material Symbols Outlined'", fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>auto_stories</span>
+              <BookOpen className="h-6 w-6" strokeWidth={2.4} />
             )}
           </div>
           <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
