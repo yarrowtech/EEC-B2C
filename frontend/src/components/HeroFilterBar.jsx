@@ -114,9 +114,12 @@ function MIcon({ name, className = "", fill = false, style }) {
 export default function HeroFilterBar() {
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const isLoggedIn = Boolean(localStorage.getItem("jwt"));
 
   const [activeBoard, setActiveBoard] = useState("CBSE");
   const [activeGrade, setActiveGrade] = useState("Class 3");
+  const [activeBoardQuery, setActiveBoardQuery] = useState("CBSE");
+  const [activeGradeQuery, setActiveGradeQuery] = useState("Class 3");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [cards, setCards] = useState([]);
@@ -148,17 +151,23 @@ export default function HeroFilterBar() {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
       if (user && (user.board || user.class || user.className)) {
-        const board = normalizeBoard(user.board);
+        const board = normalizeBoard(user.boardName || user.board);
         const grade = normalizeGrade(user.className || user.class);
         setActiveBoard(board);
         setActiveGrade(grade);
+        setActiveBoardQuery(String(user.boardId || user.board || user.boardName || board));
+        setActiveGradeQuery(String(user.classId || user.class || user.className || grade));
       } else {
         setActiveBoard("CBSE");
         setActiveGrade("Class 3");
+        setActiveBoardQuery("CBSE");
+        setActiveGradeQuery("Class 3");
       }
     } catch {
       setActiveBoard("CBSE");
       setActiveGrade("Class 3");
+      setActiveBoardQuery("CBSE");
+      setActiveGradeQuery("Class 3");
     } finally {
       setPrefsReady(true);
     }
@@ -185,17 +194,49 @@ export default function HeroFilterBar() {
     handleFindQuest(activeBoard, activeGrade, false);
   }, [prefsReady]);
 
-  async function handleFindQuest(board = activeBoard, grade = activeGrade, applyFilters = true) {
+  async function handleFindQuest(
+    board = activeBoard,
+    grade = activeGrade,
+    applyFilters = true,
+    boardQuery = activeBoardQuery,
+    gradeQuery = activeGradeQuery
+  ) {
     setLoading(true);
     setSearched(applyFilters);
     try {
-      const query = applyFilters
-        ? `?board=${encodeURIComponent(board)}&class=${encodeURIComponent(grade)}`
-        : "";
-      const summaryUrl = `${API}/api/questions/tryout-summary${query}`;
-      const res = await fetch(summaryUrl);
-      const data = await res.json();
-      const summaryItems = Array.isArray(data?.items) ? data.items : [];
+      async function fetchSummary(boardValue, classValue) {
+        const params = new URLSearchParams();
+        if (boardValue) params.set("board", boardValue);
+        if (classValue) params.set("class", classValue);
+        const summaryUrl = `${API}/api/questions/tryout-summary${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
+        const res = await fetch(summaryUrl);
+        const data = await res.json();
+        // console.log("[HeroFilterBar] tryout-summary query", {
+        //   board: boardValue,
+        //   class: classValue,
+        //   count: Array.isArray(data?.items) ? data.items.length : 0,
+        //   url: summaryUrl,
+        // });
+        return Array.isArray(data?.items) ? data.items : [];
+      }
+
+      let summaryItems = [];
+      if (!applyFilters) {
+        summaryItems = await fetchSummary();
+      } else {
+        summaryItems = await fetchSummary(boardQuery || board, gradeQuery || grade);
+        if (summaryItems.length === 0) {
+          summaryItems = await fetchSummary(board, grade);
+        }
+        if (summaryItems.length === 0) {
+          const classNumberMatch = String(grade || "").match(/class\s*(\d+)/i);
+          if (classNumberMatch?.[1]) {
+            summaryItems = await fetchSummary(board, classNumberMatch[1]);
+          }
+        }
+      }
 
       const nextCards = summaryItems
         .filter((stats) => Number(stats?.total || 0) > 0)
@@ -258,10 +299,16 @@ export default function HeroFilterBar() {
       <div className="w-full max-w-6xl">
         <div className="bg-[#e6e8ec] rounded-[2rem] shadow-[0_10px_0_0_#d5d9e0,0_14px_24px_rgba(15,23,42,0.12)] px-5 py-5 flex flex-wrap items-center gap-4 w-full">
           <div className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#d9dde3] p-2 rounded-full">
-            {BOARD_OPTIONS.map((board) => (
+            {(isLoggedIn
+              ? BOARD_OPTIONS.filter((board) => board.value === activeBoard)
+              : BOARD_OPTIONS
+            ).map((board) => (
               <button
                 key={board.value}
-                onClick={() => setActiveBoard(board.value)}
+                onClick={() => {
+                  if (isLoggedIn) return;
+                  setActiveBoard(board.value);
+                }}
                 className={`px-7 py-3 rounded-full text-sm font-bold transition-all ${
                   activeBoard === board.value
                     ? "bg-[#ff6f70] text-white shadow-[0_4px_8px_rgba(239,83,80,0.45)]"
@@ -280,9 +327,10 @@ export default function HeroFilterBar() {
               <select
                 value={activeGrade}
                 onChange={(e) => setActiveGrade(e.target.value)}
+                disabled={isLoggedIn}
                 className="h-12 appearance-none rounded-full border-2 border-[#4ECDC4] bg-[#cdeceb] pl-6 pr-11 font-bold text-[#24496c] focus:outline-none"
               >
-                {GRADES.map((grade) => (
+                {(isLoggedIn ? [activeGrade] : GRADES).map((grade) => (
                   <option key={grade} value={grade}>
                     {grade}
                   </option>
