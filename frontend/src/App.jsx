@@ -364,7 +364,7 @@ function RouteHelmet({ siteSettings }) {
     upsertMeta("property", "og:type", "website");
     upsertMeta("property", "og:url", canonical);
 
-    const faviconHref = String(siteSettings?.faviconUrl || "/logo_new.png").trim() || "/logo_new.png";
+    const faviconHref = String(siteSettings?.faviconUrl || "/favicon.ico").trim() || "/favicon.ico";
     const upsertLink = (selector, rel) => {
       let node = document.head.querySelector(selector);
       if (!node) {
