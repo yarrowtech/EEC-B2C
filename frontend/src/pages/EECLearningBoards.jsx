@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getJSON } from "../lib/api";
+import { Helmet } from "react-helmet";
 
 const DEFAULT_BOARDS = ["CBSE", "ICSE", "State Board", "IB"].map((n) => ({ value: n, label: n }));
 const DEFAULT_CLASSES = ["Class 3","Class 4","Class 5","Class 6","Class 7","Class 8","Class 9","Class 10"].map((n) => ({ value: n, label: n }));
@@ -167,6 +168,25 @@ export default function EECLearningBoards() {
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <Helmet>
+        <title>Board and Class Wise Study Topics | Edify Eight</title>
+        <meta
+          name="description"
+          content="Browse board and class wise subjects and topics with summaries and learning outcomes. Study smarter with Edify Eight."
+        />
+        <meta
+          name="keywords"
+          content="board wise study topics, class wise syllabus topics, school learning content, Edify Eight boards"
+        />
+        <link rel="canonical" href="https://www.edifyeight.com/boards" />
+        <meta property="og:title" content="Board and Class Wise Study Topics | Edify Eight" />
+        <meta
+          property="og:description"
+          content="Find the right subjects and topics by board and class for focused learning."
+        />
+        <meta property="og:url" content="https://www.edifyeight.com/boards" />
+        <meta property="og:type" content="website" />
+      </Helmet>
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden bg-linear-to-br from-[#1B1F3B] to-[#2d3561] px-4 py-14 md:py-20">

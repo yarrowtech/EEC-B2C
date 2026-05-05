@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import {
   getJSON,
   listFlashcards,
@@ -331,6 +332,25 @@ export default function FlashcardsPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <Helmet>
+        <title>Flashcards for Students by Board and Class | Edify Eight</title>
+        <meta
+          name="description"
+          content="Practice with board and class based flashcards to improve memory and revision speed. Learn topic wise with Edify Eight flashcards."
+        />
+        <meta
+          name="keywords"
+          content="student flashcards, online revision flashcards, board wise flashcards, class wise flashcards, Edify Eight"
+        />
+        <link rel="canonical" href="https://www.edifyeight.com/flashcards" />
+        <meta property="og:title" content="Flashcards for Students by Board and Class | Edify Eight" />
+        <meta
+          property="og:description"
+          content="Revise faster using topic-wise flashcards filtered by your board and class."
+        />
+        <meta property="og:url" content="https://www.edifyeight.com/flashcards" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <style>{FLIP_CSS}</style>
 
       {/* ── Header ── */}
