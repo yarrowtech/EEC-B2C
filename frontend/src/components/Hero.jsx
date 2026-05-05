@@ -75,6 +75,11 @@ function CustomSelect({
       ? labelProp(options.find((o) => valueProp(o) === value))
       : "";
 
+  const toggleOpen = () => {
+    if (disabled) return;
+    setOpen((s) => !s);
+  };
+
   const filtered =
     !searchable || !searchTerm
       ? options
@@ -91,7 +96,20 @@ function CustomSelect({
         type="button"
         ref={btnRef}
         disabled={disabled}
-        onClick={() => !disabled && setOpen((s) => !s)}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleOpen();
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleOpen();
+          }
+        }}
         className={btnClass ?? [
           "w-full rounded-2xl border px-4 py-2 text-sm text-blue-950",
           "bg-white/90 shadow-sm outline-none transition",
@@ -107,7 +125,7 @@ function CustomSelect({
           </span>
           <svg
             viewBox="0 0 20 20"
-            className={`h-4 w-4 shrink-0 transition ${open ? "rotate-180" : ""}`}
+            className={`pointer-events-none h-4 w-4 shrink-0 transition ${open ? "rotate-180" : ""}`}
             fill="currentColor"
           >
             <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.17l3.71-2.94a.75.75 0 1 1 .94 1.16l-4.24 3.36a.75.75 0 0 1-.94 0L5.21 8.39a.75.75 0 0 1 .02-1.18z" />
