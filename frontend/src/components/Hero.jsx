@@ -682,7 +682,7 @@ const Hero = () => {
                   </div>
                   <button
                     type="submit"
-                    className="self-end flex items-center justify-center gap-2 rounded-full bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none"
+                    className="self-center sm:self-end flex items-center justify-center gap-2 rounded-full bg-[#F4736E] px-8 py-4 font-bold text-white shadow-[0_4px_0_0_#c9443e] transition-all hover:bg-[#e85e58] active:translate-y-1 active:shadow-none"
                   >
                     Launch Adventure!
                     <Rocket className="h-6 w-6" strokeWidth={2.4} />
