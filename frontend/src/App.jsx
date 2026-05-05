@@ -218,6 +218,11 @@ function getSeoForPath(pathname) {
       description: "Try Edify Eight practice experiences and discover the right learning pathway.",
       keywords: "free tryout tests, student practice tests, online mock tests, Edify Eight tryouts",
     },
+    "/flashcards": {
+      title: "Flashcards for Students by Board and Class | Edify Eight",
+      description: "Practice topic-wise flashcards by board and class to boost retention and exam confidence.",
+      keywords: "student flashcards, board wise flashcards, class wise flashcards, exam revision flashcards",
+    },
     "/careers": {
       title: "Careers at Edify Eight | Join Our EdTech Team",
       description: "Join Edify Eight and help build impactful education technology products.",
@@ -262,6 +267,14 @@ function getSeoForPath(pathname) {
       title: "Subject Tryout Tests and Practice Modules | Edify Eight",
       description: "Choose subject-specific tryouts to evaluate and improve your readiness.",
       keywords: "subject tryout tests, practice modules, online subject preparation",
+    };
+  }
+
+  if (pathname.startsWith("/learn/topic/")) {
+    return {
+      title: "Learn Topic Content and Outcomes | Edify Eight",
+      description: "Read concept notes, key points, and learning outcomes for each topic in your selected subject.",
+      keywords: "learn topics, concept notes for students, topic learning outcomes, subject wise learning content",
     };
   }
 
@@ -320,6 +333,10 @@ function RouteHelmet({ siteSettings }) {
     typeof window !== "undefined"
       ? `${window.location.origin}${location.pathname}`
       : location.pathname;
+  const socialImage =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png"}`
+      : String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png";
 
   useEffect(() => {
     document.title = finalTitle;
@@ -339,9 +356,11 @@ function RouteHelmet({ siteSettings }) {
     upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("name", "twitter:title", finalTitle);
     upsertMeta("name", "twitter:description", description);
+    upsertMeta("name", "twitter:image", socialImage);
     upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");
     upsertMeta("property", "og:title", finalTitle);
     upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:image", socialImage);
     upsertMeta("property", "og:type", "website");
     upsertMeta("property", "og:url", canonical);
 
@@ -367,7 +386,7 @@ function RouteHelmet({ siteSettings }) {
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute("href", canonical);
-  }, [finalTitle, description, keywords, noindex, canonical, siteSettings?.faviconUrl]);
+  }, [finalTitle, description, keywords, noindex, canonical, socialImage, siteSettings?.faviconUrl]);
 
   return (
     <Helmet>
@@ -381,6 +400,8 @@ function RouteHelmet({ siteSettings }) {
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={finalTitle} />
       <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={socialImage} />
+      <meta property="og:image" content={socialImage} />
       {noindex ? <meta name="robots" content="noindex,nofollow" /> : <meta name="robots" content="index,follow" />}
       <link rel="canonical" href={canonical} />
     </Helmet>
