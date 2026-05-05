@@ -182,16 +182,17 @@ export default function HeroFilterBar() {
   useEffect(() => {
     if (!prefsReady || autoLoadedRef.current) return;
     autoLoadedRef.current = true;
-    handleFindQuest(activeBoard, activeGrade);
-  }, [prefsReady, activeBoard, activeGrade]);
+    handleFindQuest(activeBoard, activeGrade, false);
+  }, [prefsReady]);
 
-  async function handleFindQuest(board = activeBoard, grade = activeGrade) {
+  async function handleFindQuest(board = activeBoard, grade = activeGrade, applyFilters = true) {
     setLoading(true);
-    setSearched(true);
+    setSearched(applyFilters);
     try {
-      const summaryUrl = `${API}/api/questions/tryout-summary?board=${encodeURIComponent(
-        board
-      )}&class=${encodeURIComponent(grade)}`;
+      const query = applyFilters
+        ? `?board=${encodeURIComponent(board)}&class=${encodeURIComponent(grade)}`
+        : "";
+      const summaryUrl = `${API}/api/questions/tryout-summary${query}`;
       const res = await fetch(summaryUrl);
       const data = await res.json();
       const summaryItems = Array.isArray(data?.items) ? data.items : [];
