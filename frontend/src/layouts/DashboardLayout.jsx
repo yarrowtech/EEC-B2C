@@ -587,12 +587,7 @@ export default function DashboardLayout() {
                 {/* SIDEBAR */}
                 <aside
                     id="tour-sidebar"
-                    className={`fixed z-40 top-0 bottom-0 w-80
-  bg-white border-r border-slate-200 shadow-sm
-  transition-transform duration-300 ease-in-out
-  ${open ? "translate-x-0" : "-translate-x-full"}
-  md:translate-x-0
-  ${isExamTakeRoute ? "hidden" : ""}`}
+                    className={`fixed z-40 top-0 bottom-0 w-80 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} ${isExamTakeRoute ? "hidden" : ""}`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                     <div className="h-full flex flex-col p-6 overflow-x-hidden">

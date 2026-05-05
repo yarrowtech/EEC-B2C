@@ -14,93 +14,21 @@ function MIcon({ name, className = "", fill = false, style }) {
 }
 
 const TYPE_META = {
-  "mcq-single": {
-    name: "MCQ Single",
-    description: "Single-correct objective questions from your syllabus.",
-    gradient: "from-blue-400 to-indigo-600",
-    icon: "radio_button_checked",
-    tagBg: "bg-blue-100",
-    tagText: "text-blue-700",
-  },
-  "mcq-multi": {
-    name: "MCQ Multi",
-    description: "Multiple-correct objective questions for deeper practice.",
-    gradient: "from-emerald-400 to-teal-600",
-    icon: "check_box",
-    tagBg: "bg-teal-100",
-    tagText: "text-teal-700",
-  },
-  "choice-matrix": {
-    name: "Choice Matrix",
-    description: "Matrix-style questions to test concept-level mapping.",
-    gradient: "from-orange-400 to-pink-600",
-    icon: "grid_view",
-    tagBg: "bg-orange-100",
-    tagText: "text-orange-700",
-  },
-  "true-false": {
-    name: "True / False",
-    description: "Fast true/false concept checks.",
-    gradientStyle: "linear-gradient(to bottom right, #d97706, #78350f)",
-    icon: "rule",
-    tagBg: "bg-amber-100",
-    tagText: "text-amber-700",
-  },
-  "cloze-drag": {
-    name: "Cloze Drag",
-    description: "Drag and drop terms into the correct blanks.",
-    gradient: "from-cyan-500 to-blue-700",
-    icon: "open_with",
-    tagBg: "bg-cyan-100",
-    tagText: "text-cyan-700",
-  },
-  "cloze-select": {
-    name: "Cloze Select",
-    description: "Pick correct options to complete each statement.",
-    gradient: "from-fuchsia-500 to-rose-500",
-    icon: "arrow_drop_down_circle",
-    tagBg: "bg-fuchsia-100",
-    tagText: "text-fuchsia-700",
-  },
-  "cloze-text": {
-    name: "Cloze Text",
-    description: "Type direct answers in fill-in-the-blank prompts.",
-    gradient: "from-violet-500 to-purple-600",
-    icon: "edit_note",
-    tagBg: "bg-violet-100",
-    tagText: "text-violet-700",
-  },
-  "match-list": {
-    name: "Match List",
-    description: "Match items from two columns accurately.",
-    gradient: "from-lime-500 to-green-600",
-    icon: "hub",
-    tagBg: "bg-lime-100",
-    tagText: "text-lime-700",
-  },
-  "essay-plain": {
-    name: "Essay Plain",
-    description: "Practice structured long answers in plain text format.",
-    gradient: "from-slate-500 to-gray-700",
-    icon: "description",
-    tagBg: "bg-slate-100",
-    tagText: "text-slate-700",
-  },
-  "essay-rich": {
-    name: "Essay Rich",
-    description: "Practice rich-text long answers with formatting.",
-    gradient: "from-red-400 to-rose-600",
-    icon: "article",
-    tagBg: "bg-rose-100",
-    tagText: "text-rose-700",
-  },
+  "mcq-single":   { name: "MCQ Single",    description: "Single-correct objective questions from your syllabus.",        gradient: "from-blue-400 to-indigo-600",      icon: "radio_button_checked",    color: "#3b82f6", tagBg: "bg-blue-50",    tagText: "text-blue-600"  },
+  "mcq-multi":    { name: "MCQ Multi",     description: "Multiple-correct objective questions for deeper practice.",     gradient: "from-emerald-400 to-teal-600",    icon: "check_box",               color: "#10b981", tagBg: "bg-teal-50",    tagText: "text-teal-600"  },
+  "choice-matrix":{ name: "Choice Matrix", description: "Matrix-style questions to test concept-level mapping.",         gradient: "from-orange-400 to-pink-600",     icon: "grid_view",               color: "#f97316", tagBg: "bg-orange-50",  tagText: "text-orange-600"},
+  "true-false":   { name: "True / False",  description: "Fast true/false concept checks.",                               gradientStyle: "linear-gradient(135deg,#d97706,#78350f)", icon: "rule",     color: "#d97706", tagBg: "bg-amber-50",   tagText: "text-amber-700" },
+  "cloze-drag":   { name: "Cloze Drag",    description: "Drag and drop terms into the correct blanks.",                  gradient: "from-cyan-500 to-blue-700",       icon: "open_with",               color: "#06b6d4", tagBg: "bg-cyan-50",    tagText: "text-cyan-600"  },
+  "cloze-select": { name: "Cloze Select",  description: "Pick correct options to complete each statement.",              gradient: "from-fuchsia-500 to-rose-500",    icon: "arrow_drop_down_circle",  color: "#d946ef", tagBg: "bg-fuchsia-50", tagText: "text-fuchsia-600"},
+  "cloze-text":   { name: "Cloze Text",    description: "Type direct answers in fill-in-the-blank prompts.",             gradient: "from-violet-500 to-purple-600",   icon: "edit_note",               color: "#8b5cf6", tagBg: "bg-violet-50",  tagText: "text-violet-600"},
+  "match-list":   { name: "Match List",    description: "Match items from two columns accurately.",                      gradient: "from-lime-500 to-green-600",      icon: "hub",                     color: "#84cc16", tagBg: "bg-lime-50",    tagText: "text-lime-700"  },
+  "essay-plain":  { name: "Essay Plain",   description: "Practice structured long answers in plain text format.",        gradient: "from-slate-500 to-gray-700",      icon: "description",             color: "#64748b", tagBg: "bg-slate-100",  tagText: "text-slate-600" },
+  "essay-rich":   { name: "Essay Rich",    description: "Practice rich-text long answers with formatting.",              gradient: "from-red-400 to-rose-600",        icon: "article",                 color: "#ef4444", tagBg: "bg-rose-50",    tagText: "text-rose-600"  },
 };
 
 const DEFAULT_FREE_TRYOUT_TYPES = ["mcq-single", "mcq-multi", "choice-matrix", "true-false"];
-
 const BOARDS = ["CBSE", "ICSE", "State Board", "IB"];
-const GRADES = ["Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10"];
-const DIFFICULTIES = ["All Subjects", "Difficulty: Any"];
+const GRADES = ["Class 3","Class 4","Class 5","Class 6","Class 7","Class 8","Class 9","Class 10"];
 
 export default function EECTryouts() {
   const navigate = useNavigate();
@@ -110,373 +38,285 @@ export default function EECTryouts() {
 
   const [activeBoard, setActiveBoard] = useState("CBSE");
   const [activeGrade, setActiveGrade] = useState("Class 6");
-  const [boardOpen, setBoardOpen] = useState(false);
-  const [gradeOpen, setGradeOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cards, setCards] = useState([]);
-  const [allowedTryoutTypesState, setAllowedTryoutTypesState] = useState(
-    new Set(DEFAULT_FREE_TRYOUT_TYPES)
-  );
+  const [allowedTryoutTypesState, setAllowedTryoutTypesState] = useState(new Set(DEFAULT_FREE_TRYOUT_TYPES));
 
   useEffect(() => {
     let mounted = true;
-
     async function loadTryoutTypes() {
       setLoading(true);
       try {
         let summaryUrl = `${API}/api/questions/tryout-summary`;
-
         if (isLoggedIn) {
           const profile = await getJSON("/api/users/profile");
           const user = profile?.user || {};
-
           const boardLabel = user.boardName || user.board || BOARDS[0];
           const classLabel = user.className || user.class || GRADES[3];
           const boardValue = user.boardId || user.board || user.boardName || boardLabel;
           const classValue = user.classId || user.class || user.className || classLabel;
-
-          if (!boardValue || !classValue) {
-            throw new Error("Please update profile board and class");
-          }
-
+          if (!boardValue || !classValue) throw new Error("Please update profile board and class");
           setActiveBoard(boardLabel);
           setActiveGrade(classLabel);
-
           const [packagesRes, subscriptionRes] = await Promise.all([
             fetch(`${API}/api/packages`),
-            fetch(`${API}/api/subscriptions/current`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
+            fetch(`${API}/api/subscriptions/current`, { headers: { Authorization: `Bearer ${token}` } }),
           ]);
-          const [packagesData, subscriptionData] = await Promise.all([
-            packagesRes.json(),
-            subscriptionRes.json(),
-          ]);
-
+          const [packagesData, subscriptionData] = await Promise.all([packagesRes.json(), subscriptionRes.json()]);
           const packageRows = Array.isArray(packagesData?.packages) ? packagesData.packages : [];
           const basicPackage = packageRows.find((p) => String(p?.name || "").toLowerCase() === "basic");
           const activePackage = subscriptionData?.subscription?.package || null;
-
-          const allowedFromPackage = Array.isArray(activePackage?.allowedTryoutTypes) && activePackage.allowedTryoutTypes.length > 0
-            ? activePackage.allowedTryoutTypes
-            : Array.isArray(basicPackage?.allowedTryoutTypes) && basicPackage.allowedTryoutTypes.length > 0
-            ? basicPackage.allowedTryoutTypes
-            : DEFAULT_FREE_TRYOUT_TYPES;
+          const allowedFromPackage =
+            Array.isArray(activePackage?.allowedTryoutTypes) && activePackage.allowedTryoutTypes.length > 0
+              ? activePackage.allowedTryoutTypes
+              : Array.isArray(basicPackage?.allowedTryoutTypes) && basicPackage.allowedTryoutTypes.length > 0
+              ? basicPackage.allowedTryoutTypes
+              : DEFAULT_FREE_TRYOUT_TYPES;
           setAllowedTryoutTypesState(new Set(allowedFromPackage.map((t) => String(t).trim())));
-
           summaryUrl = `${summaryUrl}?board=${encodeURIComponent(boardValue)}&class=${encodeURIComponent(classValue)}`;
         } else {
           setAllowedTryoutTypesState(new Set(DEFAULT_FREE_TRYOUT_TYPES));
         }
-
         const summaryRes = await fetch(summaryUrl);
         const summaryData = await summaryRes.json();
         const summaryItems = Array.isArray(summaryData?.items) ? summaryData.items : [];
-
         const nextCards = summaryItems
           .filter((stats) => Number(stats?.total || 0) > 0)
           .map((stats, idx) => {
             const type = String(stats?.type || "");
             const meta = TYPE_META[type] || {};
-            const fallbackThemes = Object.values(TYPE_META);
-            const theme = meta.name ? meta : fallbackThemes[idx % fallbackThemes.length];
-
+            const fallback = Object.values(TYPE_META)[idx % Object.values(TYPE_META).length];
+            const theme = meta.name ? meta : fallback;
             return {
-              id: type,
-              type,
+              id: type, type,
               name: theme.name || type,
               description: theme.description || "Question type tryout",
               questions: Number(stats.total || 0),
-              time: `${Math.max(10, Math.ceil(Number(stats.total || 0) * 0.8))} Mins`,
-              difficulty: {
-                label: `E:${Number(stats.easy || 0)} M:${Number(stats.moderate || 0)} H:${Number(stats.hard || 0)}`,
-                icon: "tune",
-                bg: "bg-violet-100",
-                text: "text-violet-700",
-              },
-              gradient: theme.gradient,
-              gradientStyle: theme.gradientStyle,
-              icon: theme.icon || "quiz",
-              tagBg: theme.tagBg || "bg-slate-100",
-              tagText: theme.tagText || "text-slate-700",
+              time: `${Math.max(10, Math.ceil(Number(stats.total || 0) * 0.8))} min`,
+              easy: Number(stats.easy || 0), moderate: Number(stats.moderate || 0), hard: Number(stats.hard || 0),
+              gradient: theme.gradient, gradientStyle: theme.gradientStyle,
+              icon: theme.icon || "quiz", color: theme.color || "#64748b",
+              tagBg: theme.tagBg || "bg-slate-100", tagText: theme.tagText || "text-slate-600",
             };
           })
           .sort((a, b) => a.name.localeCompare(b.name));
-
         if (!mounted) return;
         setCards(nextCards);
-      } catch {
-        if (mounted) setCards([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      } catch { if (mounted) setCards([]); }
+      finally { if (mounted) setLoading(false); }
     }
-
     loadTryoutTypes();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [API, isLoggedIn]);
 
-  const visibleCards = useMemo(() => cards, [cards]);
   const allowedTryoutTypes = useMemo(() => allowedTryoutTypesState, [allowedTryoutTypesState]);
 
   function handleCardClick(card) {
-    if (!isLoggedIn) {
-      window.dispatchEvent(new Event("eec:open-login"));
-      return;
-    }
-    if (!allowedTryoutTypes.has(card.type)) {
-      navigate("/dashboard/packages");
-      return;
-    }
+    if (!isLoggedIn) { window.dispatchEvent(new Event("eec:open-login")); return; }
+    if (!allowedTryoutTypes.has(card.type)) { navigate("/dashboard/packages"); return; }
     navigate(`/tryouts/${encodeURIComponent(card.type)}`, {
-      state: {
-        board: activeBoard,
-        class: activeGrade,
-        boardLabel: activeBoard,
-        classLabel: activeGrade,
-      },
+      state: { board: activeBoard, class: activeGrade, boardLabel: activeBoard, classLabel: activeGrade },
     });
   }
 
-  function handleStartQuest() {
-    if (visibleCards.length > 0) {
-      const first = isLoggedIn
-        ? visibleCards.find((c) => allowedTryoutTypes.has(c.type)) || visibleCards[0]
-        : visibleCards[0];
-      handleCardClick(first);
-      return;
-    }
-    if (!isLoggedIn) {
-      window.dispatchEvent(new Event("eec:open-login"));
-    }
-  }
-
   return (
-    <div
-      className="min-h-screen bg-[#f8f7f6]"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-    >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-      `}</style>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
-      <main className="max-w-[1200px] mx-auto w-full px-4 md:px-10 py-10">
-        <div className="flex flex-col gap-4 mb-8">
-          <div className="flex items-center gap-2 text-[#e7c555] font-bold text-sm uppercase tracking-widest">
-            <MIcon name="star" className="text-[18px]" fill />
-            Level Up Your Brain
+      {/* ── Hero ── */}
+      <div className="bg-linear-to-br from-[#1B1F3B] to-[#2d3561] px-4 py-14 md:py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#FFD23F]/20 border border-[#FFD23F]/30 px-4 py-1.5 text-sm font-bold text-[#FFD23F] mb-5">
+            <MIcon name="star" className="text-base" fill />
+            Practice Tests
           </div>
+          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+            Adventure <span style={{ color: "#FFD23F" }}>Tryouts!</span>
+          </h1>
+          <p className="text-slate-300 text-lg max-w-xl mb-8">
+            Pick a question type, attempt real exam-style questions, earn badges, and climb the leaderboard.
+          </p>
 
-          <div className="flex flex-wrap justify-between items-end gap-4">
-            <div className="flex flex-col gap-2 max-w-2xl">
-              <h1 className="text-slate-900 text-4xl md:text-5xl font-black leading-tight tracking-tight">
-                Adventure Tryouts!
-              </h1>
-              <p className="text-slate-600 text-lg font-medium">
-                Pick a subject quest, earn badges, and climb the ranks. Are you ready, explorer?
+          {/* Board + Grade display */}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold text-white">
+              <MIcon name="school" className="text-base" />
+              {activeBoard}
+              {isLoggedIn && <span className="text-white/40 text-xs ml-1">(from profile)</span>}
+            </div>
+            <div className="flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold text-white">
+              <MIcon name="grade" className="text-base" />
+              {activeGrade}
+              {isLoggedIn && <span className="text-white/40 text-xs ml-1">(from profile)</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Board pill tabs (guests only) ── */}
+      {!isLoggedIn && (
+        <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 overflow-x-auto">
+          <div className="mx-auto max-w-6xl flex gap-2 flex-nowrap">
+            <span className="text-xs font-bold text-slate-400 self-center shrink-0 mr-1">Board:</span>
+            {BOARDS.map((b) => (
+              <button
+                key={b}
+                onClick={() => setActiveBoard(b)}
+                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-all border"
+                style={activeBoard === b
+                  ? { background: "#1B1F3B", color: "#FFD23F", borderColor: "#1B1F3B" }
+                  : { background: "white", color: "#475569", borderColor: "#e2e8f0" }}
+              >
+                {b}
+              </button>
+            ))}
+            <span className="mx-2 border-l border-slate-200 self-stretch" />
+            <span className="text-xs font-bold text-slate-400 self-center shrink-0 mr-1">Grade:</span>
+            {GRADES.map((g) => (
+              <button
+                key={g}
+                onClick={() => setActiveGrade(g)}
+                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-all border"
+                style={activeGrade === g
+                  ? { background: "#F4736E", color: "white", borderColor: "#F4736E" }
+                  : { background: "white", color: "#475569", borderColor: "#e2e8f0" }}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Card Grid ── */}
+      <div className="mx-auto max-w-6xl px-4 py-10">
+
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50 p-6 animate-pulse">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-slate-200" />
+                  <div className="h-5 w-32 bg-slate-200 rounded-lg" />
+                </div>
+                <div className="h-4 w-full bg-slate-200 rounded mb-2" />
+                <div className="h-4 w-3/4 bg-slate-200 rounded mb-6" />
+                <div className="h-10 w-full bg-slate-200 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && cards.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <MIcon name="quiz" className="text-4xl text-slate-400" />
+            </div>
+            <p className="text-lg font-bold text-slate-600 mb-1">No tryouts available</p>
+            <p className="text-sm text-slate-400">
+              {isLoggedIn ? "No tryouts found for your board and class." : "Sign in to see personalised tryouts."}
+            </p>
+            {!isLoggedIn && (
+              <button
+                onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
+                className="mt-4 rounded-full bg-[#F4736E] text-white font-bold px-6 py-2.5 text-sm hover:brightness-105 transition"
+              >
+                Sign In Free
+              </button>
+            )}
+          </div>
+        )}
+
+        {!loading && cards.length > 0 && (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm font-semibold text-slate-500">
+                <span className="font-black text-slate-900">{cards.length}</span> question types available
               </p>
             </div>
 
-            <div className="flex items-center gap-4 bg-[#e7c555]/20 p-4 rounded-2xl border border-[#e7c555]/30">
-              <div className="bg-[#e7c555] p-2 rounded-xl">
-                <MIcon name="trophy" className="text-slate-900" fill />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#b89a2a] uppercase tracking-wider">Current Rank</p>
-                <p className="font-bold text-slate-900">Star Explorer</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-3 mb-10 pb-6 border-b border-slate-200">
-          <div className="relative">
-            <button
-              disabled={isLoggedIn}
-              onClick={() => {
-                if (isLoggedIn) return;
-                setBoardOpen((o) => !o);
-                setGradeOpen(false);
-              }}
-              className={`flex h-11 items-center gap-2 rounded-full px-6 font-bold transition-colors ${
-                isLoggedIn
-                  ? "bg-slate-200 text-slate-600 cursor-not-allowed"
-                  : "bg-[#e7c555] text-slate-900 shadow-lg shadow-[#e7c555]/30 hover:bg-[#d4b44a]"
-              }`}
-            >
-              <MIcon name="school" className="text-[20px]" />
-              {activeBoard}
-              <MIcon name="expand_more" className="text-[20px]" />
-            </button>
-            {boardOpen && (
-              <div className="absolute top-13 left-0 z-30 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 min-w-[150px]">
-                {BOARDS.map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => {
-                      setActiveBoard(b);
-                      setBoardOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                      activeBoard === b ? "bg-[#e7c555]/20 text-slate-900" : "hover:bg-slate-50 text-slate-700"
-                    }`}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {cards.map((card) => {
+                const isLocked = isLoggedIn && !allowedTryoutTypes.has(card.type);
+                return (
+                  <article
+                    key={card.id}
+                    className="group flex flex-col rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
                   >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                    {/* Thin color top bar */}
+                    <div className="h-1 w-full" style={{ background: card.color }} />
 
-          <div className="relative">
-            <button
-              disabled={isLoggedIn}
-              onClick={() => {
-                if (isLoggedIn) return;
-                setGradeOpen((o) => !o);
-                setBoardOpen(false);
-              }}
-              className={`flex h-11 items-center gap-2 rounded-full px-6 font-bold border transition-all ${
-                isLoggedIn
-                  ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed"
-                  : "bg-white text-slate-700 border-slate-200 hover:border-[#e7c555]"
-              }`}
-            >
-              <MIcon name="grade" className="text-[20px]" />
-              {activeGrade}
-              <MIcon name="expand_more" className="text-[20px]" />
-            </button>
-            {gradeOpen && (
-              <div className="absolute top-13 left-0 z-30 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 min-w-[150px] max-h-56 overflow-y-auto">
-                {GRADES.map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => {
-                      setActiveGrade(g);
-                      setGradeOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                      activeGrade === g ? "bg-[#e7c555]/20 text-slate-900" : "hover:bg-slate-50 text-slate-700"
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                    <div className="flex flex-col flex-1 p-5 gap-4">
+                      {/* Icon + title row */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
+                          style={{ background: card.color }}
+                        >
+                          <MIcon name={card.icon} className="text-2xl" fill />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-black text-slate-900 text-base leading-tight truncate" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+                            {card.name}
+                          </h3>
+                          <span className="text-xs font-bold text-slate-400">{card.time}</span>
+                        </div>
+                        {isLocked && (
+                          <div className="ml-auto shrink-0">
+                            <MIcon name="lock" className="text-slate-400 text-lg" fill />
+                          </div>
+                        )}
+                      </div>
 
-          <div className="h-11 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
+                      <p className="text-sm text-slate-500 leading-relaxed flex-1">{card.description}</p>
 
-          {DIFFICULTIES.map((d) => (
-            <button
-              key={d}
-              className="flex h-11 items-center gap-2 rounded-full bg-white text-slate-700 px-6 font-bold border border-slate-200 hover:border-[#e7c555] transition-all"
-            >
-              {d}
-            </button>
-          ))}
-        </div>
+                      {/* Stats row */}
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center gap-1 ${card.tagBg} ${card.tagText} text-xs font-bold px-3 py-1 rounded-full`}>
+                          <MIcon name="format_list_numbered" className="text-sm" />
+                          {card.questions} Qs
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
+                          <MIcon name="signal_cellular_alt" className="text-sm" />
+                          E:{card.easy} M:{card.moderate} H:{card.hard}
+                        </span>
+                      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {loading && (
-            <div className="col-span-full rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-              Loading tryouts from database...
-            </div>
-          )}
+                      <button
+                        onClick={() => handleCardClick(card)}
+                        className="w-full rounded-xl py-2.5 text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                        style={isLocked
+                          ? { background: "#f1f5f9", color: "#64748b" }
+                          : { background: card.color, color: "white" }}
+                      >
+                        {isLocked ? (
+                          <><MIcon name="lock" className="text-base" /> Unlock</>
+                        ) : (
+                          <><MIcon name="play_circle" className="text-base" fill /> Start Quest</>
+                        )}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
 
-          {!loading && visibleCards.length === 0 && (
-            <div className="col-span-full rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-              {isLoggedIn
-                ? "No tryouts found for your board and class."
-                : "No tryouts available right now."}
-            </div>
-          )}
-
-          {visibleCards.map((subject) => (
-            <div
-              key={subject.id}
-              className="flex flex-col bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl hover:border-[#e7c555]/50 transition-all duration-300 group"
-            >
-              <div
-                className={`h-40 relative overflow-hidden p-6 flex flex-col justify-end ${
-                  subject.gradientStyle ? "" : `bg-gradient-to-br ${subject.gradient}`
-                }`}
-                style={subject.gradientStyle ? { backgroundImage: subject.gradientStyle } : undefined}
-              >
-                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30">
-                  {subject.time}
-                </div>
-                <MIcon
-                  name={subject.icon}
-                  className="absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform duration-300 text-white/20"
-                  style={{ fontSize: "96px" }}
-                />
-                <h3 className="text-white text-2xl font-black relative z-10">{subject.name}</h3>
-              </div>
-
-              <div className="p-6 flex flex-col gap-4 flex-1">
-                <div className="flex flex-wrap gap-2">
-                  <span className={`${subject.tagBg} ${subject.tagText} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1`}>
-                    <MIcon name="format_list_numbered" className="text-[14px]" />
-                    {subject.questions} Questions
-                  </span>
-                  <span className={`${subject.difficulty.bg} ${subject.difficulty.text} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1`}>
-                    <MIcon name={subject.difficulty.icon} className="text-[14px]" />
-                    {subject.difficulty.label}
-                  </span>
-                </div>
-                <p className="text-slate-600 text-sm line-clamp-2 flex-1">{subject.description}</p>
+              {/* Unlock card */}
+              {!loading && (
                 <button
-                  onClick={() => handleCardClick(subject)}
-                  className="w-full bg-[#e7c555] hover:bg-[#d4b44a] text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]"
+                  type="button"
+                  onClick={() => isLoggedIn ? navigate("/dashboard/packages") : window.dispatchEvent(new Event("eec:open-login"))}
+                  className="group flex flex-col rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-[#FFD23F] hover:bg-[#FFD23F]/5 transition-all duration-300 p-5 items-center justify-center gap-3 min-h-[200px]"
                 >
-                  {isLoggedIn && !allowedTryoutTypes.has(subject.type) ? "Unlock Tryout" : "Start Quest"}
-                  <MIcon name="play_circle" />
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <MIcon name="lock_open" className="text-3xl text-[#FFD23F]" fill />
+                  </div>
+                  <p className="font-black text-slate-700 text-base" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>Unlock All Types</p>
+                  <p className="text-xs text-slate-400 text-center">Upgrade to access all 10 question types</p>
                 </button>
-              </div>
+              )}
             </div>
-          ))}
-
-          {!loading && (
-            <button
-              type="button"
-              onClick={() => {
-                if (!isLoggedIn) {
-                  window.dispatchEvent(new Event("eec:open-login"));
-                  return;
-                }
-                navigate("/dashboard/packages");
-              }}
-              className="flex flex-col bg-slate-100 rounded-xl overflow-hidden border border-dashed border-slate-300 relative group opacity-80 text-left"
-            >
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/10 backdrop-blur-[2px]">
-                <div className="bg-white p-4 rounded-full shadow-lg text-[#e7c555] mb-2">
-                  <MIcon name="lock" className="text-4xl" fill />
-                </div>
-                <p className="text-slate-900 font-bold">Unlock more tryouts</p>
-              </div>
-              <div className="h-40 bg-slate-300" />
-              <div className="p-6 flex flex-col gap-4 grayscale">
-                <div className="h-4 w-32 bg-slate-200 rounded" />
-                <div className="h-10 w-full bg-slate-200 rounded-lg" />
-              </div>
-            </button>
-          )}
-        </div>
-
-        <div className="mt-12 text-center">
-          <button
-            onClick={handleStartQuest}
-            className="bg-white text-slate-900 border border-slate-200 font-bold px-8 py-3 rounded-full hover:bg-slate-50 transition-colors shadow-sm inline-flex items-center gap-2"
-          >
-            Load More Quests
-            <MIcon name="expand_more" />
-          </button>
-        </div>
-      </main>
+          </>
+        )}
+      </div>
     </div>
   );
 }

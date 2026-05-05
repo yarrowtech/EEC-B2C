@@ -212,6 +212,7 @@ export default function Navbar() {
 
   // return (
   return shouldHide ? null : (
+    <>
     <nav className="sticky top-0 z-40 w-full border-b-4 bg-white/90 backdrop-blur-md" style={{ borderBottomColor: "rgba(255,210,63,0.25)" }}>
       <style>{`
         @keyframes wiggle {
@@ -348,9 +349,11 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ======= Mobile Drawer + Overlay ======= */}
-      {/* Overlay */}
-      <div
+    </nav>
+
+    {/* ======= Mobile Drawer + Overlay — outside <nav> so backdrop-filter doesn't trap fixed positioning ======= */}
+    {/* Overlay */}
+    <div
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
         onClick={closeMobile}
@@ -361,8 +364,8 @@ export default function Navbar() {
       {/* Drawer */}
       <aside
         id="mobile-drawer"
-        className={`fixed left-0 top-0 z-50 h-screen w-80 max-w-[85%] transform bg-white/95 shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out md:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className="fixed left-0 top-0 z-50 h-screen w-80 max-w-[85%] bg-white shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out md:hidden will-change-transform"
+        style={{ transform: mobileOpen ? "translateX(0)" : "translateX(-100%)" }}
         role="dialog"
         aria-modal="true"
       >
@@ -504,8 +507,8 @@ export default function Navbar() {
           )}
 
         </div>
-      </aside>
-    </nav>
+    </aside>
+    </>
   )
   // );
 }
