@@ -123,6 +123,7 @@ export default function HeroFilterBar() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [cards, setCards] = useState([]);
+  const [boardOptions, setBoardOptions] = useState(BOARD_OPTIONS);
   const [prefsReady, setPrefsReady] = useState(false);
   const autoLoadedRef = useRef(false);
 
@@ -131,10 +132,14 @@ export default function HeroFilterBar() {
   function normalizeBoard(value) {
     const raw = String(value || "").trim().toLowerCase();
     if (!raw) return "CBSE";
+    const matchedDynamic = boardOptions.find(
+      (board) => String(board.value || "").trim().toLowerCase() === raw
+    );
+    if (matchedDynamic) return matchedDynamic.value;
     if (raw === "cbse") return "CBSE";
     if (raw === "icse") return "ICSE";
     if (raw.includes("state")) return "State Board";
-    return "CBSE";
+    return boardOptions[0]?.value || "CBSE";
   }
 
   function normalizeGrade(value) {
@@ -148,6 +153,7 @@ export default function HeroFilterBar() {
   }
 
   function applyUserPreferences() {
+    const defaultBoard = boardOptions[0]?.value || "CBSE";
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
       if (user && (user.board || user.class || user.className)) {
@@ -158,20 +164,46 @@ export default function HeroFilterBar() {
         setActiveBoardQuery(String(user.boardId || user.board || user.boardName || board));
         setActiveGradeQuery(String(user.classId || user.class || user.className || grade));
       } else {
-        setActiveBoard("CBSE");
+        setActiveBoard(defaultBoard);
         setActiveGrade("Class 3");
-        setActiveBoardQuery("CBSE");
+        setActiveBoardQuery(defaultBoard);
         setActiveGradeQuery("Class 3");
       }
     } catch {
-      setActiveBoard("CBSE");
+      setActiveBoard(defaultBoard);
       setActiveGrade("Class 3");
-      setActiveBoardQuery("CBSE");
+      setActiveBoardQuery(defaultBoard);
       setActiveGradeQuery("Class 3");
     } finally {
       setPrefsReady(true);
     }
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadBoards() {
+      try {
+        const res = await fetch(`${API}/api/boards`);
+        const data = await res.json().catch(() => []);
+        if (!res.ok || cancelled) return;
+        const nextBoards = (Array.isArray(data) ? data : [])
+          .map((b) => {
+            const value = String(b?.name || b?.board || "").trim();
+            return value ? { label: value, value } : null;
+          })
+          .filter(Boolean);
+        if (nextBoards.length > 0) {
+          setBoardOptions(nextBoards);
+        }
+      } catch {
+        // Keep fallback options.
+      }
+    }
+    loadBoards();
+    return () => {
+      cancelled = true;
+    };
+  }, [API]);
 
   useEffect(() => {
     applyUserPreferences();
@@ -186,7 +218,7 @@ export default function HeroFilterBar() {
       window.removeEventListener("eec:auth", syncPrefs);
       window.removeEventListener("storage", syncPrefs);
     };
-  }, []);
+  }, [boardOptions]);
 
   useEffect(() => {
     if (!prefsReady || autoLoadedRef.current) return;
@@ -300,8 +332,8 @@ export default function HeroFilterBar() {
         <div className="bg-[#e6e8ec] rounded-[2rem] shadow-[0_10px_0_0_#d5d9e0,0_14px_24px_rgba(15,23,42,0.12)] px-5 py-5 flex flex-wrap items-center gap-4 w-full">
           <div className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#d9dde3] p-2 rounded-full">
             {(isLoggedIn
-              ? BOARD_OPTIONS.filter((board) => board.value === activeBoard)
-              : BOARD_OPTIONS
+              ? boardOptions.filter((board) => board.value === activeBoard)
+              : boardOptions
             ).map((board) => (
               <button
                 key={board.value}
