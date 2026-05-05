@@ -21,6 +21,8 @@ import GlobalLoginModal from "../components/GlobalLoginModal";
 import PageIntroLoader from "../components/PageIntroLoader";
 import usePageIntroLoader from "../hooks/usePageIntroLoader";
 import HeroFilterBar from "../components/HeroFilterBar";
+import HomePurposeSection from "../components/HomePurposeSection";
+import HomeFeaturesSection from "../components/HomeFeaturesSection";
 
 
 const Home = () => {
@@ -60,14 +62,15 @@ const Home = () => {
     >
       <Hero />
       <HeroFilterBar />
+      <HomePurposeSection />
       <StudyGrumpySection />
       <VictoryPathSection />
+      <HomeFeaturesSection />
       <FeatureCardsSection />
       <StatsStripSection />
-      {/* <HeroRankSection /> */}
-      <QuickBundleSection />
       <StarExplorersSection />
       <QuestionsAnswersSection />
+      <QuickBundleSection />
       {/* <PaprIqFooterSection />  */}
       {/* <WhatIsEEC />
       <EECFeaturesSection />
