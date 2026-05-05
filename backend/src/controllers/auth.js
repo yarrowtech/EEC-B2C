@@ -314,6 +314,22 @@ export async function forgotPassword(req, res) {
   }
 }
 
+export async function checkResetToken(req, res) {
+  try {
+    const { token } = req.params;
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await User.findOne({
+      resetPasswordToken: hash,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+    if (!user) return res.status(400).json({ valid: false });
+    const expiresIn = Math.max(0, Math.floor((user.resetPasswordExpire - Date.now()) / 1000));
+    res.json({ valid: true, expiresIn });
+  } catch (err) {
+    res.status(500).json({ valid: false });
+  }
+}
+
 export async function resetPassword(req, res) {
   try {
     const { token } = req.params;

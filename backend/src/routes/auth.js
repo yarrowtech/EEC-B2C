@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, me, register, forgotPassword, resetPassword, googleLogin } from "../controllers/auth.js";
+import { login, me, register, forgotPassword, resetPassword, checkResetToken, googleLogin } from "../controllers/auth.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 
 const router = Router();
@@ -12,6 +12,7 @@ router.get("/admin-only", requireAuth, requireRole("admin"), (req, res) => {
   res.json({ message: "Welcome Admin!" });
 });
 router.post("/forgot-password", forgotPassword);
+router.get("/reset-token-status/:token", checkResetToken);
 router.post("/reset-password/:token", resetPassword);
 
 

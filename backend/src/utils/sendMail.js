@@ -273,6 +273,94 @@ export async function sendWelcomeEmail({ to, name }) {
   await sendMail({ to, subject: `Welcome to ${siteName} — Let's get started!`, html });
 }
 
+export async function sendNewsletterWelcomeEmail({ to, unsubscribeLink }) {
+  const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
+    await getWebsiteBranding();
+
+  const ctaHref = websiteUrl || CLIENT_ORIGIN || "#";
+  const safeUnsubscribeLink = unsubscribeLink || "#";
+
+  const html = wrapEmail(`
+    ${buildEmailHeader({ siteName, siteTagline, logoUrl })}
+
+    <!-- BODY -->
+    <tr>
+      <td style="padding:36px 40px 28px;">
+
+        <!-- Welcome badge -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td align="center">
+              <div style="display:inline-block;background:#fff7ed;border:2px solid ${BRAND.yellow};border-radius:50px;padding:8px 20px;">
+                <span style="font-size:13px;font-weight:700;color:${BRAND.navy};">📬 Newsletter Subscription Confirmed</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND.navy};text-align:center;">
+          Welcome to ${siteName} Newsletter
+        </h2>
+
+        <p style="margin:0 0 16px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;text-align:center;">
+          Thank you for subscribing. You will now receive important updates, learning news, and product announcements from
+          <strong style="color:${BRAND.navy};"> ${siteName}</strong>.
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="background:#f8fafc;border-radius:14px;border:1px solid ${BRAND.borderLight};margin:24px 0;">
+          <tr>
+            <td style="padding:22px 26px;">
+              <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:${BRAND.navy};text-transform:uppercase;letter-spacing:0.6px;">
+                What you'll receive
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:${BRAND.textMuted};">
+                    <span style="color:${BRAND.coral};font-weight:700;margin-right:8px;">→</span>New feature and platform updates
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:${BRAND.textMuted};">
+                    <span style="color:${BRAND.coral};font-weight:700;margin-right:8px;">→</span>Study tips and exam-focused resources
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:${BRAND.textMuted};">
+                    <span style="color:${BRAND.coral};font-weight:700;margin-right:8px;">→</span>Announcements and special highlights
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 20px;">
+          <tr>
+            <td align="center">
+              ${buildCtaButton({ href: ctaHref, label: `Visit ${siteName} &rarr;` })}
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:18px 0 0;font-size:12px;color:${BRAND.textLight};line-height:1.7;text-align:center;">
+          If you no longer wish to receive these emails,
+          <a href="${safeUnsubscribeLink}" style="color:${BRAND.coral};font-weight:700;text-decoration:none;"> unsubscribe here</a>.
+        </p>
+
+        <p style="margin:24px 0 0;font-size:14px;color:${BRAND.textMuted};line-height:1.6;">
+          Warm regards,<br/>
+          <strong style="color:${BRAND.navy};">${siteName} Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    ${buildEmailFooter({ siteName, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone })}
+  `);
+
+  await sendMail({ to, subject: `Welcome to ${siteName} Newsletter`, html });
+}
+
 export async function sendResetPasswordEmail({ to, name, resetLink }) {
   const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
     await getWebsiteBranding();
