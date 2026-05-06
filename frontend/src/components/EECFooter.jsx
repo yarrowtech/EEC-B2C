@@ -326,22 +326,25 @@ export default function PaprIqFooterSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
           <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="bg-[#FFD23F] p-2 rounded-xl -rotate-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="">
                 {websiteSettings.logoUrl ? (
                   <img
                     src={websiteSettings.logoUrl}
                     alt={websiteSettings.siteName}
-                    className="h-6 w-6 object-contain"
+                    className="h-26 w-26 object-contain"
                   />
                 ) : (
                   <span className="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
                 )}
               </div>
-              <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+              {/* <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+                {websiteSettings.siteName}<span className="text-[#FFD23F]"></span>
+              </span> */}
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 {websiteSettings.siteName}<span className="text-[#FFD23F]"></span>
               </span>
-            </div>
             <p className="text-sm leading-relaxed mb-8 font-medium">
               Empowering India&apos;s next generation of thinkers, leaders, and
               explorers with the most engaging practice materials. Let&apos;s make
