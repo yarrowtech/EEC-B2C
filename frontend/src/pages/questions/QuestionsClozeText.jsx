@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
@@ -18,7 +18,9 @@ function extractBlankKeys(text = "") {
 export default function QuestionsClozeText() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({
+  const [questionCount, setQuestionCount] = useState(1);
+
+  const createEmptyQuestion = () => ({
     text: "",
     answers: {},
     explanation: "",
@@ -26,21 +28,50 @@ export default function QuestionsClozeText() {
     tags: "",
   });
 
-  const blankKeys = useMemo(() => extractBlankKeys(form.text), [form.text]);
+  const [forms, setForms] = useState([createEmptyQuestion()]);
 
-  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-  const updateAnswer = (key, value) =>
-    setForm((s) => ({ ...s, answers: { ...s.answers, [key]: value } }));
+  const update = (qIdx, key, value) =>
+    setForms((prev) => prev.map((item, idx) => (idx === qIdx ? { ...item, [key]: value } : item)));
 
-  function onTextChange(value) {
+  const updateAnswer = (qIdx, key, value) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx ? { ...item, answers: { ...item.answers, [key]: value } } : item
+      )
+    );
+
+  function onTextChange(qIdx, value) {
     const keys = extractBlankKeys(value);
-    setForm((prev) => {
-      const nextAnswers = {};
-      keys.forEach((k) => {
-        nextAnswers[k] = prev.answers[k] || "";
-      });
-      return { ...prev, text: value, answers: nextAnswers };
+    setForms((prev) =>
+      prev.map((item, idx) => {
+        if (idx !== qIdx) return item;
+        const nextAnswers = {};
+        keys.forEach((k) => {
+          nextAnswers[k] = item.answers[k] || "";
+        });
+        return { ...item, text: value, answers: nextAnswers };
+      })
+    );
+  }
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
     });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
   }
 
   async function submit(e) {
@@ -58,41 +89,52 @@ export default function QuestionsClozeText() {
       return toast.warn("Please complete all fields in the parameter selector above");
     }
 
-    if (!form.text.trim()) {
-      return toast.warn("Please enter the cloze text");
-    }
+    for (let i = 0; i < forms.length; i += 1) {
+      const form = forms[i];
+      const blankKeys = extractBlankKeys(form.text);
 
-    if (!blankKeys.length) {
-      return toast.warn("Add at least one blank using [[blank_name]] syntax");
-    }
+      if (!form.text.trim()) {
+        return toast.warn(`Please enter the cloze text for Question ${i + 1}`);
+      }
 
-    const missing = blankKeys.filter((k) => !String(form.answers[k] || "").trim());
-    if (missing.length) {
-      return toast.warn(`Please provide answers for: ${missing.join(", ")}`);
+      if (!blankKeys.length) {
+        return toast.warn(`Add at least one blank using [[blank_name]] syntax for Question ${i + 1}`);
+      }
+
+      const missing = blankKeys.filter((k) => !String(form.answers[k] || "").trim());
+      if (missing.length) {
+        return toast.warn(`Please provide answers for Question ${i + 1}: ${missing.join(", ")}`);
+      }
     }
 
     setBusy(true);
     try {
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-        tags: form.tags,
-        clozeText: {
-          text: form.text,
-          answers: form.answers,
-        },
-      };
+      let savedCount = 0;
+      for (const form of forms) {
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          explanation: form.explanation,
+          explanationImage: form.explanationImage,
+          tags: form.tags,
+          clozeText: {
+            text: form.text,
+            answers: form.answers,
+          },
+        };
 
-      await postQuestion("cloze-text", payload);
-      toast.success("Question saved successfully!");
-      setForm({ text: "", answers: {}, explanation: "", explanationImage: "", tags: "" });
+        await postQuestion("cloze-text", payload);
+        savedCount += 1;
+      }
+
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved successfully!`);
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -135,56 +177,94 @@ export default function QuestionsClozeText() {
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8">
-            <div>
-              <label className="font-bold text-slate-800 mb-2 block text-lg">Cloze Text</label>
-              <textarea
-                className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                placeholder="Example: The capital of France is [[blank1]]."
-                value={form.text}
-                onChange={(e) => onTextChange(e.target.value)}
-              />
-            </div>
-
-            <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 space-y-4">
-              <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                <FiFileText className="text-indigo-600" /> Answers For Blanks
-              </h2>
-              {!blankKeys.length ? (
-                <p className="text-sm text-slate-600">No blanks detected yet. Add placeholders like [[blank1]].</p>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {blankKeys.map((k) => (
-                    <div key={k}>
-                      <label className="font-semibold text-slate-700 mb-2 block">{k}</label>
-                      <input
-                        className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                        placeholder={`Answer for ${k}`}
-                        value={form.answers[k] || ""}
-                        onChange={(e) => updateAnswer(k, e.target.value)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
-                <label className="font-bold text-slate-800 mb-2 block">Tags (optional)</label>
+                <label className="font-bold text-slate-800 mb-2 block">
+                  How many questions do you want to add?
+                </label>
                 <input
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                  placeholder="grammar, vocabulary..."
-                  value={form.tags}
-                  onChange={(e) => update("tags", e.target.value)}
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={questionCount}
+                  onChange={(e) => applyQuestionCount(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                 />
               </div>
-              <ExplanationEditor
-                explanation={form.explanation}
-                explanationImage={form.explanationImage}
-                onExplanationChange={(value) => update("explanation", value)}
-                onExplanationImageChange={(value) => update("explanationImage", value)}
-              />
+              <div className="flex items-end">
+                <p className="text-sm text-slate-600">You can add up to 50 questions in one save.</p>
+              </div>
             </div>
+
+            {forms.map((form, qIdx) => {
+              const blankKeys = extractBlankKeys(form.text);
+              return (
+                <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => deleteQuestionBlock(qIdx)}
+                      disabled={forms.length <= 1}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-800 mb-2 block text-lg">Cloze Text</label>
+                    <textarea
+                      className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 min-h-32 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      placeholder="Example: The capital of France is [[blank1]]."
+                      value={form.text}
+                      onChange={(e) => onTextChange(qIdx, e.target.value)}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl bg-white border border-slate-200 p-5 space-y-4">
+                    <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                      <FiFileText className="text-indigo-600" /> Answers For Blanks
+                    </h2>
+                    {!blankKeys.length ? (
+                      <p className="text-sm text-slate-600">No blanks detected yet. Add placeholders like [[blank1]].</p>
+                    ) : (
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {blankKeys.map((k) => (
+                          <div key={k}>
+                            <label className="font-semibold text-slate-700 mb-2 block">{k}</label>
+                            <input
+                              className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                              placeholder={`Answer for ${k}`}
+                              value={form.answers[k] || ""}
+                              onChange={(e) => updateAnswer(qIdx, k, e.target.value)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="font-bold text-slate-800 mb-2 block">Tags (optional)</label>
+                      <input
+                        className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        placeholder="grammar, vocabulary..."
+                        value={form.tags}
+                        onChange={(e) => update(qIdx, "tags", e.target.value)}
+                      />
+                    </div>
+                    <ExplanationEditor
+                      explanation={form.explanation}
+                      explanationImage={form.explanationImage}
+                      onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                      onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
 
             <button
               type="submit"

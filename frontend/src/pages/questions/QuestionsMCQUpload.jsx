@@ -14,7 +14,17 @@ export default function QuestionsMCQUpload() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkInputKey, setBulkInputKey] = useState(0);
-  const [form, setForm] = useState({
+  const [questionCount, setQuestionCount] = useState(1);
+  const [forms, setForms] = useState([{
+    question: "",
+    options: ["", "", "", ""],
+    correct: "A",
+    explanation: "",
+    explanationImage: "",
+    tags: "",
+  }]);
+
+  const createEmptyQuestion = () => ({
     question: "",
     options: ["", "", "", ""],
     correct: "A",
@@ -23,13 +33,41 @@ export default function QuestionsMCQUpload() {
     tags: "",
   });
 
-  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-  const updateOpt = (i, v) =>
-    setForm((s) => {
-      const next = [...s.options];
-      next[i] = v;
-      return { ...s, options: next };
+  const update = (qIdx, key, value) =>
+    setForms((prev) =>
+      prev.map((item, idx) => (idx === qIdx ? { ...item, [key]: value } : item))
+    );
+
+  const updateOpt = (qIdx, optIdx, value) =>
+    setForms((prev) =>
+      prev.map((item, idx) => {
+        if (idx !== qIdx) return item;
+        const nextOptions = [...item.options];
+        nextOptions[optIdx] = value;
+        return { ...item, options: nextOptions };
+      })
+    );
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
     });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
+  }
 
   function downloadBulkTemplate() {
     const worksheet = XLSX.utils.json_to_sheet([
@@ -101,44 +139,44 @@ export default function QuestionsMCQUpload() {
     }
 
     // Validate question fields
-    if (!form.question.trim()) {
-      return toast.warn("Please enter the question");
-    }
-
-    if (form.options.some(opt => !opt.trim())) {
-      return toast.warn("Please fill all options");
+    for (let i = 0; i < forms.length; i += 1) {
+      const item = forms[i];
+      if (!item.question.trim()) {
+        return toast.warn(`Please enter the question text for Question ${i + 1}`);
+      }
+      if (item.options.some((opt) => !opt.trim())) {
+        return toast.warn(`Please fill all options for Question ${i + 1}`);
+      }
     }
 
     setBusy(true);
     try {
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        question: form.question,
-        options: form.options,
-        correct: form.correct,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-        tags: form.tags,
-      };
+      let savedCount = 0;
+      for (const item of forms) {
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          question: item.question,
+          options: item.options,
+          correct: item.correct,
+          explanation: item.explanation,
+          explanationImage: item.explanationImage,
+          tags: item.tags,
+        };
+        await postQuestion("mcq-single", payload);
+        savedCount += 1;
+      }
 
-      await postQuestion("mcq-single", payload);
-      toast.success("Question saved successfully!");
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved successfully!`);
 
       // Reset only the question form, keep scope intact
-      setForm({
-        question: "",
-        options: ["", "", "", ""],
-        correct: "A",
-        explanation: "",
-        explanationImage: "",
-        tags: "",
-      });
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -238,85 +276,120 @@ export default function QuestionsMCQUpload() {
               onSubmit={submit}
               className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8"
             >
-              {/* Question Text */}
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block text-lg">
-                  Question Text
-                </label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32
-                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="Enter your question here..."
-                  value={form.question}
-                  onChange={(e) => update("question", e.target.value)}
-                />
-              </div>
-
-              {/* Options */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <FiCheckCircle className="text-green-600" />
-                  <h2 className="text-lg font-bold text-slate-800">Answer Options</h2>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {["A", "B", "C", "D"].map((L, i) => (
-                    <div key={L}>
-                      <label className="font-semibold text-slate-700 mb-2 block">
-                        Option {L}
-                      </label>
-                      <input
-                        className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
-                                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        placeholder={`Enter option ${L}`}
-                        value={form.options[i]}
-                        onChange={(e) => updateOpt(i, e.target.value)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Correct Answer & Explanation */}
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <label className="font-bold text-slate-800 mb-2 block">
-                    Correct Answer
-                  </label>
-                  <select
-                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
-                             focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                    value={form.correct}
-                    onChange={(e) => update("correct", e.target.value)}
-                  >
-                    {["A", "B", "C", "D"].map((x) => (
-                      <option key={x} value={x}>
-                        Option {x}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-800 mb-2 block">
-                    Tags (optional)
+                    How many questions do you want to add?
                   </label>
                   <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={questionCount}
+                    onChange={(e) => applyQuestionCount(e.target.value)}
                     className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
-                             focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                    placeholder="algebra, physics, grammar..."
-                    value={form.tags}
-                    onChange={(e) => update("tags", e.target.value)}
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-sm text-slate-600">
+                    You can add up to 50 questions in one save.
+                  </p>
                 </div>
               </div>
 
-              <ExplanationEditor
-                explanation={form.explanation}
-                explanationImage={form.explanationImage}
-                onExplanationChange={(value) => update("explanation", value)}
-                onExplanationImageChange={(value) => update("explanationImage", value)}
-              />
+              {forms.map((form, qIdx) => (
+                <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => deleteQuestionBlock(qIdx)}
+                      disabled={forms.length <= 1}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-800 mb-2 block text-lg">
+                      Question Text
+                    </label>
+                    <textarea
+                      className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 min-h-32
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder="Enter your question here..."
+                      value={form.question}
+                      onChange={(e) => update(qIdx, "question", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <FiCheckCircle className="text-green-600" />
+                      <h2 className="text-lg font-bold text-slate-800">Answer Options</h2>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {["A", "B", "C", "D"].map((L, i) => (
+                        <div key={L}>
+                          <label className="font-semibold text-slate-700 mb-2 block">
+                            Option {L}
+                          </label>
+                          <input
+                            className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300
+                                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder={`Enter option ${L}`}
+                            value={form.options[i]}
+                            onChange={(e) => updateOpt(qIdx, i, e.target.value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="font-bold text-slate-800 mb-2 block">
+                        Correct Answer
+                      </label>
+                      <select
+                        className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300
+                                 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                        value={form.correct}
+                        onChange={(e) => update(qIdx, "correct", e.target.value)}
+                      >
+                        {["A", "B", "C", "D"].map((x) => (
+                          <option key={x} value={x}>
+                            Option {x}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-800 mb-2 block">
+                        Tags (optional)
+                      </label>
+                      <input
+                        className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300
+                                 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        placeholder="algebra, physics, grammar..."
+                        value={form.tags}
+                        onChange={(e) => update(qIdx, "tags", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <ExplanationEditor
+                    explanation={form.explanation}
+                    explanationImage={form.explanationImage}
+                    onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                    onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                  />
+                </div>
+              ))}
 
               {/* Save Button */}
               <button

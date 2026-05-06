@@ -4,14 +4,15 @@ import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { postQuestion } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
 import ExplanationEditor from "../../components/questions/ExplanationEditor";
-import { FiFileText, FiList, FiUpload, FiSettings, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import { FiFileText, FiUpload, FiSettings, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 
 export default function QuestionsClozeSelect() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
+  const [questionCount, setQuestionCount] = useState(1);
 
-  const [form, setForm] = useState({
+  const createEmptyQuestion = () => ({
     text: "Water boils at [[blank1]] °C.",
     blanks: {
       blank1: { options: ["50", "70", "100"], correct: "100" },
@@ -20,6 +21,70 @@ export default function QuestionsClozeSelect() {
     explanationImage: "",
   });
 
+  const [forms, setForms] = useState([createEmptyQuestion()]);
+
+  const update = (qIdx, key, value) =>
+    setForms((prev) => prev.map((item, idx) => (idx === qIdx ? { ...item, [key]: value } : item)));
+
+  const updateBlankOptions = (qIdx, value) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx
+          ? {
+              ...item,
+              blanks: {
+                ...item.blanks,
+                blank1: {
+                  ...(item.blanks.blank1 || {}),
+                  options: value
+                    .split(",")
+                    .map((x) => x.trim())
+                    .filter(Boolean),
+                },
+              },
+            }
+          : item
+      )
+    );
+
+  const updateBlankCorrect = (qIdx, value) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx
+          ? {
+              ...item,
+              blanks: {
+                ...item.blanks,
+                blank1: {
+                  ...(item.blanks.blank1 || {}),
+                  correct: value,
+                },
+              },
+            }
+          : item
+      )
+    );
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
+    });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
+  }
+
   async function submit(e) {
     e.preventDefault();
     if (!scope.board || !scope.class || !scope.subject || !scope.topic ||
@@ -27,47 +92,46 @@ export default function QuestionsClozeSelect() {
       return toast.warn("Please complete all fields in the parameter selector above");
     }
 
-    if (!form.text.trim()) {
-      return toast.warn("Please enter the cloze text");
-    }
-
-    if (!(form.blanks.blank1?.options || []).length) {
-      return toast.warn("Please add at least one option");
-    }
-
-    if (!form.blanks.blank1?.correct) {
-      return toast.warn("Please set the correct answer");
+    for (let i = 0; i < forms.length; i += 1) {
+      const form = forms[i];
+      if (!form.text.trim()) {
+        return toast.warn(`Please enter the cloze text for Question ${i + 1}`);
+      }
+      if (!(form.blanks.blank1?.options || []).length) {
+        return toast.warn(`Please add at least one option for Question ${i + 1}`);
+      }
+      if (!form.blanks.blank1?.correct) {
+        return toast.warn(`Please set the correct answer for Question ${i + 1}`);
+      }
     }
 
     setBusy(true);
     try {
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        clozeSelect: {
-          text: form.text,
-          blanks: form.blanks,
-        },
-      };
+      let savedCount = 0;
+      for (const form of forms) {
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          explanation: form.explanation,
+          explanationImage: form.explanationImage,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          clozeSelect: {
+            text: form.text,
+            blanks: form.blanks,
+          },
+        };
 
-      await postQuestion("cloze-select", payload);
-      toast.success("Question saved!");
+        await postQuestion("cloze-select", payload);
+        savedCount += 1;
+      }
 
-      setForm({
-        text: "Water boils at [[blank1]] °C.",
-        blanks: {
-          blank1: { options: ["50", "70", "100"], correct: "100" },
-        },
-        explanation: "",
-        explanationImage: "",
-      });
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved!`);
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -113,119 +177,124 @@ export default function QuestionsClozeSelect() {
           <form
             onSubmit={submit}
             className="
-            space-y-8 
-            rounded-3xl bg-gradient-to-br from-white/70 to-white/30 
+            space-y-8
+            rounded-3xl bg-gradient-to-br from-white/70 to-white/30
             border border-white/40 backdrop-blur-xl shadow-xl p-8
           "
           >
-            <div className="rounded-2xl backdrop-blur-lg p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <FiFileText className="text-indigo-600" />
-                <h2 className="font-semibold text-slate-800 text-lg">Cloze Text</h2>
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div>
+                <label className="font-bold text-slate-800 mb-2 block">
+                  How many questions do you want to add?
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={questionCount}
+                  onChange={(e) => applyQuestionCount(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                           focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                />
               </div>
-
-              <textarea
-                className="
-                w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28
-                focus:ring-2 focus:ring-indigo-500
-              "
-                placeholder="Write text using [[blank1]] syntax..."
-                value={form.text}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, text: e.target.value }))
-                }
-              />
+              <div className="flex items-end">
+                <p className="text-sm text-slate-600">You can add up to 50 questions in one save.</p>
+              </div>
             </div>
 
-            <div
-              className="
-            rounded-2xl backdrop-blur-lg p-6 space-y-4
-          "
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <FiSettings className="text-purple-600" />
-                <h2 className="font-semibold text-slate-800 text-lg">Blank Options</h2>
-              </div>
+            {forms.map((form, qIdx) => (
+              <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                  <button
+                    type="button"
+                    onClick={() => deleteQuestionBlock(qIdx)}
+                    disabled={forms.length <= 1}
+                    className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </div>
 
-              <div className="rounded-2xl bg-white shadow-sm p-5 space-y-4">
-                <div className="text-sm font-semibold text-slate-700">blank1</div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-medium text-slate-600 mb-1 block">
-                      Options (comma-separated)
-                    </label>
-                    <input
-                      className="
-                      w-full rounded-xl px-4 py-2 bg-white shadow-sm
-                      focus:ring-2 focus:ring-purple-500
-                    "
-                      value={(form.blanks.blank1?.options || []).join(",")}
-                      placeholder="e.g. 50, 70, 100"
-                      onChange={(e) =>
-                        setForm((s) => ({
-                          ...s,
-                          blanks: {
-                            ...s.blanks,
-                            blank1: {
-                              ...(s.blanks.blank1 || {}),
-                              options: e.target.value
-                                .split(",")
-                                .map((x) => x.trim())
-                                .filter(Boolean),
-                            },
-                          },
-                        }))
-                      }
-                    />
+                <div className="rounded-2xl backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FiFileText className="text-indigo-600" />
+                    <h2 className="font-semibold text-slate-800 text-lg">Cloze Text</h2>
                   </div>
 
-                  <div>
-                    <label className="font-medium text-slate-600 mb-1 block">
-                      Correct Answer
-                    </label>
-                    <input
-                      className="
-                      w-full rounded-xl px-4 py-2 bg-white shadow-sm
-                      focus:ring-2 focus:ring-green-500
-                    "
-                      placeholder="Correct option"
-                      value={form.blanks.blank1?.correct || ""}
-                      onChange={(e) =>
-                        setForm((s) => ({
-                          ...s,
-                          blanks: {
-                            ...s.blanks,
-                            blank1: {
-                              ...(s.blanks.blank1 || {}),
-                              correct: e.target.value,
-                            },
-                          },
-                        }))
-                      }
-                    />
+                  <textarea
+                    className="
+                    w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28
+                    focus:ring-2 focus:ring-indigo-500
+                  "
+                    placeholder="Write text using [[blank1]] syntax..."
+                    value={form.text}
+                    onChange={(e) => update(qIdx, "text", e.target.value)}
+                  />
+                </div>
+
+                <div
+                  className="
+                rounded-2xl backdrop-blur-lg p-6 space-y-4
+              "
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <FiSettings className="text-purple-600" />
+                    <h2 className="font-semibold text-slate-800 text-lg">Blank Options</h2>
+                  </div>
+
+                  <div className="rounded-2xl bg-white shadow-sm p-5 space-y-4">
+                    <div className="text-sm font-semibold text-slate-700">blank1</div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-medium text-slate-600 mb-1 block">
+                          Options (comma-separated)
+                        </label>
+                        <input
+                          className="
+                          w-full rounded-xl px-4 py-2 bg-white shadow-sm
+                          focus:ring-2 focus:ring-purple-500
+                        "
+                          value={(form.blanks.blank1?.options || []).join(",")}
+                          placeholder="e.g. 50, 70, 100"
+                          onChange={(e) => updateBlankOptions(qIdx, e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-medium text-slate-600 mb-1 block">
+                          Correct Answer
+                        </label>
+                        <input
+                          className="
+                          w-full rounded-xl px-4 py-2 bg-white shadow-sm
+                          focus:ring-2 focus:ring-green-500
+                        "
+                          placeholder="Correct option"
+                          value={form.blanks.blank1?.correct || ""}
+                          onChange={(e) => updateBlankCorrect(qIdx, e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="rounded-2xl backdrop-blur-lg p-6">
-              <ExplanationEditor
-                explanation={form.explanation}
-                explanationImage={form.explanationImage}
-                onExplanationChange={(value) =>
-                  setForm((s) => ({ ...s, explanation: value }))
-                }
-                onExplanationImageChange={(value) =>
-                  setForm((s) => ({ ...s, explanationImage: value }))
-                }
-              />
-            </div>
+                <div className="rounded-2xl backdrop-blur-lg p-6">
+                  <ExplanationEditor
+                    explanation={form.explanation}
+                    explanationImage={form.explanationImage}
+                    onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                    onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                  />
+                </div>
+              </div>
+            ))}
 
             <button
               disabled={busy}
               className="
-              flex items-center gap-2 rounded-xl px-6 py-3 
+              flex items-center gap-2 rounded-xl px-6 py-3
               bg-indigo-600 text-white font-semibold
               shadow-md hover:bg-indigo-700 hover:shadow-xl
               active:scale-95 transition-all disabled:opacity-50

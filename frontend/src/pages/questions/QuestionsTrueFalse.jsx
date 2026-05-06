@@ -14,7 +14,16 @@ export default function QuestionsTrueFalse() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkInputKey, setBulkInputKey] = useState(0);
-  const [form, setForm] = useState({
+  const [questionCount, setQuestionCount] = useState(1);
+  const [forms, setForms] = useState([{
+    statement: "",
+    answer: "true",
+    explanation: "",
+    explanationImage: "",
+    tags: "",
+  }]);
+
+  const createEmptyQuestion = () => ({
     statement: "",
     answer: "true",
     explanation: "",
@@ -22,7 +31,28 @@ export default function QuestionsTrueFalse() {
     tags: "",
   });
 
-  const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+  const update = (qIdx, key, value) =>
+    setForms((prev) => prev.map((item, idx) => (idx === qIdx ? { ...item, [key]: value } : item)));
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
+    });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
+  }
 
   function downloadBulkTemplate() {
     const worksheet = XLSX.utils.json_to_sheet([
@@ -101,31 +131,37 @@ export default function QuestionsTrueFalse() {
       return toast.warn("Please complete all fields in the parameter selector above");
     }
 
-    if (!form.statement.trim()) {
-      return toast.warn("Please enter the statement");
+    for (let i = 0; i < forms.length; i += 1) {
+      if (!forms[i].statement.trim()) {
+        return toast.warn(`Please enter the statement for Question ${i + 1}`);
+      }
     }
 
     setBusy(true);
     try {
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        question: form.statement,
-        answer: form.answer,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-        tags: form.tags,
-      };
+      let savedCount = 0;
+      for (const form of forms) {
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          question: form.statement,
+          answer: form.answer,
+          explanation: form.explanation,
+          explanationImage: form.explanationImage,
+          tags: form.tags,
+        };
+        await postQuestion("true-false", payload);
+        savedCount += 1;
+      }
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved successfully!`);
 
-      await postQuestion("true-false", payload);
-      toast.success("Question saved successfully!");
-
-      setForm({ statement: "", answer: "true", explanation: "", explanationImage: "", tags: "" });
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -223,46 +259,84 @@ export default function QuestionsTrueFalse() {
               onSubmit={submit}
               className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8"
             >
-              <div>
-                <label className="font-bold text-slate-800 mb-2 block text-lg">Statement</label>
-                <textarea
-                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-32 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                  placeholder="Enter a statement for True/False..."
-                  value={form.statement}
-                  onChange={(e) => update("statement", e.target.value)}
-                />
-              </div>
-
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="font-bold text-slate-800 mb-2 block">Correct Answer</label>
-                  <select
-                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                    value={form.answer}
-                    onChange={(e) => update("answer", e.target.value)}
-                  >
-                    <option value="true">True</option>
-                    <option value="false">False</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-800 mb-2 block">Tags (optional)</label>
+                  <label className="font-bold text-slate-800 mb-2 block">
+                    How many questions do you want to add?
+                  </label>
                   <input
-                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                    placeholder="facts, logic, science..."
-                    value={form.tags}
-                    onChange={(e) => update("tags", e.target.value)}
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={questionCount}
+                    onChange={(e) => applyQuestionCount(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                             focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                   />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-sm text-slate-600">
+                    You can add up to 50 questions in one save.
+                  </p>
                 </div>
               </div>
 
-              <ExplanationEditor
-                explanation={form.explanation}
-                explanationImage={form.explanationImage}
-                onExplanationChange={(value) => update("explanation", value)}
-                onExplanationImageChange={(value) => update("explanationImage", value)}
-              />
+              {forms.map((form, qIdx) => (
+                <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => deleteQuestionBlock(qIdx)}
+                      disabled={forms.length <= 1}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-800 mb-2 block text-lg">Statement</label>
+                    <textarea
+                      className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 min-h-32 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                      placeholder="Enter a statement for True/False..."
+                      value={form.statement}
+                      onChange={(e) => update(qIdx, "statement", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="font-bold text-slate-800 mb-2 block">Correct Answer</label>
+                      <select
+                        className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                        value={form.answer}
+                        onChange={(e) => update(qIdx, "answer", e.target.value)}
+                      >
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-800 mb-2 block">Tags (optional)</label>
+                      <input
+                        className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        placeholder="facts, logic, science..."
+                        value={form.tags}
+                        onChange={(e) => update(qIdx, "tags", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <ExplanationEditor
+                    explanation={form.explanation}
+                    explanationImage={form.explanationImage}
+                    onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                    onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                  />
+                </div>
+              ))}
 
               <button
                 type="submit"

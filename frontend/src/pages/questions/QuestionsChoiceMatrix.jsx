@@ -20,8 +20,18 @@ export default function QuestionsChoiceMatrix() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkInputKey, setBulkInputKey] = useState(0);
+  const [questionCount, setQuestionCount] = useState(1);
 
-  const [form, setForm] = useState({
+  const [forms, setForms] = useState([{
+    prompt: "",
+    rows: ["Statement 1"],
+    cols: ["True", "False"],
+    correct: {},
+    explanation: "",
+    explanationImage: "",
+  }]);
+
+  const createEmptyQuestion = () => ({
     prompt: "",
     rows: ["Statement 1"],
     cols: ["True", "False"],
@@ -30,24 +40,61 @@ export default function QuestionsChoiceMatrix() {
     explanationImage: "",
   });
 
-  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-  const toggle = (ri, ci) =>
-    setForm((s) => ({
-      ...s,
-      correct: { ...s.correct, [`${ri}-${ci}`]: !s.correct[`${ri}-${ci}`] },
-    }));
+  const update = (qIdx, key, value) =>
+    setForms((prev) => prev.map((item, idx) => (idx === qIdx ? { ...item, [key]: value } : item)));
 
-  const addRow = () =>
-    setForm((s) => ({
-      ...s,
-      rows: [...s.rows, `Statement ${s.rows.length + 1}`],
-    }));
+  const toggle = (qIdx, ri, ci) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx
+          ? { ...item, correct: { ...item.correct, [`${ri}-${ci}`]: !item.correct[`${ri}-${ci}`] } }
+          : item
+      )
+    );
 
-  const addCol = () =>
-    setForm((s) => ({
-      ...s,
-      cols: [...s.cols, `Choice ${s.cols.length + 1}`],
-    }));
+  const addRow = (qIdx) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx ? { ...item, rows: [...item.rows, `Statement ${item.rows.length + 1}`] } : item
+      )
+    );
+
+  const addCol = (qIdx) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx ? { ...item, cols: [...item.cols, `Choice ${item.cols.length + 1}`] } : item
+      )
+    );
+
+  const updateRow = (qIdx, ri, value) =>
+    setForms((prev) =>
+      prev.map((item, idx) => {
+        if (idx !== qIdx) return item;
+        const rows = [...item.rows];
+        rows[ri] = value;
+        return { ...item, rows };
+      })
+    );
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
+    });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
+  }
 
   function downloadBulkTemplate() {
     const worksheet = XLSX.utils.json_to_sheet([
@@ -113,49 +160,49 @@ export default function QuestionsChoiceMatrix() {
       return toast.warn("Please complete all fields in the parameter selector above");
     }
 
-    if (!form.prompt.trim()) {
-      return toast.warn("Please enter the prompt");
-    }
-
-    if (form.rows.some((row) => !row.trim()) || form.cols.some((col) => !col.trim())) {
-      return toast.warn("Please fill all row and column labels");
+    for (let i = 0; i < forms.length; i += 1) {
+      const item = forms[i];
+      if (!item.prompt.trim()) {
+        return toast.warn(`Please enter the prompt for Question ${i + 1}`);
+      }
+      if (item.rows.some((row) => !row.trim()) || item.cols.some((col) => !col.trim())) {
+        return toast.warn(`Please fill all row and column labels for Question ${i + 1}`);
+      }
     }
 
     setBusy(true);
     try {
-      const correctCells = Object.entries(form.correct)
-        .filter(([, v]) => v)
-        .map(([k]) => k);
+      let savedCount = 0;
+      for (const item of forms) {
+        const correctCells = Object.entries(item.correct)
+          .filter(([, v]) => v)
+          .map(([k]) => k);
 
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-        choiceMatrix: {
-          prompt: form.prompt,
-          rows: form.rows,
-          cols: form.cols,
-          correctCells,
-        },
-      };
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          explanation: item.explanation,
+          explanationImage: item.explanationImage,
+          choiceMatrix: {
+            prompt: item.prompt,
+            rows: item.rows,
+            cols: item.cols,
+            correctCells,
+          },
+        };
 
-      await postQuestion("choice-matrix", payload);
-      toast.success("Question saved successfully!");
+        await postQuestion("choice-matrix", payload);
+        savedCount += 1;
+      }
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved successfully!`);
 
-      setForm({
-        prompt: "",
-        rows: ["Statement 1"],
-        cols: ["True", "False"],
-        correct: {},
-        explanation: "",
-        explanationImage: "",
-      });
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -261,95 +308,127 @@ export default function QuestionsChoiceMatrix() {
               border border-white/40 backdrop-blur-xl shadow-xl
             "
             >
-              <div className="rounded-2xl backdrop-blur-lg p-6">
-                <label className="font-semibold text-slate-800 mb-2 block">
-                  Prompt
-                </label>
-                <textarea
-                  className="
-                  w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28 
-                  focus:ring-2 focus:ring-blue-500
-                "
-                  placeholder="Enter the main question prompt..."
-                  value={form.prompt}
-                  onChange={(e) => update("prompt", e.target.value)}
-                />
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="font-bold text-slate-800 mb-2 block">
+                    How many questions do you want to add?
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={questionCount}
+                    onChange={(e) => applyQuestionCount(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-sm text-slate-600">
+                    You can add up to 50 questions in one save.
+                  </p>
+                </div>
               </div>
 
-              <div className="flex gap-3">
-                <button type="button" onClick={addRow} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all shadow active:scale-95">
-                  <FiPlus /> Add Row
-                </button>
+              {forms.map((form, qIdx) => (
+                <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => deleteQuestionBlock(qIdx)}
+                      disabled={forms.length <= 1}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
 
-                <button type="button" onClick={addCol} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-purple-500 hover:bg-purple-600 text-white transition-all shadow active:scale-95">
-                  <FiPlus /> Add Column
-                </button>
-              </div>
+                  <div className="rounded-2xl backdrop-blur-lg p-6">
+                    <label className="font-semibold text-slate-800 mb-2 block">
+                      Prompt
+                    </label>
+                    <textarea
+                      className="
+                      w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-28 
+                      focus:ring-2 focus:ring-blue-500
+                    "
+                      placeholder="Enter the main question prompt..."
+                      value={form.prompt}
+                      onChange={(e) => update(qIdx, "prompt", e.target.value)}
+                    />
+                  </div>
 
-              <div className="overflow-auto rounded-2xl bg-white/60 backdrop-blur-lg shadow p-4">
-                <table className="min-w-[700px] border-collapse w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-100/60 backdrop-blur">
-                      <th className="border border-slate-400 px-4 py-3 text-left font-semibold text-slate-700">
-                        Row / Column
-                      </th>
-                      {form.cols.map((c, i) => (
-                        <th key={i} className="border border-slate-400 px-4 py-3 text-center font-semibold text-slate-700">
-                          {c}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => addRow(qIdx)} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all shadow active:scale-95">
+                      <FiPlus /> Add Row
+                    </button>
 
-                  <tbody>
-                    {form.rows.map((r, ri) => (
-                      <tr key={ri} className="odd:bg-slate-50/30">
-                        <td className="border border-slate-400 px-3 py-2">
-                          <input
-                            className="w-full rounded-lg border border-slate-400 px-3 py-2 bg-white shadow-sm focus:ring-2 focus:ring-indigo-500"
-                            value={r}
-                            onChange={(e) =>
-                              setForm((s) => {
-                                const rows = [...s.rows];
-                                rows[ri] = e.target.value;
-                                return { ...s, rows };
-                              })
-                            }
-                          />
-                        </td>
+                    <button type="button" onClick={() => addCol(qIdx)} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-purple-500 hover:bg-purple-600 text-white transition-all shadow active:scale-95">
+                      <FiPlus /> Add Column
+                    </button>
+                  </div>
 
-                        {form.cols.map((c, ci) => (
-                          <td key={ci} className="border border-slate-400 px-3 py-2 text-center">
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <div className="overflow-auto rounded-2xl bg-white/60 backdrop-blur-lg shadow p-4">
+                    <table className="min-w-[700px] border-collapse w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-100/60 backdrop-blur">
+                          <th className="border border-slate-400 px-4 py-3 text-left font-semibold text-slate-700">
+                            Row / Column
+                          </th>
+                          {form.cols.map((c, i) => (
+                            <th key={i} className="border border-slate-400 px-4 py-3 text-center font-semibold text-slate-700">
+                              {c}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {form.rows.map((r, ri) => (
+                          <tr key={ri} className="odd:bg-slate-50/30">
+                            <td className="border border-slate-400 px-3 py-2">
                               <input
-                                type="checkbox"
-                                className="hidden peer"
-                                checked={!!form.correct[`${ri}-${ci}`]}
-                                onChange={() => toggle(ri, ci)}
+                                className="w-full rounded-lg border border-slate-400 px-3 py-2 bg-white shadow-sm focus:ring-2 focus:ring-indigo-500"
+                                value={r}
+                                onChange={(e) => updateRow(qIdx, ri, e.target.value)}
                               />
+                            </td>
 
-                              <div className="
-                              w-5 h-5 rounded-md border-2 border-slate-400 
-                              peer-checked:border-green-500 peer-checked:bg-green-500
-                              transition-all
-                            "></div>
-                            </label>
-                          </td>
+                            {form.cols.map((c, ci) => (
+                              <td key={ci} className="border border-slate-400 px-3 py-2 text-center">
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    className="hidden peer"
+                                    checked={!!form.correct[`${ri}-${ci}`]}
+                                    onChange={() => toggle(qIdx, ri, ci)}
+                                  />
+
+                                  <div className="
+                                  w-5 h-5 rounded-md border-2 border-slate-400 
+                                  peer-checked:border-green-500 peer-checked:bg-green-500
+                                  transition-all
+                                "></div>
+                                </label>
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                      </tbody>
+                    </table>
+                  </div>
 
-              <div className="rounded-2xl backdrop-blur-lg p-6">
-                <ExplanationEditor
-                  explanation={form.explanation}
-                  explanationImage={form.explanationImage}
-                  onExplanationChange={(value) => update("explanation", value)}
-                  onExplanationImageChange={(value) => update("explanationImage", value)}
-                />
-              </div>
+                  <div className="rounded-2xl backdrop-blur-lg p-6">
+                    <ExplanationEditor
+                      explanation={form.explanation}
+                      explanationImage={form.explanationImage}
+                      onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                      onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                    />
+                  </div>
+                </div>
+              ))}
 
               <button
                 disabled={busy}

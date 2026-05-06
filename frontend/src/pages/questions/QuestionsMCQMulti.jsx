@@ -19,8 +19,18 @@ export default function QuestionsMCQMulti() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkInputKey, setBulkInputKey] = useState(0);
+  const [questionCount, setQuestionCount] = useState(1);
 
-  const [form, setForm] = useState({
+  const [forms, setForms] = useState([{
+    question: "",
+    options: ["", "", "", ""],
+    correct: { A: false, B: false, C: false, D: false },
+    explanation: "",
+    explanationImage: "",
+    tags: "",
+  }]);
+
+  const createEmptyQuestion = () => ({
     question: "",
     options: ["", "", "", ""],
     correct: { A: false, B: false, C: false, D: false },
@@ -29,19 +39,45 @@ export default function QuestionsMCQMulti() {
     tags: "",
   });
 
-  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-  const updateOpt = (i, v) =>
-    setForm((s) => {
-      const next = [...s.options];
-      next[i] = v;
-      return { ...s, options: next };
-    });
+  const update = (qIdx, k, v) =>
+    setForms((prev) => prev.map((item, idx) => (idx === qIdx ? { ...item, [k]: v } : item)));
 
-  const toggle = (k) =>
-    setForm((s) => ({
-      ...s,
-      correct: { ...s.correct, [k]: !s.correct[k] },
-    }));
+  const updateOpt = (qIdx, optIdx, v) =>
+    setForms((prev) =>
+      prev.map((item, idx) => {
+        if (idx !== qIdx) return item;
+        const next = [...item.options];
+        next[optIdx] = v;
+        return { ...item, options: next };
+      })
+    );
+
+  const toggle = (qIdx, key) =>
+    setForms((prev) =>
+      prev.map((item, idx) =>
+        idx === qIdx ? { ...item, correct: { ...item.correct, [key]: !item.correct[key] } } : item
+      )
+    );
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
+    });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
+  }
 
   function downloadBulkTemplate() {
     const worksheet = XLSX.utils.json_to_sheet([
@@ -110,47 +146,47 @@ export default function QuestionsMCQMulti() {
       return toast.warn("Please complete all fields in the parameter selector above");
     }
 
-    if (!form.question.trim()) {
-      return toast.warn("Please enter the question");
-    }
-
-    if (form.options.some((opt) => !opt.trim())) {
-      return toast.warn("Please fill all options");
+    for (let i = 0; i < forms.length; i += 1) {
+      const item = forms[i];
+      if (!item.question.trim()) {
+        return toast.warn(`Please enter the question text for Question ${i + 1}`);
+      }
+      if (item.options.some((opt) => !opt.trim())) {
+        return toast.warn(`Please fill all options for Question ${i + 1}`);
+      }
     }
 
     setBusy(true);
     try {
-      const correct = Object.entries(form.correct)
-        .filter(([, v]) => v)
-        .map(([k]) => k);
+      let savedCount = 0;
+      for (const item of forms) {
+        const correct = Object.entries(item.correct)
+          .filter(([, v]) => v)
+          .map(([k]) => k);
 
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        tags: form.tags,
-        question: form.question,
-        options: form.options,
-        correct,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-      };
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          tags: item.tags,
+          question: item.question,
+          options: item.options,
+          correct,
+          explanation: item.explanation,
+          explanationImage: item.explanationImage,
+        };
 
-      await postQuestion("mcq-multi", payload);
-      toast.success("Question saved!");
+        await postQuestion("mcq-multi", payload);
+        savedCount += 1;
+      }
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved!`);
 
-      setForm({
-        question: "",
-        options: ["", "", "", ""],
-        correct: { A: false, B: false, C: false, D: false },
-        explanation: "",
-        explanationImage: "",
-        tags: "",
-      });
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
       toast.error(err.message || "Failed to save question.");
     } finally {
@@ -253,91 +289,129 @@ export default function QuestionsMCQMulti() {
               border border-white/40 backdrop-blur-xl shadow-xl p-8
             "
             >
-              <div className="rounded-2xl backdrop-blur-lg p-6">
-                <label className="font-semibold text-slate-800 mb-2 block">
-                  Question
-                </label>
-                <textarea
-                  className="
-                  w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-32
-                  focus:ring-2 focus:ring-blue-500
-                "
-                  placeholder="Enter your question..."
-                  value={form.question}
-                  onChange={(e) => update("question", e.target.value)}
-                />
-              </div>
-
-              <div className="rounded-2xl backdrop-blur-lg p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <FiCheckCircle className="text-green-600" />
-                  <h2 className="text-lg font-semibold text-slate-800">Options</h2>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {["A", "B", "C", "D"].map((L, i) => (
-                    <div key={L} className="space-y-2">
-                      <label className="font-medium text-slate-700">Option {L}</label>
-
-                      <input
-                        className="
-                        w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                        focus:ring-2 focus:ring-indigo-500
-                      "
-                        placeholder={`Enter option ${L}`}
-                        value={form.options[i]}
-                        onChange={(e) => updateOpt(i, e.target.value)}
-                      />
-
-                      <label
-                        className="
-                        flex items-center gap-3 cursor-pointer 
-                        text-sm font-medium text-slate-700
-                      "
-                      >
-                        <input
-                          type="checkbox"
-                          className="hidden peer"
-                          checked={form.correct[L]}
-                          onChange={() => toggle(L)}
-                        />
-                        <div
-                          className="
-                          w-5 h-5 rounded-md border-2 border-slate-400 
-                          peer-checked:border-green-500 peer-checked:bg-green-500 
-                          transition-all
-                        "
-                        ></div>
-                        Mark as Correct
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <label className="font-bold text-slate-800 mb-2 block">
-                    Tags (optional)
+                    How many questions do you want to add?
                   </label>
                   <input
-                    className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
-                    focus:ring-2 focus:ring-green-500"
-                    placeholder="chapter-name, keyword…"
-                    value={form.tags}
-                    onChange={(e) => update("tags", e.target.value)}
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={questionCount}
+                    onChange={(e) => applyQuestionCount(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-sm text-slate-600">
+                    You can add up to 50 questions in one save.
+                  </p>
                 </div>
               </div>
 
-              <div className="rounded-2xl backdrop-blur-lg p-6">
-                <ExplanationEditor
-                  explanation={form.explanation}
-                  explanationImage={form.explanationImage}
-                  onExplanationChange={(value) => update("explanation", value)}
-                  onExplanationImageChange={(value) => update("explanationImage", value)}
-                />
-              </div>
+              {forms.map((form, qIdx) => (
+                <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => deleteQuestionBlock(qIdx)}
+                      disabled={forms.length <= 1}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div className="rounded-2xl backdrop-blur-lg p-4">
+                    <label className="font-semibold text-slate-800 mb-2 block">
+                      Question
+                    </label>
+                    <textarea
+                      className="
+                      w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-32
+                      focus:ring-2 focus:ring-blue-500
+                    "
+                      placeholder="Enter your question..."
+                      value={form.question}
+                      onChange={(e) => update(qIdx, "question", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl backdrop-blur-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FiCheckCircle className="text-green-600" />
+                      <h2 className="text-lg font-semibold text-slate-800">Options</h2>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-6">
+                      {["A", "B", "C", "D"].map((L, i) => (
+                        <div key={L} className="space-y-2">
+                          <label className="font-medium text-slate-700">Option {L}</label>
+
+                          <input
+                            className="
+                            w-full rounded-xl px-4 py-3 bg-white shadow-sm 
+                            focus:ring-2 focus:ring-indigo-500
+                          "
+                            placeholder={`Enter option ${L}`}
+                            value={form.options[i]}
+                            onChange={(e) => updateOpt(qIdx, i, e.target.value)}
+                          />
+
+                          <label
+                            className="
+                            flex items-center gap-3 cursor-pointer 
+                            text-sm font-medium text-slate-700
+                          "
+                          >
+                            <input
+                              type="checkbox"
+                              className="hidden peer"
+                              checked={form.correct[L]}
+                              onChange={() => toggle(qIdx, L)}
+                            />
+                            <div
+                              className="
+                              w-5 h-5 rounded-md border-2 border-slate-400 
+                              peer-checked:border-green-500 peer-checked:bg-green-500 
+                              transition-all
+                            "
+                            ></div>
+                            Mark as Correct
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="font-bold text-slate-800 mb-2 block">
+                        Tags (optional)
+                      </label>
+                      <input
+                        className="w-full rounded-xl px-4 py-3 bg-white shadow-sm 
+                        focus:ring-2 focus:ring-green-500"
+                        placeholder="chapter-name, keyword…"
+                        value={form.tags}
+                        onChange={(e) => update(qIdx, "tags", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl backdrop-blur-lg p-4">
+                    <ExplanationEditor
+                      explanation={form.explanation}
+                      explanationImage={form.explanationImage}
+                      onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                      onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                    />
+                  </div>
+                </div>
+              ))}
 
               <button
                 disabled={busy}

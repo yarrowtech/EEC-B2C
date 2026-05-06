@@ -10,13 +10,39 @@ import { toast, ToastContainer } from "react-toastify";
 export default function QuestionsEssayPlain() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
+  const [questionCount, setQuestionCount] = useState(1);
 
-  const [form, setForm] = useState({
+  const createEmptyQuestion = () => ({
     prompt: "Explain Newton's First Law.",
     plainText: "",
     explanation: "",
     explanationImage: "",
   });
+
+  const [forms, setForms] = useState([createEmptyQuestion()]);
+
+  const update = (qIdx, key, value) =>
+    setForms((prev) => prev.map((item, idx) => (idx === qIdx ? { ...item, [key]: value } : item)));
+
+  function applyQuestionCount(rawValue) {
+    const parsed = Number(rawValue);
+    const safeCount = Number.isFinite(parsed)
+      ? Math.min(50, Math.max(1, Math.floor(parsed)))
+      : 1;
+    setQuestionCount(safeCount);
+    setForms((prev) => {
+      if (safeCount === prev.length) return prev;
+      if (safeCount < prev.length) return prev.slice(0, safeCount);
+      return [...prev, ...Array.from({ length: safeCount - prev.length }, createEmptyQuestion)];
+    });
+  }
+
+  function deleteQuestionBlock(index) {
+    if (forms.length <= 1) return;
+    const nextCount = forms.length - 1;
+    setForms((prev) => prev.filter((_, idx) => idx !== index));
+    setQuestionCount(nextCount);
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -25,36 +51,42 @@ export default function QuestionsEssayPlain() {
       return toast.warn("Please complete all fields in the parameter selector above");
     }
 
-    if (!form.prompt.trim()) {
-      return toast.warn("Please enter the essay prompt");
-    }
-
-    if (!form.plainText.trim()) {
-      return toast.warn("Please enter the answer");
+    for (let i = 0; i < forms.length; i += 1) {
+      const form = forms[i];
+      if (!form.prompt.trim()) {
+        return toast.warn(`Please enter the essay prompt for Question ${i + 1}`);
+      }
+      if (!form.plainText.trim()) {
+        return toast.warn(`Please enter the answer for Question ${i + 1}`);
+      }
     }
 
     setBusy(true);
     try {
-      const payload = {
-        board: scope.board,
-        class: scope.class,
-        subject: scope.subject,
-        topic: scope.topic,
-        prompt: form.prompt,
-        plainText: form.plainText,
-        ...buildQuestionStagePayload(scope.stage),
-        difficulty: scope.difficulty.toLowerCase(),
-        questionType: scope.questionType,
-        explanation: form.explanation,
-        explanationImage: form.explanationImage,
-      };
+      let savedCount = 0;
+      for (const form of forms) {
+        const payload = {
+          board: scope.board,
+          class: scope.class,
+          subject: scope.subject,
+          topic: scope.topic,
+          prompt: form.prompt,
+          plainText: form.plainText,
+          ...buildQuestionStagePayload(scope.stage),
+          difficulty: scope.difficulty.toLowerCase(),
+          questionType: scope.questionType,
+          explanation: form.explanation,
+          explanationImage: form.explanationImage,
+        };
 
-      const out = await postQuestion("essay-plain", payload);
-      // alert(`Saved! id=${out.id}`);
-      toast.success("Question saved!");
-      setForm({ prompt: "", plainText: "", explanation: "", explanationImage: "" });
+        await postQuestion("essay-plain", payload);
+        savedCount += 1;
+      }
+
+      toast.success(`${savedCount} question${savedCount > 1 ? "s" : ""} saved!`);
+      setQuestionCount(1);
+      setForms([createEmptyQuestion()]);
     } catch (err) {
-      // alert(err.message);
       toast.error(err.message || "Failed to save question.");
     } finally {
       setBusy(false);
@@ -99,65 +131,92 @@ export default function QuestionsEssayPlain() {
           <form
             onSubmit={submit}
             className="
-            space-y-8 rounded-3xl 
-            bg-gradient-to-br from-white/70 to-white/30 
+            space-y-8 rounded-3xl
+            bg-gradient-to-br from-white/70 to-white/30
             border border-white/40 backdrop-blur-xl shadow-xl p-8
           "
           >
-            <div className="rounded-2xl backdrop-blur-lg p-6">
-              <label className="font-semibold text-slate-800 mb-2 block flex items-center gap-2">
-                <FiFileText className="text-blue-600" />
-                Essay Prompt
-              </label>
-
-              <input
-                className="
-                w-full rounded-xl px-4 py-3 bg-white shadow-sm
-                focus:ring-2 focus:ring-blue-500 transition-all
-              "
-                placeholder="Enter essay prompt..."
-                value={form.prompt}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, prompt: e.target.value }))
-                }
-              />
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div>
+                <label className="font-bold text-slate-800 mb-2 block">
+                  How many questions do you want to add?
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={questionCount}
+                  onChange={(e) => applyQuestionCount(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+              <div className="flex items-end">
+                <p className="text-sm text-slate-600">You can add up to 50 questions in one save.</p>
+              </div>
             </div>
 
-            <div className="rounded-2xl backdrop-blur-lg p-6">
-              <label className="font-semibold text-slate-800 mb-2 block">
-                Answer (Plain Text)
-              </label>
+            {forms.map((form, qIdx) => (
+              <div key={qIdx} className="rounded-2xl border border-slate-200 p-5 space-y-5 bg-slate-50">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-extrabold text-slate-900">Question {qIdx + 1}</h3>
+                  <button
+                    type="button"
+                    onClick={() => deleteQuestionBlock(qIdx)}
+                    disabled={forms.length <= 1}
+                    className="rounded-lg px-3 py-1.5 text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </div>
 
-              <textarea
-                className="
-                w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-40
-                focus:ring-2 focus:ring-indigo-500 transition-all
-              "
-                placeholder="Write your full detailed answer here..."
-                value={form.plainText}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, plainText: e.target.value }))
-                }
-              />
-            </div>
+                <div className="rounded-2xl backdrop-blur-lg p-6">
+                  <label className="font-semibold text-slate-800 mb-2 block flex items-center gap-2">
+                    <FiFileText className="text-blue-600" />
+                    Essay Prompt
+                  </label>
 
-            <div className="rounded-2xl backdrop-blur-lg p-6">
-              <ExplanationEditor
-                explanation={form.explanation}
-                explanationImage={form.explanationImage}
-                onExplanationChange={(value) =>
-                  setForm((s) => ({ ...s, explanation: value }))
-                }
-                onExplanationImageChange={(value) =>
-                  setForm((s) => ({ ...s, explanationImage: value }))
-                }
-              />
-            </div>
+                  <input
+                    className="
+                    w-full rounded-xl px-4 py-3 bg-white shadow-sm
+                    focus:ring-2 focus:ring-blue-500 transition-all
+                  "
+                    placeholder="Enter essay prompt..."
+                    value={form.prompt}
+                    onChange={(e) => update(qIdx, "prompt", e.target.value)}
+                  />
+                </div>
+
+                <div className="rounded-2xl backdrop-blur-lg p-6">
+                  <label className="font-semibold text-slate-800 mb-2 block">
+                    Answer (Plain Text)
+                  </label>
+
+                  <textarea
+                    className="
+                    w-full rounded-xl px-4 py-3 bg-white shadow-sm min-h-40
+                    focus:ring-2 focus:ring-indigo-500 transition-all
+                  "
+                    placeholder="Write your full detailed answer here..."
+                    value={form.plainText}
+                    onChange={(e) => update(qIdx, "plainText", e.target.value)}
+                  />
+                </div>
+
+                <div className="rounded-2xl backdrop-blur-lg p-6">
+                  <ExplanationEditor
+                    explanation={form.explanation}
+                    explanationImage={form.explanationImage}
+                    onExplanationChange={(value) => update(qIdx, "explanation", value)}
+                    onExplanationImageChange={(value) => update(qIdx, "explanationImage", value)}
+                  />
+                </div>
+              </div>
+            ))}
 
             <button
               disabled={busy}
               className="
-              flex items-center gap-2 rounded-xl px-6 py-3 
+              flex items-center gap-2 rounded-xl px-6 py-3
               bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold
               shadow-md hover:shadow-xl hover:scale-[1.02]
               active:scale-95 transition-all disabled:opacity-50
