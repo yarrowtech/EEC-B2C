@@ -226,6 +226,7 @@ export default function PaprIqFooterSection() {
     { label: "Leaderboard", to: "/dashboard/leaderboard" },
     { label: "Careers", to: "/careers" },
     { label: "Contact Us", to: "/contact-us" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
     // { label: "Meet The Developer", to: "/meet-the-developer" },
   ];
 
@@ -326,7 +327,7 @@ export default function PaprIqFooterSection() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-3 mb-8">
-              <div className="bg-[#FFD23F] p-2 rounded-xl rotate-[-3deg] shadow-lg">
+              <div className="bg-[#FFD23F] p-2 rounded-xl -rotate-3 shadow-lg">
                 {websiteSettings.logoUrl ? (
                   <img
                     src={websiteSettings.logoUrl}

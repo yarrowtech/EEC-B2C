@@ -76,6 +76,7 @@ import AchievementsView from "./pages/AchievementsView";
 import StudyMaterialsPage from "./pages/StudyMaterialsPage";
 import UploadStudyMaterial from "./pages/UploadStudyMaterial";
 import ResetPassword from "./pages/ResetPassword";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CreateNotification from "./pages/CreateNotification";
 import NotificationDetails from "./pages/NotificationDetails";
 import AddClass from "./pages/questions/AddClass";
@@ -100,6 +101,7 @@ import DailyChallengeExam from "./pages/DailyChallengeExam";
 import MeetTheDeveloper from "./pages/MeetTheDeveloper";
 import FlashcardsPage from "./pages/FlashcardsPage";
 import FlashcardsManage from "./pages/admin/FlashcardsManage";
+import AdminPrivacyPolicy from "./pages/admin/AdminPrivacyPolicy";
 import FlashcardsCatalogPage from "./pages/FlashcardsCatalogPage";
 
 
@@ -819,6 +821,7 @@ export default function App() {
             <Route path="syllabus/topic/:subjectId/:topicId" element={<SyllabusTopicContentPage />} />
             <Route path="flashcards" element={<FlashcardsPage />} />
             <Route path="flashcards/manage" element={<RequireAdmin><FlashcardsManage /></RequireAdmin>} />
+            <Route path="privacy-policy" element={<RequireAdmin><AdminPrivacyPolicy /></RequireAdmin>} />
             <Route path="daily-challenge" element={<DailyChallengeExam />} />
             <Route path="questions" element={
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
@@ -897,6 +900,7 @@ export default function App() {
           <Route path="/teacher-dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="/student-dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

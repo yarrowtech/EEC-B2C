@@ -230,6 +230,7 @@ import {
     Trophy,
     User,
     BriefcaseBusiness,
+    Shield,
 } from "lucide-react";
 
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
@@ -511,7 +512,8 @@ export default function DashboardLayout() {
                 { to : "/dashboard/gift-cards", label: "Gift Cards", icon: <Gift size={18} /> },
                 { to : "/dashboard/purchases", label: "Purchases", icon: <ShoppingCart size={18} /> },
                 { to: "/dashboard/subscriptions", label: "Subscriptions", icon: <CreditCard size={18} /> },
-                { to: "/dashboard/packages/manage", label: "Manage Packages", icon: <CreditCard size={18} /> }
+                { to: "/dashboard/packages/manage", label: "Manage Packages", icon: <CreditCard size={18} /> },
+                { to: "/dashboard/privacy-policy", label: "Privacy Policy", icon: <Shield size={18} /> }
             );
         }
 
@@ -666,7 +668,7 @@ export default function DashboardLayout() {
                         </div>
 
                         {/* USER PROFILE & LOGOUT */}
-                        <div className="flex-shrink-0 flex flex-col gap-4 border-t border-slate-100 pt-6 mt-4">
+                        <div className="shrink-0 flex flex-col gap-4 border-t border-slate-100 pt-6 mt-4">
                             {/* DAILY CHALLENGE - Students Only */}
                             {role === "student" && (
                                 <div
@@ -740,13 +742,13 @@ export default function DashboardLayout() {
                                             alt="User avatar"
                                         />
                                     ) : (
-                                        <div className="h-full w-full bg-gradient-to-br from-[#FFD23F] to-[#FF6B6B] flex items-center justify-center text-white font-bold text-lg">
+                                        <div className="h-full w-full bg-linear-to-br from-[#FFD23F] to-[#FF6B6B] flex items-center justify-center text-white font-bold text-lg">
                                             {user?.name?.[0]?.toUpperCase() || "U"}
                                         </div>
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-sm font-bold text-slate-900 leading-tight truncate max-w-[160px]" title={user?.name || "User"}>
+                                    <p className="text-sm font-bold text-slate-900 leading-tight truncate max-w-40" title={user?.name || "User"}>
                                         {user?.name || "User"}
                                     </p>
                                     <p className="text-xs font-medium text-[#4ECDC4]">
@@ -919,7 +921,7 @@ export default function DashboardLayout() {
                                                 <span className="relative z-10 pointer-events-none">{item.icon}</span>
                                                 {item.to === "/dashboard/study-materials" &&
                                                     studyMaterialsUnreadIds.length > 0 && (
-                                                        <span className="absolute -right-2 -top-2 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] leading-4 text-center font-bold shadow">
+                                                        <span className="absolute -right-2 -top-2 min-w-4 h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] leading-4 text-center font-bold shadow">
                                                             {studyMaterialsUnreadIds.length > 99 ? "99+" : studyMaterialsUnreadIds.length}
                                                         </span>
                                                     )}
