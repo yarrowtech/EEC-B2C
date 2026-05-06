@@ -263,6 +263,29 @@ function isTokenValid(token) {
     }
 }
 
+function SafeAvatar({ src, name, alt = "User avatar", className = "", textClassName = "" }) {
+    const [imgFailed, setImgFailed] = useState(false);
+    const hasSrc = Boolean(String(src || "").trim()) && !imgFailed;
+    const initial = String(name || "U").trim().charAt(0).toUpperCase() || "U";
+
+    if (hasSrc) {
+        return (
+            <img
+                className={className}
+                src={src}
+                alt={alt}
+                onError={() => setImgFailed(true)}
+            />
+        );
+    }
+
+    return (
+        <div className={`h-full w-full bg-linear-to-br from-[#FFD23F] to-[#FF6B6B] flex items-center justify-center text-white font-bold ${textClassName}`}>
+            {initial}
+        </div>
+    );
+}
+
 export default function DashboardLayout() {
     const token = getToken();
     const user = getUser();
@@ -733,19 +756,20 @@ export default function DashboardLayout() {
                             )}
 
                             {/* PROFILE CARD */}
-                            <div id="tour-profile-card" className="flex items-center gap-3 px-2">
+                            <button
+                                id="tour-profile-card"
+                                type="button"
+                                onClick={() => navigate("/dashboard/profile")}
+                                className="flex w-full items-center gap-3 px-2 text-left rounded-xl hover:bg-slate-100/80 transition-colors"
+                            >
                                 <div className="h-12 w-12 rounded-full border-4 border-[#4ECDC4] overflow-hidden">
-                                    {user?.avatar ? (
-                                        <img
-                                            className="h-full w-full object-cover"
-                                            src={user.avatar}
-                                            alt="User avatar"
-                                        />
-                                    ) : (
-                                        <div className="h-full w-full bg-linear-to-br from-[#FFD23F] to-[#FF6B6B] flex items-center justify-center text-white font-bold text-lg">
-                                            {user?.name?.[0]?.toUpperCase() || "U"}
-                                        </div>
-                                    )}
+                                    <SafeAvatar
+                                        src={user?.avatar}
+                                        name={user?.name}
+                                        alt="User avatar"
+                                        className="h-full w-full object-cover"
+                                        textClassName="text-lg"
+                                    />
                                 </div>
                                 <div className="flex flex-col">
                                     <p className="text-sm font-bold text-slate-900 leading-tight truncate max-w-40" title={user?.name || "User"}>
@@ -755,7 +779,7 @@ export default function DashboardLayout() {
                                         {online ? "Online" : "Offline"}
                                     </p>
                                 </div>
-                            </div>
+                            </button>
 
                             {/* TAKE A TOUR BUTTON */}
                             <button

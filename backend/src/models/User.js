@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     password: { type: String, required: true },
     role: { type: String, default: "student" },
+    isGoogleAccount: { type: Boolean, default: false },
 
     // Old DB field
     class: { type: String, default: "" },

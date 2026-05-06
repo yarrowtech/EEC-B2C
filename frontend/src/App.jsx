@@ -698,18 +698,9 @@ export default function App() {
 
     useEffect(() => {
       const redirectToHome = () => {
-        const currentPath = window.location.pathname;
-        if (currentPath === "/") {
-          window.location.reload();
-          return;
+        if (window.location.pathname !== "/") {
+          navigate("/", { replace: true });
         }
-        navigate("/", { replace: true });
-        // Fallback in case router navigation is interrupted by modal/render races.
-        setTimeout(() => {
-          if (window.location.pathname !== "/") {
-            window.location.replace("/");
-          }
-        }, 50);
       };
 
       const onAuthEvent = (e) => {

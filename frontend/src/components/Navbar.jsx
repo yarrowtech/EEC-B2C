@@ -225,7 +225,7 @@ export default function Navbar() {
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
           {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
           <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden text-white">
               {websiteSettings.logoUrl ? (
                 <img
                   src={websiteSettings.logoUrl}
@@ -236,9 +236,9 @@ export default function Navbar() {
                 <BookOpen className="h-6 w-6" strokeWidth={2.4} />
               )}
             </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+            {/* <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
               {websiteSettings.siteName}
-            </span>
+            </span> */}
           </Link>
 
           {/* Desktop nav links — centered */}

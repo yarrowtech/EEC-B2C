@@ -171,6 +171,29 @@ const Section = ({ title, subtitle, icon, children, className = "" }) => (
   </section>
 );
 
+function SafeAvatar({ src, name, alt = "User avatar", className = "", textClassName = "" }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const hasSrc = Boolean(String(src || "").trim()) && !imgFailed;
+  const initial = String(name || "U").trim().charAt(0).toUpperCase() || "U";
+
+  if (hasSrc) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`w-full h-full bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold ${textClassName}`}>
+      {initial}
+    </div>
+  );
+}
+
 /* ===== role-specific fragments (UI only) ===== */
 
 // ---- ADMIN ----
@@ -1217,13 +1240,13 @@ function StudentContent() {
               onClick={() => setProfileMenuOpen((prev) => !prev)}
               className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-slate-200 shadow-sm"
             >
-              {storedUser?.avatar ? (
-                <img src={storedUser.avatar} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
-                  {storedUser?.name?.[0]?.toUpperCase() || "U"}
-                </div>
-              )}
+              <SafeAvatar
+                src={storedUser?.avatar}
+                name={storedUser?.name}
+                alt="Profile avatar"
+                className="w-full h-full object-cover"
+                textClassName="text-sm"
+              />
             </button>
             {profileMenuOpen && (
               <div className="absolute right-0 top-12 z-20 min-w-[170px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">

@@ -436,6 +436,7 @@ function showPromotionPopup(newClass) {
 /* ------------------------- component ------------------------- */
 export default function ProfilePage() {
   const user = getUser();
+  const isGoogleAccount = Boolean(user?.isGoogleAccount);
 
   /* --------------- form state: keep your existing backend fields --------------- */
   const [form, setForm] = useState({
@@ -468,6 +469,7 @@ export default function ProfilePage() {
 
   /* preview for uploaded image (dataURL) */
   const [imagePreview, setImagePreview] = useState(user?.avatar || "");
+  const [avatarImageError, setAvatarImageError] = useState(false);
   const fileInputRef = useRef(null);
   const occupationOptions = [
     "Government Employee",
@@ -916,6 +918,10 @@ export default function ProfilePage() {
     return (n.split(" ")[0]?.charAt(0) || "U").toUpperCase();
   };
 
+  useEffect(() => {
+    setAvatarImageError(false);
+  }, [imagePreview]);
+
 
   async function changePassword() {
     try {
@@ -1053,8 +1059,13 @@ export default function ProfilePage() {
             <div className="flex items-end gap-4 -mt-12 mb-3">
               <div className="relative flex-shrink-0">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-amber-100">
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
+                  {imagePreview && !avatarImageError ? (
+                    <img
+                      src={imagePreview}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatarImageError(true)}
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-orange-500">
                       <span className="text-3xl font-bold text-white">{getInitial()}</span>
@@ -1156,9 +1167,23 @@ export default function ProfilePage() {
                   <PField label="Email Address" required error={errors.email}>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type="email" name="email" value={form.email} onChange={handleChange}
-                        placeholder="Email address" className={iCls(errors.email) + " pl-9"} required />
+                      <input
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="Email address"
+                        className={iCls(errors.email) + " pl-9"}
+                        required
+                        disabled={isGoogleAccount}
+                        readOnly={isGoogleAccount}
+                      />
                     </div>
+                    {isGoogleAccount && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Email is managed by Google and cannot be changed here.
+                      </p>
+                    )}
                   </PField>
 
                   <PField label="Phone Number" error={errors.phone}>

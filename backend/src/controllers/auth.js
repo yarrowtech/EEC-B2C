@@ -72,6 +72,7 @@ async function buildLoginPayload(user) {
       _id: user._id,
       name: user.name,
       email: user.email,
+      isGoogleAccount: Boolean(user.isGoogleAccount),
       phone: user.phone,
       avatar: user.avatar || "",
       className: className,
@@ -229,6 +230,7 @@ export async function googleLogin(req, res) {
 
     const email = googlePayload.email.toLowerCase();
     let user = await User.findOne({ email });
+    let isNewGoogleUser = false;
 
     if (!user) {
       const generatedPassword = crypto.randomBytes(32).toString("hex");
@@ -238,14 +240,22 @@ export async function googleLogin(req, res) {
         name: (googlePayload.name || email.split("@")[0] || "User").trim(),
         email,
         password: hash,
+        isGoogleAccount: true,
         avatar: googlePayload.picture || "",
         points: 100,
         registrationYear: new Date().getFullYear(),
         registrationMonth: new Date().getMonth() + 1,
       });
+      isNewGoogleUser = true;
     } else if (googlePayload.picture && !user.avatar) {
       user.avatar = googlePayload.picture;
       await user.save();
+    }
+
+    if (isNewGoogleUser) {
+      sendWelcomeEmail({ to: user.email, name: user.name }).catch((err) =>
+        console.error("Welcome email failed:", err?.message)
+      );
     }
 
     const payload = await buildLoginPayload(user);

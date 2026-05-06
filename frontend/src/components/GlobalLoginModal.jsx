@@ -339,10 +339,16 @@ export default function GlobalLoginModal() {
     const board = String(googleProfile.board || "").trim();
     const className = String(googleProfile.className || "").trim();
     const state = String(googleProfile.state || "").trim();
-    const phone = String(googleProfile.phone || "").trim();
+    const phone = String(googleProfile.phone || "")
+      .replace(/\D/g, "")
+      .slice(0, 10);
 
     if (!board || !className || !state || !phone) {
       toast.error("Please fill board, class, state, and phone.");
+      return;
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      toast.error("Please enter a valid 10-digit phone number.");
       return;
     }
     if (!pendingGoogleAuth?.token) {
@@ -554,8 +560,16 @@ export default function GlobalLoginModal() {
                   <input
                     className="w-full rounded-full border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#F4736E]/40 focus:ring-2 focus:ring-[#F4736E]/15"
                     value={googleProfile.phone}
-                    onChange={(e) => setGoogleProfile((p) => ({ ...p, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setGoogleProfile((p) => ({
+                        ...p,
+                        phone: String(e.target.value || "").replace(/\D/g, "").slice(0, 10),
+                      }))
+                    }
                     placeholder="Enter phone number"
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
+                    maxLength={10}
                     required
                   />
                 </div>

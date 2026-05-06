@@ -397,6 +397,34 @@ router.put("/update-profile", requireAuth, async (req, res) => {
       }
     });
 
+    if (updateData.email !== undefined) {
+      const nextEmail = String(updateData.email || "").trim().toLowerCase();
+      if (!nextEmail) {
+        return res.status(400).json({ message: "Email is required." });
+      }
+
+      if (currentUser.isGoogleAccount && nextEmail !== String(currentUser.email || "").trim().toLowerCase()) {
+        return res.status(400).json({ message: "Email cannot be changed for Google login accounts." });
+      }
+
+      const existing = await User.findOne({
+        email: nextEmail,
+        _id: { $ne: currentUser._id },
+      });
+      if (existing) {
+        return res.status(409).json({ message: "Email already in use." });
+      }
+      updateData.email = nextEmail;
+    }
+
+    if (updateData.phone !== undefined) {
+      const phone = String(updateData.phone || "").replace(/\D/g, "");
+      if (!/^\d{10}$/.test(phone)) {
+        return res.status(400).json({ message: "Phone number must be exactly 10 digits." });
+      }
+      updateData.phone = phone;
+    }
+
     // Special handling: Save className into "class" for old DB compatibility
     // Only if className was actually updated
     if (req.body.className !== undefined && allowedFields.includes("className")) {
