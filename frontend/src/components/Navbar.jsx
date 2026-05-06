@@ -213,8 +213,8 @@ export default function Navbar() {
   // return (
   return shouldHide ? null : (
     <>
-    <nav className="sticky top-0 z-40 w-full border-b-4 bg-white/90 backdrop-blur-md" style={{ borderBottomColor: "rgba(255,210,63,0.25)" }}>
-      <style>{`
+      <nav className="sticky top-0 z-40 w-full border-b-4 bg-white/90 backdrop-blur-md" style={{ borderBottomColor: "rgba(255,210,63,0.25)" }}>
+        <style>{`
         @keyframes wiggle {
           0%,100% { transform: rotate(-2deg); }
           50%      { transform: rotate(2deg);  }
@@ -222,138 +222,149 @@ export default function Navbar() {
         .wiggle { animation: wiggle 1.2s ease-in-out infinite; }
         .wiggle:hover { animation-play-state: paused; }
       `}</style>
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
-        {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
-        <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
-            {websiteSettings.logoUrl ? (
-              <img
-                src={websiteSettings.logoUrl}
-                alt={websiteSettings.siteName}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <BookOpen className="h-6 w-6" strokeWidth={2.4} />
-            )}
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-            {websiteSettings.siteName}
-          </span>
-        </Link>
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
+          {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
+          <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#F4736E] p-2 rotate-3 shadow-lg text-white">
+              {websiteSettings.logoUrl ? (
+                <img
+                  src={websiteSettings.logoUrl}
+                  alt={websiteSettings.siteName}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <BookOpen className="h-6 w-6" strokeWidth={2.4} />
+              )}
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+              {websiteSettings.siteName}
+            </span>
+          </Link>
 
-        {/* Desktop nav links — centered */}
-        <div className="hidden items-center gap-8 md:flex">
-          <RouterLink className="ml-2" to="/" active={isActive("/")}>
-            Home
-          </RouterLink>
-          <RouterLink to="/about" active={isActive("/about")}>
-            About Us
-          </RouterLink>
+          {/* Desktop nav links — centered */}
+          <div className="hidden items-center gap-8 md:flex">
+            <RouterLink className="ml-2" to="/" active={isActive("/")}>
+              Home
+            </RouterLink>
+            <RouterLink to="/about" active={isActive("/about")}>
+              About Us
+            </RouterLink>
 
-          <Dropdown label="Study Tools">
+            {/* <Dropdown label="Study Tools">
             <DropItem to="/tryouts">Tryouts</DropItem>
             <DropItem to="/boards">Learn</DropItem>
             <DropItem to="/flashcards">Flashcards</DropItem>
-          </Dropdown>
+          </Dropdown> */}
+            <RouterLink to="/tryouts" active={isActive("/tryouts")}>
+              Tryouts
+            </RouterLink>
 
-          <RouterLink to="/contact-us" active={isActive("/contact-us") || isActive("/office")}>
-            Contact Us
-          </RouterLink>
-          <RouterLink to="/careers" active={isActive("/careers")}>
-            Careers
-          </RouterLink>
-        </div>
+            <RouterLink to="/boards" active={isActive("/boards")}>
+              Learning
+            </RouterLink>
 
-        {/* Desktop right side */}
-        <div className="hidden items-center gap-2 md:flex">
-          {currentUser ? (
-            <div className="relative" ref={userMenuRef}>
+            <RouterLink to="/flashcards" active={isActive("/flashcards")}>
+              Flashcards
+            </RouterLink>
+
+            <RouterLink to="/contact-us" active={isActive("/contact-us") || isActive("/office")}>
+              Contact Us
+            </RouterLink>
+            {/* <RouterLink to="/careers" active={isActive("/careers")}>
+              Careers
+            </RouterLink> */}
+          </div>
+
+          {/* Desktop right side */}
+          <div className="hidden items-center gap-2 md:flex">
+            {currentUser ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((s) => !s)}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1B1F3B] transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  {currentUser?.avatar ? (
+                    <img
+                      src={currentUser.avatar}
+                      alt="Profile"
+                      className="h-6 w-6 rounded-full object-cover border border-slate-200"
+                    />
+                  ) : (
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
+                      <User className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                  <span className="max-w-[10rem] truncate">{currentUser.name}</span>
+                  <ChevronDown className={`h-4 w-4 transition ${userMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
+                    <button
+                      type="button"
+                      onClick={proceedToDashboard}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#1B1F3B] hover:bg-slate-50"
+                    >
+                      <LayoutDashboard className="h-4 w-4 text-slate-400" />
+                      Dashboard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#1B1F3B] hover:bg-slate-50"
+                    >
+                      <LogOut className="h-4 w-4 text-slate-400" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : null}
+            {/* Claim Free Gift — exact code.html style: rounded-2xl, 3D shadow, wiggle */}
+            {!currentUser && (
               <button
                 type="button"
-                onClick={() => setUserMenuOpen((s) => !s)}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1B1F3B] transition hover:border-slate-300 hover:bg-slate-50"
+                onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
+                className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
               >
-                {currentUser?.avatar ? (
-                  <img
-                    src={currentUser.avatar}
-                    alt="Profile"
-                    className="h-6 w-6 rounded-full object-cover border border-slate-200"
-                  />
-                ) : (
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#F4736E]/10 text-[#F4736E]">
-                    <User className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                <span className="max-w-[10rem] truncate">{currentUser.name}</span>
-                <ChevronDown className={`h-4 w-4 transition ${userMenuOpen ? "rotate-180" : ""}`} />
+                Join Now 🎁
               </button>
-
-              {userMenuOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
-                  <button
-                    type="button"
-                    onClick={proceedToDashboard}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#1B1F3B] hover:bg-slate-50"
-                  >
-                    <LayoutDashboard className="h-4 w-4 text-slate-400" />
-                    Dashboard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#1B1F3B] hover:bg-slate-50"
-                  >
-                    <LogOut className="h-4 w-4 text-slate-400" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : null}
-          {/* Claim Free Gift — exact code.html style: rounded-2xl, 3D shadow, wiggle */}
-          {!currentUser && (
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
-              className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
-            >
-              Join Now 🎁
-            </button>
-          )}
-        </div>
-
-        {/* Mobile: Claim Free Gift + Hamburger */}
-        <div className="flex items-center gap-2 md:hidden">
-          {!currentUser && (
-            <button
-              type="button"
-              onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
-              className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-xs hover:bg-yellow-400 transition-all hover:scale-105"
-            >
-              Claim Free Gift! 🎁
-            </button>
-          )}
-          <button
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
-            onClick={() => setMobileOpen((s) => !s)}
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-drawer"
-          >
-            {mobileOpen ? (
-              <X className="h-5 w-5 text-[#1B1F3B]" />
-            ) : (
-              <Menu className="h-5 w-5 text-[#1B1F3B]" />
             )}
-          </button>
+          </div>
+
+          {/* Mobile: Claim Free Gift + Hamburger */}
+          <div className="flex items-center gap-2 md:hidden">
+            {!currentUser && (
+              <button
+                type="button"
+                onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
+                className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-xs hover:bg-yellow-400 transition-all hover:scale-105"
+              >
+                Claim Free Gift! 🎁
+              </button>
+            )}
+            <button
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
+              onClick={() => setMobileOpen((s) => !s)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-drawer"
+            >
+              {mobileOpen ? (
+                <X className="h-5 w-5 text-[#1B1F3B]" />
+              ) : (
+                <Menu className="h-5 w-5 text-[#1B1F3B]" />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
 
-    </nav>
+      </nav>
 
-    {/* ======= Mobile Drawer + Overlay — outside <nav> so backdrop-filter doesn't trap fixed positioning ======= */}
-    {/* Overlay */}
-    <div
+      {/* ======= Mobile Drawer + Overlay — outside <nav> so backdrop-filter doesn't trap fixed positioning ======= */}
+      {/* Overlay */}
+      <div
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
         onClick={closeMobile}
@@ -401,7 +412,7 @@ export default function Navbar() {
           </RouterLink>
 
           {/* Study Tools group */}
-          <details className="rounded-xl p-1 open:bg-blue-50/70">
+          {/* <details className="rounded-xl p-1 open:bg-blue-50/70">
             <summary className="cursor-pointer rounded-xl px-2 py-2 text-sm font-medium text-blue-900">
               Study Tools
             </summary>
@@ -416,7 +427,34 @@ export default function Navbar() {
                 Flashcards
               </DropItem>
             </div>
-          </details>
+          </details> */}
+
+          <RouterLink
+            to="/tryouts"
+            className="!block !px-2"
+            onClick={closeMobile}
+            active={isActive("/tryouts")}
+          >
+            Tryouts
+          </RouterLink>
+
+          <RouterLink
+            to="/boards"
+            className="!block !px-2"
+            onClick={closeMobile}
+            active={isActive("/boards")}
+          >
+            Learning
+          </RouterLink>
+
+          <RouterLink
+            to="/flashcards"
+            className="!block !px-2"
+            onClick={closeMobile}
+            active={isActive("/flashcards")}
+          >
+            Flashcards
+          </RouterLink>
 
           <RouterLink
             to="/contact-us"
@@ -507,7 +545,7 @@ export default function Navbar() {
           )}
 
         </div>
-    </aside>
+      </aside>
     </>
   )
   // );
