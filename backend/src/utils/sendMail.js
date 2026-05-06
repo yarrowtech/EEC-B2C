@@ -926,3 +926,62 @@ export async function sendSubscriptionInvoiceEmail({
     throw error;
   }
 }
+
+export async function sendPrivacyPolicyUpdateEmail({ to, policyUrl, lastUpdated }) {
+  const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
+    await getWebsiteBranding();
+
+  const safePolicyUrl =
+    String(policyUrl || websiteUrl || CLIENT_ORIGIN || "#").trim() || "#";
+  const safeLastUpdated = String(lastUpdated || "").trim() || "Recently";
+
+  const html = wrapEmail(`
+    ${buildEmailHeader({ siteName, siteTagline, logoUrl })}
+
+    <tr>
+      <td style="padding:36px 40px 28px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td align="center">
+              <div style="display:inline-block;background:#eff6ff;border:2px solid ${BRAND.teal};border-radius:50px;padding:8px 20px;">
+                <span style="font-size:13px;font-weight:700;color:${BRAND.navy};">🔔 Policy Update Notice</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND.navy};text-align:center;">
+          Our Privacy Policy Has Been Updated
+        </h2>
+
+        <p style="margin:0 0 14px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;text-align:center;">
+          We made updates to the <strong style="color:${BRAND.navy};">${siteName}</strong> Privacy Policy.
+        </p>
+        <p style="margin:0 0 20px;font-size:14px;color:${BRAND.textMuted};line-height:1.7;text-align:center;">
+          Effective date: <strong style="color:${BRAND.navy};">${safeLastUpdated}</strong>
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 20px;">
+          <tr>
+            <td align="center">
+              ${buildCtaButton({ href: safePolicyUrl, label: "Read Updated Policy &rarr;" })}
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:24px 0 0;font-size:14px;color:${BRAND.textMuted};line-height:1.6;">
+          Regards,<br/>
+          <strong style="color:${BRAND.navy};">${siteName} Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    ${buildEmailFooter({ siteName, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone })}
+  `);
+
+  await sendMail({
+    to,
+    subject: `${siteName} Privacy Policy Update`,
+    html,
+  });
+}

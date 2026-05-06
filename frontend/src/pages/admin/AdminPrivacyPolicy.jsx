@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import {
   Shield, Eye, Lock, Users, Bell, Trash2,
   Plus, Trash, ChevronDown, ChevronUp, RotateCcw, Save, ExternalLink,
@@ -144,7 +144,7 @@ export default function AdminPrivacyPolicy() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "Save failed");
-      toast.success("Privacy policy saved!");
+      toast.success("Updated");
     } catch (err) {
       toast.error(err.message || "Save failed");
     } finally {
@@ -229,6 +229,7 @@ export default function AdminPrivacyPolicy() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+      <ToastContainer position="bottom-right" style={{ zIndex: 99999 }} />
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
