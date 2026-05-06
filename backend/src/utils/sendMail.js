@@ -985,3 +985,134 @@ export async function sendPrivacyPolicyUpdateEmail({ to, policyUrl, lastUpdated 
     html,
   });
 }
+
+export async function sendCareerApplicationReceivedEmail({ to, name, email, jobPosition }) {
+  const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
+    await getWebsiteBranding();
+
+  const safeName = String(name || "").trim() || "Candidate";
+  const safeEmail = String(email || to || "").trim().toLowerCase() || "-";
+  const safeJob = String(jobPosition || "").trim() || "the role";
+
+  const html = wrapEmail(`
+    ${buildEmailHeader({ siteName, siteTagline, logoUrl })}
+
+    <tr>
+      <td style="padding:36px 40px 28px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td align="center">
+              <div style="display:inline-block;background:#f0fdf4;border:2px solid ${BRAND.success};border-radius:50px;padding:8px 20px;">
+                <span style="font-size:13px;font-weight:700;color:#166534;">✅ Application Received</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND.navy};text-align:center;">
+          Your Job Application Was Submitted
+        </h2>
+
+        <p style="margin:0 0 10px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;">
+          Hi <strong style="color:${BRAND.navy};">${safeName}</strong>,
+        </p>
+        <p style="margin:0 0 12px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;">
+          We have successfully received your application for <strong style="color:${BRAND.navy};">${safeJob}</strong>.
+        </p>
+        <p style="margin:0 0 20px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;">
+          Our team will review your profile and contact you if shortlisted for the next step.
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="background:#f8fafc;border:1px solid ${BRAND.borderLight};border-radius:14px;margin:0 0 24px;">
+          <tr>
+            <td style="padding:18px 20px;">
+              <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:${BRAND.navy};text-transform:uppercase;letter-spacing:0.6px;">
+                Application Details
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${buildInfoRow("Name", safeName)}
+                ${buildInfoRow("Email", safeEmail)}
+                ${buildInfoRow("Position", safeJob)}
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:24px 0 0;font-size:14px;color:${BRAND.textMuted};line-height:1.6;">
+          Regards,<br/>
+          <strong style="color:${BRAND.navy};">${siteName} Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    ${buildEmailFooter({ siteName, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone })}
+  `);
+
+  await sendMail({
+    to,
+    subject: `${siteName} Careers: Application Received`,
+    html,
+  });
+}
+
+export async function sendCareerApplicationStatusEmail({ to, name, jobPosition, status }) {
+  const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
+    await getWebsiteBranding();
+
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  const safeName = String(name || "").trim() || "Candidate";
+  const safeJob = String(jobPosition || "").trim() || "the role";
+
+  const isShortlisted = normalizedStatus === "shortlisted";
+  const badgeBg = isShortlisted ? "#f0fdf4" : "#fef2f2";
+  const badgeBorder = isShortlisted ? BRAND.success : BRAND.danger;
+  const badgeColor = isShortlisted ? "#166534" : "#991b1b";
+  const badgeText = isShortlisted ? "🎉 Shortlisted" : "📩 Application Update";
+  const title = isShortlisted ? "You Have Been Shortlisted" : "Your Application Status Was Updated";
+  const body = isShortlisted
+    ? `Great news. You have been shortlisted for <strong style="color:${BRAND.navy};">${safeJob}</strong>. Our team will contact you soon with the next steps.`
+    : `Thank you for applying for <strong style="color:${BRAND.navy};">${safeJob}</strong>. After review, your application was not selected for this role.`;
+
+  const html = wrapEmail(`
+    ${buildEmailHeader({ siteName, siteTagline, logoUrl })}
+
+    <tr>
+      <td style="padding:36px 40px 28px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td align="center">
+              <div style="display:inline-block;background:${badgeBg};border:2px solid ${badgeBorder};border-radius:50px;padding:8px 20px;">
+                <span style="font-size:13px;font-weight:700;color:${badgeColor};">${badgeText}</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND.navy};text-align:center;">
+          ${title}
+        </h2>
+
+        <p style="margin:0 0 10px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;">
+          Hi <strong style="color:${BRAND.navy};">${safeName}</strong>,
+        </p>
+        <p style="margin:0 0 20px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;">
+          ${body}
+        </p>
+
+        <p style="margin:24px 0 0;font-size:14px;color:${BRAND.textMuted};line-height:1.6;">
+          Regards,<br/>
+          <strong style="color:${BRAND.navy};">${siteName} Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    ${buildEmailFooter({ siteName, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone })}
+  `);
+
+  const subject = isShortlisted
+    ? `${siteName} Careers: You are Shortlisted`
+    : `${siteName} Careers: Application Status Update`;
+
+  await sendMail({ to, subject, html });
+}

@@ -1,5 +1,8 @@
 import CareerApplication from "../models/CareerApplication.js";
-import sendMail from "../utils/sendMail.js";
+import {
+  sendCareerApplicationReceivedEmail,
+  sendCareerApplicationStatusEmail,
+} from "../utils/sendMail.js";
 
 export const createCareerApplication = async (req, res) => {
   try {
@@ -25,33 +28,11 @@ export const createCareerApplication = async (req, res) => {
       cvPublicId: req.file.filename || "",
     });
 
-    const nameSafe = String(name || "").trim() || "Candidate";
-    const jobSafe = String(jobPosition || "").trim();
-    const html = `
-      <div style="font-family:Arial,Helvetica,sans-serif;max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-        <div style="background:linear-gradient(135deg,#ca8a04,#fde047);padding:22px 20px;text-align:center">
-          <h2 style="margin:0;color:#ffffff;font-size:22px;">Application Submitted Successfully</h2>
-        </div>
-        <div style="padding:20px">
-          <p style="margin:0 0 10px;color:#374151;font-size:15px;">Hi <strong>${nameSafe}</strong>,</p>
-          <p style="margin:0 0 12px;color:#4b5563;font-size:14px;line-height:1.6;">
-            Thank you for applying to <strong>${jobSafe}</strong> at Electronic Educare (EEC).
-            Your application has been submitted successfully.
-          </p>
-          <p style="margin:0 0 12px;color:#4b5563;font-size:14px;line-height:1.6;">
-            Our team will review your profile and contact you if your profile matches our requirements.
-          </p>
-          <p style="margin:18px 0 0;color:#6b7280;font-size:12px;">
-            This is an automated email. Please do not reply.
-          </p>
-        </div>
-      </div>
-    `;
-
-    sendMail({
+    sendCareerApplicationReceivedEmail({
       to: String(email).trim().toLowerCase(),
-      subject: `EEC Careers: Application Received for ${jobSafe}`,
-      html,
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      jobPosition: String(jobPosition).trim(),
     }).catch((mailErr) => {
       console.error("Career application confirmation email failed:", mailErr?.message || mailErr);
     });
@@ -120,6 +101,18 @@ export const updateCareerApplicationStatus = async (req, res) => {
 
     if (!item) {
       return res.status(404).json({ message: "Application not found" });
+    }
+
+    const normalizedStatus = String(status).trim().toLowerCase();
+    if (normalizedStatus === "shortlisted" || normalizedStatus === "rejected") {
+      sendCareerApplicationStatusEmail({
+        to: String(item.email || "").trim().toLowerCase(),
+        name: String(item.name || "").trim(),
+        jobPosition: String(item.jobPosition || "").trim(),
+        status: normalizedStatus,
+      }).catch((mailErr) => {
+        console.error("Career application status email failed:", mailErr?.message || mailErr);
+      });
     }
 
     return res.json({ message: "Status updated", application: item });
