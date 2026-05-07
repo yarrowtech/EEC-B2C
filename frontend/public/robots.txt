@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard/
-Disallow: /admin/
 Sitemap: https://edifyeight.com/sitemap.xml

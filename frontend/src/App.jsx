@@ -339,6 +339,45 @@ function RouteHelmet({ siteSettings }) {
     typeof window !== "undefined"
       ? `${window.location.origin}${String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png"}`
       : String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png";
+  const siteBase =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://edifyeight.com";
+  const pathParts = String(location.pathname || "/")
+    .split("/")
+    .filter(Boolean);
+  const breadcrumbItems = [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteBase}/` },
+    ...pathParts.map((part, idx) => ({
+      "@type": "ListItem",
+      position: idx + 2,
+      name: decodeURIComponent(part).replace(/-/g, " "),
+      item: `${siteBase}/${pathParts.slice(0, idx + 1).join("/")}`,
+    })),
+  ];
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteName,
+    url: siteBase,
+    logo: socialImage,
+  };
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: siteBase,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteBase}/?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems,
+  };
 
   useEffect(() => {
     document.title = finalTitle;
@@ -406,6 +445,9 @@ function RouteHelmet({ siteSettings }) {
       <meta property="og:image" content={socialImage} />
       {noindex ? <meta name="robots" content="noindex,nofollow" /> : <meta name="robots" content="index,follow" />}
       <link rel="canonical" href={canonical} />
+      <script type="application/ld+json">{JSON.stringify(organizationSchema)}</script>
+      <script type="application/ld+json">{JSON.stringify(websiteSchema)}</script>
+      <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
     </Helmet>
   );
 }
