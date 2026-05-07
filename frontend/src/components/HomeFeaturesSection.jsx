@@ -2,6 +2,21 @@
 // Quizlet-style: "how you study" — large study mode cards + teacher section
 import { motion } from "framer-motion";
 
+function AnimatedBar({ pct, color }) {
+  return (
+    <div className="h-2 rounded-full flex-1" style={{ background: color + "20" }}>
+      <motion.div
+        className="h-2 rounded-full"
+        style={{ background: color }}
+        initial={{ width: 0 }}
+        whileInView={{ width: `${pct}%` }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.75, ease: "easeOut" }}
+      />
+    </div>
+  );
+}
+
 const MODES = [
   {
     icon: "quiz",
@@ -19,15 +34,10 @@ const MODES = [
       "Weak topic identification after every test",
     ],
     visual: (
-      <div className="flex flex-col gap-2">
-        {["Basic Level", "Intermediate", "Advanced"].map((l, i) => (
+      <div className="flex flex-col gap-3">
+        {[["Basic Level", 45], ["Intermediate", 70], ["Advanced", 90]].map(([l, pct]) => (
           <div key={l} className="flex items-center gap-2">
-            <div className="h-2 rounded-full bg-[#F4736E]/20 flex-1">
-              <div
-                className="h-2 rounded-full bg-[#F4736E]"
-                style={{ width: `${[45, 70, 90][i]}%` }}
-              />
-            </div>
+            <AnimatedBar pct={pct} color="#F4736E" />
             <span className="text-xs font-bold text-[#F4736E] w-24 shrink-0">{l}</span>
           </div>
         ))}
@@ -64,7 +74,12 @@ const MODES = [
             }}
           >
             {z === 0 && (
-              <span className="material-symbols-outlined text-3xl" style={{ color: "#6C63FF", fontVariationSettings: "'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 40" }}>style</span>
+              <span
+                className="material-symbols-outlined text-3xl"
+                style={{ color: "#6C63FF", fontVariationSettings: "'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 40" }}
+              >
+                style
+              </span>
             )}
           </div>
         ))}
@@ -140,18 +155,18 @@ const MODES = [
 ];
 
 const STUDENT_FEATURES = [
-  { icon: "area_chart",          text: "See exactly where you're weak — auto-detected after every test", color: "#F4736E" },
-  { icon: "local_fire_department",text: "Build daily streaks and never break your study habit",           color: "#FF9F1C" },
-  { icon: "military_tech",       text: "Earn badges and points for every milestone you hit",             color: "#6C63FF" },
-  { icon: "leaderboard",         text: "Track your rank on the live leaderboard",                       color: "#4ECDC4" },
-  { icon: "history_edu",         text: "Review all past results and scores anytime",                    color: "#F4736E" },
-  { icon: "menu_book",           text: "Download study materials from your teachers instantly",          color: "#4ECDC4" },
+  { icon: "area_chart",           text: "See exactly where you're weak — auto-detected after every test", color: "#F4736E"  },
+  { icon: "local_fire_department",text: "Build daily streaks and never break your study habit",           color: "#FF9F1C"  },
+  { icon: "military_tech",        text: "Earn badges and points for every milestone you hit",             color: "#6C63FF"  },
+  { icon: "leaderboard",          text: "Track your rank on the live leaderboard",                        color: "#4ECDC4"  },
+  { icon: "history_edu",          text: "Review all past results and scores anytime",                     color: "#F4736E"  },
+  { icon: "menu_book",            text: "Download study materials from your teachers instantly",           color: "#4ECDC4"  },
 ];
 
 export default function HomeFeaturesSection() {
   return (
     <>
-      {/* ══ STUDY MODES SECTION (Quizlet style) ══ */}
+      {/* ══ STUDY MODES SECTION ══ */}
       <section className="py-16 md:py-24 bg-white overflow-hidden relative">
         <div className="pointer-events-none absolute -top-32 -right-32 w-96 h-96 rounded-full bg-[#F4736E]/6 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-[#6C63FF]/6 blur-3xl" />
@@ -167,7 +182,12 @@ export default function HomeFeaturesSection() {
             className="text-center mb-12"
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-[#6C63FF]/30 bg-[#6C63FF]/8 px-4 py-1.5 text-sm font-bold text-[#6C63FF] mb-4">
-              <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24" }}>auto_awesome</span>
+              <span
+                className="material-symbols-outlined text-base"
+                style={{ fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24" }}
+              >
+                auto_awesome
+              </span>
               4 Ways to Learn
             </div>
             <h2
@@ -182,21 +202,20 @@ export default function HomeFeaturesSection() {
             </p>
           </motion.div>
 
-          {/* Mode cards — alternating layout like Quizlet feature sections */}
+          {/* Mode cards */}
           <div className="space-y-6 md:space-y-8">
             {MODES.map((m, i) => (
               <motion.div
                 key={m.title}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
+                initial={{ opacity: 0, x: i % 2 === 0 ? -36 : 36 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.55 }}
+                transition={{ duration: 0.55, ease: "easeOut" }}
                 className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} gap-0 rounded-3xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300`}
                 style={{ borderColor: m.border, background: m.lightBg }}
               >
                 {/* Text side */}
                 <div className="flex-1 p-7 md:p-10 flex flex-col justify-center gap-4">
-                  {/* Tag */}
                   <span
                     className="self-start text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full"
                     style={{ background: m.color + "18", color: m.color }}
@@ -204,7 +223,6 @@ export default function HomeFeaturesSection() {
                     {m.tag}
                   </span>
 
-                  {/* Icon + Title */}
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-12 h-12 rounded-2xl bg-linear-to-br ${m.gradient} flex items-center justify-center shadow-md shrink-0`}
@@ -227,8 +245,15 @@ export default function HomeFeaturesSection() {
                   <p className="text-slate-600 text-sm md:text-base leading-relaxed">{m.desc}</p>
 
                   <ul className="space-y-2">
-                    {m.bullets.map((b) => (
-                      <li key={b} className="flex items-start gap-2.5 text-sm font-semibold text-slate-700">
+                    {m.bullets.map((b, bi) => (
+                      <motion.li
+                        key={b}
+                        initial={{ opacity: 0, x: -14 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.15 + bi * 0.09, duration: 0.38 }}
+                        className="flex items-start gap-2.5 text-sm font-semibold text-slate-700"
+                      >
                         <span
                           className="material-symbols-outlined text-[18px] shrink-0 mt-0.5"
                           style={{ color: m.color, fontVariationSettings: "'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 20" }}
@@ -236,7 +261,7 @@ export default function HomeFeaturesSection() {
                           check_circle
                         </span>
                         {b}
-                      </li>
+                      </motion.li>
                     ))}
                   </ul>
                 </div>
@@ -265,6 +290,21 @@ export default function HomeFeaturesSection() {
           style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "28px 28px" }}
         />
 
+        {/* Floating accent dots */}
+        {[
+          { x: "5%",  y: "15%", size: 10, color: "rgba(255,210,63,0.2)", dur: 4 },
+          { x: "95%", y: "20%", size: 8,  color: "rgba(78,205,196,0.2)", dur: 5 },
+          { x: "90%", y: "75%", size: 12, color: "rgba(244,115,110,0.18)", dur: 3.8 },
+        ].map((f, i) => (
+          <motion.span
+            key={i}
+            className="pointer-events-none absolute rounded-full"
+            style={{ left: f.x, top: f.y, width: f.size, height: f.size, background: f.color }}
+            animate={{ y: [0, -12, 0], scale: [1, 1.2, 1] }}
+            transition={{ duration: f.dur, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+          />
+        ))}
+
         <div className="mx-auto max-w-7xl px-4 md:px-8 relative">
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-16">
 
@@ -277,7 +317,12 @@ export default function HomeFeaturesSection() {
               className="flex-1"
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-[#FFD23F]/40 bg-[#FFD23F]/10 px-4 py-1.5 text-sm font-bold text-[#FFD23F] mb-5">
-                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24" }}>emoji_events</span>
+                <span
+                  className="material-symbols-outlined text-base"
+                  style={{ fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24" }}
+                >
+                  emoji_events
+                </span>
                 Built for Students
               </div>
 
@@ -294,8 +339,15 @@ export default function HomeFeaturesSection() {
               </p>
 
               <ul className="space-y-3">
-                {STUDENT_FEATURES.map((f) => (
-                  <li key={f.text} className="flex items-center gap-3">
+                {STUDENT_FEATURES.map((f, i) => (
+                  <motion.li
+                    key={f.text}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.09, duration: 0.4 }}
+                    className="flex items-center gap-3"
+                  >
                     <div
                       className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                       style={{ background: f.color + "25" }}
@@ -308,7 +360,7 @@ export default function HomeFeaturesSection() {
                       </span>
                     </div>
                     <span className="text-sm font-semibold text-slate-200">{f.text}</span>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             </motion.div>
@@ -321,17 +373,28 @@ export default function HomeFeaturesSection() {
               transition={{ duration: 0.55 }}
               className="flex-1 flex items-center justify-center w-full"
             >
-              <div className="relative w-full max-w-sm">
+              <motion.div
+                className="relative w-full max-w-sm"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              >
                 <div className="relative z-10 bg-white rounded-3xl p-6 shadow-2xl">
 
                   {/* Student header */}
                   <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#FFD23F] to-[#F4736E] flex items-center justify-center text-white font-black text-lg" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>A</div>
+                    <div
+                      className="w-10 h-10 rounded-full bg-linear-to-br from-[#FFD23F] to-[#F4736E] flex items-center justify-center text-white font-black text-lg"
+                      style={{ fontFamily: "'Balsamiq Sans', cursive" }}
+                    >
+                      A
+                    </div>
                     <div>
                       <p className="text-sm font-black text-slate-900">Arjun S.</p>
                       <p className="text-xs text-[#4ECDC4] font-semibold">Grade 8 · CBSE</p>
                     </div>
-                    <span className="ml-auto text-xs font-black bg-[#FFD23F]/20 text-[#FF9F1C] px-2 py-1 rounded-full">Explorer</span>
+                    <span className="ml-auto text-xs font-black bg-[#FFD23F]/20 text-[#FF9F1C] px-2 py-1 rounded-full">
+                      Explorer
+                    </span>
                   </div>
 
                   {/* Stats row */}
@@ -342,7 +405,9 @@ export default function HomeFeaturesSection() {
                       { label: "Rank",    value: "#14",  color: "#4ECDC4" },
                     ].map((s) => (
                       <div key={s.label} className="text-center rounded-2xl py-3 px-2" style={{ background: s.color + "12" }}>
-                        <p className="text-base font-black" style={{ color: s.color, fontFamily: "'Balsamiq Sans', cursive" }}>{s.value}</p>
+                        <p className="text-base font-black" style={{ color: s.color, fontFamily: "'Balsamiq Sans', cursive" }}>
+                          {s.value}
+                        </p>
                         <p className="text-[10px] font-bold text-slate-500">{s.label}</p>
                       </div>
                     ))}
@@ -361,7 +426,14 @@ export default function HomeFeaturesSection() {
                           <span style={{ color: w.color }}>{w.pct}%</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                          <div className="h-1.5 rounded-full" style={{ width: `${w.pct}%`, background: w.color }} />
+                          <motion.div
+                            className="h-1.5 rounded-full"
+                            style={{ background: w.color }}
+                            initial={{ width: 0 }}
+                            whileInView={{ width: `${w.pct}%` }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.7, ease: "easeOut" }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -369,17 +441,26 @@ export default function HomeFeaturesSection() {
 
                   {/* Daily challenge chip */}
                   <div className="flex items-center gap-2 rounded-2xl bg-[#4ECDC4]/10 border border-[#4ECDC4]/25 px-3 py-2.5">
-                    <span className="material-symbols-outlined text-base" style={{ color: "#4ECDC4", fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 20" }}>check_circle</span>
+                    <span
+                      className="material-symbols-outlined text-base"
+                      style={{ color: "#4ECDC4", fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 20" }}
+                    >
+                      check_circle
+                    </span>
                     <span className="text-xs font-bold text-slate-700">Daily challenge completed! +10 pts</span>
                   </div>
                 </div>
 
-                {/* Floating badge */}
-                <div className="absolute -bottom-5 -right-5 bg-[#F4736E] text-white rounded-2xl px-4 py-3 shadow-xl z-20 text-center">
+                {/* Floating badge — bobs independently */}
+                <motion.div
+                  className="absolute -bottom-5 -right-5 bg-[#F4736E] text-white rounded-2xl px-4 py-3 shadow-xl z-20 text-center"
+                  animate={{ y: [0, -8, 0], rotate: [-2, 2, -2] }}
+                  transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                >
                   <p className="text-2xl font-black" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>🥇</p>
                   <p className="text-xs font-bold opacity-90">Gold Badge</p>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </motion.div>
 
           </div>
@@ -397,7 +478,12 @@ export default function HomeFeaturesSection() {
               onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
               className="inline-flex items-center gap-2 rounded-full bg-[#FFD23F] px-8 py-4 text-base font-black text-[#1B1F3B] shadow-[0_8px_28px_rgba(255,210,63,0.3)] hover:brightness-105 hover:scale-105 transition-all duration-300"
             >
-              <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24" }}>rocket_launch</span>
+              <span
+                className="material-symbols-outlined text-xl"
+                style={{ fontVariationSettings: "'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24" }}
+              >
+                rocket_launch
+              </span>
               Start Learning Free Today
             </button>
           </motion.div>
