@@ -1158,13 +1158,18 @@ function StudentContent() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard/achievements")}
+            className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm hover:bg-slate-50 transition-colors"
+            title="View achievements"
+          >
             <span className="text-lg">🪙</span>
-            <div>
+            <div className="text-left">
               <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
               <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : `${Number(storedUser?.points || 0).toLocaleString()} pts`}</div>
             </div>
-          </div>
+          </button>
           <div ref={notificationRef} className="relative">
             <button
               type="button"
@@ -1303,6 +1308,7 @@ function StudentContent() {
             value={busy ? "…" : totalScore}
             icon={<span className="material-symbols-outlined fill-1">layers</span>}
             accentColor="purple"
+            onClick={() => navigate("/dashboard/achievements")}
           />
         </div>
         {err && <div className="text-xs text-rose-600 mt-2">{err}</div>}

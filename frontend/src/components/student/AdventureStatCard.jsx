@@ -80,13 +80,24 @@ const configs = {
   },
 };
 
-const AdventureStatCard = ({ title, value, icon, accentColor }) => {
+const AdventureStatCard = ({ title, value, icon, accentColor, onClick, clickable = false }) => {
   const cfg = configs[accentColor] || configs.primary;
   const { Decor } = cfg;
+  const interactive = typeof onClick === "function" || clickable;
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${cfg.bg} shadow-lg ${cfg.shadow} hover:shadow-xl hover:scale-[1.03] transition-all duration-300 cursor-default`}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (!interactive) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${cfg.bg} shadow-lg ${cfg.shadow} hover:shadow-xl hover:scale-[1.03] transition-all duration-300 ${interactive ? "cursor-pointer" : "cursor-default"}`}
     >
       {/* Dot-grid texture */}
       <div

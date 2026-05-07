@@ -421,8 +421,8 @@ export default function PaprIqFooterSection() {
           </div>
         </div>
 
-        <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold text-slate-500">
-          <p>© {new Date().getFullYear()} {websiteSettings.siteName}</p>
+        <div className="pt-12 border-t border-slate-800 flex flex-col md:flex-row justify-center items-center gap-6 text-xs font-bold text-slate-500">
+          <p>© {new Date().getFullYear()} {websiteSettings.siteName}. Made with ❤️ and care.</p>
           {/* <p className="flex items-center gap-2">
             Built with{" "} & Care
             <span className="material-symbols-outlined text-[#FF6B6B] text-sm fill-icon">favorite</span>

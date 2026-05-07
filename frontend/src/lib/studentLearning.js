@@ -1,4 +1,20 @@
-const WEAK_AREAS_STORAGE_KEY = "eec:student:weak-areas:v1";
+const WEAK_AREAS_STORAGE_KEY_BASE = "eec:student:weak-areas:v1";
+
+function getCurrentUserKey() {
+  try {
+    const raw = localStorage.getItem("user");
+    const user = raw ? JSON.parse(raw) : null;
+    const id = String(user?._id || user?.id || "").trim();
+    return id || "guest";
+  } catch {
+    return "guest";
+  }
+}
+
+function getWeakAreasStorageKey(userKey = "") {
+  const safeUserKey = String(userKey || "").trim() || getCurrentUserKey();
+  return `${WEAK_AREAS_STORAGE_KEY_BASE}:${safeUserKey}`;
+}
 
 function readJSON(key, fallback) {
   try {
@@ -30,14 +46,14 @@ export function buildTopicPracticePath({ subjectId, topicId, stage }) {
   return base.includes("?") ? `${base}&openPractice=1` : `${base}?openPractice=1`;
 }
 
-export function readWeakAreas() {
-  const rows = readJSON(WEAK_AREAS_STORAGE_KEY, []);
+export function readWeakAreas(userKey = "") {
+  const rows = readJSON(getWeakAreasStorageKey(userKey), []);
   return Array.isArray(rows) ? rows : [];
 }
 
-export function saveWeakAreas(rows) {
+export function saveWeakAreas(rows, userKey = "") {
   try {
-    localStorage.setItem(WEAK_AREAS_STORAGE_KEY, JSON.stringify(rows || []));
+    localStorage.setItem(getWeakAreasStorageKey(userKey), JSON.stringify(rows || []));
   } catch {
     // ignore localStorage quota errors
   }
