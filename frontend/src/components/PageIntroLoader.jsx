@@ -1,15 +1,13 @@
 import { motion } from "framer-motion";
 import { GraduationCap } from "lucide-react";
 
-const FLOATERS = Array.from({ length: 18 }, (_, i) => ({
-  id: i,
-  x: (i * 97 + 11) % 100,
-  y: (i * 71 + 23) % 100,
-  size: 4 + (i % 4) * 3,
-  delay: (i * 0.21) % 4,
-  dur: 2.5 + (i % 3),
-  color: i % 3 === 0 ? "rgba(244,115,110,0.12)" : i % 3 === 1 ? "rgba(231,197,85,0.12)" : "rgba(162,155,254,0.10)",
-}));
+const FLOATERS = [
+  { id: 0, x: "12%", y: "18%", size: 10, color: "rgba(244,115,110,0.14)", dur: 3.5, delay: 0    },
+  { id: 1, x: "82%", y: "14%", size: 8,  color: "rgba(231,197,85,0.14)",  dur: 4.0, delay: 0.6  },
+  { id: 2, x: "88%", y: "72%", size: 12, color: "rgba(162,155,254,0.12)", dur: 3.8, delay: 0.3  },
+  { id: 3, x: "8%",  y: "76%", size: 9,  color: "rgba(244,115,110,0.12)", dur: 4.2, delay: 1.0  },
+  { id: 4, x: "50%", y: "8%",  size: 7,  color: "rgba(231,197,85,0.12)",  dur: 3.2, delay: 0.8  },
+];
 
 export default function PageIntroLoader({ message = "Loading..." }) {
   return (
@@ -43,7 +41,7 @@ export default function PageIntroLoader({ message = "Loading..." }) {
             height: f.size,
             background: f.color,
           }}
-          animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.3, 1] }}
+          animate={{ opacity: [0.3, 0.9, 0.3] }}
           transition={{ duration: f.dur, repeat: Infinity, delay: f.delay }}
         />
       ))}

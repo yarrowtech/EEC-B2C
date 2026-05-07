@@ -358,6 +358,12 @@ details[open] summary .rotate-icon {
   background: rgba(255, 210, 63, 0.7);
 }
 
+/* Lightweight CSS float — offloads to compositor, no JS frame budget */
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
 /* Student Adventure Theme Variables */
 .student-adventure-theme {
   --student-primary: #e7c555;

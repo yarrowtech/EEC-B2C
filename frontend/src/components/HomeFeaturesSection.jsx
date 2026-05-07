@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 
 function AnimatedBar({ pct, color }) {
   return (
-    <div className="h-2 rounded-full flex-1" style={{ background: color + "20" }}>
+    <div className="h-2 rounded-full flex-1 overflow-hidden" style={{ background: color + "20" }}>
       <motion.div
         className="h-2 rounded-full"
-        style={{ background: color }}
-        initial={{ width: 0 }}
-        whileInView={{ width: `${pct}%` }}
+        style={{ background: color, transformOrigin: "left center" }}
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: pct / 100 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.75, ease: "easeOut" }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
       />
     </div>
   );
@@ -290,20 +290,9 @@ export default function HomeFeaturesSection() {
           style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "28px 28px" }}
         />
 
-        {/* Floating accent dots */}
-        {[
-          { x: "5%",  y: "15%", size: 10, color: "rgba(255,210,63,0.2)", dur: 4 },
-          { x: "95%", y: "20%", size: 8,  color: "rgba(78,205,196,0.2)", dur: 5 },
-          { x: "90%", y: "75%", size: 12, color: "rgba(244,115,110,0.18)", dur: 3.8 },
-        ].map((f, i) => (
-          <motion.span
-            key={i}
-            className="pointer-events-none absolute rounded-full"
-            style={{ left: f.x, top: f.y, width: f.size, height: f.size, background: f.color }}
-            animate={{ y: [0, -12, 0], scale: [1, 1.2, 1] }}
-            transition={{ duration: f.dur, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-          />
-        ))}
+        {/* Static glow accents */}
+        <div className="pointer-events-none absolute top-[10%] right-[4%] w-16 h-16 rounded-full bg-[#FFD23F]/15 blur-xl" />
+        <div className="pointer-events-none absolute bottom-[12%] left-[4%] w-14 h-14 rounded-full bg-[#4ECDC4]/15 blur-xl" />
 
         <div className="mx-auto max-w-7xl px-4 md:px-8 relative">
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-16">
@@ -428,11 +417,11 @@ export default function HomeFeaturesSection() {
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <motion.div
                             className="h-1.5 rounded-full"
-                            style={{ background: w.color }}
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${w.pct}%` }}
+                            style={{ background: w.color, transformOrigin: "left center" }}
+                            initial={{ scaleX: 0 }}
+                            whileInView={{ scaleX: w.pct / 100 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.7, ease: "easeOut" }}
+                            transition={{ duration: 0.65, ease: "easeOut" }}
                           />
                         </div>
                       </div>
@@ -454,7 +443,7 @@ export default function HomeFeaturesSection() {
                 {/* Floating badge — bobs independently */}
                 <motion.div
                   className="absolute -bottom-5 -right-5 bg-[#F4736E] text-white rounded-2xl px-4 py-3 shadow-xl z-20 text-center"
-                  animate={{ y: [0, -8, 0], rotate: [-2, 2, -2] }}
+                  animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <p className="text-2xl font-black" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>🥇</p>
