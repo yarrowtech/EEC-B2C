@@ -103,6 +103,7 @@ import FlashcardsPage from "./pages/FlashcardsPage";
 import FlashcardsManage from "./pages/admin/FlashcardsManage";
 import AdminPrivacyPolicy from "./pages/admin/AdminPrivacyPolicy";
 import FlashcardsCatalogPage from "./pages/FlashcardsCatalogPage";
+import NotFound from "./pages/NotFound";
 
 
 function getToken() {
@@ -922,6 +923,7 @@ export default function App() {
 
             <Route path="exams" element={<ExamsIndex />} />
             <Route path="exams/take/:attemptId" element={<ExamTake />} />
+            <Route path="*" element={<NotFound />} />
 
             {/* Add more, e.g.: */}
             {/* <Route path="classes" element={<Classes />} /> */}
@@ -935,7 +937,7 @@ export default function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

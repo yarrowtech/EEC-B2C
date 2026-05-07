@@ -297,6 +297,7 @@ export const startExam = async (req, res) => {
   try {
     const userId = req.user?.id;
     const { stage = "stage-1", level, subject, topic, type, limit = 10 } = req.body;
+    const numericLimit = Math.max(1, Number(limit) || 10);
 
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     if (!subject || !topic || !type) {
@@ -452,7 +453,8 @@ export const startExam = async (req, res) => {
 
     const pipeline = [
       { $match: match },
-      { $sample: { size: Number(limit) } },
+      // Oversample slightly so we can remove duplicate-content cloze questions and still keep enough.
+      { $sample: { size: numericLimit * 3 } },
       {
         $project: {
           type: 1,
@@ -493,10 +495,138 @@ export const startExam = async (req, res) => {
       },
     ];
 
-    const questions = await Question.aggregate(pipeline);
+    const sampledQuestions = await Question.aggregate(pipeline);
+
+    const normalizeText = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const seenKeys = new Set();
+    const questions = [];
+    for (const q of sampledQuestions) {
+      // Root-level dedupe by id for all question types.
+      const idKey = `id:${String(q?._id || "")}`;
+      if (seenKeys.has(idKey)) continue;
+
+      let dedupeKey = idKey;
+      if (q?.type === "cloze-text") {
+        const textKey = normalizeText(q?.clozeText?.text);
+        // Content-level dedupe for cloze-text to avoid repeated-looking questions.
+        dedupeKey = textKey ? `cloze-text:${textKey}` : idKey;
+      }
+
+      if (seenKeys.has(dedupeKey)) continue;
+      seenKeys.add(idKey);
+      seenKeys.add(dedupeKey);
+      questions.push(q);
+      if (questions.length >= numericLimit) break;
+    }
 
     if (!questions.length)
       return res.status(404).json({ message: "No questions found" });
+
+    const safeText = (v) => String(v || "").trim();
+    const tokenInfo = (v) => {
+      const t = safeText(v);
+      if (!t) return "";
+      const first = t[0]?.toUpperCase?.() || "";
+      return `starts with "${first}" and has ${t.length} characters`;
+    };
+    const buildQuestionHint = (q) => {
+      const qType = String(q?.type || "").trim();
+
+      if (qType === "mcq-single") {
+        const correctKey = String(q?.correct?.[0] || "").trim();
+        const correctOpt = (q?.options || []).find((o) => String(o?.key || "").trim() === correctKey);
+        const info = tokenInfo(correctOpt?.text);
+        return info
+          ? `Correct option meaning: answer ${info}. Match concept, grammar, and context.`
+          : "Eliminate options that don't fit the full sentence meaning.";
+      }
+
+      if (qType === "mcq-multi") {
+        const keys = Array.isArray(q?.correct) ? q.correct : [];
+        const count = keys.length;
+        return count > 0
+          ? `More than one option is correct. Expected correct choices: ${count}.`
+          : "More than one option may be correct. Verify each option independently.";
+      }
+
+      if (qType === "true-false") {
+        const expected = String(q?.correct?.[0] || "").toLowerCase().trim();
+        if (expected === "true") return "This statement aligns with the standard concept; check for supporting keywords.";
+        if (expected === "false") return "Look for the incorrect part in the statement (term, condition, or exception).";
+        return "Check whether this statement is universally valid or conditionally incorrect.";
+      }
+
+      if (qType === "cloze-text") {
+        const answersRaw = q?.clozeText?.answers || {};
+        const answers =
+          answersRaw instanceof Map
+            ? Object.fromEntries(answersRaw)
+            : typeof answersRaw?.toObject === "function"
+              ? answersRaw.toObject()
+              : answersRaw;
+        const keys = Object.keys(answers || {});
+        if (!keys.length) return "Use grammar and sentence meaning to fill each blank.";
+        const parts = keys.map((k) => {
+          const info = tokenInfo(answers[k]);
+          return info ? `${k}: ${info}` : `${k}: use context`;
+        });
+        return `Fill by context and grammar. Clues -> ${parts.join(" | ")}.`;
+      }
+
+      if (qType === "cloze-select") {
+        const blanksRaw = q?.clozeSelect?.blanks || {};
+        const blanks =
+          blanksRaw instanceof Map
+            ? Object.fromEntries(blanksRaw)
+            : typeof blanksRaw?.toObject === "function"
+              ? blanksRaw.toObject()
+              : blanksRaw;
+        const keys = Object.keys(blanks || {});
+        if (!keys.length) return "Choose options that keep the statement factually correct and grammatically valid.";
+        return `Check each blank independently; there are ${keys.length} correct selections in total.`;
+      }
+
+      if (qType === "cloze-drag") {
+        const correctRaw = q?.clozeDrag?.correctMap || {};
+        const correct =
+          correctRaw instanceof Map
+            ? Object.fromEntries(correctRaw)
+            : typeof correctRaw?.toObject === "function"
+              ? correctRaw.toObject()
+              : correctRaw;
+        const keys = Object.keys(correct || {});
+        if (!keys.length) return "Place each token where grammar and meaning both fit.";
+        return `Use meaning flow and tense agreement. Total blanks to match: ${keys.length}.`;
+      }
+
+      if (qType === "choice-matrix") {
+        const correctCells = Array.isArray(q?.choiceMatrix?.correctCells) ? q.choiceMatrix.correctCells : [];
+        return correctCells.length
+          ? `Evaluate each row carefully; total correct row-column matches: ${correctCells.length}.`
+          : "Match each row to the most accurate column based on definition.";
+      }
+
+      if (qType === "match-list") {
+        const pairsRaw = q?.matchList?.pairs || {};
+        const pairs =
+          pairsRaw instanceof Map
+            ? Object.fromEntries(pairsRaw)
+            : typeof pairsRaw?.toObject === "function"
+              ? pairsRaw.toObject()
+              : pairsRaw;
+        const pairCount = Object.keys(pairs || {}).length;
+        return pairCount
+          ? `Begin with obvious pairs first, then eliminate remaining options. Total valid pairs: ${pairCount}.`
+          : "Start with the most obvious pair, then use elimination.";
+      }
+
+      return "Focus on key terms, logic, and context to reach the correct answer.";
+    };
 
     // ⭐ CLOZE PARSER (UNCHANGED)
     function parseCloze(q) {
@@ -532,6 +662,7 @@ export const startExam = async (req, res) => {
           clozeText: parsed.clozeText,
           options: parsed.options,
           correct: parsed.correct,
+          hint: buildQuestionHint(q),
           explanation: q.explanation,
           explanationImage: q.explanationImage,
         };
@@ -542,6 +673,7 @@ export const startExam = async (req, res) => {
           _id: q._id,
           type: q.type,
           clozeSelect: q.clozeSelect,
+          hint: buildQuestionHint(q),
           explanation: q.explanation,
           explanationImage: q.explanationImage,
         };
@@ -552,6 +684,7 @@ export const startExam = async (req, res) => {
           _id: q._id,
           type: q.type,
           clozeText: q.clozeText || {},
+          hint: buildQuestionHint(q),
           explanation: q.explanation,
           explanationImage: q.explanationImage,
         };
@@ -563,6 +696,7 @@ export const startExam = async (req, res) => {
           type: q.type,
           matchList: q.matchList || {},
           prompt: q.matchList?.prompt || q.prompt || "",
+          hint: buildQuestionHint(q),
           explanation: q.explanation,
           explanationImage: q.explanationImage,
         };
@@ -574,6 +708,7 @@ export const startExam = async (req, res) => {
           type: q.type,
           prompt: q.prompt || "",
           plainText: q.plainText || "",
+          hint: buildQuestionHint(q),
           explanation: q.explanation,
           explanationImage: q.explanationImage,
         };
@@ -585,6 +720,7 @@ export const startExam = async (req, res) => {
           type: q.type,
           prompt: q.prompt || "",
           richHtml: q.richHtml || "",
+          hint: buildQuestionHint(q),
           explanation: q.explanation,
           explanationImage: q.explanationImage,
         };
@@ -595,6 +731,7 @@ export const startExam = async (req, res) => {
         type: q.type,
         question: q.question,
         prompt: q.prompt,
+        hint: buildQuestionHint(q),
         explanation: q.explanation,
         explanationImage: q.explanationImage,
         choiceMatrix: q.choiceMatrix || {},

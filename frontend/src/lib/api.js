@@ -229,3 +229,38 @@ export async function participateFlashcardSet(id, payload) {
 export async function myFlashcardAttempts(id) {
   return getJSON(`/api/flashcards/${encodeURIComponent(id)}/my-attempts`);
 }
+
+export async function getPublicFeedback() {
+  return getJSON(`/api/feedback/public`);
+}
+
+export async function getMyFeedbackStatus() {
+  return getJSON(`/api/feedback/me/status`);
+}
+
+export async function submitFeedback(payload) {
+  const res = await fetch(`${API_BASE}/api/feedback/submit`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function listFeedbackAdmin(status = "") {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return getJSON(`/api/feedback/admin${qs}`);
+}
+
+export async function updateFeedbackStatus(id, status) {
+  const res = await fetch(`${API_BASE}/api/feedback/admin/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ status }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}

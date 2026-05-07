@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getJSON, submitExam } from "../../lib/api";
+import { getJSON, getMyFeedbackStatus, submitExam, submitFeedback } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
+import FeedbackPromptModal from "../../components/FeedbackPromptModal";
 import {
   createWeakAreaEntries,
   readWeakAreas,
@@ -49,6 +50,8 @@ export default function ExamTake() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [matchTokenSelection, setMatchTokenSelection] = useState({});
   const [hintOpen, setHintOpen] = useState({});
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [feedbackInitial, setFeedbackInitial] = useState({ name: "", schoolName: "" });
   const [isFullscreen, setIsFullscreen] = useState(
     typeof document !== "undefined" ? Boolean(document.fullscreenElement) : false
   );
@@ -445,11 +448,31 @@ export default function ExamTake() {
           autoClose: 6000,
         });
       }
+
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user") || "null") || {};
+        setFeedbackInitial({
+          name: String(storedUser?.name || "").trim(),
+          schoolName: String(storedUser?.schoolName || storedUser?.school || "").trim(),
+        });
+        const feedbackState = await getMyFeedbackStatus();
+        if (feedbackState?.shouldPrompt) {
+          setShowFeedbackPrompt(true);
+        }
+      } catch {
+        // Ignore feedback prompt failures.
+      }
     } catch (err) {
       toast.error(err.message || "Failed to submit exam. Please try again.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleSubmitFeedback(payload) {
+    await submitFeedback(payload);
+    setShowFeedbackPrompt(false);
+    toast.success("Thank you! Your feedback is submitted for admin approval.");
   }
 
   function parseCloze(q) {
@@ -611,6 +634,76 @@ export default function ExamTake() {
   }
 
   function getAutoHint(q, questionText) {
+    const authoredHint = String(q?.hint || "").trim();
+    if (authoredHint) return authoredHint;
+
+    const safe = (v) => String(v || "").trim();
+    const tokenInfo = (v) => {
+      const t = safe(v);
+      if (!t) return "";
+      const first = t[0]?.toUpperCase?.() || "";
+      return `starts with "${first}" and has ${t.length} characters`;
+    };
+
+    // Fallback: build hint directly from stored answer fields in this question payload.
+    if (q?.type === "cloze-text") {
+      const ansRaw = q?.clozeText?.answers || {};
+      const ans =
+        ansRaw instanceof Map
+          ? Object.fromEntries(ansRaw)
+          : typeof ansRaw?.toObject === "function"
+            ? ansRaw.toObject()
+            : ansRaw;
+      const keys = Object.keys(ans || {});
+      if (keys.length) {
+        return `Use context and grammar. ${keys
+          .map((k) => `${k}: ${tokenInfo(ans[k]) || "check sentence fit"}`)
+          .join(" | ")}`;
+      }
+    }
+
+    if (q?.type === "cloze-select") {
+      const blanksRaw = q?.clozeSelect?.blanks || {};
+      const blanks =
+        blanksRaw instanceof Map
+          ? Object.fromEntries(blanksRaw)
+          : typeof blanksRaw?.toObject === "function"
+            ? blanksRaw.toObject()
+            : blanksRaw;
+      const keys = Object.keys(blanks || {});
+      if (keys.length) return `There are ${keys.length} correct selections in total. Verify each blank independently.`;
+    }
+
+    if (q?.type === "cloze-drag") {
+      const mapRaw = q?.clozeDrag?.correctMap || q?.correct || {};
+      const map =
+        mapRaw instanceof Map
+          ? Object.fromEntries(mapRaw)
+          : typeof mapRaw?.toObject === "function"
+            ? mapRaw.toObject()
+            : mapRaw;
+      const keys = Object.keys(map || {});
+      if (keys.length) return `Match tokens by grammar and meaning flow. Total blanks to fill: ${keys.length}.`;
+    }
+
+    if (q?.type === "mcq-single") {
+      const key = String(q?.correct?.[0] || "").trim();
+      const opt = Array.isArray(q?.options) ? q.options.find((o) => String(o?.key || "").trim() === key) : null;
+      const info = tokenInfo(opt?.text);
+      if (info) return `Correct option ${info}. Choose the one that best matches concept and context.`;
+    }
+
+    if (q?.type === "mcq-multi") {
+      const count = Array.isArray(q?.correct) ? q.correct.length : 0;
+      if (count) return `More than one option is correct. Expected correct choices: ${count}.`;
+    }
+
+    if (q?.type === "true-false") {
+      const expected = String(q?.correct?.[0] || "").toLowerCase().trim();
+      if (expected === "true") return "This statement is conceptually valid; check core supporting terms.";
+      if (expected === "false") return "Find the incorrect part in the statement (term, condition, or exception).";
+    }
+
     const qType = q?.type || type;
     const cleanQuestion = plainText(questionText);
     const keywords = extractKeywords(cleanQuestion, 5);
@@ -656,6 +749,13 @@ export default function ExamTake() {
   return (
     <>
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+      <FeedbackPromptModal
+        open={showFeedbackPrompt}
+        initialName={feedbackInitial.name}
+        initialSchool={feedbackInitial.schoolName}
+        onClose={() => setShowFeedbackPrompt(false)}
+        onSubmit={handleSubmitFeedback}
+      />
       {!result && !isFullscreen && (
         <div className="fixed inset-0 z-[1200] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-6 text-center shadow-2xl">
@@ -1643,28 +1743,34 @@ export default function ExamTake() {
                     );
                   }
 
+                  const blankIds = parts
+                    .filter((p) => p.type === "blank")
+                    .map((p) => String(p.id || "").trim())
+                    .filter(Boolean);
+                  const uniqueBlankIds = [...new Set(blankIds)];
+
                   return (
-                    <div className="text-sm md:text-base leading-8 flex flex-wrap gap-1">
-                      {parts.map((p, i) => (
-                        <span key={`${q._id}-clozet-${i}`}>
-                          {p.type === "text" ? (
-                            p.value
-                          ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-slate-700">Fill in the blanks:</p>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {uniqueBlankIds.map((blankId) => (
+                          <label key={`${q._id}-blank-${blankId}`} className="space-y-1">
+                            <span className="text-xs font-semibold text-slate-600">{blankId}</span>
                             <input
                               type="text"
-                              value={answers[q._id]?.clozeText?.[p.id] || ""}
+                              value={answers[q._id]?.clozeText?.[blankId] || ""}
                               onChange={(e) => {
                                 const prev = answers[q._id]?.clozeText || {};
                                 setAns(q._id, {
-                                  clozeText: { ...prev, [p.id]: e.target.value },
+                                  clozeText: { ...prev, [blankId]: e.target.value },
                                 });
                               }}
-                              className="inline-block min-w-[120px] px-2 py-1 mx-1 border-b-2 border-indigo-400 bg-indigo-50/40 rounded-t-md outline-none focus:bg-white focus:border-indigo-600"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500"
                               placeholder="Type..."
                             />
-                          )}
-                        </span>
-                      ))}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   );
                 })()}
