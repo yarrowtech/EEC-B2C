@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Hero from "../components/Hero";
 import StudyGrumpySection from "../components/StudyGrumpySection";
 import VictoryPathSection from "../components/VictoryPathSection";
@@ -50,37 +50,41 @@ const Home = () => {
     };
   }, []);
 
-  if (loading) {
-    return <PageIntroLoader message={`Welcome to ${siteName}...`} />;
-  }
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="overflow-x-hidden block w-full max-w-[100vw]"
-    >
-      <Hero />
-      <HeroFilterBar />
-      <HomePurposeSection />
-      <StudyGrumpySection />
-      <VictoryPathSection />
-      <HomeFeaturesSection />
-      <FeatureCardsSection />
-      <StatsStripSection />
-      <StarExplorersSection />
-      <QuestionsAnswersSection />
-      <QuickBundleSection />
-      {/* <PaprIqFooterSection />  */}
-      {/* <WhatIsEEC />
-      <EECFeaturesSection />
-      <EECStages />
-      <EECUnique />
-      <EECImageRow />
-      <EECFAQ />
-      <GlobalLoginModal />
-      <EECFooter /> */}
-    </motion.div>
+    <AnimatePresence>
+      {loading ? (
+        <PageIntroLoader key="intro-loader" message={`Welcome to ${siteName}...`} />
+      ) : (
+        <motion.div
+          key="home-content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="overflow-x-hidden block w-full max-w-[100vw]"
+        >
+          <Hero />
+          <HeroFilterBar />
+          <HomePurposeSection />
+          <StudyGrumpySection />
+          <VictoryPathSection />
+          <HomeFeaturesSection />
+          <FeatureCardsSection />
+          <StatsStripSection />
+          <StarExplorersSection />
+          <QuestionsAnswersSection />
+          <QuickBundleSection />
+          {/* <PaprIqFooterSection />  */}
+          {/* <WhatIsEEC />
+          <EECFeaturesSection />
+          <EECStages />
+          <EECUnique />
+          <EECImageRow />
+          <EECFAQ />
+          <GlobalLoginModal />
+          <EECFooter /> */}
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
