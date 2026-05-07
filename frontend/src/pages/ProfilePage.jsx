@@ -1197,7 +1197,7 @@ export default function ProfilePage() {
                   <PField label="Date of Birth">
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type="date" name="dob" value={form.dob} onChange={handleChange}
+                      <input type="date" name="dob" value={normalizeDateInputValue(form.dob)} onChange={handleChange}
                         className={iCls() + " pl-9"} />
                     </div>
                   </PField>
@@ -1224,7 +1224,7 @@ export default function ProfilePage() {
                         <div className="relative">
                           <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
                           <select name="className" value={form.className} onChange={handleChange}
-                            className={iCls(errors.className) + " pl-9"}>
+                            className={iCls(errors.className) + " pl-10 md:pl-11"}>
                             <option value="">Select Class</option>
                             {classOptions.length > 0
                               ? classOptions.map(c => <option key={c._id} value={c.name}>{c.name}</option>)
@@ -1365,5 +1365,14 @@ function iCls(hasError) {
       ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
       : "border-slate-200 hover:border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
   }`;
+}
+
+function normalizeDateInputValue(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const dt = new Date(raw);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toISOString().slice(0, 10);
 }
 

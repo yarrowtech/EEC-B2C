@@ -643,7 +643,7 @@ const Hero = () => {
             className="relative w-full flex justify-center lg:justify-start"
           >
             {/* Card — exact: rounded-[2.5rem] shadow-2xl border-4 border-primary/30 */}
-            <div className="rounded-[2.5rem] border-4 bg-white p-6 sm:p-8 shadow-2xl w-full max-w-[100%] sm:max-w-xl lg:max-w-2xl overflow-hidden box-border"
+            <div className="rounded-[2.5rem] border-4 bg-white p-6 sm:p-8 shadow-2xl w-full max-w-[100%] sm:max-w-xl lg:max-w-2xl overflow-visible box-border"
               style={{ borderColor: "rgba(255,210,63,0.3)" }}>
               <h2 className="mb-6 text-2xl font-bold text-slate-800" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 Ready to Start Your Adventure?
