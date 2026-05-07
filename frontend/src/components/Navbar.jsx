@@ -222,10 +222,10 @@ export default function Navbar() {
         .wiggle { animation: wiggle 1.2s ease-in-out infinite; }
         .wiggle:hover { animation-play-state: paused; }
       `}</style>
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
           {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
-          <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-            <div className="flex h-20 w-20 items-center justify-center overflow-hidden text-white">
+          <Link to="/" className="flex items-center gap-2 md:gap-3" onClick={closeMobile}>
+            <div className="flex h-16 w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 items-center justify-center overflow-hidden text-white">
               {websiteSettings.logoUrl ? (
                 <img
                   src={websiteSettings.logoUrl}
@@ -242,7 +242,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav links — centered */}
-          <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-6 lg:flex">
             <RouterLink className="ml-2" to="/" active={isActive("/")}>
               Home
             </RouterLink>
@@ -276,7 +276,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop right side */}
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             {currentUser ? (
               <div className="relative" ref={userMenuRef}>
                 <button
@@ -334,12 +334,12 @@ export default function Navbar() {
           </div>
 
           {/* Mobile: Claim Free Gift + Hamburger */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             {!currentUser && (
               <button
                 type="button"
                 onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
-                className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-xs hover:bg-yellow-400 transition-all hover:scale-105"
+                className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-3 md:px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-[11px] md:text-xs hover:bg-yellow-400 transition-all hover:scale-105"
               >
                 Claim Free Gift! 🎁
               </button>
@@ -365,7 +365,7 @@ export default function Navbar() {
       {/* ======= Mobile Drawer + Overlay — outside <nav> so backdrop-filter doesn't trap fixed positioning ======= */}
       {/* Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        className={`fixed inset-0 z-30 bg-black/40 transition-opacity duration-300 lg:hidden ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
         onClick={closeMobile}
         onPointerDown={closeMobile}
@@ -375,7 +375,7 @@ export default function Navbar() {
       {/* Drawer */}
       <aside
         id="mobile-drawer"
-        className="fixed left-0 top-0 z-50 h-screen w-80 max-w-[85%] bg-white shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out md:hidden will-change-transform"
+        className="fixed left-0 top-0 z-50 h-screen w-80 md:w-96 max-w-[88%] bg-white shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out lg:hidden will-change-transform"
         style={{ transform: mobileOpen ? "translateX(0)" : "translateX(-100%)" }}
         role="dialog"
         aria-modal="true"

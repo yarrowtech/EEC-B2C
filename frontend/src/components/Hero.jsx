@@ -574,10 +574,10 @@ const Hero = () => {
       </div>
 
       {/* ===== Main grid ===== */}
-      <div className="relative mx-auto grid min-h-[calc(100vh-60px)] w-full max-w-full xl:max-w-[1400px] grid-cols-1 items-center gap-8 px-4 sm:px-8 py-12 md:grid-cols-2 md:py-16 lg:px-16 xl:px-24">
+      <div className="relative mx-auto grid min-h-[calc(100vh-60px)] w-full max-w-full xl:max-w-[1400px] grid-cols-1 items-center gap-8 px-4 sm:px-8 py-12 lg:grid-cols-2 lg:py-16 lg:px-16 xl:px-24">
 
         {/* ── LEFT: Heading + Floating form card ── */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col items-center text-center gap-8 lg:items-start lg:text-left">
 
           {/* Badge — matches code.html: accent bg, border, celebration icon */}
           <motion.div
@@ -628,7 +628,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.16 }}
-            className="max-w-lg text-lg md:text-2xl leading-relaxed text-slate-500"
+            className="max-w-xl lg:max-w-lg text-lg md:text-2xl leading-relaxed text-slate-500 mx-auto lg:mx-0"
           >
             {hero?.paragraph ||
               "Turn study time into playtime! Master Class 3–12 exams with fun, colorful worksheets and exciting challenges designed for curious minds."}
@@ -640,10 +640,10 @@ const Hero = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.24 }}
-            className="relative"
+            className="relative w-full flex justify-center lg:justify-start"
           >
             {/* Card — exact: rounded-[2.5rem] shadow-2xl border-4 border-primary/30 */}
-            <div className="rounded-[2.5rem] border-4 bg-white p-6 sm:p-8 shadow-2xl w-full max-w-[100%] sm:max-w-xl overflow-hidden box-border"
+            <div className="rounded-[2.5rem] border-4 bg-white p-6 sm:p-8 shadow-2xl w-full max-w-[100%] sm:max-w-xl lg:max-w-2xl overflow-hidden box-border"
               style={{ borderColor: "rgba(255,210,63,0.3)" }}>
               <h2 className="mb-6 text-2xl font-bold text-slate-800" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 Ready to Start Your Adventure?
@@ -711,7 +711,7 @@ const Hero = () => {
           initial={{ opacity: 0, x: 26, scale: 0.98 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="block flex-1 relative w-full max-w-md mx-auto md:max-w-none md:mx-0"
+          className="block flex-1 relative w-full max-w-xl mx-auto lg:max-w-none lg:mx-0"
         >
           <div className="relative z-10 w-full">
             <img
@@ -722,7 +722,7 @@ const Hero = () => {
               decoding="async"
               width="960"
               height="960"
-              className="block w-full h-auto object-contain origin-center md:scale-110 lg:scale-150"
+              className="block w-full h-auto object-contain origin-center scale-100 sm:scale-105 lg:scale-115 xl:scale-125"
             />
           </div>
         </motion.div>
