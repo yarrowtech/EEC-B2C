@@ -603,7 +603,7 @@ export default function DashboardLayout() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="fixed inset-0 z-30 bg-black/40 md:hidden"
+                            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
                             onClick={() => setOpen(false)}
                         />
                     )}
@@ -612,7 +612,7 @@ export default function DashboardLayout() {
                 {/* SIDEBAR */}
                 <aside
                     id="tour-sidebar"
-                    className={`fixed z-40 top-0 bottom-0 w-80 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} ${isExamTakeRoute ? "hidden" : ""}`}
+                    className={`fixed z-40 top-0 bottom-0 hidden w-80 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform lg:block lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} ${isExamTakeRoute ? "hidden" : ""}`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                     <div className="h-full flex flex-col p-6 overflow-x-hidden">
@@ -806,11 +806,11 @@ export default function DashboardLayout() {
                 {/* MAIN CONTENT */}
                 <main
                     className={`
-            ml-0 ${isExamTakeRoute ? "" : "md:ml-80"}
+            ml-0 ${isExamTakeRoute ? "" : "lg:ml-80"}
             h-screen
             overflow-y-auto
             w-full
-            ${role === "student" && !isExamTakeRoute ? "pb-16 md:pb-0" : ""}
+            ${role === "student" && !isExamTakeRoute ? "pb-20 lg:pb-0" : ""}
           `}
                 >
                     <div className="mx-auto max-w-7xl">
@@ -819,9 +819,9 @@ export default function DashboardLayout() {
                 </main>
             </div>
 
-            {/* MOBILE / TABLET FOOTER NAV — students only, visible below md */}
+            {/* MOBILE / TABLET FOOTER NAV — students only, visible below lg */}
             {role === "student" && !isExamTakeRoute && (
-                <nav id="tour-mobile-nav" className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+                <nav id="tour-mobile-nav" className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
                     <div className="flex items-stretch h-[72px]">
                         {[
                             { to: "/dashboard", label: "Home", icon: <Home size={22} />, end: true, id: "tour-mobile-home" },
@@ -959,6 +959,13 @@ export default function DashboardLayout() {
                     </div>
                 </nav>
             )}
+
+            {/* Tablet guidance */}
+            {/* {!isExamTakeRoute && (
+                <div className="fixed bottom-[78px] left-1/2 z-40 hidden -translate-x-1/2 rounded-full border border-indigo-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-indigo-700 shadow-sm md:block lg:hidden">
+                    Use bottom menu for quick navigation
+                </div>
+            )} */}
 
             {/* Teacher Verification Modal */}
             {showTeacherVerification && user?.role === "teacher" && (
