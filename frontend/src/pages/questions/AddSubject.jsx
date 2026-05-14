@@ -20,7 +20,10 @@ export default function AddSubject() {
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const isTeacher = String(user?.role || "").toLowerCase() === "teacher";
+    const userId = user?.id || user?._id || "";
+    const userRole = String(user?.role || "").toLowerCase();
+    const isTeacher = userRole === "teacher";
+    const isAdmin = userRole === "admin";
 
 
     const loadBoards = async () => {
@@ -50,7 +53,9 @@ export default function AddSubject() {
     };
 
     const loadSubjects = async () => {
+        const params = isTeacher ? { mine: 1 } : {};
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/subject`, {
+            params,
             headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
         });
         setSubjects(res.data);
@@ -79,7 +84,7 @@ export default function AddSubject() {
                 }
             );
 
-            toast.success("Subject Added");
+            toast.success("Subject added");
             setName("");
             setBoard("");
             setClassId("");
@@ -112,7 +117,7 @@ export default function AddSubject() {
                     },
                 }
             );
-            toast.success("Subject Updated");
+            toast.success("Subject updated");
             setEditingId(null);
             loadSubjects();
         } catch (err) {
@@ -134,11 +139,11 @@ export default function AddSubject() {
                 }
             );
 
-            toast.success("Subject deleted successfully!");
+            toast.success("Subject deleted successfully");
             setShowDeletePopup(false);
             loadSubjects();
         } catch (err) {
-            toast.error("Failed to delete subject");
+            toast.error(err.response?.data?.message || "Failed to delete subject");
         }
     };
 
@@ -161,7 +166,7 @@ export default function AddSubject() {
             </div>
 
             {/* ---------- ADD SUBJECT CARD - Enhanced ---------- */}
-            {!isTeacher && (
+            {(isTeacher || isAdmin) && (
                 <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
                     <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
                         <span className="text-xl"></span>
@@ -317,7 +322,7 @@ export default function AddSubject() {
                                         </td>
 
                                         <td className="p-4">
-                                            {!isTeacher && (user.role === "admin" || s.createdBy?._id === user.id) ? (
+                                            {(isAdmin || s.createdBy?._id === userId) ? (
                                                 <div className="flex gap-2 justify-center">
                                                     {editingId === s._id ? (
                                                         <>

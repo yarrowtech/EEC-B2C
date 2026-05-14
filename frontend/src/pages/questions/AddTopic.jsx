@@ -23,7 +23,10 @@ export default function AddTopic() {
     const [editTopicImage, setEditTopicImage] = useState("");
     const [editUploadingImage, setEditUploadingImage] = useState(false);
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const isTeacher = String(user?.role || "").toLowerCase() === "teacher";
+    const userId = user?.id || user?._id || "";
+    const userRole = String(user?.role || "").toLowerCase();
+    const isTeacher = userRole === "teacher";
+    const isAdmin = userRole === "admin";
     const API = import.meta.env.VITE_API_URL;
     const headers = { Authorization: `Bearer ${localStorage.getItem("jwt")}` };
 
@@ -70,6 +73,7 @@ export default function AddTopic() {
             const params = [];
             if (boardId) params.push(`board=${boardId}`);
             if (classId) params.push(`class=${classId}`);
+            if (isTeacher) params.push("mine=1");
             if (params.length > 0) url += `?${params.join("&")}`;
 
             const res = await axios.get(url, { headers });
@@ -81,23 +85,27 @@ export default function AddTopic() {
 
     const loadTopics = async () => {
         try {
-            const subRes = await axios.get(`${API}/api/subject`, { headers });
+            const subjectParams = isTeacher ? { mine: 1 } : {};
+            const subRes = await axios.get(`${API}/api/subject`, { params: subjectParams, headers });
 
-            const subjects = subRes.data;
+            const subjectRows = subRes.data;
             const final = [];
 
-            for (const s of subjects) {
+            for (const s of subjectRows) {
                 const tRes = await axios.get(
                     `${API}/api/topic/${s._id}`,
                     { headers }
                 );
+                const topics = isTeacher
+                    ? (tRes.data || []).filter((t) => String(t?.createdBy?._id || "") === String(userId))
+                    : (tRes.data || []);
 
                 final.push({
                     subjectName: s.name,
                     subjectId: s._id,
                     boardName: s.board?.name,
                     className: s.class?.name,
-                    topics: tRes.data
+                    topics
                 });
             }
 
@@ -181,7 +189,7 @@ export default function AddTopic() {
                 { headers }
             );
 
-            toast.success("Topic Added");
+            toast.success("Topic added");
             setName("");
             setSubject("");
             setBoard("");
@@ -223,7 +231,7 @@ export default function AddTopic() {
                 },
                 { headers }
             );
-            toast.success("Topic Updated");
+            toast.success("Topic updated");
             setEditingId(null);
             loadTopics();
         } catch (err) {
@@ -233,10 +241,13 @@ export default function AddTopic() {
 
     const deleteTopic = async (id) => {
         if (!confirm("Delete this topic?")) return;
-
-        await axios.delete(`${API}/api/topic/${id}`, { headers });
-
-        loadTopics();
+        try {
+            await axios.delete(`${API}/api/topic/${id}`, { headers });
+            toast.success("Topic deleted");
+            loadTopics();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to delete topic");
+        }
     };
 
     return (
@@ -257,7 +268,7 @@ export default function AddTopic() {
             </div>
 
             {/* ---------- Add Topic Card - Enhanced ---------- */}
-            {!isTeacher && (
+            {(isTeacher || isAdmin) && (
                 <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
                     <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
                         <span className="text-xl"></span>
@@ -551,7 +562,7 @@ export default function AddTopic() {
 
                 {/* Actions with Permission */}
                 <td className="p-4">
-                    {!isTeacher && (user.role === "admin" || topic.createdBy?._id === user.id) ? (
+                    {(isAdmin || topic.createdBy?._id === userId) ? (
                         <div className="flex gap-2 justify-center">
                             {editingId === topic._id ? (
                                 <>

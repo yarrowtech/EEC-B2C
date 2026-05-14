@@ -5,6 +5,7 @@ import Question from "../models/Question.js";
 import { requireAuth } from "../middleware/auth.js"; // ✅ FIXED IMPORT
 
 const router = express.Router();
+const ALLOWED_WRITE_ROLES = new Set(["admin", "teacher"]);
 
 async function resolveRefFilterValues(rawValue, modelPath) {
   if (!rawValue) return [];
@@ -68,6 +69,11 @@ function normalizeStageQuery(stageValue) {
 // Add subject
 router.post("/subject", requireAuth, async (req, res) => {
   try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!ALLOWED_WRITE_ROLES.has(role)) {
+      return res.status(403).json({ message: "Only admin or teacher can add subjects" });
+    }
+
     const { name, board, class: className } = req.body;
 
     if (!name || !board || !className) {
@@ -82,14 +88,17 @@ router.post("/subject", requireAuth, async (req, res) => {
     });
     res.json(subject);
   } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "Already added" });
+    }
     res.status(500).json({ message: err.message });
   }
 });
 
 // Get all subjects (filtered by board and class if provided)
-router.get("/subject", async (req, res) => {
+router.get("/subject", requireAuth, async (req, res) => {
   try {
-    const { board, class: className, stage } = req.query;
+    const { board, class: className, stage, mine } = req.query;
     // console.log("GET /api/subject - board:", board, "class:", className);
 
     // Build filter
@@ -105,6 +114,11 @@ router.get("/subject", async (req, res) => {
       const classValues = await resolveRefFilterValues(className, "../models/Class.js");
       if (classValues.length === 0) return res.json([]);
       filter.class = { $in: classValues };
+    }
+
+    const role = String(req.user?.role || "").toLowerCase();
+    if (mine === "1" && role === "teacher") {
+      filter.createdBy = req.user.id;
     }
 
     // console.log("Final filter:", JSON.stringify(filter));
@@ -138,6 +152,11 @@ router.get("/subject", async (req, res) => {
 // Add topic
 router.post("/topic", requireAuth, async (req, res) => {
   try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!ALLOWED_WRITE_ROLES.has(role)) {
+      return res.status(403).json({ message: "Only admin or teacher can add topics" });
+    }
+
     const {
       name,
       subject,
@@ -234,6 +253,20 @@ router.get("/topic/:subjectId", async (req, res) => {
 // UPDATE SUBJECT
 router.put("/subject/:id", requireAuth, async (req, res) => {
   try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!ALLOWED_WRITE_ROLES.has(role)) {
+      return res.status(403).json({ message: "Only admin or teacher can update subjects" });
+    }
+
+    const existingSubject = await Subject.findById(req.params.id).select("createdBy");
+    if (!existingSubject) {
+      return res.status(404).json({ message: "Subject not found" });
+    }
+
+    if (role === "teacher" && String(existingSubject.createdBy) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Not permitted. This subject belongs to another user." });
+    }
+
     const { name, board, class: className } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
@@ -247,6 +280,9 @@ router.put("/subject/:id", requireAuth, async (req, res) => {
     ).populate("board", "name").populate("class", "name");
     res.json(updated);
   } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "Already added" });
+    }
     res.status(500).json({ message: err.message });
   }
 });
@@ -254,6 +290,20 @@ router.put("/subject/:id", requireAuth, async (req, res) => {
 // DELETE SUBJECT
 router.delete("/subject/:id", requireAuth, async (req, res) => {
   try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!ALLOWED_WRITE_ROLES.has(role)) {
+      return res.status(403).json({ message: "Only admin or teacher can delete subjects" });
+    }
+
+    const existingSubject = await Subject.findById(req.params.id).select("createdBy");
+    if (!existingSubject) {
+      return res.status(404).json({ message: "Subject not found" });
+    }
+
+    if (role === "teacher" && String(existingSubject.createdBy) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Not permitted. This subject belongs to another user." });
+    }
+
     await Topic.deleteMany({ subject: req.params.id }); // also delete its topics
     await Subject.findByIdAndDelete(req.params.id);
     res.json({ message: "Subject deleted" });
@@ -265,9 +315,20 @@ router.delete("/subject/:id", requireAuth, async (req, res) => {
 // UPDATE TOPIC
 router.put("/topic/:id", requireAuth, async (req, res) => {
   try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!ALLOWED_WRITE_ROLES.has(role)) {
+      return res.status(403).json({ message: "Only admin or teacher can update topics" });
+    }
+
     const existingTopic = await Topic.findById(req.params.id);
     if (!existingTopic) {
       return res.status(404).json({ message: "Topic not found" });
+    }
+
+    if (role === "teacher" && String(existingTopic.createdBy) !== String(req.user.id)) {
+      return res
+        .status(403)
+        .json({ message: "Not permitted. This topic belongs to another user." });
     }
 
     const {
@@ -280,7 +341,6 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
       topicSummary,
       learningOutcome,
     } = req.body;
-    const role = String(req.user?.role || "").toLowerCase();
     const isTeacher = role === "teacher";
 
     const isContentUpdate =
@@ -331,6 +391,22 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
 // DELETE TOPIC
 router.delete("/topic/:id", requireAuth, async (req, res) => {
   try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!ALLOWED_WRITE_ROLES.has(role)) {
+      return res.status(403).json({ message: "Only admin or teacher can delete topics" });
+    }
+
+    const existingTopic = await Topic.findById(req.params.id).select("createdBy");
+    if (!existingTopic) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
+    if (role === "teacher" && String(existingTopic.createdBy) !== String(req.user.id)) {
+      return res
+        .status(403)
+        .json({ message: "Not permitted. This topic belongs to another user." });
+    }
+
     await Topic.findByIdAndDelete(req.params.id);
     res.json({ message: "Topic deleted" });
   } catch (err) {
