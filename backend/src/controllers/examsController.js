@@ -535,6 +535,9 @@ export const startExam = async (req, res) => {
       return `starts with "${first}" and has ${t.length} characters`;
     };
     const buildQuestionHint = (q) => {
+      const authoredHint = String(q?.hint || "").trim();
+      if (authoredHint) return authoredHint;
+
       const qType = String(q?.type || "").trim();
 
       if (qType === "mcq-single") {

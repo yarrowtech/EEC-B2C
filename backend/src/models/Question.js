@@ -118,6 +118,7 @@ const QuestionSchema = new mongoose.Schema(
 
     // Shared fields
     question: { type: String, trim: true }, // MCQ / TrueFalse / essays
+    hint: { type: String, trim: true },
     explanation: { type: String, trim: true },
     explanationImage: { type: String, trim: true },
 

@@ -622,6 +622,7 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
     options: (doc.options || []).map((o) => o.text).slice(0, 4).concat(new Array(4).fill("")).slice(0, 4),
     correct: (doc.correct && doc.correct[0]) || "A",
     tags: (doc.tags || []).join(","),
+    hint: doc.hint || "",
     explanation: doc.explanation || "",
     explanationImage: doc.explanationImage || "",
   }));
@@ -647,6 +648,7 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
         options: form.options,
         correct: form.correct,
         tags: form.tags,
+        hint: form.hint,
         explanation: form.explanation,
         explanationImage: form.explanationImage,
       });
@@ -720,6 +722,17 @@ function EditMCQSingle({ doc, scope, busy, setBusy }) {
               placeholder="algebra, physics, grammar..."
             />
           </div>
+        </div>
+
+        <div className="mb-6">
+          <FieldLabel>Hint (optional)</FieldLabel>
+          <textarea
+            value={form.hint}
+            onChange={(e) => update("hint", e.target.value)}
+            className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300 min-h-24
+                     focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+            placeholder="Shown in exam hint section"
+          />
         </div>
 
         <div className="mb-6">

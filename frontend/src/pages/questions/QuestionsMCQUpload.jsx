@@ -19,6 +19,7 @@ export default function QuestionsMCQUpload() {
     question: "",
     options: ["", "", "", ""],
     correct: "A",
+    hint: "",
     explanation: "",
     explanationImage: "",
     tags: "",
@@ -28,6 +29,7 @@ export default function QuestionsMCQUpload() {
     question: "",
     options: ["", "", "", ""],
     correct: "A",
+    hint: "",
     explanation: "",
     explanationImage: "",
     tags: "",
@@ -164,6 +166,7 @@ export default function QuestionsMCQUpload() {
           question: item.question,
           options: item.options,
           correct: item.correct,
+          hint: item.hint,
           explanation: item.explanation,
           explanationImage: item.explanationImage,
           tags: item.tags,
@@ -267,7 +270,7 @@ export default function QuestionsMCQUpload() {
                   <strong>Required:</strong> question, optionA, optionB, optionC, optionD, correct
                 </p>
                 <p className="text-sm text-slate-700">
-                  <strong>Optional:</strong> explanation, tags
+                  <strong>Optional:</strong> hint, explanation, tags
                 </p>
               </div>
             </div>
@@ -380,6 +383,19 @@ export default function QuestionsMCQUpload() {
                         onChange={(e) => update(qIdx, "tags", e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-800 mb-2 block">
+                      Hint (optional)
+                    </label>
+                    <textarea
+                      className="w-full rounded-xl px-4 py-3 bg-white border border-slate-300 min-h-24
+                               focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                      placeholder="This will display in exam hint section"
+                      value={form.hint}
+                      onChange={(e) => update(qIdx, "hint", e.target.value)}
+                    />
                   </div>
 
                   <ExplanationEditor

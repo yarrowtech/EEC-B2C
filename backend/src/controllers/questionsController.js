@@ -202,6 +202,7 @@ function shapeByType(type, body, userId) {
       .map((s) => s.trim())
       .filter(Boolean),
     explanation: body.explanation || "",
+    hint: String(body.hint || "").trim(),
     explanationImage: body.explanationImage || "",
     stage: normalizeStageValue(body.stage),
     level: normalizeLevel(body.level, body.stage),

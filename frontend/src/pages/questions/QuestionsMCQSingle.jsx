@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
+import { postQuestion } from "../../lib/api";
+import { buildQuestionStagePayload } from "../../lib/stage";
+import { toast, ToastContainer } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HelpCircle,
@@ -26,6 +29,7 @@ const DIFFICULTY_CONFIG = {
   moderate: { label: "Moderate", color: "#f59e0b", bg: "rgba(245,158,11,0.10)", ring: "#f59e0b" },
   hard:     { label: "Hard",     color: "#ef4444", bg: "rgba(239,68,68,0.10)",  ring: "#ef4444" },
 };
+const Motion = motion;
 
 export default function QuestionsMCQSingle() {
   const { scope } = useQuestionScope();
@@ -34,6 +38,7 @@ export default function QuestionsMCQSingle() {
     question: "",
     options: ["", "", "", ""],
     correct: "A",
+    hint: "",
     explanation: "",
     tags: "",
   });
@@ -61,17 +66,53 @@ export default function QuestionsMCQSingle() {
   };
 
   const handleReset = () => {
-    setForm({ difficulty: "easy", question: "", options: ["", "", "", ""], correct: "A", explanation: "", tags: "" });
+    setForm({
+      difficulty: "easy",
+      question: "",
+      options: ["", "", "", ""],
+      correct: "A",
+      hint: "",
+      explanation: "",
+      tags: "",
+    });
     setTagList([]);
     setTagInput("");
     setSaved(false);
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    console.log({ scope, type: "mcq-single", ...form });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+
+    if (!scope.board || !scope.class || !scope.subject || !scope.topic ||
+        !scope.stage || !scope.difficulty || !scope.questionType) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
+    if (form.options.some((opt) => !opt.trim())) {
+      return toast.warn("Please fill all options");
+    }
+
+    try {
+      await postQuestion("mcq-single", {
+        board: scope.board,
+        class: scope.class,
+        subject: scope.subject,
+        topic: scope.topic,
+        ...buildQuestionStagePayload(scope.stage),
+        difficulty: scope.difficulty.toLowerCase(),
+        questionType: scope.questionType,
+        tags: form.tags,
+        question: form.question,
+        options: form.options,
+        correct: form.correct,
+        hint: form.hint,
+        explanation: form.explanation,
+      });
+      toast.success("Question saved");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      toast.error(err.message || "Failed to save question");
+    }
   };
 
   const wordCount = form.question.trim().split(/\s+/).filter(Boolean).length;
@@ -79,6 +120,7 @@ export default function QuestionsMCQSingle() {
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16">
+      <ToastContainer position="bottom-right" />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* ── Page header ── */}
@@ -163,7 +205,7 @@ export default function QuestionsMCQSingle() {
                 const cfg = OPTION_COLORS[L];
                 const isCorrect = form.correct === L;
                 return (
-                  <motion.div
+                  <Motion.div
                     key={L}
                     layout
                     className="relative flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all"
@@ -194,7 +236,7 @@ export default function QuestionsMCQSingle() {
                     {/* Correct indicator */}
                     <AnimatePresence>
                       {isCorrect && (
-                        <motion.div
+                        <Motion.div
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
@@ -202,10 +244,10 @@ export default function QuestionsMCQSingle() {
                           className="shrink-0"
                         >
                           <CheckCircle2 className="w-5 h-5" style={{ color: cfg.ring }} />
-                        </motion.div>
+                        </Motion.div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
+                  </Motion.div>
                 );
               })}
             </div>
@@ -261,6 +303,18 @@ export default function QuestionsMCQSingle() {
 
           {/* ── Explanation ── */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6">
+            <SectionLabel icon={<Lightbulb className="w-4 h-4 text-amber-500" />} title="Hint" badge="Optional" />
+            <textarea
+              value={form.hint}
+              onChange={(e) => update("hint", e.target.value)}
+              rows={3}
+              placeholder="Add a hint that will be shown in exam hint section"
+              className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 hover:border-amber-300 focus:border-amber-400 focus:ring-2 focus:ring-amber-200 outline-none bg-slate-50 focus:bg-white text-sm text-slate-800 leading-relaxed resize-none transition-all"
+            />
+          </div>
+
+          {/* ── Explanation ── */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6">
             <SectionLabel icon={<Lightbulb className="w-4 h-4 text-[#e7c555]" />} title="Explanation" badge="Optional" />
             <textarea
               value={form.explanation}
@@ -289,7 +343,7 @@ export default function QuestionsMCQSingle() {
                   <RotateCcw className="w-3.5 h-3.5" /> Reset
                 </button>
 
-                <motion.button
+                <Motion.button
                   type="submit"
                   whileTap={{ scale: 0.97 }}
                   className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-bold shadow-sm transition-all"
@@ -304,7 +358,7 @@ export default function QuestionsMCQSingle() {
                   ) : (
                     <><Save className="w-4 h-4" /> Save Question</>
                   )}
-                </motion.button>
+                </Motion.button>
               </div>
             </div>
           </div>
