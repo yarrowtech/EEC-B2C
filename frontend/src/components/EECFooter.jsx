@@ -327,7 +327,7 @@ export default function PaprIqFooterSection() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="">
+              {/* <div className="">
                 {websiteSettings.logoUrl ? (
                   <img
                     src={websiteSettings.logoUrl}
@@ -337,7 +337,7 @@ export default function PaprIqFooterSection() {
                 ) : (
                   <span className="material-symbols-outlined text-slate-900 text-xl font-bold">auto_stories</span>
                 )}
-              </div>
+              </div> */}
               {/* <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 {websiteSettings.siteName}<span className="text-[#FFD23F]"></span>
               </span> */}

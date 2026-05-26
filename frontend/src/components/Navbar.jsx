@@ -225,7 +225,7 @@ export default function Navbar() {
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
           {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
           <Link to="/" className="flex items-center gap-2 md:gap-3" onClick={closeMobile}>
-            <div className="flex h-16 w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 items-center justify-center overflow-hidden text-white">
+            <div className="flex h-16 w-16 md:h-18 md:w-18 lg:h-30 lg:w-30 items-center justify-center overflow-hidden text-white">
               {websiteSettings.logoUrl ? (
                 <img
                   src={websiteSettings.logoUrl}
