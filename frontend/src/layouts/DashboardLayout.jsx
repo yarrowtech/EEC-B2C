@@ -525,6 +525,7 @@ export default function DashboardLayout() {
             base.push(
                 { to: "/dashboard/students", label: "Students", icon: <Users size={18} />, id: "tour-nav-students" },
                 { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} />, id: "tour-nav-teachers" },
+                { to: "/dashboard/button-analytics", label: "Button Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/teacher-analytics", label: "Teacher Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/job-applications", label: "Job Applications", icon: <BriefcaseBusiness size={18} /> },

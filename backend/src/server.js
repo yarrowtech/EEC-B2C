@@ -42,6 +42,7 @@ import subscriptionRoutes from "./routes/subscriptions.js";
 import careerApplicationsRoutes from "./routes/careerApplicationsRoutes.js";
 import dailyChallengeRoutes from "./routes/dailyChallengeRoutes.js";
 import flashcardRoutes from "./routes/flashcards.js";
+import uiClickRoutes from "./routes/uiClickRoutes.js";
 
 const app = express();
 
@@ -119,6 +120,7 @@ app.use("/api/packages", packageRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/daily-challenge", dailyChallengeRoutes);
 app.use("/api/flashcards", flashcardRoutes);
+app.use("/api/ui-clicks", uiClickRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;

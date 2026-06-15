@@ -104,6 +104,8 @@ import FlashcardsManage from "./pages/admin/FlashcardsManage";
 import AdminPrivacyPolicy from "./pages/admin/AdminPrivacyPolicy";
 import FlashcardsCatalogPage from "./pages/FlashcardsCatalogPage";
 import NotFound from "./pages/NotFound";
+import UiClickTracker from "./components/UiClickTracker";
+import ButtonAnalytics from "./pages/admin/ButtonAnalytics";
 
 
 function getToken() {
@@ -792,6 +794,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <UiClickTracker />
       <RouteHelmet siteSettings={siteSettings} />
       <AuthExpiryHandler />
       <Routes>
@@ -906,6 +909,7 @@ export default function App() {
 
             <Route path="results" element={<RequireAdmin><ResultsList /></RequireAdmin>} />
             <Route path="results/:id" element={<RequireAdmin><ResultDetail /></RequireAdmin>} />
+            <Route path="button-analytics" element={<RequireAdmin><ButtonAnalytics /></RequireAdmin>} />
             <Route path="student-analytics" element={<RequireAdmin><AdvancedStudentAnalytics /></RequireAdmin>} />
             <Route path="teacher-analytics" element={<RequireAdmin><TeacherAnalytics /></RequireAdmin>} />
             <Route path="job-applications" element={<RequireAdmin><JobApplicationsPage /></RequireAdmin>} />

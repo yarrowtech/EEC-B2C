@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Rocket, BookOpen, GraduationCap, Brain, PencilRuler, FlaskConical } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getUiClickSessionId, mergeUiClickSession } from "../lib/api";
 
 
 function CustomSelect({
@@ -384,6 +385,11 @@ const Hero = () => {
       };
 
       localStorage.setItem("user", JSON.stringify(hydratedUser));
+      try {
+        await mergeUiClickSession(getUiClickSessionId());
+      } catch {
+        // Ignore session merge failures.
+      }
       setStepDone(true);
       toast.success(`Welcome, ${hydratedUser?.name || data?.user?.name || "Explorer"}! 🎉`);
       setTimeout(() => {

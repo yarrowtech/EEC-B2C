@@ -4,6 +4,7 @@ import Login from "./Login";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { toast as hotToast } from "react-hot-toast";
+import { getUiClickSessionId, mergeUiClickSession } from "../lib/api";
 
 const PROFILE_CACHE_KEY = "eec:user-profile-cache:v1";
 const PROFILE_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -162,6 +163,12 @@ export default function GlobalLoginModal() {
       persistAuthSession(data.token, hydratedUser);
     } catch {
       throw new Error("Browser storage is full. Clear site data and try again.");
+    }
+
+    try {
+      await mergeUiClickSession(getUiClickSessionId());
+    } catch {
+      // Ignore session merge failures; auth should still succeed.
     }
 
     setShowForgot(false);

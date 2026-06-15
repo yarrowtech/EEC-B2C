@@ -29,6 +29,36 @@ function authOnlyHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export function getUiClickSessionId() {
+  const key = "eec:ui-click-session";
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const created =
+      globalThis.crypto?.randomUUID?.() ||
+      `anon-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, created);
+    return created;
+  } catch {
+    return "";
+  }
+}
+
+export async function mergeUiClickSession(sessionId) {
+  const token = readToken();
+  const cleanSessionId = String(sessionId || "").trim();
+  if (!token || !cleanSessionId) return null;
+
+  const res = await fetch(`${API_BASE}/api/ui-clicks/merge-session`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ sessionId: cleanSessionId }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
 export async function getJSON(path) {
   const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
   const json = await res.json().catch(() => ({}));
