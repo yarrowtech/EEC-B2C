@@ -540,7 +540,7 @@ const Hero = () => {
   const floatingStudyIcons = [
     { Icon: BookOpen, className: "left-[6%] top-[22%] hidden md:block text-[#4ECDC4]" },
     { Icon: GraduationCap, className: "right-[8%] top-[20%] hidden lg:block text-[#3B82F6]" },
-    { Icon: Brain, className: "left-[10%] bottom-[20%] hidden md:block text-[#F59E0B]" },
+    { Icon: Brain, className: "left-[3%] bottom-[12%] hidden md:block text-[#F59E0B]" },
     { Icon: PencilRuler, className: "right-[12%] bottom-[18%] hidden md:block text-[#EC4899]" },
     { Icon: FlaskConical, className: "right-[28%] top-[12%] hidden xl:block text-[#8B5CF6]" },
   ];
@@ -553,7 +553,7 @@ const Hero = () => {
       {floatingStudyIcons.map(({ Icon, className }, idx) => (
         <motion.div
           key={`study-icon-${idx}`}
-          className={`pointer-events-none absolute z-[1] ${className}`}
+          className={`pointer-events-none absolute z-0 ${className}`}
           animate={{ y: [0, -10, 0], rotate: [-2, 2, -2] }}
           transition={{
             duration: 3.4 + idx * 0.25,
@@ -577,7 +577,7 @@ const Hero = () => {
       <div className="relative mx-auto grid min-h-[calc(100vh-60px)] w-full max-w-full xl:max-w-[1400px] grid-cols-1 items-center gap-8 px-4 sm:px-8 py-12 lg:grid-cols-2 lg:py-16 lg:px-16 xl:px-24">
 
         {/* ── LEFT: Heading + Floating form card ── */}
-        <div className="flex flex-col items-center text-center gap-8 lg:items-start lg:text-left">
+        <div className="relative z-10 order-2 flex flex-col items-center text-center gap-8 lg:order-1 lg:items-start lg:text-left">
 
           {/* Badge — matches code.html: accent bg, border, celebration icon */}
           <motion.div
@@ -711,7 +711,7 @@ const Hero = () => {
           initial={{ opacity: 0, x: 26, scale: 0.98 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="block flex-1 relative w-full max-w-xl mx-auto lg:max-w-none lg:mx-0"
+          className="order-1 block flex-1 relative w-full max-w-xl mx-auto lg:order-2 lg:max-w-none lg:mx-0"
         >
           <div className="relative z-10 w-full">
             <img
