@@ -5,10 +5,20 @@
 *.md
 *.docx
 *.pdf
-*.html
 *.odt
 *.xlsx
 *.csv
+
+# Keep frontend entry file
+!frontend/index.html
+
+code.html
+edify_eight_revenue_plan_code_based.html
+EEC_B2C_API_DOCUMENTATION.html
+EEC_B2C_DATABASE_SCHEMA.html
+EEC_B2C_DFD.html
+EEC_B2C_SRS.html
+maity123@.html
 
 # AI Service
 ai-service/
