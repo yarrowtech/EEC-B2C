@@ -36,3 +36,11 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Local only
+.codex
+.pptgen/
+Ref/
+files/
+Pasted image.png
+WhatsApp Image*.jpeg
