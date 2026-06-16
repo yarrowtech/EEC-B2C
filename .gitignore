@@ -2,39 +2,37 @@
 .claude/
 
 # Documentation files
-GIFT_CARD_SYSTEM.md
-WELCOME_BONUS_DEBUG.md
-AI_QUESTION_GENERATOR_SETUP.md
-AI_SERVICE_SETUP.md
-MIGRATION_TO_LOCAL_AI.md
-QUICK_START.md
+*.md
+*.docx
+*.pdf
+*.html
+*.odt
+*.xlsx
+*.csv
 
-# AI Service folder
+# AI Service
 ai-service/
 verify_setup.sh
 
-# Environment variables
+# Environment
+.env
 backend/.env
 frontend/.env
-.env
 
-# Node modules
-backend/node_modules
-frontend/node_modules
+# Dependencies
+**/node_modules/
 
-# Build outputs
+# Build
 dist/
 build/
 
-# Zip files
-backend/backend.zip
-frontend/frontend.zip
+# Archives
 *.zip
 
 # Logs
 *.log
 npm-debug.log*
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
