@@ -664,14 +664,14 @@ export default function DashboardLayout() {
                                 alt={websiteSettings.siteName || "Edify Eight"}
                                 className="h-9 w-auto shrink-0 object-contain"
                             />
-                            <div className="min-w-0">
+                            {/* <div className="min-w-0">
                                 <p className="truncate text-sm font-extrabold tracking-tight text-slate-900">
                                     {websiteSettings.siteName}
                                 </p>
                                 <p className="text-[11px] font-medium text-slate-500">
                                     Tap to return home
                                 </p>
-                            </div>
+                            </div> */}
                         </Link>
                     </div>
                 )}
