@@ -362,6 +362,7 @@ function RouteHelmet({ siteSettings }) {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: siteName,
+    alternateName: "Edify Eight",
     url: siteBase,
     logo: socialImage,
   };
@@ -369,6 +370,7 @@ function RouteHelmet({ siteSettings }) {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: siteName,
+    alternateName: "Edify Eight",
     url: siteBase,
     potentialAction: {
       "@type": "SearchAction",
@@ -401,11 +403,13 @@ function RouteHelmet({ siteSettings }) {
     upsertMeta("name", "twitter:title", finalTitle);
     upsertMeta("name", "twitter:description", description);
     upsertMeta("name", "twitter:image", socialImage);
+    upsertMeta("name", "application-name", siteName);
     upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");
     upsertMeta("property", "og:title", finalTitle);
     upsertMeta("property", "og:description", description);
     upsertMeta("property", "og:image", socialImage);
     upsertMeta("property", "og:type", "website");
+    upsertMeta("property", "og:site_name", siteName);
     upsertMeta("property", "og:url", canonical);
 
     const faviconHref = String(siteSettings?.faviconUrl || "/favicon.ico").trim() || "/favicon.ico";
@@ -440,11 +444,13 @@ function RouteHelmet({ siteSettings }) {
       <meta property="og:title" content={finalTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
+      <meta property="og:site_name" content={siteName} />
       <meta property="og:url" content={canonical} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={finalTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={socialImage} />
+      <meta name="application-name" content={siteName} />
       <meta property="og:image" content={socialImage} />
       {noindex ? <meta name="robots" content="noindex,nofollow" /> : <meta name="robots" content="index,follow" />}
       <link rel="canonical" href={canonical} />
