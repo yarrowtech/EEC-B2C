@@ -213,7 +213,7 @@
 
 // src/layouts/DashboardLayout.jsx
 import React, { useMemo, useState, useEffect } from "react";
-import { Outlet, NavLink, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, Navigate, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Home,
@@ -292,6 +292,7 @@ export default function DashboardLayout() {
     const role = String(user?.role || "").toLowerCase();
     const navigate = useNavigate();
     const location = useLocation();
+    const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
     const isExamTakeRoute = location.pathname.startsWith("/dashboard/exams/take/");
     const [open, setOpen] = useState(false);
     const [practiceMenuOpen, setPracticeMenuOpen] = useState(false);
@@ -301,6 +302,10 @@ export default function DashboardLayout() {
     const [showTeacherVerification, setShowTeacherVerification] = useState(false);
     const [showTour, setShowTour] = useState(false);
     const [studyMaterialsUnreadIds, setStudyMaterialsUnreadIds] = useState([]);
+    const [websiteSettings, setWebsiteSettings] = useState({
+        siteName: "Edify Eight",
+        logoUrl: "",
+    });
     const [dailyChallenge, setDailyChallenge] = useState({
         loading: false,
         hasQuestion: false,
@@ -328,6 +333,41 @@ export default function DashboardLayout() {
             window.removeEventListener("offline", goOffline);
         };
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadWebsiteSettings() {
+            try {
+                const res = await fetch(`${API}/api/website-settings`);
+                const data = await res.json().catch(() => ({}));
+                if (cancelled || !res.ok) return;
+
+                setWebsiteSettings({
+                    siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+                    logoUrl: String(data?.logoUrl || "").trim(),
+                });
+            } catch {
+                // Keep defaults if settings cannot be loaded.
+            }
+        }
+
+        loadWebsiteSettings();
+
+        const onWebsiteSettingsUpdated = (e) => {
+            const data = e?.detail || {};
+            setWebsiteSettings({
+                siteName: String(data?.siteName || "Edify Eight").trim() || "Edify Eight",
+                logoUrl: String(data?.logoUrl || "").trim(),
+            });
+        };
+
+        window.addEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+        return () => {
+            cancelled = true;
+            window.removeEventListener("website:settings-updated", onWebsiteSettingsUpdated);
+        };
+    }, [API]);
 
     useEffect(() => {
         if (role !== "student" || !token) {
@@ -591,6 +631,7 @@ export default function DashboardLayout() {
                 : dailyChallenge.streakBroken
                     ? "Streak uncompleted. Attempt today to restart."
                     : `Attempt today to continue your ${dailyChallenge.streak} day streak.`;
+    const showDashboardChrome = !isExamTakeRoute;
 
     return (
         // <div className="h-screen overflow-hidden bg-[#FFFBEA]">
@@ -610,13 +651,59 @@ export default function DashboardLayout() {
                     )}
                 </AnimatePresence>
 
+                {/* MOBILE / TABLET BRAND BAR */}
+                {showDashboardChrome && (
+                    <div className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+                        <Link
+                            to="/"
+                            className="flex min-w-0 items-center gap-3"
+                            aria-label={`Go to ${websiteSettings.siteName || "home"}`}
+                        >
+                            <img
+                                src={websiteSettings.logoUrl || "/logo_new.png"}
+                                alt={websiteSettings.siteName || "Edify Eight"}
+                                className="h-9 w-auto shrink-0 object-contain"
+                            />
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-extrabold tracking-tight text-slate-900">
+                                    {websiteSettings.siteName}
+                                </p>
+                                <p className="text-[11px] font-medium text-slate-500">
+                                    Tap to return home
+                                </p>
+                            </div>
+                        </Link>
+                    </div>
+                )}
+
                 {/* SIDEBAR */}
+                {showDashboardChrome && (
                 <aside
                     id="tour-sidebar"
-                    className={`fixed z-40 top-0 bottom-0 hidden w-80 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform lg:block lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} ${isExamTakeRoute ? "hidden" : ""}`}
+                    className={`fixed z-40 top-0 bottom-0 hidden w-80 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform lg:block lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                     <div className="h-full flex flex-col p-6 overflow-x-hidden">
+                        <Link
+                            to="/"
+                            className="mb-5 flex items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-slate-200 hover:bg-slate-100"
+                            aria-label={`Go to ${websiteSettings.siteName || "home"}`}
+                        >
+                            <img
+                                src={websiteSettings.logoUrl || "/logo_new.png"}
+                                alt={websiteSettings.siteName || "Edify Eight"}
+                                className="h-10 w-auto shrink-0 object-contain"
+                            />
+                            {/* <div className="min-w-0">
+                                <p className="truncate text-sm font-extrabold tracking-tight text-slate-900">
+                                    {websiteSettings.siteName}
+                                </p>
+                                <p className="text-xs font-medium text-slate-500">
+                                    Back to home
+                                </p>
+                            </div> */}
+                        </Link>
+
                         {/* SCROLLABLE NAVIGATION */}
                         <div className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll pr-2">
                                 {!online && (
@@ -803,15 +890,16 @@ export default function DashboardLayout() {
                         </div>
                     </div>
                 </aside>
+                )}
 
                 {/* MAIN CONTENT */}
                 <main
                     className={`
-            ml-0 ${isExamTakeRoute ? "" : "lg:ml-80"}
+            ml-0 ${showDashboardChrome ? "lg:ml-80" : ""}
             h-screen
             overflow-y-auto
             w-full
-            ${role === "student" && !isExamTakeRoute ? "pb-20 lg:pb-0" : ""}
+            ${showDashboardChrome ? (role === "student" ? "pt-16 pb-20 lg:pt-0 lg:pb-0" : "pt-16 lg:pt-0") : ""}
           `}
                 >
                     <div className="mx-auto max-w-7xl">
@@ -821,7 +909,7 @@ export default function DashboardLayout() {
             </div>
 
             {/* MOBILE / TABLET FOOTER NAV — students only, visible below lg */}
-            {role === "student" && !isExamTakeRoute && (
+            {role === "student" && showDashboardChrome && (
                 <nav id="tour-mobile-nav" className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#FFF7DB] border-t-2 border-yellow-300 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
                     <div className="flex items-stretch h-[72px]">
                         {[
