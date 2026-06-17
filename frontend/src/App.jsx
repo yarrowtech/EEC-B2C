@@ -345,7 +345,7 @@ function RouteHelmet({ siteSettings }) {
   const siteBase =
     typeof window !== "undefined"
       ? window.location.origin
-      : "https://edifyeight.com";
+      : "https://www.edifyeight.com";
   const pathParts = String(location.pathname || "/")
     .split("/")
     .filter(Boolean);

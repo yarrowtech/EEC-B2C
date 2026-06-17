@@ -5,10 +5,10 @@
       "has": [
         {
           "type": "host",
-          "value": "www.edifyeight.com"
+          "value": "edifyeight.com"
         }
       ],
-      "destination": "https://edifyeight.com/:path*",
+      "destination": "https://www.edifyeight.com/:path*",
       "permanent": true
     }
   ],
