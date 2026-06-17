@@ -646,7 +646,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.24 }}
-            className="relative w-full flex justify-center lg:justify-start"
+            className="relative w-full flex justify-center lg:justify-start scroll-mt-28 lg:scroll-mt-36"
           >
             {/* Card — exact: rounded-[2.5rem] shadow-2xl border-4 border-primary/30 */}
             <div className="rounded-[2.5rem] border-4 bg-white p-6 sm:p-8 shadow-2xl w-full max-w-[100%] sm:max-w-xl lg:max-w-2xl overflow-visible box-border"

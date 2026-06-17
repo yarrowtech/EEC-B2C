@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import Hero from "../components/Hero";
 import StudyGrumpySection from "../components/StudyGrumpySection";
 import VictoryPathSection from "../components/VictoryPathSection";
@@ -27,6 +28,7 @@ import HomeFeaturesSection from "../components/HomeFeaturesSection";
 
 const Home = () => {
   const loading = usePageIntroLoader("eec:home:loaded");
+  const location = useLocation();
   const [siteName, setSiteName] = useState("Edify Eight");
 
   useEffect(() => {
@@ -49,6 +51,30 @@ const Home = () => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    if (location.hash !== "#hero-signup") return;
+
+    const t = setTimeout(() => {
+      const target = document.getElementById("hero-signup");
+      if (!target) return;
+
+      const isDesktop = window.innerWidth >= 1024;
+      const offset = Math.max(
+        isDesktop ? 180 : 128,
+        Math.round(window.innerHeight * (isDesktop ? 0.18 : 0.12))
+      );
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: "smooth",
+      });
+    }, 0);
+
+    return () => clearTimeout(t);
+  }, [loading, location.hash]);
 
   return (
     <AnimatePresence>
