@@ -312,12 +312,11 @@ export const startExam = async (req, res) => {
     if (type === "cloze-dnd") qType = "cloze-drag";
 
     // Enforce package-based tryout access for students.
+    let allowedTryoutTypes = null;
     if (String(req.user?.role || "").toLowerCase() === "student") {
       const userDoc = await User.findById(userId)
         .select("activeSubscription")
         .lean();
-
-      let allowedTryoutTypes = null;
 
       if (userDoc?.activeSubscription) {
         const subscription = await Subscription.findById(userDoc.activeSubscription)
@@ -341,7 +340,7 @@ export const startExam = async (req, res) => {
         }
       }
 
-      if (!allowedTryoutTypes.has(qType)) {
+      if (qType !== "all" && !allowedTryoutTypes.has(qType)) {
         return res.status(403).json({
           message: "Upgrade your package to unlock this tryout type",
         });
@@ -399,10 +398,17 @@ export const startExam = async (req, res) => {
     }
 
     const match = {
-      type: qType,
       subject: await buildMatchValue(subject),
       topic: await buildMatchValue(topic),
     };
+
+    if (qType === "all") {
+      if (allowedTryoutTypes && allowedTryoutTypes.size > 0) {
+        match.type = { $in: Array.from(allowedTryoutTypes) };
+      }
+    } else {
+      match.type = qType;
+    }
 
     const stageNumber = normalizeStage(stage);
     if (stageNumber !== null) {
@@ -451,10 +457,11 @@ export const startExam = async (req, res) => {
 
     // console.log("MATCH USED (with board):", match);
 
+    const totalMatched = await Question.countDocuments(match);
     const pipeline = [
       { $match: match },
       // Oversample slightly so we can remove duplicate-content cloze questions and still keep enough.
-      { $sample: { size: numericLimit * 3 } },
+      { $sample: { size: Math.max(1, Math.min(totalMatched || numericLimit, numericLimit * 3)) } },
       {
         $project: {
           type: 1,
@@ -761,15 +768,61 @@ export const startExam = async (req, res) => {
     res.status(201).json({
       attemptId: attempt._id,
       stage,
+      level,
       subject,
       topic,
       type,
+      limit: attempt.total,
       total: attempt.total,
       questions: finalQuestions,
     });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const restartExam = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { attemptId } = req.params;
+
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    if (!attemptId) {
+      return res.status(400).json({ message: "attemptId is required" });
+    }
+
+    const sourceAttempt = await Attempt.findById(attemptId).lean();
+    if (!sourceAttempt) {
+      return res.status(404).json({ message: "Attempt not found" });
+    }
+    if (String(sourceAttempt.userId) !== String(userId)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const nextAttempt = await Attempt.create({
+      userId,
+      attemptType: sourceAttempt.attemptType || "mcq",
+      stage: sourceAttempt.stage || "stage-1",
+      subject: sourceAttempt.subject,
+      topic: sourceAttempt.topic,
+      type: sourceAttempt.type,
+      questions: Array.isArray(sourceAttempt.questions) ? sourceAttempt.questions : [],
+      total: Number(sourceAttempt.total || (sourceAttempt.questions || []).length || 0),
+    });
+
+    res.status(201).json({
+      attemptId: nextAttempt._id,
+      stage: sourceAttempt.stage || "stage-1",
+      subject: String(sourceAttempt.subject || ""),
+      topic: String(sourceAttempt.topic || ""),
+      type: sourceAttempt.type,
+      total: nextAttempt.total,
+      limit: nextAttempt.total,
+    });
+  } catch (e) {
+    console.error("Failed to restart exam", e);
+    res.status(500).json({ message: "Failed to restart exam" });
   }
 };
 

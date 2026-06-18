@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getJSON, getMyFeedbackStatus, submitExam, submitFeedback } from "../../lib/api";
+import { getJSON, getMyFeedbackStatus, restartExam, submitExam, submitFeedback } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
 import FeedbackPromptModal from "../../components/FeedbackPromptModal";
 import {
@@ -50,11 +50,17 @@ export default function ExamTake() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [matchTokenSelection, setMatchTokenSelection] = useState({});
   const [hintOpen, setHintOpen] = useState({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(165);
+  const [examStartedAt] = useState(() => Date.now());
+  const [timeTakenSeconds, setTimeTakenSeconds] = useState(0);
+  const [dailyStreak, setDailyStreak] = useState(0);
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
   const [feedbackInitial, setFeedbackInitial] = useState({ name: "", schoolName: "" });
   const [isFullscreen, setIsFullscreen] = useState(
     typeof document !== "undefined" ? Boolean(document.fullscreenElement) : false
   );
+  const [restarting, setRestarting] = useState(false);
 
   async function enterFullscreen() {
     try {
@@ -206,11 +212,39 @@ export default function ExamTake() {
     }
   }, [result, STORAGE_KEY, META_STORAGE_KEY]);
 
+  // Fetch current daily-challenge streak for the result screen (reuses existing endpoint).
+  useEffect(() => {
+    if (!result) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem("jwt");
+        const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/api/daily-challenge/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) setDailyStreak(Number(data?.streak || 0));
+      } catch {
+        setDailyStreak(0);
+      }
+    })();
+  }, [result]);
+
   useEffect(() => {
     if (!meta) {
       setMeta(null);
     }
   }, [meta]);
+
+  // Per-question countdown (visual pacing only — does not auto-submit).
+  useEffect(() => {
+    if (result) return;
+    setQuestionTimeLeft(165);
+    const timer = setInterval(() => {
+      setQuestionTimeLeft((t) => (t > 0 ? t - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [currentQuestionIndex, result]);
 
   // Hydrate legacy/incomplete question payloads with full question docs.
   useEffect(() => {
@@ -293,6 +327,33 @@ export default function ExamTake() {
   }
 
   const { questions = [], type, total } = meta;
+  const isMcqSingleExam =
+    type === "mcq-single" &&
+    questions.length > 0 &&
+    questions.every((q) => (q.type || type) === "mcq-single");
+
+  function formatTimer(totalSeconds) {
+    const safe = Math.max(0, Number(totalSeconds) || 0);
+    const m = Math.floor(safe / 60);
+    const s = safe % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  const resultPercent = Number(result?.percent || 0);
+  const starsEarned = !result ? 0 : resultPercent >= 80 ? 3 : resultPercent >= 50 ? 2 : 1;
+  const xpEarned = Math.max(10, Math.round(Number(meta?.estPotentialXp) || total * 5));
+  const storedUserPoints = (() => {
+    try {
+      return Number(JSON.parse(localStorage.getItem("user") || "{}")?.points || 0);
+    } catch {
+      return 0;
+    }
+  })();
+  const levelNumber = Math.floor(storedUserPoints / 100) + 1;
+  const levelProgressPercent = storedUserPoints % 100;
+  const avgSecondsPerQuestion = total ? Math.round(timeTakenSeconds / total) : 0;
+  const questTitle = String(meta?.topicName || meta?.subjectName || "Quest").trim();
+  const stageLabelText = `Stage ${meta?.stage || 1}`;
 
   function setAns(qid, payload) {
     setAnswers(prev => ({ ...prev, [qid]: { ...(prev[qid] || {}), ...payload } }));
@@ -366,7 +427,7 @@ export default function ExamTake() {
   }
 
   async function onSubmit(e) {
-    e.preventDefault();
+    e?.preventDefault?.();
     setBusy(true);
     try {
       // build answers array to match backend
@@ -420,6 +481,7 @@ export default function ExamTake() {
 
       const res = await submitExam(attemptId, arr);
       await exitFullscreen();
+      setTimeTakenSeconds(Math.max(1, Math.round((Date.now() - examStartedAt) / 1000)));
       setResult(res); // {score,total,percent}
 
       const weakRows = createWeakAreaEntries({
@@ -605,6 +667,29 @@ export default function ExamTake() {
     nav(`/dashboard/syllabus?stage=${stageNum}`);
   }
 
+  async function restartSameExam() {
+    if (!attemptId) {
+      goToTopicPracticeAfterSubmit();
+      return;
+    }
+
+    try {
+      setRestarting(true);
+      const data = await restartExam(attemptId);
+      nav(`/dashboard/exams/take/${data.attemptId}`, {
+        state: {
+          ...meta,
+          ...data,
+          questions: meta?.questions || [],
+        },
+      });
+    } catch (err) {
+      toast.error(err.message || "Failed to restart exam. Please try again.");
+    } finally {
+      setRestarting(false);
+    }
+  }
+
   function plainText(input) {
     return String(input || "")
       .replace(/<[^>]*>/g, " ")
@@ -773,6 +858,374 @@ export default function ExamTake() {
           </div>
         </div>
       )}
+      {isMcqSingleExam && !result ? (
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 pb-28 select-none">
+          <div className="max-w-3xl mx-auto px-4 pt-6">
+            {/* Quest Progress */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-black text-sm">
+                    {currentQuestionIndex + 1}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Quest Progress</p>
+                    <p className="text-xs text-slate-500">
+                      Question {currentQuestionIndex + 1} of {total} answered
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-black text-[#7a6a23]">
+                    {Math.round(((currentQuestionIndex + 1) / total) * 100)}%
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Complete</p>
+                </div>
+              </div>
+              <div className="h-2.5 rounded-full bg-[#f1e9d2] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#7a6a23] transition-all duration-500"
+                  style={{ width: `${((currentQuestionIndex + 1) / total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Question Card */}
+            {(() => {
+              const q = questions[currentQuestionIndex];
+              if (!q) return null;
+              const displayQuestionText =
+                translatedQuestions[q._id]?.question || q.question || q.prompt || q.plainText || "";
+              const subjectLabel = String(meta?.topicName || meta?.subjectName || "Quest").toUpperCase();
+
+              return (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="inline-flex items-center rounded-full bg-[#f1e9d2] text-[#7a6a23] text-[11px] font-bold uppercase tracking-wide px-3 py-1">
+                      {subjectLabel}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-600 text-xs font-bold px-3 py-1.5">
+                      ⏱ {formatTimer(questionTimeLeft)}
+                    </span>
+                  </div>
+
+                  <p className="text-lg font-bold text-slate-900 mb-3">{displayQuestionText}</p>
+
+                  <button
+                    type="button"
+                    onClick={() => setHintOpen((prev) => ({ ...prev, [q._id]: !prev[q._id] }))}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold px-3.5 py-1.5 mb-4 hover:bg-amber-200 transition"
+                  >
+                    📍 {hintOpen[q._id] ? "Hide Hint" : "Show Hint"}
+                  </button>
+                  {hintOpen[q._id] && (
+                    <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      <span className="mt-0.5 shrink-0 text-base leading-none">💡</span>
+                      <span className="leading-relaxed">{getAutoHint(q, displayQuestionText)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3">
+                    {(translatedQuestions[q._id]?.options || q.options || []).map((o) => {
+                      const checked = (answers[q._id]?.mcq || "") === o.key;
+                      return (
+                        <label
+                          key={o.key}
+                          className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                            checked ? "border-indigo-400 bg-indigo-50" : "border-slate-100 bg-[#fbf9f5] hover:border-slate-200"
+                          }`}
+                        >
+                          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f1e9d2] text-[#7a6a23] font-bold text-sm shrink-0">
+                            {o.key}
+                          </span>
+                          <span className="flex-1 text-sm font-medium text-slate-800">{o.text}</span>
+                          <input
+                            type="radio"
+                            name={`q-${q._id}`}
+                            checked={checked}
+                            onChange={() => setAns(q._id, { mcq: o.key })}
+                            className="h-4 w-4 accent-indigo-600 cursor-pointer"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Bottom nav */}
+          <div className="fixed inset-x-0 bottom-0 z-30 bg-white/95 backdrop-blur border-t border-slate-100 px-4 py-3">
+            <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+              <button
+                type="button"
+                disabled={currentQuestionIndex === 0}
+                onClick={() => setCurrentQuestionIndex((i) => Math.max(0, i - 1))}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed hover:text-slate-700"
+              >
+                ← Previous Question
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {questions.map((q, i) => (
+                  <span
+                    key={q._id}
+                    className={`h-2 rounded-full transition-all ${
+                      i === currentQuestionIndex
+                        ? "bg-[#7a6a23] w-4"
+                        : answers[q._id]
+                        ? "bg-indigo-300 w-2"
+                        : "bg-slate-200 w-2"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {currentQuestionIndex < total - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setCurrentQuestionIndex((i) => Math.min(total - 1, i + 1))}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-5 py-2.5 transition"
+                >
+                  Next Question →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onSubmit()}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-5 py-2.5 transition disabled:opacity-50"
+                >
+                  {busy ? "Submitting…" : "Submit Quest 🏁"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : isMcqSingleExam && result ? (
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 pb-12">
+          <div className="max-w-4xl mx-auto px-4 pt-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">🏆</span>
+                <div>
+                  <h1 className="text-xl font-black text-slate-900">Quest Complete!</h1>
+                  <p className="text-xs text-slate-500">
+                    {questTitle} {stageLabelText}
+                    {resultPercent >= 80 ? " Mastered" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+                >
+                  <span className="text-base">🔔</span>
+                </button>
+                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-[#e7c555]/40 bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                  {(() => {
+                    try {
+                      const u = JSON.parse(localStorage.getItem("user") || "{}");
+                      return u?.avatar ? (
+                        <img src={u.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        String(u?.name || "U").charAt(0).toUpperCase()
+                      );
+                    } catch {
+                      return "U";
+                    }
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Score Summary + Stat cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+              {/* Score Summary */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center text-center">
+                <p className="text-xs font-bold uppercase tracking-wide text-indigo-500 mb-3">Score Summary</p>
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="54" fill="none" stroke="#f1e9d2" strokeWidth="10" />
+                  <circle
+                    cx="70"
+                    cy="70"
+                    r="54"
+                    fill="none"
+                    stroke="#7a6a23"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 54}
+                    strokeDashoffset={2 * Math.PI * 54 * (1 - resultPercent / 100)}
+                    transform="rotate(-90 70 70)"
+                  />
+                  <text x="70" y="68" textAnchor="middle" fontSize="24" fontWeight="900" fill="#1e293b">
+                    {result.score}/{result.total}
+                  </text>
+                  <text x="70" y="88" textAnchor="middle" fontSize="11" fontWeight="700" fill="#7a6a23">
+                    {resultPercent}% CORRECT
+                  </text>
+                </svg>
+                <p className="mt-3 text-xs text-slate-400 italic leading-relaxed">
+                  "A journey of a thousand miles begins with a single step. You've got this!"
+                </p>
+              </div>
+
+              {/* Stat mini-cards */}
+              <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 text-lg">⏱</span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Time Taken</p>
+                    <p className="text-sm font-black text-slate-900">{formatTimer(timeTakenSeconds)}</p>
+                    <p className="text-[10px] text-slate-400">Avg: {avgSecondsPerQuestion}s/question</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 text-lg">⚡</span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">XP Earned</p>
+                    <p className="text-sm font-black text-slate-900">+{xpEarned} XP</p>
+                    <p className="text-[10px] text-slate-400">Lvl {levelNumber} Progress: {levelProgressPercent}%</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 text-lg">⭐</span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Stars</p>
+                    <p className="text-sm font-black text-slate-900">{starsEarned}/3</p>
+                    <p className="text-[10px] text-slate-400">{starsEarned >= 3 ? "Perfect run!" : "Keep practicing!"}</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 text-lg">🔥</span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Daily Streak</p>
+                    <p className="text-sm font-black text-slate-900">{dailyStreak} Days</p>
+                    <p className="text-[10px] text-slate-400">Comeback tomorrow!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Review Your Answers */}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-slate-800">Review Your Answers</h2>
+              <span className="text-xs text-slate-400">Question 1 of {total}</span>
+            </div>
+
+            <div className="flex flex-col gap-3 mb-8">
+              {questions.map((q, idx) => {
+                const status = result.detail?.[q._id];
+                const selectedKey = String(answers[q._id]?.mcq || "").trim().toLowerCase();
+                const correctKeys = (Array.isArray(q.correct) ? q.correct : []).map((k) =>
+                  String(k).trim().toLowerCase()
+                );
+                const questionText = q.question || q.prompt || q.plainText || "";
+
+                return (
+                  <details
+                    key={q._id}
+                    open={idx === 0}
+                    className="group rounded-2xl border border-slate-100 bg-white overflow-hidden"
+                  >
+                    <summary className="flex items-center gap-3 p-4 cursor-pointer list-none">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">
+                        {idx + 1}
+                      </span>
+                      <span className="flex-1 text-sm font-semibold text-slate-800 truncate">{questionText}</span>
+                      <span className={`text-lg shrink-0 ${status === "correct" ? "text-emerald-500" : "text-rose-500"}`}>
+                        {status === "correct" ? "✓" : "✕"}
+                      </span>
+                    </summary>
+                    <div className="px-4 pb-4 pt-1 flex flex-col gap-2">
+                      {(q.options || []).map((o) => {
+                        const key = String(o.key).trim().toLowerCase();
+                        const isSelected = selectedKey === key;
+                        const isCorrect = correctKeys.includes(key);
+                        const theme = isCorrect
+                          ? "bg-emerald-50 border-emerald-300"
+                          : isSelected
+                          ? "bg-rose-50 border-rose-300"
+                          : "bg-slate-50 border-slate-100 opacity-60";
+                        return (
+                          <div
+                            key={o.key}
+                            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 ${theme}`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span
+                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                  isCorrect
+                                    ? "bg-emerald-500 text-white"
+                                    : isSelected
+                                    ? "bg-rose-500 text-white"
+                                    : "bg-slate-200 text-slate-500"
+                                }`}
+                              >
+                                {o.key}
+                              </span>
+                              <span className="text-sm text-slate-700 truncate">{o.text}</span>
+                            </div>
+                            {isSelected && !isCorrect && (
+                              <span className="shrink-0 text-[10px] font-bold uppercase text-rose-600 bg-rose-100 px-2 py-1 rounded-full">
+                                ✕ Your Choice
+                              </span>
+                            )}
+                            {isCorrect && (
+                              <span className="shrink-0 text-[10px] font-bold uppercase text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+                                ✓ Correct Answer
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      <div
+                        className={`mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold ${
+                          status === "correct" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {status === "correct"
+                          ? "🎉 Great job! You nailed it."
+                          : "✕ Try again next time! It's okay to make mistakes — that's how we learn."}
+                      </div>
+
+                      {q.explanation && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          <p className="font-bold text-amber-800 mb-1">📘 Explanation</p>
+                          <p className="leading-relaxed">{q.explanation}</p>
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+
+            {/* Footer actions */}
+            <div className="flex items-center justify-center gap-4 pb-6">
+              <button
+                type="button"
+                onClick={restartSameExam}
+                disabled={restarting}
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+              >
+                {restarting ? "Restarting…" : "↺ Try Again"}
+              </button>
+              <button
+                type="button"
+                onClick={goBackAfterSubmit}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#e7c555] hover:bg-[#d4b44a] px-6 py-3 text-sm font-bold text-slate-900 shadow-md transition"
+              >
+                Back to Dashboard →
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
       <form onSubmit={onSubmit} className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 select-none">
         <div className="max-w-4xl mx-auto">
         {/* Header Section */}
@@ -2045,6 +2498,7 @@ export default function ExamTake() {
         </div>
       </div>
       </form>
+      )}
     </>
   );
 }

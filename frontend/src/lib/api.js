@@ -166,6 +166,16 @@ export async function startExam(payload) {
   return json; // {attemptId, questions[], total, ...}
 }
 
+export async function restartExam(attemptId) {
+  const res = await fetch(`${API_BASE}/api/exams/restart/${encodeURIComponent(attemptId)}`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
 export async function submitExam(attemptId, answers) {
   const res = await fetch(`${API_BASE}/api/exams/submit/${attemptId}`, {
     method: "POST",

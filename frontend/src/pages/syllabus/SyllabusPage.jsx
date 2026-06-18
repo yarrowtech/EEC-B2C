@@ -1,73 +1,99 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, X, FileText, Clock, ListChecks, Lock, ChevronRight } from "lucide-react";
-import { getJSON, startExam } from "../../lib/api";
+import { Loader2, X, Lock } from "lucide-react";
+import { getJSON, startExam, myAttempts } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
 
 /* ── Helper: Material icon component ── */
-function MIcon({ name, className = "", fill = false }) {
+function MIcon({ name, className = "", fill = false, style }) {
+  const fillStyle = fill ? { fontVariationSettings: "'FILL' 1" } : undefined;
   return (
     <span
       className={`material-symbols-outlined ${fill ? "fill-icon" : ""} ${className}`}
-      style={fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
+      style={{ ...fillStyle, ...style }}
     >
       {name}
     </span>
   );
 }
 
-/* ── Gradient palette cycling for subject cards ── */
-const CARD_THEMES = [
-  {
-    gradient: "from-blue-400 to-indigo-600",
-    icon: "calculate",
-    tagBg: "bg-blue-100",
-    tagText: "text-blue-700",
-  },
-  {
-    gradient: "from-emerald-400 to-teal-600",
-    icon: "biotech",
-    tagBg: "bg-teal-100",
-    tagText: "text-teal-700",
-  },
-  {
-    gradient: "from-orange-400 to-pink-600",
-    icon: "menu_book",
-    tagBg: "bg-orange-100",
-    tagText: "text-orange-700",
-  },
-  {
-    gradient: "from-amber-600 to-yellow-900",
-    gradientStyle: "linear-gradient(to bottom right, #d97706, #78350f)",
-    icon: "explore",
-    tagBg: "bg-amber-100",
-    tagText: "text-amber-700",
-  },
-  {
-    gradient: "from-cyan-500 to-blue-700",
-    icon: "public",
-    tagBg: "bg-cyan-100",
-    tagText: "text-cyan-700",
-  },
-  {
-    gradient: "from-purple-400 to-violet-600",
-    icon: "psychology",
-    tagBg: "bg-purple-100",
-    tagText: "text-purple-700",
-  },
-  {
-    gradient: "from-rose-400 to-red-600",
-    icon: "science",
-    tagBg: "bg-rose-100",
-    tagText: "text-rose-700",
-  },
-];
+/* ── Easy / Medium / Hard tab metadata, keyed by numeric stage ── */
+const STAGE_LEVEL_META = {
+  1: { label: "Stage 1", icon: "sentiment_satisfied" },
+  2: { label: "Stage 2", icon: "bolt" },
+  3: { label: "Stage 3", icon: "military_tech" },
+};
 
-const DIFFICULTY_BADGES = [
-  { label: "Easy Peasy", icon: "sentiment_satisfied", bg: "bg-green-100", text: "text-green-700" },
-  { label: "Challenger", icon: "bolt", bg: "bg-yellow-100", text: "text-yellow-700" },
-  { label: "Master Mind", icon: "psychology", bg: "bg-purple-100", text: "text-purple-700" },
-];
+function getStageLevelMeta(stage) {
+  return STAGE_LEVEL_META[stage] || { label: `Stage ${stage}`, icon: "school" };
+}
+
+/* ── Subject theming: icon, gradient, description & CTA by subject name ── */
+function getSubjectTheme(name = "") {
+  const n = String(name || "").toLowerCase();
+  if (/math/.test(n)) {
+    return {
+      icon: "calculate",
+      grad: ["#FF8A75", "#FF5C5C"],
+      description: "Solve magical puzzles and master numbers!",
+      cta: "Let's Count!",
+    };
+  }
+  if (/sci|physic|chem|bio/.test(n)) {
+    return {
+      icon: "science",
+      grad: ["#A78BFA", "#6D5BD0"],
+      description: "Discover nature's secrets and lab wonders.",
+      cta: "Experiment!",
+    };
+  }
+  if (/eng|story|read|hindi|lang/.test(n)) {
+    return {
+      icon: "auto_stories",
+      grad: ["#FBBF45", "#F2A93B"],
+      description: "Journey through books and build vocabulary.",
+      cta: "Read Now!",
+    };
+  }
+  if (/art|draw|paint|craft/.test(n)) {
+    return {
+      icon: "palette",
+      grad: ["#FF9AA8", "#FF6F86"],
+      description: "Unleash creativity with colors and shapes.",
+      cta: "Create Art!",
+    };
+  }
+  if (/hist|civic|social/.test(n)) {
+    return {
+      icon: "fort",
+      grad: ["#D8C9A8", "#B8A47C"],
+      description: "Meet great leaders and explore past worlds.",
+      cta: "Explore History!",
+    };
+  }
+  if (/comput|code|program/.test(n)) {
+    return {
+      icon: "sports_esports",
+      grad: ["#FBBF24", "#F59E0B"],
+      description: "Build logic skills through fun interactive games.",
+      cta: "Start Coding!",
+    };
+  }
+  if (/geo|evs|environ/.test(n)) {
+    return {
+      icon: "public",
+      grad: ["#34D8B0", "#10B981"],
+      description: "Explore the world and its wonders.",
+      cta: "Explore Now!",
+    };
+  }
+  return {
+    icon: "school",
+    grad: ["#94A3B8", "#64748B"],
+    description: `Explore ${name} topics and test your knowledge!`,
+    cta: "Start Learning!",
+  };
+}
 
 const TOPIC_NUMBER_THEMES = [
   "from-blue-400 to-indigo-500",
@@ -104,12 +130,11 @@ export default function SyllabusPage() {
   const [showTopicDetailsModal, setShowTopicDetailsModal] = useState(false);
   const [selectedTopicForDetails, setSelectedTopicForDetails] = useState(null);
   const [startingExam, setStartingExam] = useState(null);
-  const [showLevelSelector, setShowLevelSelector] = useState(false);
-  const [showTypeSelector, setShowTypeSelector] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showAdventureSetup, setShowAdventureSetup] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
+  const [selectedQuestionTypeType, setSelectedQuestionTypeType] = useState("");
+  const [selectedLimit, setSelectedLimit] = useState(25);
   const [questionTypes, setQuestionTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [currentStage, setCurrentStage] = useState(1);
@@ -120,44 +145,92 @@ export default function SyllabusPage() {
     allowedLevels: ["basic"],
     levelPackagesMap: {},
   });
+  const [attempts, setAttempts] = useState([]);
+  const [dailyBadge, setDailyBadge] = useState("none");
 
   const levelOptions = [
     {
       key: "basic",
-      label: "Basic",
-      subtitle: "Start simple and build confidence",
-      icon: "🌱",
-      tone: "from-emerald-500 to-green-500",
+      label: "Easy",
+      subtitle: "A gentle stroll through facts.",
+      stars: 1,
     },
     {
       key: "intermediate",
       label: "Intermediate",
-      subtitle: "A bit challenging for practice",
-      icon: "🚀",
-      tone: "from-orange-500 to-amber-500",
+      subtitle: "Balanced challenge for explorers.",
+      stars: 2,
     },
     {
       key: "advanced",
       label: "Advanced",
-      subtitle: "Hard questions for top preparation",
-      icon: "🏆",
-      tone: "from-purple-500 to-indigo-500",
+      subtitle: "Master-level brain power needed!",
+      stars: 3,
     },
   ];
-  const selectedTypeAvailableCount = useMemo(() => {
-    if (!selectedType) return 0;
-    if (selectedType.type === "all") {
-      return questionTypes.reduce((sum, item) => sum + Number(item?.count || 0), 0);
-    }
-    const match = questionTypes.find((item) => item?.type === selectedType.type);
-    return Number(match?.count ?? selectedType.count ?? 0);
-  }, [questionTypes, selectedType]);
+
+  /* Best-available question type for the selected level (highest question count). */
+  const selectedQuestionType = useMemo(() => {
+    if (!questionTypes.length) return null;
+    return (
+      questionTypes.find((item) => item?.type === selectedQuestionTypeType) ||
+      questionTypes[0] ||
+      null
+    );
+  }, [questionTypes, selectedQuestionTypeType]);
+  const resolvedQuestionCount = Number(selectedQuestionType?.count || 0);
+  const maxQuestionLimit = Math.max(1, resolvedQuestionCount || selectedLimit || 1);
+  const finalQuestionLimit = Math.min(selectedLimit, maxQuestionLimit);
+  const estDurationMins = Math.max(5, Math.round(finalQuestionLimit * 0.5));
+  const levelXpMultiplier = { basic: 1, intermediate: 1.5, advanced: 2 };
+  const potentialXp = Math.round(finalQuestionLimit * 10 * (levelXpMultiplier[selectedLevel] || 1));
+
+  useEffect(() => {
+    if (!resolvedQuestionCount) return;
+    setSelectedLimit((current) => Math.min(current || resolvedQuestionCount, resolvedQuestionCount));
+  }, [resolvedQuestionCount, selectedQuestionTypeType]);
 
   useEffect(() => {
     fetchUnlockedStages();
     fetchAllStages();
     fetchLevelAccess();
+    fetchMyAttempts();
+    fetchDailyBadge();
   }, []);
+
+  async function fetchMyAttempts() {
+    try {
+      const { items } = await myAttempts();
+      setAttempts(items || []);
+    } catch {
+      setAttempts([]);
+    }
+  }
+
+  async function fetchDailyBadge() {
+    try {
+      const token = localStorage.getItem("jwt");
+      const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const res = await fetch(`${API}/api/daily-challenge/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) setDailyBadge(String(data?.badge || "none").toLowerCase());
+    } catch {
+      setDailyBadge("none");
+    }
+  }
+
+  function getSubjectProgress(subjectId) {
+    const matches = attempts.filter((a) => {
+      const sameSubject = String(a?.subject?._id || a?.subject || "") === String(subjectId);
+      const stageNum = Number(String(a?.stage ?? "").match(/\d+/)?.[0] ?? a?.stage);
+      return sameSubject && stageNum === currentStage;
+    });
+    if (!matches.length) return 0;
+    const avg = matches.reduce((sum, a) => sum + (Number(a?.percent) || 0), 0) / matches.length;
+    return Math.round(avg);
+  }
 
   async function fetchLevelAccess() {
     try {
@@ -206,12 +279,10 @@ export default function SyllabusPage() {
     setSelectedSubject(null);
     setShowTopicDetailsModal(false);
     setSelectedTopicForDetails(null);
-    setShowLevelSelector(false);
-    setShowTypeSelector(false);
-    setShowConfirmDialog(false);
+    setShowAdventureSetup(false);
     setSelectedTopic(null);
     setSelectedLevel(null);
-    setSelectedType(null);
+    setQuestionTypes([]);
     setSubjectTopicsLoading(null);
   }, [currentStage]);
 
@@ -445,7 +516,14 @@ export default function SyllabusPage() {
       const response = await getJSON(
         `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${currentStage}&level=${encodeURIComponent(level)}`
       );
-      setQuestionTypes((response.types || []).filter((t) => t?.type !== "all"));
+      const nextTypes = (response.types || [])
+        .filter((t) => t?.type !== "all")
+        .sort((a, b) => Number(b?.count || 0) - Number(a?.count || 0));
+      setQuestionTypes(nextTypes);
+      setSelectedQuestionTypeType((current) => {
+        if (current && nextTypes.some((item) => item?.type === current)) return current;
+        return nextTypes[0]?.type || "";
+      });
       return true;
     } catch (err) {
       console.error("Failed to fetch question types", err);
@@ -470,10 +548,24 @@ export default function SyllabusPage() {
     }
   }
 
-  function handleTopicClick(subject, topic) {
+  function pickDefaultLevel() {
+    const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+    return levelOptions.find((lvl) => allowedLevelSet.has(lvl.key))?.key || "basic";
+  }
+
+  function openAdventureSetup(subject, topic) {
     setShowTopicsModal(false);
     setSelectedTopic({ subject, topic });
-    setShowLevelSelector(true);
+    setSelectedLimit(25);
+    setSelectedQuestionTypeType("");
+    const defaultLevel = pickDefaultLevel();
+    setSelectedLevel(defaultLevel);
+    setShowAdventureSetup(true);
+    fetchQuestionTypesForLevel(subject, topic, defaultLevel);
+  }
+
+  function handleTopicClick(subject, topic) {
+    openAdventureSetup(subject, topic);
   }
 
   function handleTopicInfoClick(subject, topic, e) {
@@ -507,8 +599,8 @@ export default function SyllabusPage() {
       .replace(/&amp;/g, "&");
   }
 
-  async function handleLevelSelection(level) {
-    if (!selectedTopic) return;
+  async function handleAdventureLevelChange(level) {
+    if (!selectedTopic || level === selectedLevel) return;
     const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
     if (!allowedLevelSet.has(level)) {
       toast.error(`The ${level} level is locked in your current package.`);
@@ -516,40 +608,26 @@ export default function SyllabusPage() {
       return;
     }
     setSelectedLevel(level);
-    const loaded = await fetchQuestionTypesForLevel(selectedTopic.subject, selectedTopic.topic, level);
-    if (!loaded) return;
-    setShowLevelSelector(false);
-    setShowTypeSelector(true);
+    await fetchQuestionTypesForLevel(selectedTopic.subject, selectedTopic.topic, level);
   }
 
-  function handleTypeSelection(type) {
-    setSelectedType(type);
-    setShowTypeSelector(false);
-    setShowConfirmDialog(true);
-  }
-
-  function goBackToTypeSelector() {
-    setShowConfirmDialog(false);
-    setShowTypeSelector(true);
-  }
-
-  async function confirmStartExam() {
-    if (!selectedTopic || !selectedType || !selectedLevel) return;
+  async function confirmAdventureStart() {
+    if (!selectedTopic || !selectedLevel) return;
 
     const { subject, topic } = selectedTopic;
     const user = getStoredUser();
     const userClass = user.classId || user.class || user.className || "";
     const userBoard = user.boardId || user.board || user.boardName || "";
+    const typeToUse = selectedQuestionType?.type || "mcq-single";
 
     try {
       setStartingExam(`${subject._id}-${topic._id}`);
-      setShowConfirmDialog(false);
 
       const data = await startExam({
         subject: subject._id,
         topic: topic._id,
-        type: selectedType.type === "all" ? "mcq-single" : selectedType.type,
-        limit: 10,
+        type: typeToUse,
+        limit: finalQuestionLimit,
         level: selectedLevel,
         stage: currentStage,
         class: userClass,
@@ -557,43 +635,29 @@ export default function SyllabusPage() {
       });
 
       navigate(`/dashboard/exams/take/${data.attemptId}`, {
-        state: data,
+        state: { ...data, subjectName: subject.name, topicName: topic.name, estPotentialXp: potentialXp },
       });
     } catch (err) {
       console.error("Failed to start exam", err);
       toast.error(err.message || "Failed to start exam. Please try again.");
     } finally {
       setStartingExam(null);
+      setShowAdventureSetup(false);
       setSelectedTopic(null);
       setSelectedLevel(null);
-      setSelectedType(null);
+      setQuestionTypes([]);
       setSelectedSubject(null);
       setShowTopicsModal(false);
     }
   }
 
-  function cancelLevelSelector() {
-    setShowLevelSelector(false);
+  function closeAdventureSetup() {
+    setShowAdventureSetup(false);
     setSelectedTopic(null);
     setSelectedLevel(null);
-    setSelectedType(null);
     setQuestionTypes([]);
     // Go back to topics modal
     setShowTopicsModal(true);
-  }
-
-  function cancelTypeSelector() {
-    setShowTypeSelector(false);
-    setSelectedType(null);
-    setSelectedLevel(null);
-    setQuestionTypes([]);
-    setShowLevelSelector(true);
-  }
-
-  function cancelStartExam() {
-    setShowConfirmDialog(false);
-    setSelectedType(null);
-    setShowTypeSelector(true);
   }
 
   if (loading) {
@@ -622,95 +686,92 @@ export default function SyllabusPage() {
         {/* ── Main Content ── */}
         <main className="flex-1 max-w-[1200px] mx-auto w-full px-4 md:px-10 py-8">
 
-          {/* ── Hero Section ── */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#e7c555]/20 to-[#e7c555]/5 rounded-[3rem] p-8 border border-[#e7c555]/20 mb-8">
-            {/* Decorative background elements */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[#e7c555]/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-10 left-10 h-40 w-40 rounded-full bg-[#e7c555]/10 blur-2xl" />
-
-            <div className="relative z-10 flex flex-col gap-4">
-              <div className="flex items-center gap-2 text-[#e7c555] font-bold text-sm uppercase tracking-widest">
-                <MIcon name="star" className="text-[18px]" />
-                Level Up Your Brain
-              </div>
-              <div className="flex flex-wrap justify-between items-end gap-4">
-                <div className="flex flex-col gap-2 max-w-2xl">
-                  <h1 className="text-slate-900 text-4xl md:text-5xl font-black leading-tight tracking-tight">
-                    Adventure Tryouts!
-                  </h1>
-                  <p className="text-slate-600 text-lg font-medium">
-                    Pick a subject quest, earn badges, and climb the ranks. Are you ready, explorer?
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 min-w-[240px]">
-                  <div className="flex items-center gap-4 bg-[#e7c555]/20 p-4 rounded-[3rem] border border-[#e7c555]/30">
-                    <div className="bg-[#e7c555] p-2 rounded-[2rem] text-white">
-                      <MIcon name="trophy" fill className="text-2xl" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-[#e7c555] uppercase">
-                        Stage {currentStage}
-                      </p>
-                      <p className="font-bold text-slate-900">
-                        {currentStage === 1 ? "Explorer" : `Stage ${currentStage} Explorer`}
-                      </p>
-                    </div>
+          {/* ── Hero Header ── */}
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-slate-900 text-3xl md:text-4xl font-black leading-tight tracking-tight">
+                Pick an Adventure! <span>🚀</span>
+              </h1>
+              <p className="text-slate-500 text-sm mt-1 font-medium">
+                Grade {userClassName} Explorer • Choose your subject to start learning
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
+                <span className="text-lg">🛡️</span>
+                <div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Daily Badge</div>
+                  <div className="text-sm font-black text-slate-800">
+                    {dailyBadge === "none" ? "Novice" : `${dailyBadge.charAt(0).toUpperCase()}${dailyBadge.slice(1)}`}
                   </div>
                 </div>
               </div>
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2.5 shadow-sm">
+                <span className="text-lg">🪙</span>
+                <div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
+                  <div className="text-sm font-black text-slate-800">
+                    {Number(resolvedUserProfile.points || 0).toLocaleString()} pts
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard")}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+              >
+                <MIcon name="notifications" className="text-[20px]" />
+              </button>
             </div>
-
-            {/* Decorative background icon */}
-            <MIcon
-              name="rocket_launch"
-              className="absolute -bottom-10 -right-10 text-[200px] text-[#e7c555]/10 pointer-events-none"
-            />
           </div>
 
-          {/* ── Filters ── */}
-          <div className="flex flex-wrap gap-3 mb-10 pb-6 border-b border-slate-200">
-            {/* Board pill */}
-            <button className="flex h-11 items-center justify-center gap-x-2 rounded-full bg-[#e7c555] text-slate-900 px-6 font-bold shadow-lg shadow-[#e7c555]/20">
-              <MIcon name="school" className="text-[20px]" />
-              {userBoardName}
-              <MIcon name="expand_more" className="text-[20px]" />
-            </button>
-            {/* Class pill */}
-            <button className="flex h-11 items-center justify-center gap-x-2 rounded-full bg-white text-slate-700 px-6 font-bold border border-slate-200 hover:border-[#e7c555] transition-all">
-              <MIcon name="grade" className="text-[20px]" />
-              {userClassName}
-              <MIcon name="expand_more" className="text-[20px]" />
-            </button>
-            {/* Separator */}
-            <div className="h-11 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
-            {/* Stage selector pills */}
-            {allStages.map((stage) => {
-              const isUnlocked = unlockedStages.includes(stage);
-              const isActive = currentStage === stage;
-              return (
-                <button
-                  key={stage}
-                  onClick={() => {
-                    if (!isUnlocked) {
-                      navigate("/dashboard/packages");
-                    } else {
-                      navigate(`/dashboard/syllabus?stage=${stage}`);
-                    }
-                  }}
-                  className={`flex h-11 items-center justify-center gap-x-2 rounded-full px-6 font-bold border transition-all ${
-                    isActive
-                      ? "bg-[#e7c555] text-slate-900 border-transparent shadow-lg shadow-[#e7c555]/20"
-                      : isUnlocked
-                      ? "bg-white text-slate-700 border-slate-200 hover:border-[#e7c555]"
-                      : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                  }`}
-                >
-                  {!isUnlocked && <Lock className="w-3.5 h-3.5" />}
-                  Stage {stage}
-                  {stage === 1 && <span className="text-xs ml-1 text-emerald-600 font-semibold">(Free)</span>}
-                </button>
-              );
-            })}
+          {/* ── Level Selector ── */}
+          <div className="flex flex-wrap items-center gap-3 mb-10 border-2 border-white rounded-3xl px-4 py-3 bg-orange-300/5 shadow-inner">
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+              <MIcon name="tune" className="text-[18px] text-slate-400" />
+              Set your level:
+            </span>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 p-1.5 shadow-inner">
+              {allStages.map((stage) => {
+                const isUnlocked = unlockedStages.includes(stage);
+                const isActive = currentStage === stage;
+                const meta = getStageLevelMeta(stage);
+                return (
+                  <button
+                    key={stage}
+                    onClick={() => {
+                      if (!isUnlocked) {
+                        navigate("/dashboard/packages");
+                      } else {
+                        navigate(`/dashboard/syllabus?stage=${stage}`);
+                      }
+                    }}
+                    className={`flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-bold transition-all ${
+                      isActive
+                        ? "bg-[#3f3a23] text-[#e7c555] shadow-md"
+                        : isUnlocked
+                        ? "text-slate-500 hover:text-slate-800"
+                        : "text-slate-300 cursor-not-allowed"
+                    }`}
+                  >
+                    {!isUnlocked && <Lock className="w-3 h-3" />}
+                    <MIcon name={meta.icon} className="text-[16px]" />
+                    {meta.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="relative group">
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <MIcon name="info" className="text-[14px]" />
+              </button>
+              <div className="pointer-events-none absolute left-0 top-7 z-20 w-56 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100">
+                Adjusting difficulty changes the challenge level.
+              </div>
+            </div>
           </div>
 
           {/* ── Subject Cards Grid ── */}
@@ -744,74 +805,95 @@ export default function SyllabusPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {subjects.map((subject, subjectIndex) => {
-                const theme = CARD_THEMES[subjectIndex % CARD_THEMES.length];
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {subjects.map((subject) => {
+                const theme = getSubjectTheme(subject.name);
                 const topicCount = subject.topicsLoaded
                   ? subject.topics.length
                   : typeof subject.topicCount === "number"
                   ? subject.topicCount
                   : null;
-                const topicCountDisplay = topicCount === null ? "--" : topicCount;
-                const topicSuffix = topicCount === 1 ? "" : "s";
-                const diffBadge = DIFFICULTY_BADGES[subjectIndex % DIFFICULTY_BADGES.length];
+                const isComingSoon = topicCount === 0;
+                const progress = getSubjectProgress(subject._id);
 
                 return (
                   <div
                     key={subject._id}
-                    className="flex flex-col bg-white rounded-[3rem] overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl hover:border-[#e7c555]/50 transition-all group"
+                    className={`relative overflow-hidden rounded-3xl p-6 shadow-sm transition-all duration-300 ${
+                      isComingSoon ? "bg-slate-100" : "shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                    }`}
+                    style={
+                      isComingSoon
+                        ? undefined
+                        : { backgroundImage: `linear-gradient(to bottom right, ${theme.grad[0]}, ${theme.grad[1]})` }
+                    }
                   >
-                    {/* Card gradient header */}
-                    <div
-                      className={`h-40 bg-gradient-to-br ${theme.gradient} relative overflow-hidden p-6 flex flex-col justify-end`}
-                      style={theme.gradientStyle ? { backgroundImage: theme.gradientStyle } : undefined}
-                    >
-                      {/* Decorative blobs */}
-                      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-                      <div className="pointer-events-none absolute -bottom-4 left-4 h-24 w-24 rounded-full bg-white/10 blur-xl" />
+                    {!isComingSoon && (
+                      <>
+                        {/* Dot-grid texture */}
+                        <div
+                          className="absolute inset-0 pointer-events-none opacity-[0.12]"
+                          style={{
+                            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+                            backgroundSize: "16px 16px",
+                          }}
+                        />
+                        {/* Large faint decorative icon */}
+                        <MIcon
+                          name={theme.icon}
+                          className="absolute -top-2 -right-1 text-white/15 pointer-events-none select-none"
+                          style={{ fontSize: "140px" }}
+                        />
+                      </>
+                    )}
 
-                      {/* Time badge */}
-                      <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/30">
-                        {topicCountDisplay} Topic{topicSuffix}
-                      </div>
-                      {/* Background decoration icon */}
-                      <MIcon
-                        name={theme.icon}
-                        className="text-white/20 text-8xl absolute -bottom-4 -right-4 rotate-12 group-hover:rotate-0 transition-transform duration-300"
-                      />
-                      {/* Subject name */}
-                      <h3 className="text-white text-2xl font-black relative z-10">{subject.name}</h3>
-                    </div>
-
-                    {/* Card body */}
-                    <div className="p-6 flex flex-col gap-4">
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`${theme.tagBg} ${theme.tagText} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1`}>
-                          <MIcon name="format_list_numbered" className="text-[14px]" />
-                          {topicCountDisplay} Topic{topicSuffix}
-                        </span>
-                        <span className={`${diffBadge.bg} ${diffBadge.text} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1`}>
-                          <MIcon name={diffBadge.icon} className="text-[14px]" />
-                          {diffBadge.label}
-                        </span>
+                    <div className="relative z-10">
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 shadow-sm ${
+                          isComingSoon ? "bg-slate-300 text-slate-500" : "bg-white/25 text-white"
+                        }`}
+                      >
+                        <MIcon name={isComingSoon ? "hourglass_empty" : theme.icon} className="text-2xl" />
                       </div>
 
-                      {/* Description */}
-                      <p className="text-slate-600 text-sm line-clamp-2">
-                        {subject.description || `Explore ${subject.name} topics and test your knowledge with fun quests and challenges!`}
+                      <h3 className={`text-xl font-black mb-1.5 ${isComingSoon ? "text-slate-500" : "text-slate-900"}`}>
+                        {subject.name}
+                      </h3>
+                      <p className={`text-sm mb-4 line-clamp-2 ${isComingSoon ? "text-slate-400" : "text-slate-800/70"}`}>
+                        {isComingSoon
+                          ? "New quests for this level are on the way. Check back soon!"
+                          : theme.description}
                       </p>
 
-                      {/* Start Quest button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSubjectClick(subject);
-                        }}
-                        className="w-full bg-[#e7c555] hover:bg-[#d4b44a] text-slate-900 font-bold py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all group-hover:scale-[1.02]"
-                      >
-                        Start Quest <MIcon name="play_circle" />
-                      </button>
+                      {isComingSoon ? (
+                        <div className="flex items-center justify-center gap-1.5 rounded-full border border-dashed border-slate-300 py-3 text-sm font-bold text-slate-400">
+                          <MIcon name="schedule" className="text-[16px]" />
+                          Coming Soon
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-900/70 mb-1.5">
+                            <span>Journey Progress</span>
+                            <span>{progress}%</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-white/40 overflow-hidden mb-4">
+                            <div
+                              className="h-full rounded-full bg-slate-900/80"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSubjectClick(subject);
+                            }}
+                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-full flex items-center justify-center gap-2 transition-all"
+                          >
+                            {theme.cta}
+                            <MIcon name="arrow_forward" className="text-[18px]" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -1021,277 +1103,286 @@ export default function SyllabusPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════ */}
-      {/* ── LEVEL SELECTOR (bottom sheet on mobile) ──         */}
+      {/* ── ADVENTURE SETUP (level + type + length + start) ── */}
       {/* ═══════════════════════════════════════════════════════ */}
-      {showLevelSelector && selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          <div
-            className="w-full md:max-w-2xl bg-white rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden"
-            style={{ maxHeight: "90vh" }}
-          >
-            {/* Drag handle - mobile only */}
-            <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
-            </div>
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-r from-[#e7c555] to-[#d4a843] p-5 md:p-6 text-slate-900 flex-shrink-0">
-              {/* Decorative blobs */}
-              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl md:text-2xl font-bold">Choose Level</h3>
-                  <button
-                    onClick={cancelLevelSelector}
-                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="mt-1.5 text-slate-700/80 text-sm">
-                  {selectedTopic.subject.name} — {selectedTopic.topic.name}
-                </p>
-              </div>
-            </div>
-            {/* Body */}
-            <div className="px-4 pt-4 pb-24 md:p-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                {levelOptions.map((level) => {
-                  const freeLevelSet = new Set(levelAccess.freeLevels || []);
-                  const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
-                  const isFree = freeLevelSet.has(level.key);
-                  const isAllowed = allowedLevelSet.has(level.key);
-                  const packageRows = Array.isArray(levelAccess.levelPackagesMap?.[level.key])
-                    ? levelAccess.levelPackagesMap[level.key]
-                    : [];
-                  const packageLabel = packageRows
-                    .map((pkg) => pkg?.displayName || pkg?.name)
-                    .filter(Boolean)
-                    .join(", ");
-
-                  return (
-                    <button
-                      key={level.key}
-                      onClick={() => handleLevelSelection(level.key)}
-                      className={`rounded-[3rem] border-2 transition-all p-4 md:p-5 text-left flex items-center gap-3 sm:flex-col sm:items-start group ${
-                        isAllowed
-                          ? "border-slate-200 hover:border-[#e7c555] hover:shadow-lg active:scale-[0.98]"
-                          : "border-slate-200 bg-slate-50 opacity-80"
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-[3rem] bg-gradient-to-br ${level.tone} flex items-center justify-center text-2xl shadow-md flex-shrink-0`}>
-                        {level.icon}
-                      </div>
-                      <div className="w-full">
-                        <h4 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-[#c5a832] flex items-center gap-2">
-                          {level.label}
-                          {!isAllowed && <Lock className="w-4 h-4 text-slate-500" />}
-                        </h4>
-                        <p className="mt-0.5 text-xs md:text-sm text-slate-600">{level.subtitle}</p>
-                        <div className="mt-2">
-                          {isFree ? (
-                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
-                              Free level
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
-                              {packageLabel ? `Paid · ${packageLabel}` : "Paid level"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* ── QUESTION TYPE SELECTOR (bottom sheet on mobile) ── */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      {showTypeSelector && selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          <div
-            className="w-full md:max-w-lg bg-white rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden"
-            style={{ maxHeight: "90vh" }}
-          >
-            <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
-            </div>
-            <div className="relative overflow-hidden bg-gradient-to-r from-[#e7c555] to-[#d4a843] p-5 md:p-6 text-slate-900 flex-shrink-0">
-              {/* Decorative blobs */}
-              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl md:text-2xl font-bold">Question Type</h3>
-                  <button
-                    onClick={cancelTypeSelector}
-                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="mt-1.5 text-slate-700/80 text-sm">
-                  {selectedTopic.subject.name} — {selectedTopic.topic.name}
-                </p>
-                {selectedLevel && (
-                  <p className="mt-1 text-xs text-slate-700/60 uppercase tracking-wide">
-                    Level: {selectedLevel}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="px-4 pt-4 pb-24 md:p-6 overflow-y-auto flex-1">
-              {loadingTypes ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#e7c555]" />
-                  <span className="ml-3 text-gray-600">Loading question types...</span>
-                </div>
-              ) : questionTypes.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <div className="text-6xl mb-4">🤔</div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">No Questions Yet</h4>
-                  <p className="text-gray-600 mb-6">
-                    There are no questions available for this topic right now.
-                  </p>
-                  <button
-                    onClick={cancelTypeSelector}
-                    className="px-6 py-2 rounded-[3rem] border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    Choose Another Level
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {questionTypes.map((qType, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleTypeSelection(qType)}
-                      disabled={qType.count === 0}
-                      className="w-full flex items-center justify-between p-4 rounded-[3rem] border-2 border-gray-200 hover:border-[#e7c555] hover:bg-[#e7c555]/5 active:scale-[0.98] transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-white"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{qType.icon || "📝"}</span>
-                        <div>
-                          <p className="font-semibold text-gray-900">{qType.label}</p>
-                          {qType.count !== null && (
-                            <p className="text-xs text-gray-500">
-                              {qType.count} question{qType.count !== 1 ? "s" : ""} available
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* ── CONFIRM DIALOG (bottom sheet on mobile) ──         */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      {showConfirmDialog && selectedTopic && selectedType && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          <div className="w-full md:max-w-md bg-white rounded-t-[3rem] md:rounded-[3rem] shadow-2xl overflow-hidden">
-            <div className="md:hidden flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
-            </div>
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-r from-[#e7c555] to-[#d4a843] p-5 md:p-6 text-slate-900">
-              {/* Decorative blobs */}
-              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl md:text-2xl font-bold">Start Exam?</h3>
-                  <button
-                    onClick={cancelStartExam}
-                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="mt-1.5 text-slate-700/80 text-sm">
-                  {selectedTopic.topic.name}
-                </p>
-              </div>
-            </div>
-            {/* Body */}
-            <div className="px-5 pt-5 pb-6 md:p-6 space-y-3.5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-[2rem] flex-shrink-0">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {selectedTypeAvailableCount} Question{selectedTypeAvailableCount !== 1 ? "s" : ""}
-                  </p>
-                  <p className="text-sm text-gray-500">{selectedType.label}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-[2rem] flex-shrink-0">
-                  <Clock className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">No Time Limit</p>
-                  <p className="text-sm text-gray-500">Take your time to answer</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-[2rem] flex-shrink-0">
-                  <ListChecks className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Subject: {selectedTopic.subject.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Stage {currentStage}{currentStage === 1 ? " — Free" : ""}
-                    {selectedLevel ? ` · Level ${selectedLevel}` : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="bg-[#e7c555]/10 border border-[#e7c555]/30 rounded-[3rem] p-3.5">
-                <p className="text-sm text-slate-700">
-                  Make sure you're ready! Once started, give it your best effort.
-                </p>
-              </div>
-            </div>
-            {/* Footer */}
-            <div className="px-5 pt-2 pb-24 md:px-6 md:pb-6 bg-gray-50 flex gap-3">
+      {showAdventureSetup && selectedTopic && (
+        <div className="fixed inset-x-0 top-0 bottom-16 md:bottom-0 z-50 overflow-y-auto bg-[#f8f7f6]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          {/* Top Header */}
+          <header className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[#e7c555]/10 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+            <div className="flex items-center gap-4 min-w-0">
               <button
-                onClick={goBackToTypeSelector}
-                className="px-4 py-3 rounded-[3rem] border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                onClick={closeAdventureSetup}
+                className="p-2 rounded-[2rem] bg-[#e7c555]/20 hover:bg-[#e7c555]/30 transition-colors flex-shrink-0"
               >
-                ← Back
+                <MIcon name="arrow_back" />
               </button>
+              <div className="min-w-0">
+                <h1 className="text-lg font-black text-slate-900 flex items-center gap-1.5 truncate">
+                  <MIcon name="menu_book" className="text-[20px] text-[#e7c555]" />
+                  Adventure Setup
+                </h1>
+                <p className="text-xs text-slate-500 truncate">
+                  Prepare your journey into {selectedTopic.topic.name}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 flex-shrink-0">
               <button
-                onClick={cancelStartExam}
-                className="flex-1 px-4 py-3 rounded-[3rem] border-2 border-gray-300 font-semibold text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                type="button"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
               >
-                Cancel
+                <MIcon name="notifications" className="text-[18px]" />
               </button>
-              <button
-                onClick={confirmStartExam}
-                disabled={startingExam}
-                className="flex-1 px-4 py-3 rounded-[3rem] bg-[#e7c555] hover:bg-[#d4b44a] font-semibold text-slate-900 active:scale-[0.98] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                {startingExam ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Starting...
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-[#e7c555]/40 bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                  {resolvedUserProfile.avatar ? (
+                    <img src={resolvedUserProfile.avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    String(resolvedUserProfile.name || "U").charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span className="text-sm font-bold text-slate-800">{resolvedUserProfile.name || "Explorer"}</span>
+              </div>
+            </div>
+          </header>
+
+          <div className="p-6 md:p-8 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* ── Left column ── */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              {/* Choose Difficulty */}
+              <div className="relative bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 font-bold text-slate-800">
+                    <MIcon name="military_tech" className="text-[20px] text-[#e7c555]" />
+                    Choose Difficulty
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
+                    Recommended for you
                   </span>
-                ) : (
-                  "Practice Now"
-                )}
-              </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {levelOptions.map((level) => {
+                    const allowedLevelSet = new Set(levelAccess.allowedLevels || []);
+                    const isAllowed = allowedLevelSet.has(level.key);
+                    const isActive = selectedLevel === level.key;
+                    return (
+                      <button
+                        key={level.key}
+                        onClick={() => handleAdventureLevelChange(level.key)}
+                        className={`rounded-2xl p-4 text-left transition-all ${
+                          isActive
+                            ? "bg-[#3f3a23] shadow-md"
+                            : isAllowed
+                            ? "bg-[#f8f3ea] hover:bg-[#f1e7d2]"
+                            : "bg-slate-100 opacity-70"
+                        }`}
+                      >
+                        <div className="flex items-center gap-0.5 mb-2">
+                          {[1, 2, 3].map((i) => (
+                            <MIcon
+                              key={i}
+                              name="star"
+                              fill={i <= level.stars}
+                              className={`text-[14px] ${isActive ? "text-[#e7c555]" : "text-amber-500"}`}
+                            />
+                          ))}
+                          {!isAllowed && <Lock className={`w-3 h-3 ml-1 ${isActive ? "text-[#e7c555]" : "text-slate-400"}`} />}
+                        </div>
+                        <p className={`font-black ${isActive ? "text-[#e7c555]" : "text-slate-900"}`}>{level.label}</p>
+                        <p className={`text-xs mt-0.5 ${isActive ? "text-[#e7c555]/70" : "text-slate-500"}`}>
+                          {level.subtitle}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Tryout Type */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6">
+                  <div className="flex items-center gap-2 font-bold text-slate-800 mb-4">
+                    <MIcon name="sync_alt" className="text-[20px] text-[#e7c555]" />
+                    Tryout Type
+                  </div>
+                  {loadingTypes ? (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                      Loading available tryouts...
+                    </div>
+                  ) : questionTypes.length > 0 ? (
+                    <div className="flex flex-col gap-3">
+                      {questionTypes.map((type) => {
+                        const active = selectedQuestionType?.type === type.type;
+                        return (
+                          <button
+                            key={type.type}
+                            onClick={() => setSelectedQuestionTypeType(type.type)}
+                            className={`rounded-2xl border-2 p-4 text-left flex items-center gap-3 transition-all ${
+                              active ? "border-indigo-400 bg-indigo-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span
+                              className={`inline-flex h-4 w-4 rounded-full border-2 flex-shrink-0 ${
+                                active ? "border-indigo-500 bg-indigo-500" : "border-slate-300"
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-sm text-slate-900">{type.label}</p>
+                                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                                  {type.count} available
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500">
+                                {type.type === "mcq-single"
+                                  ? "Single-correct tryout"
+                                  : type.type === "mcq-multi"
+                                  ? "Multiple-correct tryout"
+                                  : type.type === "choice-matrix"
+                                  ? "Matrix-style challenge"
+                                  : type.type === "true-false"
+                                  ? "True / False challenge"
+                                  : "Tryout available at this level"}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                      No tryouts available for this level yet.
+                    </div>
+                  )}
+                </div>
+
+                {/* Quest Length */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6">
+                  <div className="flex items-center gap-2 font-bold text-slate-800 mb-4">
+                    <MIcon name="route" className="text-[20px] text-[#e7c555]" />
+                    Quest Length
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-col items-center gap-1 text-slate-400">
+                      <MIcon name="directions_walk" className="text-[20px]" />
+                      <span className="text-[10px] font-bold">Short Trip</span>
+                    </div>
+                    <span className="inline-flex flex-col items-center justify-center rounded-2xl bg-amber-100 text-amber-800 px-4 py-1.5 font-black">
+                      <span className="text-lg leading-none">{finalQuestionLimit}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide">Questions</span>
+                    </span>
+                    <div className="flex flex-col items-center gap-1 text-slate-400">
+                      <MIcon name="directions_run" className="text-[20px]" />
+                      <span className="text-[10px] font-bold">Big Quest</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={maxQuestionLimit}
+                    step={1}
+                    value={finalQuestionLimit}
+                    onChange={(e) => setSelectedLimit(Number(e.target.value))}
+                    className="w-full accent-[#e7c555]"
+                  />
+                  {loadingTypes ? (
+                    <p className="text-[11px] text-slate-400 mt-2">Checking available questions…</p>
+                  ) : resolvedQuestionCount > 0 && resolvedQuestionCount < selectedLimit ? (
+                    <p className="text-[11px] text-slate-400 mt-2">
+                      Only {resolvedQuestionCount} question{resolvedQuestionCount !== 1 ? "s" : ""} available at this level.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Right column: Adventure Pass ── */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
+                {/* Pass header image */}
+                <div className="relative h-40 bg-gradient-to-br from-[#3f3a23] via-[#5b4a23] to-[#1f1c10] flex items-end p-5 overflow-hidden">
+                  <MIcon
+                    name="forest"
+                    className="absolute -bottom-6 -right-6 text-white/10 pointer-events-none select-none"
+                    style={{ fontSize: "140px" }}
+                  />
+                  <div className="relative z-10">
+                    <span className="inline-flex items-center gap-1 bg-[#e7c555] text-[#211d11] text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full mb-2">
+                      <MIcon name="confirmation_number" className="text-[12px]" />
+                      Adventure Pass
+                    </span>
+                    <p className="text-white font-black text-lg leading-tight">{selectedTopic.topic.name}</p>
+                  </div>
+                </div>
+
+                <div className="p-5 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Explorer</span>
+                    <span className="text-sm font-black text-slate-900">{resolvedUserProfile.name || "Explorer"}</span>
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                        <MIcon name="military_tech" className="text-[14px]" />
+                        Difficulty
+                      </span>
+                      <span className="text-sm font-bold text-slate-800">
+                        {levelOptions.find((l) => l.key === selectedLevel)?.label || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                        <MIcon name="bolt" className="text-[14px]" />
+                        Type
+                      </span>
+                      <span className="text-sm font-bold text-indigo-600">
+                        {selectedQuestionType?.label || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                        <MIcon name="schedule" className="text-[14px]" />
+                        Est. Duration
+                      </span>
+                      <span className="text-sm font-bold text-rose-500">{estDurationMins} Mins</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-[#e7c555]/10 border border-[#e7c555]/30 px-4 py-3 flex items-center gap-3">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#e7c555] text-[#211d11]">
+                      <MIcon name="monetization_on" className="text-[18px]" />
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Potential Earnings</p>
+                      <p className="text-sm font-black text-slate-900">{potentialXp} XP</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={confirmAdventureStart}
+                    disabled={Boolean(startingExam) || (!loadingTypes && questionTypes.length === 0) || !selectedQuestionType}
+                    className="w-full rounded-2xl bg-[#e7c555] hover:bg-[#d4b44a] text-slate-900 font-black py-3.5 flex flex-col items-center justify-center gap-0.5 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {startingExam ? (
+                      <span className="flex items-center justify-center gap-2 text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Starting...
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-sm tracking-wide">START ADVENTURE</span>
+                        <span className="text-[10px] font-bold opacity-70">READY? 🚀</span>
+                      </>
+                    )}
+                  </button>
+
+                  <p className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                    <Lock className="w-3 h-3" />
+                    Progress is saved automatically
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1420,11 +1511,7 @@ export default function SyllabusPage() {
                       <button
                         onClick={() => {
                           setShowTopicDetailsModal(false);
-                          setSelectedTopic({
-                            subject: selectedTopicForDetails.subject,
-                            topic: selectedTopicForDetails.topic
-                          });
-                          setShowLevelSelector(true);
+                          openAdventureSetup(selectedTopicForDetails.subject, selectedTopicForDetails.topic);
                         }}
                         className="px-4 py-2 rounded-full bg-[#e7c555] text-slate-900 font-bold text-sm hover:scale-105 transition-transform shadow-md"
                       >

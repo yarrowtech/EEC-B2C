@@ -550,6 +550,7 @@ export default function DashboardLayout() {
     const NAV = useMemo(() => {
         const base = [
             { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true, id: "tour-nav-dashboard" },
+            { to: "/dashboard/study", label: "Study", icon: <Library size={18} />, id: "tour-nav-study" },
         ];
 
         // Add Self Study for all users (students, teachers, admins)
@@ -684,34 +685,34 @@ export default function DashboardLayout() {
                 {showDashboardChrome && (
                 <aside
                     id="tour-sidebar"
-                    className={`fixed z-40 top-0 bottom-0 hidden w-80 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform lg:block lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
+                    className={`fixed z-40 top-0 bottom-0 hidden w-60 bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 ease-in-out will-change-transform lg:block lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
-                    <div className="h-full flex flex-col p-6 overflow-x-hidden">
+                    <div className="h-full flex flex-col p-3.5 overflow-x-hidden">
                         <Link
                             to="/"
-                            className="mb-5 flex flex-col items-center gap-1.5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-slate-200 hover:bg-slate-100"
+                            className="mb-3.5 flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5 transition hover:border-slate-200 hover:bg-slate-100"
                             aria-label={`Go to ${websiteSettings.siteName || "home"}`}
                         >
                             <img
                                 src={websiteSettings.logoUrl || "/logo_new.png"}
                                 alt={websiteSettings.siteName || "Edify Eight"}
-                                className="h-10 w-auto shrink-0 object-contain"
+                                className="h-8 w-auto shrink-0 object-contain"
                             />
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">
                                 Learning Adventure
                             </p>
                         </Link>
 
                         {/* SCROLLABLE NAVIGATION */}
-                        <div className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll pr-2">
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll pr-1">
                                 {!online && (
                                     <div className="mx-1 mb-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
                                         You are offline. Connect to continue.
                                     </div>
                                 )}
 
-                                <nav className="flex flex-col gap-2 w-full overflow-x-hidden">
+                                <nav className="flex w-full flex-col gap-1.5 overflow-x-hidden">
                                     {NAV.map((item, idx) => {
                                         // Cycle through colors for each nav item
                                         const iconColors = ['text-[#FFD23F]', 'text-[#4ECDC4]', 'text-[#FF6B6B]'];
@@ -725,7 +726,7 @@ export default function DashboardLayout() {
                                                 end={item.end}
                                                 onClick={blockOfflineNavigation}
                                                 className={({ isActive }) =>
-                                                    `flex items-center gap-4 px-4 py-3 rounded-full font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-sm whitespace-nowrap overflow-hidden ${
+                                                    `flex items-center gap-2.5 rounded-full px-3 py-2 font-bold transition-all duration-300 hover:scale-[1.01] hover:shadow-sm whitespace-nowrap overflow-hidden ${
                                                         !online
                                                             ? "text-slate-400 bg-slate-100 cursor-not-allowed"
                                                             : isActive
@@ -746,11 +747,12 @@ export default function DashboardLayout() {
                                                              item.to.includes('gift') ? 'card_giftcard' :
                                                              item.to.includes('purchase') ? 'shopping_cart' :
                                                              item.to.includes('subscription') ? 'credit_card' :
+                                                             item.to.includes('syllabus') || item.to.includes('study') ? 'school' :
                                                              item.to.includes('upload') || item.to.includes('material') ? 'menu_book' :
                                                              item.to.includes('notification') ? 'notifications' :
                                                              'description'}
                                                         </span>
-                                                        <span className="text-sm truncate">{item.label}</span>
+                                                        <span className="text-[13px] truncate">{item.label}</span>
                                                     </>
                                                 )}
                                             </NavLink>
@@ -778,7 +780,7 @@ export default function DashboardLayout() {
                         </div>
 
                         {/* USER PROFILE & LOGOUT */}
-                        <div className="shrink-0 flex flex-col gap-4 border-t border-slate-100 pt-6 mt-4">
+                        <div className="shrink-0 mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3.5">
                             {/* DAILY CHALLENGE - Students Only */}
                             {role === "student" && (
                                 <div
@@ -788,15 +790,15 @@ export default function DashboardLayout() {
                                             navigate("/dashboard/daily-challenge");
                                         }
                                     }}
-                                    className={`p-4 bg-[#e7c555]/5 rounded-2xl border border-[#e7c555]/20 transition-all duration-300 ${
+                                    className={`rounded-2xl border border-[#e7c555]/20 bg-[#e7c555]/5 p-3 transition-all duration-300 ${
                                         dailyChallenge.hasQuestion && !dailyChallenge.alreadyAttempted
                                             ? "cursor-pointer hover:bg-[#e7c555]/10 hover:border-[#e7c555]/30"
                                             : "opacity-95"
                                     }`}
                                 >
-                                    <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-2.5">
                                         <div className="flex items-center justify-between gap-2">
-                                            <p className="text-sm font-bold text-slate-800">Daily Challenge</p>
+                                            <p className="text-[13px] font-bold text-slate-800">Daily Challenge</p>
                                             {!dailyChallenge.loading && dailyChallenge.hasQuestion && (
                                                 <span
                                                     className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
@@ -809,7 +811,7 @@ export default function DashboardLayout() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${challengeProgress}%` }}
@@ -817,7 +819,7 @@ export default function DashboardLayout() {
                                                 className="bg-[#e7c555] h-full"
                                             ></motion.div>
                                         </div>
-                                        <p className="text-xs text-slate-500">
+                                        <p className="text-[11px] text-slate-500">
                                             {challengeMessage}
                                         </p>
                                         {!dailyChallenge.loading && dailyChallenge.hasQuestion && (
@@ -829,7 +831,7 @@ export default function DashboardLayout() {
                                                     navigate("/dashboard/daily-challenge");
                                                 }}
                                                 disabled={dailyChallenge.alreadyAttempted}
-                                                className={`w-full rounded-full px-3 py-2 text-xs font-bold transition ${
+                                                className={`w-full rounded-full px-3 py-1.5 text-[11px] font-bold transition ${
                                                     dailyChallenge.alreadyAttempted
                                                         ? "bg-slate-200 text-slate-500 cursor-not-allowed"
                                                         : "bg-[#e7c555] text-slate-900 hover:brightness-95"
@@ -847,22 +849,22 @@ export default function DashboardLayout() {
                                 id="tour-profile-card"
                                 type="button"
                                 onClick={() => navigate("/dashboard/profile")}
-                                className="flex w-full items-center gap-3 px-2 text-left rounded-xl hover:bg-slate-100/80 transition-colors"
+                                className="flex w-full items-center gap-2.5 rounded-xl px-2 text-left transition-colors hover:bg-slate-100/80"
                             >
-                                <div className="h-12 w-12 rounded-full border-4 border-[#4ECDC4] overflow-hidden">
+                                <div className="h-10 w-10 rounded-full border-3 border-[#4ECDC4] overflow-hidden">
                                     <SafeAvatar
                                         src={user?.avatar}
                                         name={user?.name}
                                         alt="User avatar"
                                         className="h-full w-full object-cover"
-                                        textClassName="text-lg"
+                                        textClassName="text-sm"
                                     />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-sm font-bold text-slate-900 leading-tight truncate max-w-40" title={user?.name || "User"}>
+                                    <p className="text-[13px] font-bold text-slate-900 leading-tight truncate max-w-40" title={user?.name || "User"}>
                                         {user?.name || "User"}
                                     </p>
-                                    <p className="text-xs font-bold text-[#4ECDC4]">
+                                    <p className="text-[11px] font-bold text-[#4ECDC4]">
                                         {role === "student" ? learnerTierLabel : online ? "Online" : "Offline"}
                                     </p>
                                 </div>
@@ -871,18 +873,18 @@ export default function DashboardLayout() {
                             {/* HELP & SUPPORT LINK */}
                             <Link
                                 to="/support"
-                                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-50 py-2.5 text-xs font-semibold text-blue-500 transition-all hover:bg-blue-100 hover:text-blue-600"
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-50 py-1.5 text-[11px] font-semibold text-blue-500 transition-all hover:bg-blue-100 hover:text-blue-600"
                             >
-                                <span className="material-symbols-outlined text-base">support_agent</span>
+                                <span className="material-symbols-outlined text-sm">support_agent</span>
                                 <span>Help &amp; Support</span>
                             </Link>
 
                             {/* LOGOUT BUTTON */}
                             <button
                                 onClick={handleLogout}
-                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-3 text-sm font-bold text-[#FF6B6B] transition-all duration-300 hover:bg-[#FF6B6B] hover:text-white hover:scale-[1.02] active:scale-[0.98]"
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 py-2 text-[13px] font-bold text-[#FF6B6B] transition-all duration-300 hover:bg-[#FF6B6B] hover:text-white hover:scale-[1.01] active:scale-[0.98]"
                             >
-                                <span className="material-symbols-outlined text-lg">logout</span>
+                                <span className="material-symbols-outlined text-base">logout</span>
                                 <span>Logout</span>
                             </button>
                         </div>
@@ -893,14 +895,14 @@ export default function DashboardLayout() {
                 {/* MAIN CONTENT */}
                 <main
                     className={`
-            ml-0 ${showDashboardChrome ? "lg:ml-80" : ""}
+            ml-0 ${showDashboardChrome ? "lg:ml-60" : ""}
             h-screen
             overflow-y-auto
             w-full
             ${showDashboardChrome ? (role === "student" ? "pt-16 pb-20 lg:pt-0 lg:pb-0" : "pt-16 lg:pt-0") : ""}
           `}
                 >
-                    <div className="mx-auto max-w-7xl">
+                    <div className="mx-auto max-w-6xl">
                         <Outlet />
                     </div>
                 </main>

@@ -126,7 +126,7 @@ const IconBubble = ({ children, from, to }) => (
 const StatCard = ({ title, value, icon, gradient }) => {
   return (
     <div
-      className={`relative overflow-hidden rounded-xl md:rounded-2xl p-3 md:p-5 shadow-md text-white bg-gradient-to-br ${gradient[0]} ${gradient[1]} transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}
+      className={`relative overflow-hidden rounded-xl md:rounded-2xl p-2.5 md:p-4 shadow-md text-white bg-gradient-to-br ${gradient[0]} ${gradient[1]} transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
     >
       <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
         <div className="absolute top-3 right-4 w-20 h-20 bg-white rounded-full"></div>
@@ -134,10 +134,10 @@ const StatCard = ({ title, value, icon, gradient }) => {
       </div>
       <div className="relative z-10 flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs md:text-sm text-white/80 truncate">{title}</p>
-          <h3 className="text-base md:text-2xl font-bold mt-0.5 md:mt-1 truncate">{value}</h3>
+          <p className="text-[11px] md:text-xs text-white/80 truncate">{title}</p>
+          <h3 className="text-sm md:text-xl font-bold mt-0.5 md:mt-1 truncate">{value}</h3>
         </div>
-        <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
+        <div className="p-2 bg-white/20 rounded-lg md:rounded-xl shadow-md flex-shrink-0">
           {icon}
         </div>
       </div>
@@ -147,9 +147,9 @@ const StatCard = ({ title, value, icon, gradient }) => {
 
 
 const Card = ({ title, icon, bubble = ["from-slate-700", "to-slate-900"], children }) => (
-  <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-5 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
-    <div className="flex items-center justify-between mb-3">
-      <div className="text-[13px] font-semibold text-slate-600 tracking-wide">{title}</div>
+  <div className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-[0_6px_24px_-12px_rgba(2,6,23,0.15)] p-4 hover:shadow-[0_12px_28px_-10px_rgba(2,6,23,0.25)] transition-shadow">
+    <div className="flex items-center justify-between mb-2.5">
+      <div className="text-[12px] font-semibold text-slate-600 tracking-wide">{title}</div>
       {icon && (
         <IconBubble from={bubble[0]} to={bubble[1]}>
           {icon}
@@ -161,11 +161,11 @@ const Card = ({ title, icon, bubble = ["from-slate-700", "to-slate-900"], childr
 );
 
 const Section = ({ title, subtitle, icon, action, children, className = "" }) => (
-  <section className={`space-y-3 md:space-y-4 ${className}`}>
+  <section className={`space-y-2.5 md:space-y-3 ${className}`}>
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         {icon && <span className="text-slate-700">{icon}</span>}
-        <h2 className="text-sm md:text-lg font-bold text-slate-800 tracking-tight">{title}</h2>
+        <h2 className="text-sm md:text-base font-bold text-slate-800 tracking-tight">{title}</h2>
       </div>
       {action ? action : subtitle ? <Badge tone="slate">{subtitle}</Badge> : null}
     </div>
@@ -1116,7 +1116,7 @@ function StudentContent() {
   }, [attempts, weakAreas, attemptNameMaps]);
 
   return (
-    <div className="student-adventure-theme relative p-4 md:p-6 space-y-6">
+    <div className="student-adventure-theme relative p-3 md:p-4 space-y-5 md:space-y-6">
       {/* Decorative star */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-[0.06] pointer-events-none select-none hidden lg:block">
         <span className="material-symbols-outlined" style={{ fontSize: "260px", color: "#94a3b8" }}>star</span>
@@ -1127,17 +1127,17 @@ function StudentContent() {
       {/* ── Welcome Header ── */}
       <div className="flex items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">
+          <h1 className="text-xl md:text-2xl font-black text-slate-900">
             Welcome back, {storedUser?.name?.split(" ")[0] || "Student"}! 👋
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Ready to level up your knowledge today?</p>
+          <p className="text-slate-500 text-xs md:text-sm mt-1">Ready to level up your knowledge today?</p>
         </div>
-        <div className="flex items-center justify-end gap-2 md:gap-3 flex-wrap">
-          <div className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm">
-            <span className="text-lg">🛡️</span>
+        <div className="flex items-center justify-end gap-2 md:gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-2.5 py-1.5 md:px-3.5 md:py-2 shadow-sm">
+            <span className="text-base md:text-lg">🛡️</span>
             <div>
-              <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Tier</div>
-              <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
+              <div className="hidden md:block text-[8px] text-slate-400 font-bold uppercase tracking-wider">Tier</div>
+              <div className="text-[11px] md:text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
             </div>
             <div className="relative group">
               <button
@@ -1163,13 +1163,13 @@ function StudentContent() {
           <button
             type="button"
             onClick={() => navigate("/dashboard/achievements")}
-            className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-2.5 py-1.5 md:px-3.5 md:py-2 shadow-sm hover:bg-slate-50 transition-colors"
             title="View achievements"
           >
-            <span className="text-lg">🪙</span>
+            <span className="text-base md:text-lg">🪙</span>
             <div className="text-left">
-              <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
-              <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : Number(storedUser?.points || 0).toLocaleString()}</div>
+              <div className="hidden md:block text-[8px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
+              <div className="text-[11px] md:text-sm font-black text-slate-800">{busy ? "…" : Number(storedUser?.points || 0).toLocaleString()}</div>
             </div>
           </button>
           <div ref={notificationRef} className="relative">
@@ -1180,9 +1180,9 @@ function StudentContent() {
                 setShowNotifications((prev) => !prev);
                 setProfileMenuOpen(false);
               }}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
             >
-              <Bell size={18} />
+              <Bell size={16} />
               {unreadCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -1191,12 +1191,12 @@ function StudentContent() {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 top-12 z-20 w-[320px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-                <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
-                  <p className="text-sm font-bold text-slate-800">Notifications</p>
+              <div className="absolute right-0 top-11 z-20 w-[300px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                  <p className="text-[13px] font-bold text-slate-800">Notifications</p>
                   <span className="text-xs text-slate-500">{unreadCount} unread</span>
                 </div>
-                <div className="max-h-[320px] overflow-y-auto">
+                <div className="max-h-[300px] overflow-y-auto">
                   {recentNotifications.length === 0 ? (
                     <div className="px-3 py-6 text-center text-sm text-slate-500">
                       No notifications yet
@@ -1215,14 +1215,14 @@ function StudentContent() {
                             setShowNotifications(false);
                             navigate(`/dashboard/notification/${n._id}`);
                           }}
-                          className={`w-full text-left px-3 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${
+                          className={`w-full text-left px-3 py-2.5 border-b border-slate-50 hover:bg-slate-50 transition-colors ${
                             !isRead ? "bg-amber-50/40" : ""
                           }`}
                         >
                           <div className="flex items-start gap-2">
                             {!isRead && <span className="mt-1 h-2 w-2 rounded-full bg-rose-500 flex-shrink-0" />}
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 truncate">
+                              <p className="text-[13px] font-semibold text-slate-800 truncate">
                                 {n.title || "Notification"}
                               </p>
                               <p className="text-xs text-slate-600 line-clamp-2 mt-0.5">
@@ -1245,7 +1245,7 @@ function StudentContent() {
             <button
               type="button"
               onClick={() => setProfileMenuOpen((prev) => !prev)}
-              className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-slate-200 shadow-sm"
+              className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-slate-200 shadow-sm"
             >
               <SafeAvatar
                 src={storedUser?.avatar}
@@ -1256,14 +1256,14 @@ function StudentContent() {
               />
             </button>
             {profileMenuOpen && (
-              <div className="absolute right-0 top-12 z-20 min-w-[170px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+              <div className="absolute right-0 top-11 z-20 min-w-[160px] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {
                     setProfileMenuOpen(false);
                     navigate("/dashboard/profile");
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   <span className="material-symbols-outlined text-base">person</span>
                   Profile
@@ -1274,7 +1274,7 @@ function StudentContent() {
                     setProfileMenuOpen(false);
                     handleLogout();
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-semibold text-rose-600 hover:bg-rose-50"
                 >
                   <span className="material-symbols-outlined text-base">logout</span>
                   Logout
@@ -1290,14 +1290,14 @@ function StudentContent() {
         action={
           <Link
             to="/dashboard/achievements"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors"
+            className="inline-flex items-center gap-1 text-xs md:text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors"
           >
             View Insights
             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
           </Link>
         }
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <AdventureStatCard
             title="Revision Streak"
             value={busy ? "…" : `${dailyStreak} Days`}
@@ -1329,7 +1329,7 @@ function StudentContent() {
 
       {/* ── Personalized Recommendation ── */}
       <Section title="Personalized Recommendation">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e7c555] via-[#f0d265] to-[#fde68a] p-5 md:p-6 shadow-md">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e7c555] via-[#f0d265] to-[#fde68a] p-4 md:p-5 shadow-md">
           {/* Dot-grid texture */}
           <div
             className="absolute inset-0 pointer-events-none opacity-[0.12]"
@@ -1352,13 +1352,13 @@ function StudentContent() {
           <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-white/20 pointer-events-none" />
           <div className="absolute -bottom-6 left-1/3 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0 flex-1 pr-0 md:pr-16">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="material-symbols-outlined text-slate-800 text-[18px]">flag</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="material-symbols-outlined text-slate-800 text-[16px]">flag</span>
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Priority Focus</span>
               </div>
-              <p className="text-lg md:text-xl font-black text-slate-900 leading-snug">
+              <p className="text-base md:text-lg font-black text-slate-900 leading-snug">
                 {nextAction.topicName ? (
                   <>
                     {nextAction.topicName}:{" "}
@@ -1370,13 +1370,13 @@ function StudentContent() {
                   nextAction.subtitle
                 )}
               </p>
-              <p className="mt-1.5 text-sm text-slate-800 line-clamp-2 opacity-80">{nextAction.description}</p>
+              <p className="mt-1 text-xs md:text-sm text-slate-800 line-clamp-2 opacity-80">{nextAction.description}</p>
             </div>
             <div className="shrink-0 flex flex-col items-center md:items-end gap-1.5">
               <button
                 type="button"
                 onClick={() => navigate(nextAction.to)}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-md transition hover:bg-slate-800 active:scale-95"
               >
                 {nextAction.ctaLabel}
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -1403,7 +1403,7 @@ function StudentContent() {
           </div>
         }
       >
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {weakAreas.slice(0, 3).map((row, idx) => {
             const summaryTo = buildTopicSummaryPath({
               subjectId: row.subjectId,
@@ -1443,47 +1443,47 @@ function StudentContent() {
                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl ${accentBar}`} />
 
                 {/* Faint number watermark */}
-                <div className="absolute right-4 bottom-2 text-[64px] font-black text-slate-100 select-none pointer-events-none leading-none">
+                <div className="absolute right-4 bottom-2 text-[56px] font-black text-slate-100 select-none pointer-events-none leading-none">
                   {idx + 1}
                 </div>
 
-                <div className="pl-5 pr-4 py-4 relative z-10">
+                <div className="pl-4 pr-3.5 py-3.5 relative z-10">
                   {/* Header row */}
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${badgeBg}`}>
-                        <span className="material-symbols-outlined text-[12px]">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black ${badgeBg}`}>
+                        <span className="material-symbols-outlined text-[11px]">
                           {isWrong ? "cancel" : "pending"}
                         </span>
                         {isWrong ? "Need Revision" : "Partially Correct"}
                       </span>
-                      <span className="text-xs text-slate-400 font-semibold">
+                      <span className="text-[11px] text-slate-400 font-semibold">
                         {subjectName} • {topicName}
                       </span>
                     </div>
                     {/* Subject icon bubble */}
-                    <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${iconBg}`}>
-                      <span className={`material-symbols-outlined text-[20px] ${iconColor}`}>{subjectIcon}</span>
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${iconBg}`}>
+                      <span className={`material-symbols-outlined text-[18px] ${iconColor}`}>{subjectIcon}</span>
                     </div>
                   </div>
 
                   {/* Question preview */}
-                  <p className="mt-2.5 text-sm text-slate-700 line-clamp-2 leading-relaxed">{row.questionText}</p>
+                  <p className="mt-2 text-xs md:text-sm text-slate-700 line-clamp-2 leading-relaxed">{row.questionText}</p>
 
                   {/* Action buttons */}
-                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <div className="mt-2.5 flex items-center gap-2 flex-wrap">
                     <Link
                       to={summaryTo}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition"
                     >
-                      <span className="material-symbols-outlined text-[13px]">menu_book</span>
+                      <span className="material-symbols-outlined text-[12px]">menu_book</span>
                       Topic Summary
                     </Link>
                     <Link
                       to={practiceTo}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-white transition ${ctaBg}`}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold text-white transition ${ctaBg}`}
                     >
-                      <span className="material-symbols-outlined text-[13px]">bolt</span>
+                      <span className="material-symbols-outlined text-[12px]">bolt</span>
                       Practice Basic
                     </Link>
                   </div>
@@ -1493,7 +1493,7 @@ function StudentContent() {
           })}
 
           {weakAreas.length === 0 && (
-            <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-10 flex flex-col items-center text-center">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-8 flex flex-col items-center text-center">
               <div
                 className="absolute inset-0 pointer-events-none opacity-[0.05]"
                 style={{
@@ -1501,16 +1501,16 @@ function StudentContent() {
                   backgroundSize: "18px 18px",
                 }}
               />
-              <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20 rotate-12">
-                <span className="material-symbols-outlined text-white text-3xl">verified</span>
+              <div className="relative z-10 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20 rotate-12">
+                <span className="material-symbols-outlined text-white text-2xl">verified</span>
               </div>
-              <p className="relative z-10 mt-5 text-lg font-black text-slate-800">You're all caught up!</p>
-              <p className="relative z-10 mt-2 max-w-sm text-sm text-slate-500">
+              <p className="relative z-10 mt-4 text-base font-black text-slate-800">You're all caught up!</p>
+              <p className="relative z-10 mt-2 max-w-sm text-xs md:text-sm text-slate-500">
                 No weak areas identified in your recent sessions. This is excellent! Keep maintaining this pace.
               </p>
               <Link
                 to="/dashboard/syllabus?stage=1"
-                className="relative z-10 mt-5 inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+                className="relative z-10 mt-4 inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
               >
                 Explore New Topics
               </Link>
@@ -1520,15 +1520,15 @@ function StudentContent() {
       </Section>
 
       <Section title="Daily Streak Tracker" subtitle={monthLabel}>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid grid-cols-7 gap-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="grid grid-cols-7 gap-1.5">
             {weekdayLabels.map((label) => (
               <div key={label} className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-wide">
                 {label}
               </div>
             ))}
             {monthDots.map((dot, idx) => {
-              if (!dot) return <div key={`empty-${idx}`} className="h-6" />;
+              if (!dot) return <div key={`empty-${idx}`} className="h-5" />;
               const title = `${dot.dateKey} - ${
                 dot.status === "correct"
                   ? "Correct"
@@ -1546,40 +1546,40 @@ function StudentContent() {
                 <div
                   key={dot.dateKey}
                   title={title}
-                  className={`h-6 flex items-center justify-center rounded-md ${dot.isToday ? "ring-1 ring-indigo-300 bg-indigo-50" : ""}`}
+                  className={`h-5 flex items-center justify-center rounded-md ${dot.isToday ? "ring-1 ring-indigo-300 bg-indigo-50" : ""}`}
                 >
-                  <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} />
+                  <span className={`h-2 w-2 rounded-full ${colorClass}`} />
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-3 flex items-center gap-4 text-xs text-slate-600">
+          <div className="mt-2.5 flex items-center gap-3 text-[11px] text-slate-600">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-sm bg-emerald-500" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
               Correct
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-sm bg-amber-400" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
               Wrong
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-sm bg-slate-200" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-slate-200" />
               Missed
             </span>
           </div>
         </div>
       </Section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Recent Tryouts - 2/3 width */}
-        <section className="lg:col-span-2 space-y-3">
+        <section className="lg:col-span-2 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-slate-500" style={{ fontSize: "20px" }}>history</span>
-              <h2 className="text-sm md:text-lg font-bold text-slate-800">Recent Tryouts</h2>
+              <h2 className="text-sm md:text-base font-bold text-slate-800">Recent Tryouts</h2>
             </div>
-            <Link to="/dashboard/result" className="text-sm font-semibold text-amber-500 hover:text-amber-600 transition-colors">View All</Link>
+            <Link to="/dashboard/result" className="text-xs md:text-sm font-semibold text-amber-500 hover:text-amber-600 transition-colors">View All</Link>
           </div>
           <div className="rounded-2xl border border-[#e7c555]/10 bg-white/80 backdrop-blur shadow-md overflow-hidden">
 
@@ -1590,22 +1590,22 @@ function StudentContent() {
               .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
               .slice(0, 5)
               .map((a, index) => (
-                <div key={a._id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-sm font-bold flex items-center justify-center flex-shrink-0 shadow">
+                <div key={a._id} className="flex items-center gap-3 px-3.5 py-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 shadow">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-800 text-sm truncate">
+                    <div className="font-semibold text-gray-800 text-[13px] truncate">
                       {a.subject?.name || a.subjectName || "—"}
                     </div>
-                    <div className="text-xs text-slate-500 truncate">
+                    <div className="text-[11px] text-slate-500 truncate">
                       {a.topic?.name || a.topicName || "—"}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className="uppercase text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold">
+                      <span className="uppercase text-[9px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold">
                         {a.type}
                       </span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
                         a.percent >= 90 ? "bg-green-100 text-green-700" :
                         a.percent >= 75 ? "bg-blue-100 text-blue-700" :
                         a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
@@ -1616,7 +1616,7 @@ function StudentContent() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="font-bold text-gray-800 text-sm">{a.score}<span className="text-gray-400 font-normal">/{a.total}</span></div>
+                    <div className="font-bold text-gray-800 text-[13px]">{a.score}<span className="text-gray-400 font-normal">/{a.total}</span></div>
                     <div className="text-[10px] text-slate-400 mt-0.5">
                       {a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" }) : "—"}
                     </div>
@@ -1624,21 +1624,21 @@ function StudentContent() {
                 </div>
               ))}
             {!attempts.length && !busy && (
-              <div className="p-8 text-center">
-                <div className="text-4xl mb-2">📝</div>
-                <p className="text-gray-500 font-medium text-sm">No exam attempts yet</p>
+              <div className="p-6 text-center">
+                <div className="text-3xl mb-2">📝</div>
+                <p className="text-gray-500 font-medium text-xs md:text-sm">No exam attempts yet</p>
               </div>
             )}
           </div>
 
           {/* ── DESKTOP TABLE (md+) ── */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-[720px] w-full text-sm">
+            <table className="min-w-[720px] w-full text-xs md:text-sm">
               <thead className="bg-[#e7c555]/5 border-b border-[#e7c555]/10">
                 <tr>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Subject</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Type</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Score</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 text-left">Subject</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 text-left">Type</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 text-left">Score</th>
                   {/* <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-left">Action</th> */}
                 </tr>
               </thead>
@@ -1649,20 +1649,20 @@ function StudentContent() {
                   .slice(0, 5)
                   .map((a, index) => (
                     <tr key={a._id} className="hover:bg-[#e7c555]/5 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-[#4ecdc4]/20 flex items-center justify-center text-[#4ecdc4]">
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-[#4ecdc4]/20 flex items-center justify-center text-[#4ecdc4]">
                             <span className="material-symbols-outlined text-sm">science</span>
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-bold text-gray-800">{a.subject?.name || a.subjectName || "—"}</span>
-                            <span className="text-xs text-slate-600">{a.topic?.name || a.topicName || "—"}</span>
+                            <span className="font-bold text-gray-800 text-[13px]">{a.subject?.name || a.subjectName || "—"}</span>
+                            <span className="text-[11px] text-slate-600">{a.topic?.name || a.topicName || "—"}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-semibold text-slate-500">{a.type}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-sm px-3 py-1.5 rounded-full font-black inline-flex items-center ${
+                      <td className="px-4 py-3.5 font-semibold text-slate-500">{a.type}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-black inline-flex items-center ${
                           a.percent >= 90 ? "bg-green-100 text-green-700" :
                           a.percent >= 75 ? "bg-blue-100 text-blue-700" :
                           a.percent >= 50 ? "bg-yellow-100 text-yellow-700" :
@@ -1807,7 +1807,7 @@ export default function Dashboard() {
         </div>
       </div> */}
 
-      <main className="mx-auto max-w-7xl px-3 md:px-4 py-4 md:py-8 space-y-5 md:space-y-8">
+      <main className="mx-auto max-w-6xl px-3 md:px-4 py-3 md:py-5 space-y-4 md:space-y-6">
         {roleContent}
 
         {/* <Section title="Announcements" icon={<Bell size={18} />}>

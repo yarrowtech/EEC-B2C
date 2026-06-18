@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth, requireAdminOrTeacher } from "../middleware/auth.js";
 import {
   startExam,
+  restartExam,
   submitExam,
   myAttempts,
   adminAttempts,
@@ -15,6 +16,7 @@ const router = Router();
 
 // Student start + submit exam
 router.post("/start", requireAuth, startExam);
+router.post("/restart/:attemptId", requireAuth, restartExam);
 router.post("/submit/:attemptId", requireAuth, submitExam);
 
 // ✅ Students can now view ONLY their own attempts

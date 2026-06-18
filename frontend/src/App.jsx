@@ -92,9 +92,11 @@ import SelfStudy from "./pages/SelfStudy";
 import SelfStudyResults from "./pages/SelfStudyResults";
 import SelfStudyResultDetail from "./pages/SelfStudyResultDetail";
 import SyllabusPage from "./pages/syllabus/SyllabusPage";
+import StudyPage from "./pages/StudyPage";
 import EECTryouts from "./pages/EECTryouts";
 import TryoutSubjects from "./pages/TryoutSubjects";
 import SyllabusTopicContentPage from "./pages/syllabus/SyllabusTopicContentPage";
+import TopicExplorerPage from "./pages/syllabus/TopicExplorerPage";
 import ManagePackages from "./pages/admin/ManagePackages";
 import Packages from "./pages/Packages";
 import DailyChallengeExam from "./pages/DailyChallengeExam";
@@ -853,6 +855,8 @@ export default function App() {
             <Route path="notifications/create" element={<RequireAdmin><CreateNotification /></RequireAdmin>} />
             <Route path="/dashboard/notification/:id" element={<NotificationDetails />} />
             <Route path="games/mind-training" element={<MindTrainingGames />} />
+            <Route path="study" element={<StudyPage />} />
+            <Route path="study/:subjectId" element={<TopicExplorerPage />} />
             <Route path="gift-cards" element={<AdminGiftCardsPage />} />
             <Route path="purchases" element={<RequireAdmin><AdminPurchasesPage /></RequireAdmin>} />
             <Route path="subscriptions" element={<RequireAdmin><AdminSubscriptionsPage /></RequireAdmin>} />

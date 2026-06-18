@@ -25,6 +25,7 @@ export default function SyllabusTopicContentPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState(10);
   const [questionTypes, setQuestionTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [didAutoOpenPractice, setDidAutoOpenPractice] = useState(false);
@@ -67,6 +68,11 @@ export default function SyllabusTopicContentPage() {
       text: "text-purple-700",
     },
   ];
+  const levelLabelMap = {
+    basic: "Easy",
+    intermediate: "Intermediate",
+    advanced: "Advanced",
+  };
 
   const selectedTopic = useMemo(() => (subject && topic ? { subject, topic } : null), [subject, topic]);
   const selectedTypeAvailableCount = useMemo(() => {
@@ -77,6 +83,19 @@ export default function SyllabusTopicContentPage() {
     const match = questionTypes.find((item) => item?.type === selectedType.type);
     return Number(match?.count ?? selectedType.count ?? 0);
   }, [questionTypes, selectedType]);
+  const questionCountOptions = useMemo(() => {
+    const max = Math.max(0, Number(selectedTypeAvailableCount || 0));
+    if (!max) return [];
+    const presets = [5, 10, 15, 20, 25, 30, 40, 50];
+    const values = presets.filter((n) => n <= max);
+    if (!values.includes(max)) values.push(max);
+    return [...new Set(values)];
+  }, [selectedTypeAvailableCount]);
+  const selectedLevelLabel = selectedLevel ? (levelLabelMap[selectedLevel] || selectedLevel) : "";
+  const totalAvailableTryoutQuestions = useMemo(
+    () => questionTypes.reduce((sum, item) => sum + Number(item?.count || 0), 0),
+    [questionTypes]
+  );
   const topicProgress = useMemo(() => {
     const hasSummary = Boolean(String(topic?.topicSummary || "").trim());
     const hasOutcome = Boolean(String(topic?.learningOutcome || "").trim());
@@ -270,7 +289,7 @@ export default function SyllabusTopicContentPage() {
       const response = await getJSON(
         `/api/questions/types?subject=${subject._id}&topic=${topic._id}&class=${userClass}&board=${userBoard}&stage=${stage}&level=${encodeURIComponent(level)}`
       );
-      setQuestionTypes((response.types || []).filter((t) => t?.type !== "all"));
+      setQuestionTypes((response.types || []).sort((a, b) => Number(b?.count || 0) - Number(a?.count || 0)));
       return true;
     } catch (err) {
       console.error("Failed to fetch question types", err);
@@ -301,6 +320,8 @@ export default function SyllabusTopicContentPage() {
 
   function handleTypeSelection(type) {
     setSelectedType(type);
+    const available = Number(type?.count || 0) || selectedTypeAvailableCount || 10;
+    setSelectedQuestionCount(Math.max(1, Math.min(10, available)));
     setShowTypeSelector(false);
     setShowConfirmDialog(true);
   }
@@ -318,8 +339,8 @@ export default function SyllabusTopicContentPage() {
       const data = await startExam({
         subject: subject._id,
         topic: topic._id,
-        type: selectedType.type === "all" ? "mcq-single" : selectedType.type,
-        limit: 10,
+        type: selectedType.type,
+        limit: selectedQuestionCount,
         level: selectedLevel,
         stage,
         class: userClass,
@@ -342,6 +363,7 @@ export default function SyllabusTopicContentPage() {
     setShowConfirmDialog(false);
     setSelectedLevel(null);
     setSelectedType(null);
+    setSelectedQuestionCount(10);
     setQuestionTypes([]);
   }
 
@@ -650,9 +672,10 @@ export default function SyllabusTopicContentPage() {
                     {selectedTopic.subject.name} — {selectedTopic.topic.name}
                   </p>
                   {selectedLevel && (
-                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white">
-                      {levelOptions.find(l => l.key === selectedLevel)?.icon} {selectedLevel}
-                    </span>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white">
+                      <span className="material-symbols-outlined text-sm">filter_alt</span>
+                      {selectedLevelLabel} level
+                    </div>
                   )}
                 </div>
                 <button
@@ -675,7 +698,7 @@ export default function SyllabusTopicContentPage() {
                   <div className="mb-3 text-5xl">🤔</div>
                   <h4 className="text-lg font-bold text-gray-900">No Questions Yet</h4>
                   <p className="mt-1 text-sm text-gray-500">
-                    There are no questions available for this topic at this level.
+                    There are no tryouts available for this topic at this level.
                   </p>
                   <button
                     onClick={cancelTypeSelector}
@@ -685,7 +708,22 @@ export default function SyllabusTopicContentPage() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-amber-900">
+                          {selectedLevelLabel || "Selected"} level tryouts
+                        </p>
+                        <p className="text-xs text-amber-700">
+                          {questionTypes.length} type{questionTypes.length !== 1 ? "s" : ""} available
+                        </p>
+                      </div>
+                      <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-amber-700 shadow-sm">
+                        {totalAvailableTryoutQuestions}
+                      </div>
+                    </div>
+                  </div>
                   {questionTypes.map((qType, index) => (
                     <button
                       key={index}
@@ -752,13 +790,50 @@ export default function SyllabusTopicContentPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100">
-                  <Clock className="h-4.5 w-4.5 text-emerald-600" />
-                </div>
+              <div className="rounded-xl bg-emerald-50 px-4 py-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">No Time Limit</p>
-                  <p className="text-xs text-gray-500">Take your time to answer</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100">
+                        <Clock className="h-4.5 w-4.5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Choose Questions</p>
+                        <p className="text-xs text-gray-500">Pick how many questions to include</p>
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-white px-3 py-1 text-sm font-bold text-emerald-700 shadow-sm">
+                      {selectedQuestionCount}
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <input
+                      type="range"
+                      min="1"
+                      max={Math.max(1, selectedTypeAvailableCount)}
+                      step="1"
+                      value={Math.min(selectedQuestionCount, Math.max(1, selectedTypeAvailableCount))}
+                      onChange={(e) => setSelectedQuestionCount(Math.max(1, Number(e.target.value) || 1))}
+                      className="h-2 w-full cursor-pointer accent-emerald-500"
+                      disabled={selectedTypeAvailableCount <= 1}
+                    />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {questionCountOptions.map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => setSelectedQuestionCount(count)}
+                          className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                            selectedQuestionCount === count
+                              ? "bg-emerald-600 text-white"
+                              : "bg-white text-emerald-700 hover:bg-emerald-100"
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
