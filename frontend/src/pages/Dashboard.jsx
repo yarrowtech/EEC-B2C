@@ -30,6 +30,8 @@ import {
   buildTopicSummaryPath,
   deriveNextAction,
   readWeakAreas,
+  stageRevisionLabel,
+  stageEstimateMinutes,
 } from "../lib/studentLearning";
 
 /* small local helpers (mirrors your App.jsx approach) */
@@ -158,14 +160,14 @@ const Card = ({ title, icon, bubble = ["from-slate-700", "to-slate-900"], childr
   </div>
 );
 
-const Section = ({ title, subtitle, icon, children, className = "" }) => (
+const Section = ({ title, subtitle, icon, action, children, className = "" }) => (
   <section className={`space-y-3 md:space-y-4 ${className}`}>
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         {icon && <span className="text-slate-700">{icon}</span>}
         <h2 className="text-sm md:text-lg font-bold text-slate-800 tracking-tight">{title}</h2>
       </div>
-      {subtitle && <Badge tone="slate">{subtitle}</Badge>}
+      {action ? action : subtitle ? <Badge tone="slate">{subtitle}</Badge> : null}
     </div>
     {children}
   </section>
@@ -1128,13 +1130,13 @@ function StudentContent() {
           <h1 className="text-2xl font-black text-slate-900">
             Welcome back, {storedUser?.name?.split(" ")[0] || "Student"}! 👋
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Your next adventure awaits.</p>
+          <p className="text-slate-500 text-sm mt-1">Ready to level up your knowledge today?</p>
         </div>
         <div className="flex items-center justify-end gap-2 md:gap-3 flex-wrap">
           <div className="flex items-center gap-2 md:gap-2.5 bg-white border border-slate-200 rounded-full px-2.5 py-2 md:px-4 md:py-2.5 shadow-sm">
             <span className="text-lg">🛡️</span>
             <div>
-              <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Daily Badge</div>
+              <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Tier</div>
               <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : dailyLevelLabel}</div>
             </div>
             <div className="relative group">
@@ -1167,7 +1169,7 @@ function StudentContent() {
             <span className="text-lg">🪙</span>
             <div className="text-left">
               <div className="hidden md:block text-[9px] text-slate-400 font-bold uppercase tracking-wider">Points</div>
-              <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : `${Number(storedUser?.points || 0).toLocaleString()} pts`}</div>
+              <div className="text-xs md:text-sm font-black text-slate-800">{busy ? "…" : Number(storedUser?.points || 0).toLocaleString()}</div>
             </div>
           </button>
           <div ref={notificationRef} className="relative">
@@ -1283,7 +1285,18 @@ function StudentContent() {
         </div>
       </div>
 
-      <Section title="My Study Stats">
+      <Section
+        title="Study Analytics"
+        action={
+          <Link
+            to="/dashboard/achievements"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors"
+          >
+            View Insights
+            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+          </Link>
+        }
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AdventureStatCard
             title="Revision Streak"
@@ -1306,7 +1319,7 @@ function StudentContent() {
           <AdventureStatCard
             title="Total Points"
             value={busy ? "…" : totalScore}
-            icon={<span className="material-symbols-outlined fill-1">layers</span>}
+            icon={<span className="material-symbols-outlined fill-1">star</span>}
             accentColor="purple"
             onClick={() => navigate("/dashboard/achievements")}
           />
@@ -1314,8 +1327,8 @@ function StudentContent() {
         {err && <div className="text-xs text-rose-600 mt-2">{err}</div>}
       </Section>
 
-      {/* ── Recommended Next Step ── */}
-      <Section title={nextAction.title}>
+      {/* ── Personalized Recommendation ── */}
+      <Section title="Personalized Recommendation">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e7c555] via-[#f0d265] to-[#fde68a] p-5 md:p-6 shadow-md">
           {/* Dot-grid texture */}
           <div
@@ -1342,26 +1355,54 @@ function StudentContent() {
           <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0 flex-1 pr-0 md:pr-16">
               <div className="flex items-center gap-2 mb-2">
-                <span className="material-symbols-outlined text-slate-800 text-[18px]">my_location</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">What to do next</span>
+                <span className="material-symbols-outlined text-slate-800 text-[18px]">flag</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Priority Focus</span>
               </div>
-              <p className="text-lg md:text-xl font-black text-slate-900 leading-snug">{nextAction.subtitle}</p>
+              <p className="text-lg md:text-xl font-black text-slate-900 leading-snug">
+                {nextAction.topicName ? (
+                  <>
+                    {nextAction.topicName}:{" "}
+                    <span className="inline-block rounded-md bg-slate-900 px-2 py-0.5 text-[#fde68a]">
+                      {stageRevisionLabel(nextAction.stage)}
+                    </span>
+                  </>
+                ) : (
+                  nextAction.subtitle
+                )}
+              </p>
               <p className="mt-1.5 text-sm text-slate-800 line-clamp-2 opacity-80">{nextAction.description}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate(nextAction.to)}
-              className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 active:scale-95"
-            >
-              {nextAction.ctaLabel}
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-            </button>
+            <div className="shrink-0 flex flex-col items-center md:items-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => navigate(nextAction.to)}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 active:scale-95"
+              >
+                {nextAction.ctaLabel}
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </button>
+              <span className="text-[11px] font-semibold text-slate-700/70">
+                Est. time: {stageEstimateMinutes(nextAction.stage)} mins
+              </span>
+            </div>
           </div>
         </div>
       </Section>
 
       {/* ── Weak Areas Auto-Revision ── */}
-      <Section title="Weak Areas Auto-Revision" subtitle={`${Math.min(3, weakAreas.length)} of ${weakAreas.length}`}>
+      <Section
+        title="Daily Auto-Revision"
+        action={
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
+            <div className="text-right">
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Progress</div>
+              <div className="text-xs font-black text-slate-800">
+                0/{Math.min(3, weakAreas.length)} Tasks
+              </div>
+            </div>
+          </div>
+        }
+      >
         <div className="grid gap-3">
           {weakAreas.slice(0, 3).map((row, idx) => {
             const summaryTo = buildTopicSummaryPath({
@@ -1452,20 +1493,20 @@ function StudentContent() {
           })}
 
           {weakAreas.length === 0 && (
-            <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 flex items-center gap-4">
-              <div className="absolute right-4 top-0 bottom-0 flex items-center pointer-events-none opacity-10">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" stroke="#059669" strokeWidth="4"/>
-                  <path d="M24 40l12 12 20-24" stroke="#059669" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+            <div className="rounded-2xl border border-slate-100 bg-white p-10 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20 rotate-12">
+                <span className="material-symbols-outlined text-white text-3xl">verified</span>
               </div>
-              <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-emerald-500 text-2xl">verified</span>
-              </div>
-              <div>
-                <p className="font-black text-emerald-800">All clear!</p>
-                <p className="text-sm text-emerald-700 mt-0.5">No weak areas saved yet. Complete an exam and revision suggestions will appear here.</p>
-              </div>
+              <p className="mt-5 text-lg font-black text-slate-800">You're all caught up!</p>
+              <p className="mt-2 max-w-sm text-sm text-slate-500">
+                No weak areas identified in your recent sessions. This is excellent! Keep maintaining this pace.
+              </p>
+              <Link
+                to="/dashboard/syllabus?stage=1"
+                className="mt-5 inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Explore New Topics
+              </Link>
             </div>
           )}
         </div>

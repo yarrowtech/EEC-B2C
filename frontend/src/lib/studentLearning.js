@@ -153,6 +153,20 @@ function getAttemptSubject(attempt) {
   };
 }
 
+export function stageRevisionLabel(stage) {
+  const stageNum = resolveStageNumber(stage);
+  if (stageNum >= 3) return "Advanced Revision";
+  if (stageNum === 2) return "Intermediate Revision";
+  return "Basics Revision";
+}
+
+export function stageEstimateMinutes(stage) {
+  const stageNum = resolveStageNumber(stage);
+  if (stageNum >= 3) return 25;
+  if (stageNum === 2) return 18;
+  return 12;
+}
+
 export function deriveNextAction({ attempts, weakAreas }) {
   const weakList = Array.isArray(weakAreas) ? weakAreas : [];
   const attemptList = Array.isArray(attempts) ? attempts : [];
@@ -168,9 +182,12 @@ export function deriveNextAction({ attempts, weakAreas }) {
     });
     return {
       title: "Recommended Next Step",
+      topicName,
+      subjectName,
+      stage: top.stage,
       subtitle: `Revise ${topicName} (${subjectName}) and retry practice`,
-      description: `${subjectName} • ${topicName} • ${top.questionText || "Review this concept"}`,
-      ctaLabel: "Revise Now",
+      description: `Your last attempt needs revision. ${top.questionText || "Review this concept"}`,
+      ctaLabel: "Revise & Practice",
       to,
     };
   }
@@ -178,6 +195,9 @@ export function deriveNextAction({ attempts, weakAreas }) {
   if (attemptList.length === 0) {
     return {
       title: "Recommended Next Step",
+      topicName: "",
+      subjectName: "",
+      stage: 1,
       subtitle: "Start your first practice",
       description: "Open Stage 1 syllabus and begin with any topic summary, then start practice.",
       ctaLabel: "Start Learning",
@@ -195,11 +215,14 @@ export function deriveNextAction({ attempts, weakAreas }) {
 
   return {
     title: "Recommended Next Step",
+    topicName: info.topicName,
+    subjectName: info.subjectName,
+    stage: info.stage,
     subtitle: `Continue ${info.topicName} (${info.subjectName})`,
     description:
       info.percent >= 75
         ? `Great progress (${info.percent}%). Attempt a new set to strengthen speed and accuracy.`
-        : `Last score ${info.percent}%. Revise summary and retry basic practice for better confidence.`,
+        : `Your last attempt scored ${info.percent}%. Revise summary and retry basic practice for better confidence.`,
     ctaLabel: info.percent >= 75 ? "Practice Again" : "Revise & Practice",
     to,
   };

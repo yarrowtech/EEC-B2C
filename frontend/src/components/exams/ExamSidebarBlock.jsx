@@ -16,9 +16,9 @@ import { getJSON } from "../../lib/api";
 
 /* 🔥 SAME STYLES AS DashboardLayout */
 const linkBase =
-  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-orange-800 transition-all";
+  "flex items-center gap-3 px-4 py-3 rounded-full text-sm font-bold text-slate-600 transition-all";
 const linkActive =
-  "bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md";
+  "bg-[#e7c555] text-[#211d11] shadow-md shadow-[#e7c555]/30";
 
 const stageNames = {
   1: "Basic Level",
@@ -61,7 +61,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       {/* EXAMS DROPDOWN */}
       {/* <button
         onClick={() => setOpen((s) => !s)}
-        className={`${linkBase} w-full text-left hover:bg-yellow-100`}
+        className={`${linkBase} w-full text-left hover:bg-slate-100`}
         aria-expanded={open}
         aria-controls="emenu"
       >
@@ -96,7 +96,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
                 key={stage}
                 to={url}
                 className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+                  `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"
                   }`
                 }
               >
@@ -111,7 +111,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       {/* 🎮 GAMES DROPDOWN */}
       {/* <button
         onClick={() => setGamesOpen((s) => !s)}
-        className={`${linkBase} w-full text-left hover:bg-yellow-100`}
+        className={`${linkBase} w-full text-left hover:bg-slate-100`}
         aria-expanded={gamesOpen}
         aria-controls="gmenu"
       >
@@ -132,7 +132,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
           <NavLink
             to="/dashboard/games/mind-training"
             className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+              `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"}`
             }
           >
             <Brain size={18} />
@@ -142,7 +142,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
           <NavLink
             to="/dashboard/games/memory"
             className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+              `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"}`
             }
           >
             <GraduationCap size={18} />
@@ -152,7 +152,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
           <NavLink
             to="/dashboard/games/reaction"
             className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"}`
+              `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"}`
             }
           >
             <Zap size={18} />
@@ -165,7 +165,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       <NavLink
         to="/dashboard/flashcards"
         className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"
           }`
         }
       >
@@ -177,7 +177,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       <NavLink
         to="/dashboard/result"
         className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"
           }`
         }
       >
@@ -189,7 +189,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       <NavLink
         to="/dashboard/achievements"
         className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"
           }`
         }
       >
@@ -201,7 +201,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       <NavLink
         to="/dashboard/study-materials"
         className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"
           }`
         }
       >
@@ -218,7 +218,7 @@ export default function ExamSidebarBlock({ role = "student", studyMaterialsUnrea
       <NavLink
         to="/dashboard/leaderboard"
         className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : "hover:bg-yellow-100"
+          `${linkBase} ${isActive ? linkActive : "hover:bg-slate-100"
           }`
         }
       >

@@ -3,9 +3,9 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, ChevronDown, Lock, Sparkles } from "lucide-react";
 
 const linkBase =
-  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-orange-800 transition-all";
+  "flex items-center gap-3 px-4 py-3 rounded-full text-sm font-bold text-slate-600 transition-all";
 const linkActive =
-  "bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md";
+  "bg-[#e7c555] text-[#211d11] shadow-md shadow-[#e7c555]/30";
 
 export default function SyllabusSidebarBlock({ role = "student" }) {
   const [open, setOpen] = useState(false);
@@ -84,7 +84,7 @@ export default function SyllabusSidebarBlock({ role = "student" }) {
     <div className="mt-1">
       <button
         onClick={() => setOpen((s) => !s)}
-        className={`${linkBase} w-full text-left hover:bg-yellow-100`}
+        className={`${linkBase} w-full text-left hover:bg-slate-100`}
         aria-expanded={open}
         aria-controls="attempt-exam-menu"
       >
@@ -102,7 +102,7 @@ export default function SyllabusSidebarBlock({ role = "student" }) {
           open ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="ml-2 mt-1 pl-2 border-l border-yellow-200 space-y-1">
+        <div className="ml-2 mt-1 pl-2 border-l border-slate-200 space-y-1">
           {loading ? (
             <div className="px-4 py-2 text-xs text-gray-500">Loading stages...</div>
           ) : (
@@ -132,7 +132,7 @@ export default function SyllabusSidebarBlock({ role = "student" }) {
                   key={stage}
                   to={`/dashboard/syllabus?stage=${stage}`}
                   className={() =>
-                    `${linkBase} ${currentStageFromQuery === stage ? linkActive : "hover:bg-yellow-100"} text-xs`
+                    `${linkBase} ${currentStageFromQuery === stage ? linkActive : "hover:bg-slate-100"} text-xs`
                   }
                 >
                   <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-400 to-yellow-500 text-white text-xs font-bold flex items-center justify-center">

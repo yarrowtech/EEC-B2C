@@ -478,10 +478,6 @@ export default function DashboardLayout() {
         markTourDone();
     }
 
-    function handleStartTour() {
-        setShowTour(true);
-    }
-
     useEffect(() => {
         if (role !== "student" || !token) return;
         let mounted = true;
@@ -607,6 +603,14 @@ export default function DashboardLayout() {
         toast.warn("You are offline. Try to connect to the internet.");
     };
 
+    const learnerTierLabel = (() => {
+        const subscriptionType = String(user?.subscriptionType || "none").toLowerCase();
+        if (subscriptionType === "premium") return "PRO LEARNER";
+        if (subscriptionType === "intermediate") return "PLUS LEARNER";
+        if (subscriptionType === "basic") return "BASIC LEARNER";
+        return "FREE LEARNER";
+    })();
+
     async function handleLogout() {
         const didLogout = await confirmAndLogout();
         if (didLogout) {
@@ -686,7 +690,7 @@ export default function DashboardLayout() {
                     <div className="h-full flex flex-col p-6 overflow-x-hidden">
                         <Link
                             to="/"
-                            className="mb-5 flex items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-slate-200 hover:bg-slate-100"
+                            className="mb-5 flex flex-col items-center gap-1.5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-slate-200 hover:bg-slate-100"
                             aria-label={`Go to ${websiteSettings.siteName || "home"}`}
                         >
                             <img
@@ -694,14 +698,9 @@ export default function DashboardLayout() {
                                 alt={websiteSettings.siteName || "Edify Eight"}
                                 className="h-10 w-auto shrink-0 object-contain"
                             />
-                            {/* <div className="min-w-0">
-                                <p className="truncate text-sm font-extrabold tracking-tight text-slate-900">
-                                    {websiteSettings.siteName}
-                                </p>
-                                <p className="text-xs font-medium text-slate-500">
-                                    Back to home
-                                </p>
-                            </div> */}
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                Learning Adventure
+                            </p>
                         </Link>
 
                         {/* SCROLLABLE NAVIGATION */}
@@ -863,21 +862,20 @@ export default function DashboardLayout() {
                                     <p className="text-sm font-bold text-slate-900 leading-tight truncate max-w-40" title={user?.name || "User"}>
                                         {user?.name || "User"}
                                     </p>
-                                    <p className="text-xs font-medium text-[#4ECDC4]">
-                                        {online ? "Online" : "Offline"}
+                                    <p className="text-xs font-bold text-[#4ECDC4]">
+                                        {role === "student" ? learnerTierLabel : online ? "Online" : "Offline"}
                                     </p>
                                 </div>
                             </button>
 
-                            {/* TAKE A TOUR BUTTON */}
-                            <button
-                                type="button"
-                                onClick={handleStartTour}
+                            {/* HELP & SUPPORT LINK */}
+                            <Link
+                                to="/support"
                                 className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-50 py-2.5 text-xs font-semibold text-blue-500 transition-all hover:bg-blue-100 hover:text-blue-600"
                             >
-                                <span className="material-symbols-outlined text-base">tour</span>
-                                <span>Take a Tour</span>
-                            </button>
+                                <span className="material-symbols-outlined text-base">support_agent</span>
+                                <span>Help &amp; Support</span>
+                            </Link>
 
                             {/* LOGOUT BUTTON */}
                             <button
