@@ -1493,17 +1493,24 @@ function StudentContent() {
           })}
 
           {weakAreas.length === 0 && (
-            <div className="rounded-2xl border border-slate-100 bg-white p-10 flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20 rotate-12">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-10 flex flex-col items-center text-center">
+              <div
+                className="absolute inset-0 pointer-events-none opacity-[0.05]"
+                style={{
+                  backgroundImage: "radial-gradient(circle, #059669 1.2px, transparent 1.2px)",
+                  backgroundSize: "18px 18px",
+                }}
+              />
+              <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-500/20 rotate-12">
                 <span className="material-symbols-outlined text-white text-3xl">verified</span>
               </div>
-              <p className="mt-5 text-lg font-black text-slate-800">You're all caught up!</p>
-              <p className="mt-2 max-w-sm text-sm text-slate-500">
+              <p className="relative z-10 mt-5 text-lg font-black text-slate-800">You're all caught up!</p>
+              <p className="relative z-10 mt-2 max-w-sm text-sm text-slate-500">
                 No weak areas identified in your recent sessions. This is excellent! Keep maintaining this pace.
               </p>
               <Link
                 to="/dashboard/syllabus?stage=1"
-                className="mt-5 inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+                className="relative z-10 mt-5 inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
               >
                 Explore New Topics
               </Link>

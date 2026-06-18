@@ -95,6 +95,15 @@ const AdventureStatCard = ({ title, value, icon, accentColor, onClick, clickable
       }}
       className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${cfg.bg} shadow-lg ${cfg.shadow} hover:shadow-xl hover:scale-[1.03] transition-all duration-300 ${interactive ? "cursor-pointer" : "cursor-default"}`}
     >
+      {/* Dot-grid texture */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.12]"
+        style={{
+          backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+          backgroundSize: "16px 16px",
+        }}
+      />
+
       {/* Large translucent decorative icon — right side */}
       <div className="absolute -top-1 -right-1 opacity-20 pointer-events-none select-none">
         <Decor size={100} />
