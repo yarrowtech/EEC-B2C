@@ -871,13 +871,13 @@ export default function DashboardLayout() {
                             </button>
 
                             {/* HELP & SUPPORT LINK */}
-                            <Link
+                            {/* <Link
                                 to="/support"
                                 className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-50 py-1.5 text-[11px] font-semibold text-blue-500 transition-all hover:bg-blue-100 hover:text-blue-600"
                             >
                                 <span className="material-symbols-outlined text-sm">support_agent</span>
                                 <span>Help &amp; Support</span>
-                            </Link>
+                            </Link> */}
 
                             {/* LOGOUT BUTTON */}
                             <button

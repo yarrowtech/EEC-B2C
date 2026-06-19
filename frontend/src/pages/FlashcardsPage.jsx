@@ -41,42 +41,252 @@ function readUser() {
   }
 }
 
-function SkeletonList() {
-  return Array.from({ length: 4 }).map((_, i) => (
-    <div key={i} className="rounded-xl border border-slate-100 p-3 animate-pulse space-y-2">
-      <div className="h-3.5 bg-slate-100 rounded-full w-3/4" />
-      <div className="h-2.5 bg-slate-100 rounded-full w-1/2" />
-    </div>
-  ));
+const SUBJECT_VISUALS = [
+  {
+    test: /math|maths|mathematics/,
+    src: "/Math.png",
+    fallbackIcon: "calculate",
+  },
+  {
+    test: /bio|biology|science|physic|chem/,
+    src: "/biology.png",
+    fallbackIcon: "biotech",
+  },
+  {
+    test: /geo|geography|evs|environment/,
+    src: "/geography.png",
+    fallbackIcon: "travel_explore",
+  },
+  {
+    test: /hist|history|social|civic|civics/,
+    src: "/history.png",
+    fallbackIcon: "history_edu",
+  },
+  {
+    test: /account|accountancy|accounting|economics|commerce/,
+    src: "/accountant.png",
+    fallbackIcon: "account_balance",
+  },
+  {
+    test: /art|draw|paint|creative|design|computer|code|program/,
+    src: "/screen.png",
+    fallbackIcon: "palette",
+  },
+];
+
+function getSubjectVisual(name = "") {
+  const n = String(name || "").toLowerCase();
+  return SUBJECT_VISUALS.find((item) => item.test.test(n)) || {
+    src: "/screen.png",
+    fallbackIcon: "style",
+  };
 }
 
-function SetItem({ row, active, onSelect }) {
+const FLASHCARD_SUBJECT_THEMES = [
+  {
+    test: /math/,
+    icon: "calculate",
+    panelBg: "linear-gradient(135deg, #FDE9C8, #F8D88A)",
+    iconColor: "#8a6d1d",
+    buttonColor: "#6b6b1a",
+    description: "Master numbers with magical puzzles and counting games!",
+  },
+  {
+    test: /sci|physic|chem|bio/,
+    icon: "biotech",
+    panelBg: "linear-gradient(135deg, #E4D9FB, #C9B7F2)",
+    iconColor: "#5b3fc4",
+    buttonColor: "#4f3cc9",
+    description: "Discover the wonders of nature and the tiny world around us.",
+  },
+  {
+    test: /eng|story|read|lit|hindi|lang/,
+    icon: "auto_stories",
+    panelBg: "linear-gradient(135deg, #2b2640, #14121f)",
+    iconColor: "#e7c555",
+    buttonColor: "#b91c1c",
+    description: "Jump into amazing tales and learn new words every day!",
+  },
+  {
+    test: /art|draw|paint|craft/,
+    icon: "palette",
+    panelBg: "linear-gradient(135deg, #FBE4EC, #F6B8CE)",
+    iconColor: "#c0267a",
+    buttonColor: "#c0267a",
+    description: "Unleash creativity with colors and shapes.",
+  },
+  {
+    test: /hist|civic|social/,
+    icon: "history_edu",
+    panelBg: "linear-gradient(135deg, #F1E6D2, #DFC9A0)",
+    iconColor: "#8a6429",
+    buttonColor: "#8a6429",
+    description: "Meet great leaders and explore past worlds.",
+  },
+  {
+    test: /comput|code|program/,
+    icon: "terminal",
+    panelBg: "linear-gradient(135deg, #D8F4F0, #A6E6DC)",
+    iconColor: "#0f766e",
+    buttonColor: "#0f766e",
+    description: "Build logic skills through fun interactive games.",
+  },
+  {
+    test: /geo|evs|environ/,
+    icon: "travel_explore",
+    panelBg: "linear-gradient(135deg, #DCF6E3, #A9E8BC)",
+    iconColor: "#15803d",
+    buttonColor: "#15803d",
+    description: "Explore the world and its wonders.",
+  },
+];
+
+function getFlashcardSubjectTheme(name = "") {
+  const n = String(name || "").toLowerCase();
+  const match = FLASHCARD_SUBJECT_THEMES.find((t) => t.test.test(n));
+  if (match) return match;
+  return {
+    icon: "style",
+    panelBg: "linear-gradient(135deg, #E8E6FE, #C9C4F7)",
+    iconColor: "#6C63FF",
+    buttonColor: "#6C63FF",
+    description: `Explore ${name} and grow your knowledge one card at a time.`,
+  };
+}
+
+function SubjectCard({ subject, onSelect }) {
+  const theme = getFlashcardSubjectTheme(subject.name);
+  const visual = getSubjectVisual(subject.name);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [subject._id, subject.name]);
+
+  return (
+    <div className="group relative overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-sm p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
+      <div className="rounded-2xl h-40 mb-5 overflow-hidden relative" style={{ background: theme.panelBg }}>
+        {!imageError ? (
+          <img
+            src={visual.src}
+            alt={subject.name}
+            className="absolute inset-0 h-full w-full object-cover"
+            onError={() => setImageError(true)}
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: "64px", color: theme.iconColor, fontVariationSettings: "'FILL' 1" }}
+            >
+              {visual.fallbackIcon || theme.icon}
+            </span>
+          </div>
+        )}
+      </div>
+      <h3 className="text-lg font-black text-slate-900 mb-1.5">{subject.name}</h3>
+      <p className="text-sm text-slate-500 leading-relaxed mb-5 line-clamp-2">{theme.description}</p>
+      <button
+        type="button"
+        onClick={() => onSelect(subject)}
+        className="w-full flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold text-white transition-all hover:brightness-110"
+        style={{ backgroundColor: theme.buttonColor }}
+      >
+        Select
+        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+      </button>
+    </div>
+  );
+}
+
+function stripHtml(html) {
+  return String(html || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const TOPIC_PICKER_THEMES = [
+  { test: /solar|space|planet|astro|universe/, icon: "rocket_launch", bg: "#F2B33D", description: "Explore planets, moons, and stars in our cosmic backyard." },
+  { test: /animal|wildlife|kingdom/, icon: "pets", bg: "#F2978C", description: "Discover the amazing diversity of creatures on Earth." },
+  { test: /plant|botany|tree|flower/, icon: "eco", bg: "#B7A6F0", description: "Learn how flowers grow and why trees are super important." },
+  { test: /weather|climate|cloud/, icon: "cloud", bg: "#7FB7E6", description: "Understand clouds, rain, and the seasons around us." },
+  { test: /cell|biology|organism/, icon: "biotech", bg: "#6FAEEA", description: "Peek inside living things and how they work." },
+  { test: /human|body|anatomy/, icon: "favorite", bg: "#F08A8A", description: "Learn how your body works from head to toe." },
+  { test: /math|number|algebra|geometry/, icon: "calculate", bg: "#F2B33D", description: "Sharpen your number skills with fun practice." },
+  { test: /history|civilization|war/, icon: "history_edu", bg: "#C9A86A", description: "Travel back in time to meet legends of the past." },
+];
+
+function getTopicPickerTheme(name = "") {
+  const n = String(name || "").toLowerCase();
+  const match = TOPIC_PICKER_THEMES.find((t) => t.test.test(n));
+  if (match) return match;
+  const fallback = [
+    { icon: "auto_stories", bg: "#8C7AE6", description: `Explore ${name} and learn something new today!` },
+    { icon: "lightbulb", bg: "#F2B33D", description: `Explore ${name} and learn something new today!` },
+    { icon: "explore", bg: "#4ECDC4", description: `Explore ${name} and learn something new today!` },
+  ];
+  const idx = Math.abs(n.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % fallback.length;
+  return fallback[idx];
+}
+
+function TopicTile({ topic, selected, onSelect }) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(row)}
-      className={`w-full text-left rounded-xl border p-3 transition-all duration-200 ${
-        active
-          ? "border-[#e7c555] bg-[#fffae8] shadow-sm"
-          : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
+      onClick={() => onSelect(topic)}
+      className={`relative overflow-hidden rounded-2xl p-5 text-left border-2 transition-all ${
+        selected ? "border-[#e7c555] bg-[#fffbe8]" : "border-transparent bg-slate-50 hover:bg-slate-100"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-bold text-slate-800 leading-snug">{row.title}</p>
-        {active && (
-          <span className="material-symbols-outlined text-[#c9a92b] text-base flex-shrink-0">check_circle</span>
-        )}
-      </div>
-      <div className="flex items-center gap-3 mt-1.5">
-        <span className="flex items-center gap-1 text-xs text-slate-400">
-          <span className="material-symbols-outlined text-[13px]">style</span>
-          {row.cardsCount || row.cards?.length || 0} cards
-        </span>
-        <span className="flex items-center gap-1 text-xs text-slate-400">
-          <span className="material-symbols-outlined text-[13px]">group</span>
-          {row.participantsCount || 0}
+      <div className="absolute -right-4 -bottom-4 opacity-[0.08] pointer-events-none">
+        <span className="material-symbols-outlined" style={{ fontSize: "120px" }}>
+          {topic.theme.icon}
         </span>
       </div>
+      <div className="relative z-10">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+          style={{ background: topic.theme.bg }}
+        >
+          <span
+            className="material-symbols-outlined text-white text-xl"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            {topic.theme.icon}
+          </span>
+        </div>
+        <p className="font-black text-slate-900 mb-1">{topic.name}</p>
+        <p className="text-xs text-slate-500 leading-snug">{topic.description}</p>
+      </div>
+    </button>
+  );
+}
+
+function TopicRow({ topic, selected, onSelect }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(topic)}
+      className={`w-full flex items-center gap-3 rounded-2xl p-4 text-left border-2 transition-all ${
+        selected ? "border-[#e7c555] bg-[#fffbe8]" : "border-transparent bg-slate-50 hover:bg-slate-100"
+      }`}
+    >
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: topic.theme.bg }}
+      >
+        <span className="material-symbols-outlined text-white text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+          {topic.theme.icon}
+        </span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-black text-slate-900">{topic.name}</p>
+        <p className="text-xs text-slate-500 leading-snug truncate">{topic.description}</p>
+      </div>
+      <span className="material-symbols-outlined text-slate-300 flex-shrink-0">chevron_right</span>
     </button>
   );
 }
@@ -91,9 +301,7 @@ export default function FlashcardsPage() {
   const [className, setClassName] = useState(String(user?.classId || user?.class || user?.className || ""));
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
-  const [stage, setStage] = useState("");
-  const [profileBoardLabel] = useState(String(user?.boardName || user?.board || ""));
-  const [profileClassLabel] = useState(String(user?.className || user?.class || ""));
+  const [stage] = useState("");
 
   const [boards, setBoards] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -107,7 +315,6 @@ export default function FlashcardsPage() {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [attempts, setAttempts] = useState([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [profileReady, setProfileReady] = useState(!isLoggedIn);
   const [profileScope, setProfileScope] = useState({ board: "", className: "" });
 
@@ -116,11 +323,66 @@ export default function FlashcardsPage() {
   const [knownSet, setKnownSet] = useState(new Set());
   const [unknownSet, setUnknownSet] = useState(new Set());
   const [startTs, setStartTs] = useState(Date.now());
+  const [pickedTopicId, setPickedTopicId] = useState("");
 
   const cards = selected?.cards || [];
   const currentCard = cards[index] || null;
   const isLast = cards.length > 0 && index === cards.length - 1;
-  const progressPct = cards.length > 0 ? (index / cards.length) * 100 : 0;
+  const progressPct = cards.length > 0 ? ((index + 1) / cards.length) * 100 : 0;
+
+  const currentSubjectName = subjects.find((s) => String(s._id) === String(subject))?.name || "Subject";
+  const currentTopicName = topics.find((t) => String(t._id) === String(topic))?.name || selected?.title || "Flashcards";
+  const flashStageLabel = { 1: "Beginner", 2: "Intermediate", 3: "Advanced" }[Number(selected?.stage) || 1] || "Beginner";
+  const pickedTopicTheme = getTopicPickerTheme(currentTopicName);
+
+  const availableSubjects = useMemo(() => {
+    if (!subjects.length || !sets.length) return [];
+    return subjects.filter((s) =>
+      sets.some(
+        (row) =>
+          String(row.subject || "") === String(s._id) ||
+          String(row.subjectName || "").toLowerCase() === String(s.name || "").toLowerCase()
+      )
+    );
+  }, [subjects, sets]);
+
+  const availableTopicsForSubject = useMemo(() => {
+    if (!subject || !topics.length || !sets.length) return [];
+    return topics
+      .filter((t) =>
+        sets.some(
+          (row) =>
+            String(row.topic || "") === String(t._id) ||
+            String(row.topicName || "").toLowerCase() === String(t.name || "").toLowerCase()
+        )
+      )
+      .map((t) => {
+        const theme = getTopicPickerTheme(t.name);
+        return { ...t, theme, description: stripHtml(t.shortDescription) || theme.description };
+      });
+  }, [subject, topics, sets]);
+
+  useEffect(() => {
+    if (!availableTopicsForSubject.length) {
+      setPickedTopicId("");
+      return;
+    }
+    if (!availableTopicsForSubject.some((t) => String(t._id) === pickedTopicId)) {
+      setPickedTopicId(String(availableTopicsForSubject[0]._id));
+    }
+  }, [availableTopicsForSubject, pickedTopicId]);
+
+  async function startTopicDeck() {
+    const topicObj = availableTopicsForSubject.find((t) => String(t._id) === pickedTopicId);
+    if (!topicObj) return;
+    const matchedSet = sets.find(
+      (row) =>
+        String(row.topic || "") === String(topicObj._id) ||
+        String(row.topicName || "").toLowerCase() === String(topicObj.name || "").toLowerCase()
+    );
+    setTopic(String(topicObj._id));
+    if (matchedSet) await selectSet(matchedSet);
+  }
 
   useEffect(() => { loadBoardsAndClasses(); }, []);
 
@@ -188,15 +450,17 @@ export default function FlashcardsPage() {
     loadMyAttempts(selected._id);
   }, [selected?._id]);
 
-  // Lock body scroll when drawer is open on mobile
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+    if (!currentCard || result) return;
+    function handleKey(e) {
+      if (e.code === "Space") {
+        e.preventDefault();
+        setShowBack((p) => !p);
+      }
     }
-    return () => { document.body.style.overflow = ""; };
-  }, [drawerOpen]);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [currentCard, result]);
 
   async function loadBoardsAndClasses() {
     try {
@@ -295,7 +559,6 @@ export default function FlashcardsPage() {
     }
 
     setSelected(next);
-    setDrawerOpen(false);
     setIndex(0); setShowBack(false);
     setKnownSet(new Set()); setUnknownSet(new Set());
     setStartTs(Date.now()); setResult(null); setError("");
@@ -307,6 +570,14 @@ export default function FlashcardsPage() {
     setResult(null);
     setKnownSet((prev) => { const n = new Set(prev); known ? n.add(id) : n.delete(id); return n; });
     setUnknownSet((prev) => { const n = new Set(prev); !known ? n.add(id) : n.delete(id); return n; });
+    if (!isLast) { setIndex((p) => p + 1); setShowBack(false); }
+  }
+
+  function goPrev() {
+    if (index > 0) { setIndex((p) => p - 1); setShowBack(false); }
+  }
+
+  function goNext() {
     if (!isLast) { setIndex((p) => p + 1); setShowBack(false); }
   }
 
@@ -327,8 +598,6 @@ export default function FlashcardsPage() {
       setError(e.message || "Failed to submit participation");
     } finally { setBusy(false); }
   }
-
-  const selectStyle = "w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#e7c555]/40 transition";
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -353,212 +622,228 @@ export default function FlashcardsPage() {
       </Helmet>
       <style>{FLIP_CSS}</style>
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
+      {!subject ? (
+        /* ── Subject Picker (landing view) ── */
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Flashcards</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Flip, recall, and master concepts card by card</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Desktop: static sets count chip */}
-          <div className="hidden lg:flex items-center gap-2 bg-[#e7c555]/10 border border-[#e7c555]/30 rounded-full px-4 py-2">
-            <span className="material-symbols-outlined text-[#c9a92b] text-lg">style</span>
-            <span className="text-sm font-bold text-slate-700">{sets.length} Sets</span>
+          <div className="flex items-start justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Choose Your Subject</h1>
+              <p className="text-sm text-slate-500 mt-1">Pick an adventure to start your flashcard session!</p>
+            </div>
+            {/* <div className="flex items-center gap-2.5 flex-shrink-0">
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+              >
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+              </button>
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-[#e7c555]/40 bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    String(user?.name || "U").charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span className="text-sm font-bold text-slate-800">{user?.name || "Explorer"}</span>
+              </div>
+            </div> */}
           </div>
 
-          {/* Mobile: drawer toggle */}
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="lg:hidden flex items-center gap-2 bg-[#e7c555] rounded-full px-4 py-2.5 text-sm font-bold text-slate-900 shadow-sm active:brightness-95 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">style</span>
-            Sets
-            <span className="bg-slate-900/10 rounded-full px-1.5 py-0.5 text-xs font-black">{sets.length}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile: active set indicator */}
-      {selected && (
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="lg:hidden w-full flex items-center gap-3 bg-[#fffae8] border border-[#e7c555]/40 rounded-2xl px-4 py-3 text-left"
-        >
-          <span className="material-symbols-outlined text-[#c9a92b] text-[20px] flex-shrink-0">check_circle</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#c9a92b] mb-0.5">Active Set</p>
-            <p className="text-sm font-bold text-slate-800 truncate">{selected.title}</p>
-          </div>
-          <span className="material-symbols-outlined text-slate-400 text-[18px] flex-shrink-0">swap_vert</span>
-        </button>
-      )}
-
-      {/* ── Filters ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="material-symbols-outlined text-slate-400 text-[18px]">tune</span>
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Filters</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
-            <span className="material-symbols-outlined text-[13px]">account_tree</span>
-            Board: {profileBoardLabel || "N/A"}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
-            <span className="material-symbols-outlined text-[13px]">school</span>
-            Class: {profileClassLabel || "N/A"}
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
-          <select
-            value={board}
-            onChange={(e) => { if (!isLoggedIn) setBoard(e.target.value); }}
-            disabled={isLoggedIn}
-            className={selectStyle}
-          >
-            {boards.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
-          </select>
-          <select
-            value={className}
-            onChange={(e) => { if (!isLoggedIn) setClassName(e.target.value); }}
-            disabled={isLoggedIn}
-            className={selectStyle}
-          >
-            {classes.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
-          <select value={subject} onChange={(e) => { setSubject(e.target.value); setTopic(""); }} className={selectStyle}>
-            <option value="">All Subjects</option>
-            {subjects.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-          </select>
-          <select value={topic} onChange={(e) => setTopic(e.target.value)} className={selectStyle}>
-            <option value="">All Topics</option>
-            {topics.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
-          </select>
-          <select value={stage} onChange={(e) => setStage(e.target.value)} className={selectStyle}>
-            <option value="">All Stages</option>
-            <option value={1}>Stage 1</option>
-            <option value={2}>Stage 2</option>
-            <option value={3}>Stage 3</option>
-          </select>
-          <button
-            type="button"
-            onClick={loadSets}
-            disabled={!board || !className || loading}
-            className="rounded-full bg-[#e7c555] px-4 py-2 text-sm font-bold text-slate-900 disabled:opacity-60"
-          >
-            {loading ? "Loading..." : "Find Sets"}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Mobile Bottom Sheet ── */}
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-x-0 top-0 bottom-[72px] z-40 bg-black/50 backdrop-blur-[2px] lg:hidden transition-opacity duration-300 ${
-          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={() => setDrawerOpen(false)}
-      />
-
-      {/* Sheet panel */}
-      <div
-        className={`fixed bottom-[60px] left-0 right-0 z-40 lg:hidden bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
-          drawerOpen ? "translate-y-0" : "translate-y-full"
-        }`}
-        style={{ maxHeight: "calc(78vh - 72px)" }}
-      >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1.5 rounded-full bg-slate-200" />
-        </div>
-
-        {/* Sheet header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 flex-shrink-0">
-          <div>
-            <p className="text-base font-black text-slate-900">Choose a Set</p>
-            <p className="text-xs text-slate-400 mt-0.5">{sets.length} sets available</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(false)}
-            className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 transition"
-          >
-            <span className="material-symbols-outlined text-slate-600 text-[20px]">close</span>
-          </button>
-        </div>
-
-        {/* Sheet body — scrollable */}
-        <div className="overflow-y-auto flex-1 p-3 space-y-2 pb-24">
-          {loading && <SkeletonList />}
-          {!loading && sets.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
-              <span className="material-symbols-outlined text-slate-200 text-5xl">style</span>
-              <p className="text-xs text-slate-400 font-medium">No sets found for this filter</p>
+          {(loading || !profileReady) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-3xl border border-slate-100 bg-white p-5 animate-pulse space-y-4">
+                  <div className="h-40 rounded-2xl bg-slate-100" />
+                  <div className="h-4 bg-slate-100 rounded-full w-1/2" />
+                  <div className="h-3 bg-slate-100 rounded-full w-3/4" />
+                  <div className="h-10 bg-slate-100 rounded-full" />
+                </div>
+              ))}
             </div>
           )}
-          {sets.map((row) => (
-            <SetItem
-              key={row._id}
-              row={row}
-              active={selected?._id === row._id}
-              onSelect={selectSet}
-            />
-          ))}
-          {/* Safe area bottom padding for notched phones */}
-          <div className="h-4" />
-        </div>
-      </div>
 
-      {/* ── Main layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
-
-        {/* Desktop sets list */}
-        <div className="hidden lg:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <p className="text-sm font-black text-slate-800">Available Sets</p>
-            <span className="text-xs font-semibold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{sets.length}</span>
-          </div>
-          <div className="max-h-[60vh] overflow-y-auto p-3 space-y-2">
-            {loading && <SkeletonList />}
-            {!loading && sets.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-                <span className="material-symbols-outlined text-slate-200 text-5xl">style</span>
-                <p className="text-xs text-slate-400 font-medium">No sets found for this filter</p>
+          {!loading && profileReady && availableSubjects.length === 0 && (
+            <div className="flex flex-col items-center py-16 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-slate-300 text-3xl">style</span>
               </div>
-            )}
-            {sets.map((row) => (
-              <SetItem
-                key={row._id}
-                row={row}
-                active={selected?._id === row._id}
-                onSelect={selectSet}
-              />
-            ))}
-          </div>
-        </div>
+              <h3 className="text-lg font-bold text-slate-700 mb-1">No flashcards available yet</h3>
+              <p className="text-sm text-slate-400 max-w-md">
+                No flashcard sets have been uploaded for your board and class yet. Check back soon!
+              </p>
+            </div>
+          )}
 
-        {/* Practice area */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 md:p-6">
-          {!selected ? (
-            <div className="flex flex-col items-center justify-center min-h-[340px] text-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
-                <span className="material-symbols-outlined text-slate-200 text-5xl">style</span>
+          {!loading && profileReady && availableSubjects.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableSubjects.map((s) => (
+                <SubjectCard key={s._id} subject={s} onSelect={(picked) => setSubject(String(picked._id))} />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : !topic ? (
+        /* ── Topic Picker (deck setup view) ── */
+        <div className="pb-10">
+          <button
+            type="button"
+            onClick={() => setSubject("")}
+            className="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 mb-3 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+            All Subjects
+          </button>
+
+          <h1 className="text-xl md:text-2xl font-black mb-4" style={{ color: "#7a6a23" }}>
+            {currentSubjectName} Quest: Setup Your Deck
+          </h1>
+
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <p className="text-base font-black text-slate-900">Select Your Topic</p>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold text-white bg-[#6C63FF] whitespace-nowrap">
+              {availableTopicsForSubject.length} Topics Available
+            </span>
+          </div>
+
+          {(loading || !sets.length) && availableTopicsForSubject.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="rounded-2xl bg-slate-50 p-5 h-32 animate-pulse" />
+              ))}
+            </div>
+          ) : availableTopicsForSubject.length === 0 ? (
+            <div className="flex flex-col items-center py-16 text-center">
+              <span className="material-symbols-outlined text-slate-300 text-3xl mb-2">style</span>
+              <h3 className="text-base font-bold text-slate-700 mb-1">No topics available yet</h3>
+              <p className="text-sm text-slate-400 max-w-md">
+                No flashcard sets have been uploaded for {currentSubjectName} yet. Check back soon!
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                {availableTopicsForSubject.slice(0, 2).map((t) => (
+                  <TopicTile
+                    key={t._id}
+                    topic={t}
+                    selected={String(t._id) === pickedTopicId}
+                    onSelect={(picked) => setPickedTopicId(String(picked._id))}
+                  />
+                ))}
               </div>
-              <div>
-                <p className="font-bold text-slate-600">No set selected</p>
-                <p className="text-sm text-slate-400 mt-0.5 hidden lg:block">Pick a flashcard set from the left panel</p>
+
+              {availableTopicsForSubject.length > 2 && (
+                <div className="flex flex-col gap-3 mb-8">
+                  {availableTopicsForSubject.slice(2).map((t) => (
+                    <TopicRow
+                      key={t._id}
+                      topic={t}
+                      selected={String(t._id) === pickedTopicId}
+                      onSelect={(picked) => setPickedTopicId(String(picked._id))}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-center mt-10">
                 <button
                   type="button"
-                  onClick={() => setDrawerOpen(true)}
-                  className="lg:hidden mt-3 flex items-center gap-2 mx-auto rounded-full bg-[#e7c555] px-5 py-2.5 text-sm font-bold text-slate-900"
+                  onClick={startTopicDeck}
+                  disabled={!pickedTopicId}
+                  className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-white font-bold shadow-md disabled:opacity-50 transition-all hover:brightness-110"
+                  style={{ backgroundColor: "#6b6b1a" }}
                 >
-                  <span className="material-symbols-outlined text-[16px]">style</span>
-                  Browse Sets
+                  Start Flashcards
+                  <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    play_circle
+                  </span>
                 </button>
               </div>
+            </>
+          )}
+        </div>
+      ) : (
+      <>
+      {/* ── Quest Header ── */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <button
+            type="button"
+            onClick={() => setTopic("")}
+            className="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 mb-1 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+            Change Topic
+          </button>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{currentTopicName}</h1>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="inline-flex items-center rounded-full bg-[#e7c555] px-2.5 py-1 text-[11px] font-bold text-slate-900">
+              {currentSubjectName} Explorer
+            </span>
+            <span className="text-xs font-semibold text-slate-400">• {flashStageLabel} Level</span>
+          </div>
+        </div>
+
+        {/* <div className="flex items-center gap-2.5 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#e7c555]/15 border border-[#e7c555]/30 rounded-full pl-1.5 pr-3 py-1.5">
+            <span className="w-6 h-6 rounded-full bg-[#e7c555] flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-[14px] text-slate-900" style={{ fontVariationSettings: "'FILL' 1" }}>
+                add
+              </span>
+            </span>
+            <span className="text-xs font-black text-slate-800 whitespace-nowrap">
+              {Number(user?.points || 0).toLocaleString()} Points
+            </span>
+          </div>
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+          >
+            <span className="material-symbols-outlined text-[18px]">notifications</span>
+          </button>
+          <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-[#e7c555]/40 bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              String(user?.name || "U").charAt(0).toUpperCase()
+            )}
+          </div>
+        </div> */}
+      </div>
+
+      {/* Progress */}
+      {cards.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1.5">
+            <span>Card {index + 1} of {cards.length}</span>
+            <span>{Math.floor(progressPct)}% Complete</span>
+          </div>
+          <div className="w-full h-2.5 rounded-full bg-[#ECE3D0] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progressPct}%`, backgroundColor: "#6b6b1a" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Deck area ── */}
+      <div className="max-w-2xl mx-auto w-full">
+        <div className="relative overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm p-6 md:p-8">
+          {!selected ? (
+            <div className="flex flex-col items-center justify-center min-h-[300px] text-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-slate-200 text-3xl">style</span>
+              </div>
+              <p className="font-bold text-slate-600">No deck found for this topic</p>
+              <button
+                type="button"
+                onClick={() => setTopic("")}
+                className="text-sm font-bold text-[#6C63FF] hover:underline"
+              >
+                ← Back to Topics
+              </button>
             </div>
           ) : result ? (
             /* ── Result screen ── */
@@ -598,11 +883,11 @@ export default function FlashcardsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDrawerOpen(true)}
-                  className="lg:hidden flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
+                  onClick={() => setTopic("")}
+                  className="flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
                 >
                   <span className="material-symbols-outlined text-sm">style</span>
-                  Change Set
+                  Change Topic
                 </button>
               </div>
 
@@ -622,109 +907,98 @@ export default function FlashcardsPage() {
             </div>
           ) : (
             /* ── Practice mode ── */
-            <div className="space-y-5">
-              {/* Title + restart */}
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 leading-tight">{selected.title}</h2>
-                  {selected.description && (
-                    <p className="text-sm text-slate-500 mt-0.5">{selected.description}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => selectSet(selected)}
-                  className="flex-shrink-0 flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 rounded-full border border-slate-200 px-3 py-1.5 transition"
-                >
-                  <span className="material-symbols-outlined text-[14px]">restart_alt</span>
-                  Restart
-                </button>
-              </div>
-
-              {/* Progress */}
-              {cards.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1.5">
-                    <span>Card {index + 1} / {cards.length}</span>
-                    <span className="flex items-center gap-3">
-                      <span className="text-emerald-600">{knownSet.size} known</span>
-                      <span className="text-amber-500">{unknownSet.size} revisit</span>
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#e7c555] to-[#4ECDC4] transition-all duration-500"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+            <div className="space-y-6">
+              {/* Decorative faint topic icon */}
+              <span
+                className="material-symbols-outlined absolute top-4 right-4 text-slate-100 pointer-events-none select-none"
+                style={{ fontSize: "110px" }}
+              >
+                {pickedTopicTheme.icon}
+              </span>
 
               {/* Flip card */}
               {currentCard && (
-                <div
-                  className="fc-scene cursor-pointer select-none"
-                  style={{ height: 260 }}
-                  onClick={() => setShowBack((p) => !p)}
-                >
+                <div className="relative z-10 fc-scene select-none" style={{ height: 340 }}>
                   <div className={`fc-card ${showBack ? "flipped" : ""}`}>
-                    <div className="fc-face fc-face-front bg-gradient-to-br from-[#fffae6] to-[#fff9d6] border-2 border-[#e7c555]/40 flex flex-col items-center justify-center p-8 text-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#e7c555]/20 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#c9a92b]">lightbulb</span>
+                    <div className="fc-face fc-face-front bg-white flex flex-col items-center justify-center p-6 text-center gap-4">
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center bg-[#fdf3d9]">
+                        <span
+                          className="material-symbols-outlined text-[#c9a92b]"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          quiz
+                        </span>
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#c9a92b]">Question</p>
-                      <p className="text-xl md:text-2xl font-black text-slate-800 leading-snug">{currentCard.front}</p>
-                      <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px]">touch_app</span>
-                        Tap to reveal answer
+                      <p className="text-lg md:text-xl font-black text-slate-900 leading-snug max-w-sm">
+                        {currentCard.front}
                       </p>
-                    </div>
-                    <div className="fc-face fc-face-back bg-gradient-to-br from-[#e6faf8] to-[#d8f5f2] border-2 border-[#4ECDC4]/40 flex flex-col items-center justify-center p-8 text-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#4ECDC4]/20 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#4ECDC4]">check_circle</span>
+                      <div
+                        className="w-32 h-32 rounded-2xl flex items-center justify-center shadow-inner"
+                        style={{ background: `linear-gradient(135deg, ${pickedTopicTheme.bg}, #fff)` }}
+                      >
+                        <span
+                          className="material-symbols-outlined text-white"
+                          style={{ fontSize: "56px", fontVariationSettings: "'FILL' 1" }}
+                        >
+                          {pickedTopicTheme.icon}
+                        </span>
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#4ECDC4]">Answer</p>
-                      <p className="text-xl md:text-2xl font-black text-slate-800 leading-snug">{currentCard.back}</p>
+                    </div>
+                    <div className="fc-face fc-face-back bg-white flex flex-col items-center justify-center p-6 text-center gap-4">
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center bg-emerald-50">
+                        <span
+                          className="material-symbols-outlined text-emerald-500"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          check_circle
+                        </span>
+                      </div>
+                      <p className="text-lg md:text-xl font-black text-slate-900 leading-snug max-w-sm">
+                        {currentCard.back}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowBack((p) => !p)}
-                  className="flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
-                >
-                  <span className="material-symbols-outlined text-[16px]">flip</span>
-                  {showBack ? "Show Front" : "Flip Card"}
-                </button>
+              {/* Flip / mark buttons */}
+              <div className="relative z-10 flex flex-col items-center gap-3">
+                {!showBack ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowBack(true)}
+                    className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-bold text-white bg-[#6C63FF] hover:brightness-110 transition-all shadow-md"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">flip</span>
+                    Flip Card
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => markCard(false)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-5 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-100 transition"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">refresh</span>
+                      Need Revision
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => markCard(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-5 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                      I Know This
+                    </button>
+                  </div>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => markCard(false)}
-                  className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-100 transition"
-                >
-                  <span className="material-symbols-outlined text-[16px]">refresh</span>
-                  Need Revision
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => markCard(true)}
-                  className="flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition"
-                >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  I Know This
-                </button>
-
-                {isLast && (
+                {isLast && showBack && (
                   <button
                     type="button"
                     onClick={submitParticipation}
                     disabled={busy}
-                    className="ml-auto flex items-center gap-1.5 rounded-full bg-[#e7c555] px-5 py-2.5 text-sm font-bold text-slate-900 hover:brightness-95 disabled:opacity-50 transition"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#e7c555] px-6 py-2.5 text-sm font-bold text-slate-900 hover:brightness-95 disabled:opacity-50 transition"
                   >
                     {busy ? (
                       <>
@@ -734,37 +1008,53 @@ export default function FlashcardsPage() {
                     ) : (
                       <>
                         <span className="material-symbols-outlined text-[16px]">send</span>
-                        Submit
+                        Submit Deck
                       </>
                     )}
                   </button>
                 )}
               </div>
 
+              {/* Prev / Next nav */}
+              <div className="relative z-10 flex items-center justify-between pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  disabled={index === 0}
+                  className="flex items-center gap-1 text-sm font-bold text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                >
+                  <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                  Previous Card
+                </button>
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-bold text-slate-500">
+                    SPACE
+                  </kbd>
+                  to flip
+                </span>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={isLast}
+                  className="flex items-center gap-1 text-sm font-bold text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                >
+                  Next Card
+                  <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                </button>
+              </div>
+
               {error && (
-                <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                <div className="relative z-10 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
                   <span className="material-symbols-outlined text-red-500 text-sm">error</span>
                   <p className="text-sm font-semibold text-red-600">{error}</p>
-                </div>
-              )}
-
-              {attempts.length > 0 && (
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="text-sm font-bold text-slate-800 mb-2">My Recent Attempts</p>
-                  <div className="space-y-1.5">
-                    {attempts.slice(0, 5).map((row) => (
-                      <div key={row._id} className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
-                        <span className="text-xs text-slate-500">{new Date(row.createdAt).toLocaleString()}</span>
-                        <span className={`text-sm font-black ${row.percent >= 70 ? "text-emerald-600" : "text-amber-500"}`}>{row.percent}%</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
