@@ -46,6 +46,12 @@ export function buildTopicPracticePath({ subjectId, topicId, stage }) {
   return base.includes("?") ? `${base}&openPractice=1` : `${base}?openPractice=1`;
 }
 
+export function buildStudyTopicPath({ subjectId, topicId }) {
+  if (!subjectId) return "/dashboard/study";
+  const query = topicId ? `?topicId=${encodeURIComponent(topicId)}` : "";
+  return `/dashboard/study/${encodeURIComponent(subjectId)}${query}`;
+}
+
 export function readWeakAreas(userKey = "") {
   const rows = readJSON(getWeakAreasStorageKey(userKey), []);
   return Array.isArray(rows) ? rows : [];
@@ -175,10 +181,9 @@ export function deriveNextAction({ attempts, weakAreas }) {
     const top = weakList[0];
     const topicName = top.topicName || "this topic";
     const subjectName = top.subjectName || "this subject";
-    const to = buildTopicSummaryPath({
+    const to = buildStudyTopicPath({
       subjectId: top.subjectId,
       topicId: top.topicId,
-      stage: top.stage,
     });
     return {
       title: "Recommended Next Step",
@@ -207,11 +212,17 @@ export function deriveNextAction({ attempts, weakAreas }) {
 
   const latest = [...attemptList].sort((a, b) => attemptSortTs(b) - attemptSortTs(a))[0];
   const info = getAttemptSubject(latest);
-  const to = buildTopicPracticePath({
-    subjectId: info.subjectId,
-    topicId: info.topicId,
-    stage: info.stage,
-  });
+  const to =
+    info.percent >= 75
+      ? buildTopicPracticePath({
+          subjectId: info.subjectId,
+          topicId: info.topicId,
+          stage: info.stage,
+        })
+      : buildStudyTopicPath({
+          subjectId: info.subjectId,
+          topicId: info.topicId,
+        });
 
   return {
     title: "Recommended Next Step",

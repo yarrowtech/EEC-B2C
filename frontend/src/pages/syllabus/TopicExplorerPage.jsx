@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getJSON } from "../../lib/api";
 import { ToastContainer, useToast } from "../../components/Toast";
 
@@ -81,7 +81,9 @@ function getTopicTheme(name = "") {
 export default function TopicExplorerPage() {
   const { subjectId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
+  const topicIdParam = String(searchParams.get("topicId") || "").trim();
 
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState(null);
@@ -117,7 +119,11 @@ export default function TopicExplorerPage() {
       );
       const normalized = (Array.isArray(topicRows) ? topicRows : []).filter((t) => t?._id && t?.name);
       setTopics(normalized);
-      setSelectedTopicId(normalized[0]?._id || null);
+      const preferredTopic =
+        topicIdParam && normalized.some((t) => String(t._id) === topicIdParam)
+          ? topicIdParam
+          : normalized[0]?._id || null;
+      setSelectedTopicId(preferredTopic);
     } catch (err) {
       console.error("Failed to load topics", err);
       toast.error("Failed to load topics for this subject.");
@@ -128,7 +134,7 @@ export default function TopicExplorerPage() {
 
   useEffect(() => {
     loadTopics();
-  }, [subjectId]);
+  }, [subjectId, topicIdParam]);
 
   const selectedTopic = useMemo(
     () => topics.find((t) => String(t._id) === String(selectedTopicId)) || null,
