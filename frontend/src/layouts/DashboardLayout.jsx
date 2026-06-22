@@ -550,8 +550,12 @@ export default function DashboardLayout() {
     const NAV = useMemo(() => {
         const base = [
             { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true, id: "tour-nav-dashboard" },
-            { to: "/dashboard/study", label: "Study", icon: <Library size={18} />, id: "tour-nav-study" },
         ];
+
+        // Add Study link for non-admin users
+        if (role !== "admin") {
+            base.push({ to: "/dashboard/study", label: "Study", icon: <Library size={18} />, id: "tour-nav-study" });
+        }
 
         // Add Self Study for all users (students, teachers, admins)
         // base.push(
