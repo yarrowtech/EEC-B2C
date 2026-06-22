@@ -3,55 +3,59 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   CreditCard,
   CheckCircle2,
-  Lock,
-  Zap,
   Shield,
+  Rocket,
+  Award,
+  Circle,
   Star,
   Calendar,
   BookOpen,
   Layers,
   Check,
-  Crown,
   Sparkles,
   Clock,
+  Zap,
   AlertTriangle,
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 
 const TIER_CONFIG = {
   Basic: {
-    gradient: "from-slate-500 to-gray-600",
-    lightGradient: "from-slate-50 to-gray-50",
-    border: "border-slate-200",
-    activeBorder: "border-slate-400",
-    badge: "bg-slate-100 text-slate-700",
-    button: "from-slate-600 to-gray-700 hover:from-slate-700 hover:to-gray-800",
-    icon: <Shield className="w-5 h-5" />,
-    accentColor: "text-slate-600",
-    ringColor: "ring-slate-400",
+    icon: <Shield className="w-6 h-6" />,
+    iconBg: "bg-slate-100",
+    iconColor: "text-slate-500",
+    border: "border-slate-100",
+    activeBorder: "border-emerald-400",
+    bulletColor: "text-emerald-500",
+    button: "bg-slate-900 hover:bg-slate-800",
+    ctaPaid: "Subscribe Now",
+    ctaFree: "Get Started Free",
+    priceCaption: (pkg) => (Number(pkg.price) === 0 ? "Always and forever" : null),
   },
   Intermediate: {
-    gradient: "from-blue-500 to-cyan-500",
-    lightGradient: "from-blue-50 to-cyan-50",
-    border: "border-blue-200",
-    activeBorder: "border-blue-400",
-    badge: "bg-blue-100 text-blue-700",
-    button: "from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700",
-    icon: <Zap className="w-5 h-5" />,
-    accentColor: "text-blue-600",
-    ringColor: "ring-blue-400",
+    icon: <Rocket className="w-6 h-6" />,
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
+    border: "border-amber-300",
+    activeBorder: "border-emerald-400",
+    bulletColor: "text-amber-500",
+    button: "bg-amber-900 hover:bg-amber-950",
+    ctaPaid: "Start My Adventure",
+    ctaFree: "Get Started Free",
+    priceCaption: () => "SAVE 20% YEARLY",
     popular: true,
   },
   Premium: {
-    gradient: "from-amber-500 to-orange-500",
-    lightGradient: "from-amber-50 to-orange-50",
-    border: "border-amber-200",
-    activeBorder: "border-amber-400",
-    badge: "bg-amber-100 text-amber-700",
-    button: "from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600",
-    icon: <Crown className="w-5 h-5" />,
-    accentColor: "text-amber-600",
-    ringColor: "ring-amber-400",
+    icon: <Award className="w-6 h-6" />,
+    iconBg: "bg-violet-100",
+    iconColor: "text-violet-600",
+    border: "border-violet-100",
+    activeBorder: "border-emerald-400",
+    bulletColor: "text-violet-500",
+    button: "bg-indigo-600 hover:bg-indigo-700",
+    ctaPaid: "Go Master Tier",
+    ctaFree: "Get Started Free",
+    priceCaption: () => "Full premium access",
   },
 };
 
@@ -60,6 +64,13 @@ function getTierConfig(pkgName) {
     (k) => k.toLowerCase() === String(pkgName || "").toLowerCase()
   );
   return TIER_CONFIG[key] || TIER_CONFIG.Basic;
+}
+
+function durationLabel(duration) {
+  const days = Number(duration) || 0;
+  if (days >= 360) return "/year";
+  if (days >= 28 && days <= 31) return "/month";
+  return days ? `/${days} days` : "";
 }
 
 export default function Packages() {
@@ -315,22 +326,22 @@ export default function Packages() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50">
+    <div className="min-h-screen bg-[#fdf5ee]">
       <ToastContainer />
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
 
         {/* ── Page Header ── */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold mb-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400 text-amber-950 text-sm font-bold mb-2">
             <Sparkles className="w-4 h-4" />
-            Choose Your Plan
+            Pick Your Adventure
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
             Unlock Your Full Potential
           </h1>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            Pick the plan that fits your learning goals. Upgrade anytime to access more stages and resources.
+            Join thousands of young explorers on a journey of discovery. Choose the pass that fits your learning goals and level up your skills today!
           </p>
         </div>
 
@@ -499,9 +510,10 @@ export default function Packages() {
                 (activePackageId && activePackageId === pkg._id) ||
                 String(pkg.name || "").toLowerCase() === activeType;
               const cfg = getTierConfig(pkg.name);
-              const priceLabel = pkg.price === 0 ? "Free" : `₹${pkg.price}`;
               const isPurchasing = purchasingId === pkg._id;
-
+              const isFree = Number(pkg.price) === 0;
+              const caption = cfg.priceCaption(pkg);
+              const features = Array.isArray(pkg.features) ? pkg.features : [];
               const studyBadge = {
                 full: { label: "Full Access", cls: "bg-emerald-100 text-emerald-700" },
                 limited: { label: "Limited", cls: "bg-amber-100 text-amber-700" },
@@ -511,147 +523,150 @@ export default function Packages() {
               return (
                 <div
                   key={pkg._id || pkg.name}
-                  className={`relative rounded-2xl border-2 bg-white shadow-sm transition-all duration-200 hover:shadow-xl flex flex-col ${
-                    isActive ? `${cfg.activeBorder} shadow-lg` : cfg.border
-                  } ${cfg.popular && !isActive ? "ring-2 ring-blue-300 ring-offset-2" : ""}`}
+                  className={`relative rounded-3xl border-2 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-lg flex flex-col ${
+                    isActive ? cfg.activeBorder : cfg.border
+                  } ${cfg.popular && !isActive ? "shadow-lg lg:-mt-2" : ""}`}
                 >
                   {/* Popular badge */}
                   {cfg.popular && !isActive && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md">
-                        <Star className="w-3 h-3 fill-white" /> Most Popular
-                      </span>
-                    </div>
+                    <span className="absolute top-4 right-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-400 text-amber-950 shadow-sm">
+                      <Star className="w-3 h-3 fill-amber-950" /> Most Popular
+                    </span>
                   )}
 
                   {/* Active badge */}
                   {isActive && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-md">
-                        <CheckCircle2 className="w-3 h-3" /> Current Plan
+                    <span className="absolute top-4 right-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500 text-white shadow-sm">
+                      <CheckCircle2 className="w-3 h-3" /> Current Plan
+                    </span>
+                  )}
+
+                  {/* Icon */}
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${cfg.iconBg} ${cfg.iconColor}`}>
+                    {cfg.icon}
+                  </div>
+
+                  {/* Title & description */}
+                  <h3 className="mt-4 text-lg font-bold text-slate-900">{pkg.displayName || pkg.name}</h3>
+                  <p className="mt-1 text-sm text-slate-500 leading-relaxed">{pkg.description}</p>
+
+                  {/* Price */}
+                  <div className="mt-5">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-extrabold text-slate-900">
+                        {isFree ? "Free" : `₹${pkg.price}`}
                       </span>
+                      {!isFree && (
+                        <span className="text-sm text-slate-400 font-medium">{durationLabel(pkg.duration)}</span>
+                      )}
+                    </div>
+                    {caption && (
+                      <p className={`mt-1 text-xs font-semibold ${isFree ? "text-slate-400" : cfg.popular ? "text-amber-600 uppercase tracking-wide" : "text-slate-400"}`}>
+                        {caption}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  {features.length > 0 && (
+                    <div className="mt-6 space-y-3 flex-1">
+                      {features.map((feature, idx) => {
+                        const isLastDisabled = isFree && features.length > 1 && idx === features.length - 1;
+                        return (
+                          <div key={idx} className="flex items-center gap-2.5">
+                            {isLastDisabled ? (
+                              <Circle className="w-4 h-4 shrink-0 text-slate-300" />
+                            ) : (
+                              <CheckCircle2 className={`w-4 h-4 shrink-0 ${cfg.bulletColor}`} />
+                            )}
+                            <span className={`text-sm ${isLastDisabled ? "text-slate-400" : "text-slate-600"}`}>
+                              {feature}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {/* Card Header */}
-                  <div className={`rounded-t-xl bg-gradient-to-br ${cfg.lightGradient} px-6 pt-7 pb-5 border-b ${cfg.border}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.badge}`}>
-                        {cfg.icon}
-                        {pkg.name}
-                      </span>
-                      {pkg.prioritySupport && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
-                          Priority Support
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-1">{pkg.displayName || pkg.name}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">{pkg.description}</p>
-
-                    {/* Price */}
-                    <div className="mt-4 flex items-baseline gap-1">
-                      {pkg.price === 0 ? (
-                        <span className="text-4xl font-extrabold text-slate-800">Free</span>
-                      ) : (
-                        <>
-                          <span className="text-4xl font-extrabold text-slate-800">₹{pkg.price}</span>
-                          <span className="text-sm text-slate-500 font-medium">/ {pkg.duration} days</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="px-6 py-5 flex-1 space-y-5">
-
-                    {/* Features */}
-                    {Array.isArray(pkg.features) && pkg.features.length > 0 && (
-                      <div className="space-y-2.5">
-                        {pkg.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5">
-                            <span className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-gradient-to-br ${cfg.gradient} flex items-center justify-center`}>
-                              <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                            </span>
-                            <span className="text-sm text-slate-700">{feature}</span>
+                  {/* Plan Details */}
+                  {(() => {
+                    const hasStages = Array.isArray(pkg.unlockedStages) && pkg.unlockedStages.length > 0;
+                    const hasTryoutTypes = Array.isArray(pkg.allowedTryoutTypes) && pkg.allowedTryoutTypes.length > 0;
+                    if (!hasStages && !hasTryoutTypes && !pkg.studyMaterialsAccess && !pkg.subjectContentAccess && !pkg.analyticsAccess && !pkg.duration) {
+                      return null;
+                    }
+                    return (
+                      <div className="mt-5 pt-4 border-t border-slate-100 space-y-2.5 text-xs">
+                        {hasStages && (
+                          <div className="flex items-start gap-2">
+                            <Layers className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${cfg.iconColor}`} />
+                            <div className="flex flex-wrap gap-1">
+                              {pkg.unlockedStages.map((stage) => (
+                                <span key={stage} className={`px-2 py-0.5 rounded-full font-bold ${cfg.iconBg} ${cfg.iconColor}`}>
+                                  Stage {stage}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {/* Meta Info */}
-                    <div className="space-y-3 pt-1 border-t border-slate-100">
-                      {/* Unlocked Stages */}
-                      <div className="flex items-start gap-2">
-                        <Layers className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-                        <div className="flex flex-wrap gap-1">
-                          {Array.isArray(pkg.unlockedStages) && pkg.unlockedStages.length > 0 ? (
-                            pkg.unlockedStages.map((stage) => (
-                              <span key={stage} className={`px-2 py-0.5 rounded text-xs font-bold ${cfg.badge}`}>
-                                Stage {stage}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400">No stages unlocked</span>
-                          )}
-                        </div>
-                      </div>
+                        {pkg.studyMaterialsAccess && (
+                          <div className="flex items-center gap-2">
+                            <BookOpen className={`w-3.5 h-3.5 shrink-0 ${cfg.iconColor}`} />
+                            <span className="text-slate-500">Study Materials:</span>
+                            <span className={`px-2 py-0.5 rounded-full font-semibold ${studyBadge.cls}`}>
+                              {studyBadge.label}
+                            </span>
+                          </div>
+                        )}
 
-                      {/* Study Materials */}
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <span className="text-xs text-slate-500">Study Materials:</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${studyBadge.cls}`}>
-                          {studyBadge.label}
-                        </span>
-                      </div>
+                        {pkg.subjectContentAccess && (
+                          <div className="flex items-center gap-2">
+                            <Layers className={`w-3.5 h-3.5 shrink-0 ${cfg.iconColor}`} />
+                            <span className="text-slate-500">Subject Content:</span>
+                            <span className={`px-2 py-0.5 rounded-full font-semibold ${cfg.iconBg} ${cfg.iconColor}`}>
+                              {pkg.subjectContentAccess}
+                            </span>
+                          </div>
+                        )}
 
-                      {/* Subject Content */}
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <span className="text-xs text-slate-500">Subject Content:</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700">
-                          {pkg.subjectContentAccess || "basic"}
-                        </span>
-                      </div>
+                        {pkg.analyticsAccess && (
+                          <div className="flex items-center gap-2">
+                            <Clock className={`w-3.5 h-3.5 shrink-0 ${cfg.iconColor}`} />
+                            <span className="text-slate-500">Analytics:</span>
+                            <span className={`px-2 py-0.5 rounded-full font-semibold ${cfg.iconBg} ${cfg.iconColor}`}>
+                              {pkg.analyticsAccess}
+                            </span>
+                          </div>
+                        )}
 
-                      {/* Analytics */}
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <span className="text-xs text-slate-500">Analytics:</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-700">
-                          {pkg.analyticsAccess || "none"}
-                        </span>
-                      </div>
+                        {Boolean(pkg.duration) && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className={`w-3.5 h-3.5 shrink-0 ${cfg.iconColor}`} />
+                            <span className="text-slate-500">
+                              Valid for <span className="font-semibold text-slate-700">{pkg.duration} days</span>
+                            </span>
+                          </div>
+                        )}
 
-                      {/* Duration */}
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <span className="text-xs text-slate-500">
-                          Valid for <span className="font-semibold text-slate-700">{pkg.duration} days</span>
-                        </span>
+                        {hasTryoutTypes && (
+                          <div className="flex items-start gap-2">
+                            <Zap className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${cfg.iconColor}`} />
+                            <div className="flex flex-wrap gap-1">
+                              {pkg.allowedTryoutTypes.map((typeName) => (
+                                <span key={typeName} className={`px-2 py-0.5 rounded-full font-bold ${cfg.iconBg} ${cfg.iconColor}`}>
+                                  {typeName}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
+                    );
+                  })()}
 
-                      {/* Allowed Tryout Types */}
-                      <div className="flex items-start gap-2">
-                        <Zap className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-                        <div className="flex flex-wrap gap-1">
-                          {Array.isArray(pkg.allowedTryoutTypes) && pkg.allowedTryoutTypes.length > 0 ? (
-                            pkg.allowedTryoutTypes.map((typeName) => (
-                              <span key={typeName} className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">
-                                {typeName}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400">No tryout types configured</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Footer */}
-                  <div className="px-6 pb-6">
+                  {/* Footer */}
+                  <div className="mt-6">
                     {isActive ? (
                       <div className="w-full py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-sm text-center flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-4 h-4" /> Active Plan
@@ -661,20 +676,17 @@ export default function Packages() {
                         type="button"
                         onClick={() => purchasePackage(pkg)}
                         disabled={isPurchasing}
-                        className={`w-full py-3 rounded-xl text-white font-semibold text-sm shadow-md transition-all duration-200 bg-gradient-to-r ${cfg.button} hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+                        className={`w-full py-3 rounded-xl text-white font-semibold text-sm shadow-md transition-all duration-200 ${cfg.button} hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                       >
                         {isPurchasing ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                             Processing...
                           </>
-                        ) : pkg.price === 0 ? (
-                          <>Get Started Free</>
+                        ) : isFree ? (
+                          cfg.ctaFree
                         ) : (
-                          <>
-                            <CreditCard className="w-4 h-4" />
-                            Subscribe — ₹{pkg.price}
-                          </>
+                          cfg.ctaPaid
                         )}
                       </button>
                     )}
