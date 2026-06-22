@@ -506,7 +506,9 @@ export default function Packages() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {sortedPackages.map((pkg) => {
+              const isImplicitFreePlan = !hasActivePlan && Number(pkg.price) === 0;
               const isActive =
+                isImplicitFreePlan ||
                 (activePackageId && activePackageId === pkg._id) ||
                 String(pkg.name || "").toLowerCase() === activeType;
               const cfg = getTierConfig(pkg.name);
