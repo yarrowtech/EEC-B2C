@@ -20,8 +20,10 @@ import {
   getLevelAccess,
   getTryoutSummary,
   uploadPerformanceAnalytics,
+  listForReview,
+  reviewQuestion,
 } from "../controllers/questionsController.js";
-import {requireAuth} from "../middleware/auth.js";
+import {requireAuth, requireRole} from "../middleware/auth.js";
 
 const router = Router();
 const uploadExcel = multer({
@@ -69,12 +71,16 @@ router.get("/types", requireAuth, getQuestionTypes);
 router.get("/level-access", requireAuth, getLevelAccess);
 router.get("/upload-performance", requireAuth, uploadPerformanceAnalytics);
 
+// Question review (admin only, MUST be before /:id route)
+router.get("/review", requireAuth, requireRole("admin"), listForReview);
+
 // Dynamic routes (place these LAST)
 router.get("/:id", requireAuth, getOne);
 
 // Writes
 router.put("/:id", requireAuth, update);
 router.delete("/:id", requireAuth, remove);
+router.patch("/:id/review", requireAuth, requireRole("admin"), reviewQuestion);
 
 // Bulk upload
 router.post("/bulk/mcq-single", requireAuth, uploadExcel.single("file"), bulkCreateMcqSingle);

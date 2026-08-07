@@ -103,7 +103,7 @@ export default function SubjectTopicPicker() {
   const loadTopics = async (subjectId, boardId, classId) => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/topic/${subjectId}?board=${boardId}&class=${classId}`,
+        `${import.meta.env.VITE_API_URL}/api/topic/${subjectId}?board=${boardId}&class=${classId}&manage=1`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
         }

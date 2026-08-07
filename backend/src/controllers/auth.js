@@ -34,7 +34,7 @@ function signToken(user) {
   });
 }
 
-async function buildLoginPayload(user) {
+export async function buildLoginPayload(user) {
   // Look up Board and Class IDs
   let boardId = null;
   let classId = null;
@@ -180,6 +180,58 @@ export async function checkEmailExists(req, res) {
     res.json({ exists: Boolean(exists) });
   } catch (err) {
     console.error("check-email error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+// List every account that shares the current user's familyId (siblings
+// registered together), so the UI can offer password-less switching between them.
+export async function getFamilyAccounts(req, res) {
+  try {
+    const currentUser = await User.findById(req.user.id).select("familyId");
+    if (!currentUser?.familyId) {
+      return res.json({ items: [] });
+    }
+
+    const members = await User.find({ familyId: currentUser.familyId }).select(
+      "name email className board avatar role"
+    );
+
+    const items = members.map((m) => ({
+      _id: m._id,
+      name: m.name,
+      className: m.className,
+      board: m.board,
+      avatar: m.avatar || "",
+      role: m.role,
+      isCurrent: String(m._id) === String(req.user.id),
+    }));
+
+    res.json({ items });
+  } catch (err) {
+    console.error("getFamilyAccounts error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+// Switch the active session to a sibling account without re-entering a
+// password — trust boundary is "already authenticated + proven same family".
+export async function switchAccount(req, res) {
+  try {
+    const currentUser = await User.findById(req.user.id).select("familyId");
+    if (!currentUser?.familyId) {
+      return res.status(403).json({ message: "Not permitted" });
+    }
+
+    const target = await User.findById(req.params.userId);
+    if (!target || !target.familyId || String(target.familyId) !== String(currentUser.familyId)) {
+      return res.status(403).json({ message: "Not permitted" });
+    }
+
+    const payload = await buildLoginPayload(target);
+    res.json(payload);
+  } catch (err) {
+    console.error("switchAccount error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }

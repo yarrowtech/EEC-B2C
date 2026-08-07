@@ -7,6 +7,8 @@ import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
 import Attempt from "../models/Attempt.js";
 import { resolveLevelAccessForUser } from "../utils/levelAccess.js";
+import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
+import { sendPushNotification } from "../routes/pushNotificationRoutes.js";
 import * as XLSX from "xlsx";
 
 // Helpers
@@ -191,7 +193,7 @@ function parseTrueFalseAnswer(rawValue) {
  * Validate and normalize payload by type.
  * Returns: { ok: true, doc } OR { ok: false, message }
  */
-function shapeByType(type, body, userId) {
+export function shapeByType(type, body, userId) {
   const common = {
     type,
     subject: String(body.subject || "").trim(),
@@ -375,6 +377,7 @@ export const create = async (req, res) => {
 
     doc.class = req.body.class;
     doc.board = req.body.board;
+    doc.status = req.user.role === "admin" ? "approved" : "pending";
 
     const saved = await Question.create(doc);
     res.status(201).json({ message: "Created", id: saved._id });
@@ -487,6 +490,7 @@ export const bulkCreateMcqSingle = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -616,6 +620,7 @@ export const bulkCreateMcqMulti = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -751,6 +756,7 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -879,6 +885,7 @@ export const bulkCreateTrueFalse = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -963,6 +970,7 @@ export const list = async (req, res) => {
       if (req.user.board) {
         filter.board = req.user.board; // ✅ AUTO board filter
       }
+      filter.status = "approved";
     }
 
     // Teachers only see the questions they personally added; admins see everything.
@@ -1171,6 +1179,11 @@ export const update = async (req, res) => {
     doc.class = merged.class || existing.class;
     doc.board = merged.board || existing.board;
 
+    if (isTeacher && existing.status === "rejected") {
+      doc.status = "pending";
+      doc.rejectionReason = "";
+    }
+
     await Question.findByIdAndUpdate(req.params.id, doc, { new: true });
 
     res.json({ message: "Updated" });
@@ -1216,6 +1229,117 @@ export const remove = async (req, res) => {
 
     await existing.deleteOne();
     res.json({ message: "Deleted" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const QUESTION_REVIEW_STATUSES = new Set(["approved", "rejected"]);
+
+// List questions for review (admin only)
+export const listForReview = async (req, res) => {
+  try {
+    const { status = "pending", q, limit = 50, page = 1 } = req.query;
+
+    const filter = {};
+    if (status && status !== "all") filter.status = status;
+    if (q) {
+      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (escaped) {
+        filter.$or = [
+          { question: { $regex: escaped, $options: "i" } },
+          { prompt: { $regex: escaped, $options: "i" } },
+        ];
+      }
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const safePage = Math.max(Number(page) || 1, 1);
+
+    const [items, total] = await Promise.all([
+      Question.find(filter)
+        .populate("createdBy", "name email role")
+        .populate("reviewedBy", "name")
+        .sort({ createdAt: -1 })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit),
+      Question.countDocuments(filter),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Approve or reject a question (admin only)
+export const reviewQuestion = async (req, res) => {
+  try {
+    const { status, reason } = req.body || {};
+    const normalizedStatus = String(status || "").trim().toLowerCase();
+
+    if (!QUESTION_REVIEW_STATUSES.has(normalizedStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const updated = await Question.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: normalizedStatus,
+        reviewedBy: req.user.id,
+        reviewedAt: new Date(),
+        rejectionReason: normalizedStatus === "rejected" ? String(reason || "").trim() : "",
+      },
+      { new: true }
+    ).populate("createdBy", "name email");
+
+    if (!updated) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    const recipient = updated.createdBy;
+    if (recipient?.email) {
+      const preview =
+        updated.question ||
+        updated.prompt ||
+        updated.choiceMatrix?.prompt ||
+        updated.clozeDrag?.text ||
+        updated.clozeSelect?.text ||
+        updated.clozeText?.text ||
+        updated.matchList?.prompt ||
+        "Question";
+      const title = normalizedStatus === "approved" ? "Question Approved" : "Question Needs Changes";
+      const message =
+        normalizedStatus === "approved"
+          ? `Your question was approved and is now live.`
+          : `Your question was not approved. Please review and resubmit.`;
+
+      sendTopicReviewStatusEmail({
+        to: recipient.email,
+        name: recipient.name,
+        topicName: preview,
+        subjectName: "",
+        status: normalizedStatus,
+        reason: updated.rejectionReason,
+        kind: "question",
+      }).catch((mailErr) => {
+        console.error("Question review email failed:", mailErr?.message || mailErr);
+      });
+
+      sendPushNotification(recipient._id, title, message).catch((pushErr) => {
+        console.error("Question review push notification failed:", pushErr?.message || pushErr);
+      });
+    }
+
+    res.json(updated);
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });

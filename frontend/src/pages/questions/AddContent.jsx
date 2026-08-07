@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import JoditEditor from "jodit-react";
@@ -34,20 +34,18 @@ export default function AddContent() {
   const [deletingId, setDeletingId] = useState("");
   const [insertingImage, setInsertingImage] = useState(false);
 
+  const [allTopics, setAllTopics] = useState([]);
+  const [loadingAllTopics, setLoadingAllTopics] = useState(true);
+  const [filterBoard, setFilterBoard] = useState("");
+  const [filterClass, setFilterClass] = useState("");
+  const [filterSubject, setFilterSubject] = useState("");
+
+  const pendingSubjectIdRef = useRef("");
+  const pendingTopicIdRef = useRef("");
+  const editorTopRef = useRef(null);
+
   const token = localStorage.getItem("jwt");
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
-  const selectedSubjectName = useMemo(
-    () => subjects.find((s) => s._id === subject)?.name || "-",
-    [subjects, subject]
-  );
-  const selectedBoardName = useMemo(
-    () => boards.find((b) => b._id === board)?.name || "-",
-    [boards, board]
-  );
-  const selectedClassName = useMemo(
-    () => classes.find((c) => c._id === classId)?.name || "-",
-    [classes, classId]
-  );
   const editorConfig = useMemo(
     () => ({
       readonly: !topicId,
@@ -65,6 +63,7 @@ export default function AddContent() {
   useEffect(() => {
     loadBoards();
     loadClasses();
+    loadAllTopics();
   }, []);
 
   useEffect(() => {
@@ -110,9 +109,13 @@ export default function AddContent() {
       return;
     }
 
+    const hasPendingDraft =
+      selected?.contentStatus === "pending" &&
+      (getPlainText(selected?.draftTopicSummary) || getPlainText(selected?.draftLearningOutcome));
+
     setTopicId(nextTopicId);
-    setTopicSummary(normalizeRichContent(selected?.topicSummary || ""));
-    setLearningOutcome(normalizeRichContent(selected?.learningOutcome || ""));
+    setTopicSummary(normalizeRichContent(hasPendingDraft ? selected.draftTopicSummary : selected?.topicSummary || ""));
+    setLearningOutcome(normalizeRichContent(hasPendingDraft ? selected.draftLearningOutcome : selected?.learningOutcome || ""));
   }
 
   function getPlainText(html) {
@@ -139,19 +142,14 @@ export default function AddContent() {
     return looksEncodedHtml ? decodeEntityTags(raw) : raw;
   }
 
-  function hasContent(topic) {
-    return Boolean(getPlainText(topic?.topicSummary) || getPlainText(topic?.learningOutcome));
-  }
-
+  // Only an in-flight pending draft blocks another teacher — once content is
+  // live/approved or idle-rejected, any teacher may propose a new draft since
+  // it still needs admin approval before it takes effect.
   function getContentOwnerId(topic) {
-    const owner = topic?.contentUpdatedBy;
-    if (owner) {
-      return String(typeof owner === "string" ? owner : owner?._id || owner?.id || "");
-    }
-    if (hasContent(topic)) {
-      const creator = topic?.createdBy;
-      if (creator) {
-        return String(typeof creator === "string" ? creator : creator?._id || creator?.id || "");
+    if (topic?.contentStatus === "pending") {
+      const draftOwner = topic?.draftUpdatedBy;
+      if (draftOwner) {
+        return String(typeof draftOwner === "string" ? draftOwner : draftOwner?._id || draftOwner?.id || "");
       }
     }
     return "";
@@ -171,12 +169,43 @@ export default function AddContent() {
   );
   const canEditSelectedTopic = topicId ? canManageTopicContent(selectedTopic) : false;
 
-  const visibleTopicsWithContent = useMemo(() => {
-    const withContent = topics.filter((t) => hasContent(t));
-    if (isAdmin) return withContent;
-    if (isTeacher) return withContent.filter((t) => getContentOwnerId(t) === currentUserId);
-    return [];
-  }, [topics, isAdmin, isTeacher, currentUserId]);
+  // Teachers only see topics/content they're personally connected to (created
+  // the topic, or wrote its live/pending content); admins see everything.
+  const roleScopedTopics = useMemo(() => {
+    if (!isTeacher) return allTopics;
+    return allTopics.filter((t) => {
+      const creatorId = t.createdBy?._id || t.createdBy;
+      const contentOwnerId = t.contentUpdatedBy?._id || t.contentUpdatedBy;
+      const draftOwnerId = t.draftUpdatedBy?._id || t.draftUpdatedBy;
+      return [creatorId, contentOwnerId, draftOwnerId]
+        .filter(Boolean)
+        .some((id) => String(id) === currentUserId);
+    });
+  }, [allTopics, isTeacher, currentUserId]);
+
+  const filterSubjectOptions = useMemo(() => {
+    const seen = new Set();
+    const options = [];
+    for (const t of roleScopedTopics) {
+      if (filterBoard && t.board?._id !== filterBoard) continue;
+      if (filterClass && t.class?._id !== filterClass) continue;
+      if (seen.has(t.subjectId)) continue;
+      seen.add(t.subjectId);
+      options.push({ id: t.subjectId, name: t.subjectName });
+    }
+    return options;
+  }, [roleScopedTopics, filterBoard, filterClass]);
+
+  const filteredAllTopics = useMemo(() => {
+    return roleScopedTopics.filter((t) => {
+      if (filterBoard && t.board?._id !== filterBoard) return false;
+      if (filterClass && t.class?._id !== filterClass) return false;
+      if (filterSubject && t.subjectId !== filterSubject) return false;
+      return true;
+    });
+  }, [roleScopedTopics, filterBoard, filterClass, filterSubject]);
+
+  const hasActiveFilters = Boolean(filterBoard || filterClass || filterSubject);
 
   function previewText(html, max = 100) {
     const txt = getPlainText(html);
@@ -208,7 +237,15 @@ export default function AddContent() {
         `${API}/api/subject?board=${boardId}&class=${selectedClassId}`,
         { headers }
       );
-      setSubjects(Array.isArray(res.data) ? res.data : []);
+      const rows = Array.isArray(res.data) ? res.data : [];
+      setSubjects(rows);
+
+      if (pendingSubjectIdRef.current) {
+        const targetSubjectId = pendingSubjectIdRef.current;
+        pendingSubjectIdRef.current = "";
+        setSubject(targetSubjectId);
+        loadTopics(targetSubjectId, boardId, selectedClassId);
+      }
     } catch {
       toast.error("Failed to load subjects");
     }
@@ -217,13 +254,65 @@ export default function AddContent() {
   async function loadTopics(subjectId, boardId, selectedClassId) {
     try {
       const res = await axios.get(
-        `${API}/api/topic/${subjectId}?board=${boardId}&class=${selectedClassId}`,
+        `${API}/api/topic/${subjectId}?board=${boardId}&class=${selectedClassId}&manage=1`,
         { headers }
       );
-      setTopics(Array.isArray(res.data) ? res.data : []);
+      const rows = Array.isArray(res.data) ? res.data : [];
+      setTopics(rows);
+
+      if (pendingTopicIdRef.current) {
+        const targetTopicId = pendingTopicIdRef.current;
+        pendingTopicIdRef.current = "";
+        const found = rows.find((t) => t._id === targetTopicId);
+        if (found && canManageTopicContent(found)) {
+          const hasPendingDraft =
+            found.contentStatus === "pending" &&
+            (getPlainText(found.draftTopicSummary) || getPlainText(found.draftLearningOutcome));
+          setTopicId(found._id);
+          setTopicSummary(normalizeRichContent(hasPendingDraft ? found.draftTopicSummary : found.topicSummary || ""));
+          setLearningOutcome(normalizeRichContent(hasPendingDraft ? found.draftLearningOutcome : found.learningOutcome || ""));
+        } else if (found) {
+          toast.warn("Not permitted. This content belongs to another user.");
+        }
+      }
     } catch {
       toast.error("Failed to load topics");
     }
+  }
+
+  async function loadAllTopics() {
+    try {
+      setLoadingAllTopics(true);
+      const subRes = await axios.get(`${API}/api/subject`, { headers });
+      const subjectRows = Array.isArray(subRes.data) ? subRes.data : [];
+
+      const rows = [];
+      for (const s of subjectRows) {
+        const tRes = await axios.get(`${API}/api/topic/${s._id}?manage=1`, { headers });
+        const topicRows = Array.isArray(tRes.data) ? tRes.data : [];
+        for (const t of topicRows) {
+          rows.push({ ...t, subjectId: s._id, subjectName: s.name });
+        }
+      }
+      setAllTopics(rows);
+    } catch {
+      toast.error("Failed to load topics");
+    } finally {
+      setLoadingAllTopics(false);
+    }
+  }
+
+  function editFromTable(row) {
+    if (!canManageTopicContent(row)) {
+      toast.warn("Not permitted. This content belongs to another user.");
+      return;
+    }
+    pendingSubjectIdRef.current = row.subjectId;
+    pendingTopicIdRef.current = row._id;
+    setBoard(row.board?._id || "");
+    setClassId(row.class?._id || "");
+    loadSubjects(row.board?._id || "", row.class?._id || "");
+    editorTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function uploadImage(file) {
@@ -289,10 +378,11 @@ export default function AddContent() {
         },
         { headers }
       );
-      toast.success("Topic content saved");
+      toast.success(isTeacher ? "Content submitted for admin review" : "Topic content saved");
       setTopicSummary(normalizedSummary);
       setLearningOutcome(normalizedOutcome);
       await loadTopics(subject, board, classId);
+      await loadAllTopics();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save topic content");
     } finally {
@@ -324,8 +414,9 @@ export default function AddContent() {
         setLearningOutcome("");
       }
 
-      toast.success("Content deleted");
-      await loadTopics(subject, board, classId);
+      toast.success(isTeacher ? "Content removal submitted for admin review" : "Content deleted");
+      if (subject) await loadTopics(subject, board, classId);
+      await loadAllTopics();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete content");
     } finally {
@@ -346,7 +437,7 @@ export default function AddContent() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 space-y-5">
+      <div ref={editorTopRef} className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <select
             value={board}
@@ -405,10 +496,35 @@ export default function AddContent() {
             {topics.map((t) => (
               <option key={t._id} value={t._id}>
                 {t.name}
+                {t.status === "pending" ? " (Pending Review)" : t.status === "rejected" ? " (Rejected)" : ""}
               </option>
             ))}
           </select>
         </div>
+
+        {selectedTopic && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm font-medium ${
+              selectedTopic.contentStatus === "approved"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                : selectedTopic.contentStatus === "rejected"
+                  ? "bg-rose-50 border-rose-200 text-rose-700"
+                  : "bg-amber-50 border-amber-200 text-amber-700"
+            }`}
+          >
+            {selectedTopic.contentStatus === "approved" &&
+              "This content is approved and live for students."}
+            {selectedTopic.contentStatus === "pending" &&
+              "This content is pending admin review. Students still see the previously approved version until it's approved."}
+            {selectedTopic.contentStatus === "rejected" && (
+              <>
+                This content was rejected
+                {selectedTopic.contentRejectionReason ? `: ${selectedTopic.contentRejectionReason}` : "."} Edit
+                and save to resubmit for review.
+              </>
+            )}
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
@@ -493,22 +609,95 @@ export default function AddContent() {
         </div>
       </div>
 
+      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">Filter Topics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <select
+            value={filterBoard}
+            onChange={(e) => {
+              setFilterBoard(e.target.value);
+              setFilterSubject("");
+            }}
+            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 outline-none transition-all"
+          >
+            <option value="">All Boards</option>
+            {boards.map((b) => (
+              <option key={b._id} value={b._id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filterClass}
+            onChange={(e) => {
+              setFilterClass(e.target.value);
+              setFilterSubject("");
+            }}
+            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 outline-none transition-all"
+          >
+            <option value="">All Classes</option>
+            {classes.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filterSubject}
+            onChange={(e) => setFilterSubject(e.target.value)}
+            className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 outline-none transition-all"
+          >
+            <option value="">All Subjects</option>
+            {filterSubjectOptions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFilterBoard("");
+              setFilterClass("");
+              setFilterSubject("");
+            }}
+            disabled={!hasActiveFilters}
+            className={`px-6 py-3 rounded-xl transition-all font-semibold shadow-sm ${
+              hasActiveFilters ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800">Stored Topic Content</h2>
-          <span className="text-sm text-gray-500">
-            {visibleTopicsWithContent.length} with content
-          </span>
+          <h2 className="text-xl font-bold text-gray-800">
+            {isTeacher ? "My Topics & Content" : "All Topics & Content"} ({filteredAllTopics.length})
+          </h2>
+          <button
+            type="button"
+            onClick={loadAllTopics}
+            className="px-4 py-2 rounded-xl bg-white border border-orange-200 text-orange-700 text-sm font-semibold hover:bg-orange-50 transition-all"
+          >
+            Refresh
+          </button>
         </div>
 
-        {!subject ? (
+        {loadingAllTopics ? (
+          <p className="text-sm text-gray-500">Loading topics...</p>
+        ) : filteredAllTopics.length === 0 ? (
           <p className="text-sm text-gray-500">
-            Select board, class, and subject to view stored content.
+            {hasActiveFilters
+              ? "No topics match your filters."
+              : isTeacher
+                ? "You haven't created or added content to any topics yet."
+                : "No topics found."}
           </p>
-        ) : topics.length === 0 ? (
-          <p className="text-sm text-gray-500">No topics found for this selection.</p>
-        ) : visibleTopicsWithContent.length === 0 ? (
-          <p className="text-sm text-gray-500">No saved content yet for these topics.</p>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-xl">
             <table className="w-full text-xs">
@@ -518,38 +707,58 @@ export default function AddContent() {
                   <th className="text-left px-3 py-2 font-semibold text-gray-700">Class</th>
                   <th className="text-left px-3 py-2 font-semibold text-gray-700">Subject</th>
                   <th className="text-left px-3 py-2 font-semibold text-gray-700">Topic</th>
+                  <th className="text-left px-3 py-2 font-semibold text-gray-700">Topic Status</th>
                   <th className="text-left px-3 py-2 font-semibold text-gray-700">Summary</th>
                   <th className="text-left px-3 py-2 font-semibold text-gray-700">Outcome</th>
+                  <th className="text-left px-3 py-2 font-semibold text-gray-700">Content Status</th>
                   <th className="text-center px-3 py-2 font-semibold text-gray-700 w-40">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleTopicsWithContent
-                  .map((t) => (
-                    <tr key={t._id} className="border-t border-gray-200 align-top">
-                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                        {t.board?.name || selectedBoardName}
-                      </td>
-                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                        {t.class?.name || selectedClassName}
-                      </td>
-                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                        {selectedSubjectName}
-                      </td>
-                      <td className="px-3 py-2 font-medium text-gray-800 whitespace-nowrap">
-                        {t.name}
-                      </td>
-                      <td className="px-3 py-2 text-gray-600">
-                        {previewText(t.topicSummary, 120)}
-                      </td>
-                      <td className="px-3 py-2 text-gray-600">
-                        {previewText(t.learningOutcome, 120)}
-                      </td>
-                      <td className="px-3 py-2">
+                {filteredAllTopics.map((t) => (
+                  <tr key={t._id} className="border-t border-gray-200 align-top">
+                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{t.board?.name || "N/A"}</td>
+                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{t.class?.name || "N/A"}</td>
+                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{t.subjectName || "N/A"}</td>
+                    <td className="px-3 py-2 font-medium text-gray-800 whitespace-nowrap">{t.name}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
+                          t.status === "approved"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : t.status === "rejected"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {t.status === "approved" ? "Approved" : t.status === "rejected" ? "Rejected" : "Pending"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-gray-600">{previewText(t.topicSummary, 120)}</td>
+                    <td className="px-3 py-2 text-gray-600">{previewText(t.learningOutcome, 120)}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
+                          t.contentStatus === "approved"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : t.contentStatus === "rejected"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {t.contentStatus === "approved"
+                          ? "Approved"
+                          : t.contentStatus === "rejected"
+                            ? "Rejected"
+                            : "Pending Review"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      {canManageTopicContent(t) ? (
                         <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
-                            onClick={() => handleTopicChange(t._id)}
+                            onClick={() => editFromTable(t)}
                             className="px-2.5 py-1 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
                           >
                             Edit
@@ -567,9 +776,14 @@ export default function AddContent() {
                             {deletingId === t._id ? "..." : "Delete"}
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
+                      ) : (
+                        <span className="text-xs font-semibold text-red-500 px-2 py-1 bg-red-50 rounded-lg block text-center">
+                          Not Permitted
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

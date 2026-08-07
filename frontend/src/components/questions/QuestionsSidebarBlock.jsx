@@ -7,6 +7,7 @@ import {
   ListChecks,
   Sparkles,
   BookText,
+  ClipboardCheck,
 } from "lucide-react";
 
 /* MATCH DASHBOARD SIDEBAR STYLE */
@@ -96,6 +97,20 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             Topics
           </NavLink>
 
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/topic-review"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <ClipboardCheck size={18} />
+              <span>Topic Review</span>
+            </NavLink>
+          )}
+
           {(role === "admin" || role === "teacher") && (
             <NavLink
               to="/dashboard/add-content"
@@ -136,6 +151,20 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             <span className="w-2 h-2 rounded-full bg-orange-400" />
             All Questions
           </NavLink>
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/questions/review"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <ClipboardCheck size={18} />
+              <span>Question Review</span>
+            </NavLink>
+          )}
 
           {/* AI QUESTION GENERATOR */}
           {role === "admin" && (

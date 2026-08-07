@@ -361,9 +361,12 @@ import {
   Briefcase,
   Gift,
   ShoppingBag,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 import { getPoints } from "../lib/points"; // optional helper from your new design
 import { ToastContainer, toast } from "react-toastify";
+import { persistAuthSession } from "../lib/authSession";
 
 /* ------------------------- local helpers / API ------------------------- */
 function getToken() {
@@ -502,6 +505,50 @@ export default function ProfilePage() {
   const [redemptionHistory, setRedemptionHistory] = useState([]);
   const [giftCardAvailability, setGiftCardAvailability] = useState({});
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [familyAccounts, setFamilyAccounts] = useState([]);
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
+  const [switchingId, setSwitchingId] = useState("");
+
+  /* load sibling accounts for "Switch Account" (only present when this
+     account was created as part of a multi-child registration) */
+  useEffect(() => {
+    let mounted = true;
+    async function loadFamilyAccounts() {
+      try {
+        const res = await fetch(`${API}/api/auth/family-accounts`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!mounted || !res.ok) return;
+        setFamilyAccounts(Array.isArray(data?.items) ? data.items : []);
+      } catch {
+        // silently ignore — switch-account UI just won't show
+      }
+    }
+    loadFamilyAccounts();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function switchToAccount(userId) {
+    if (switchingId) return;
+    setSwitchingId(userId);
+    try {
+      const res = await fetch(`${API}/api/auth/switch-account/${userId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || "Failed to switch account");
+
+      persistAuthSession(data, "switch-account");
+      window.location.assign("/dashboard");
+    } catch (err) {
+      toast.error(err?.message || "Failed to switch account");
+      setSwitchingId("");
+    }
+  }
 
   /* load points (optional) */
   useEffect(() => {
@@ -1084,11 +1131,54 @@ export default function ProfilePage() {
                     : <Camera className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              <div className="pt-14 min-w-0">
-                <h2 className="text-xl font-bold text-slate-900 leading-tight truncate">{form.name || "Your Name"}</h2>
-                <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-md capitalize mt-0.5">
-                  {user?.role}
-                </span>
+              <div className="pt-14 min-w-0 flex-1 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold text-slate-900 leading-tight truncate">{form.name || "Your Name"}</h2>
+                  <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-md capitalize mt-0.5">
+                    {user?.role}
+                  </span>
+                </div>
+
+                {familyAccounts.length > 1 && (
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowAccountSwitcher((s) => !s)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      Switch
+                      <ChevronDown className={`w-3 h-3 transition-transform ${showAccountSwitcher ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {showAccountSwitcher && (
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+                        {familyAccounts.map((acc) => (
+                          <button
+                            key={acc._id}
+                            type="button"
+                            onClick={() => !acc.isCurrent && switchToAccount(acc._id)}
+                            disabled={acc.isCurrent || Boolean(switchingId)}
+                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center justify-between gap-2 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          >
+                            <span className="min-w-0">
+                              <span className="block font-medium text-slate-800 truncate">
+                                {acc.name}
+                                {acc.isCurrent ? " (Current)" : ""}
+                              </span>
+                              <span className="block text-xs text-slate-500 truncate">
+                                {[acc.className, acc.board].filter(Boolean).join(" • ")}
+                              </span>
+                            </span>
+                            {switchingId === acc._id && (
+                              <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

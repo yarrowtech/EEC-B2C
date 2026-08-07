@@ -1,11 +1,15 @@
 import express from "express";
+import jwt from "jsonwebtoken";
 import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
 import Question from "../models/Question.js";
-import { requireAuth } from "../middleware/auth.js"; // ✅ FIXED IMPORT
+import { requireAuth, requireRole } from "../middleware/auth.js"; // ✅ FIXED IMPORT
+import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
+import { sendPushNotification } from "./pushNotificationRoutes.js";
 
 const router = express.Router();
 const ALLOWED_WRITE_ROLES = new Set(["admin", "teacher"]);
+const TOPIC_REVIEW_STATUSES = new Set(["approved", "rejected"]);
 
 async function resolveRefFilterValues(rawValue, modelPath) {
   if (!rawValue) return [];
@@ -182,6 +186,7 @@ router.post("/topic", requireAuth, async (req, res) => {
       topicSummary,
       learningOutcome,
       createdBy: req.user.id,
+      status: role === "admin" ? "approved" : "pending",
     });
     res.json(topic);
   } catch (err) {
@@ -207,7 +212,7 @@ router.post("/topic", requireAuth, async (req, res) => {
 
 router.get("/topic/:subjectId", async (req, res) => {
   try {
-    const { board, class: className, stage } = req.query;
+    const { board, class: className, stage, manage } = req.query;
 
     // Build filter
     const filter = { subject: req.params.subjectId };
@@ -224,11 +229,30 @@ router.get("/topic/:subjectId", async (req, res) => {
       filter.class = { $in: classValues };
     }
 
+    let includeAllStatuses = false;
+    if (manage === "1") {
+      const authHeader = req.headers.authorization || "";
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const role = String(decoded.role || "").toLowerCase();
+          if (role === "admin" || role === "teacher") includeAllStatuses = true;
+        } catch {
+          // ignore invalid/expired token, fall back to approved-only
+        }
+      }
+    }
+    if (!includeAllStatuses) {
+      filter.status = "approved";
+    }
+
     let topics = await Topic.find(filter)
       .populate("board", "name")
       .populate("class", "name")
       .populate("createdBy", "name")
       .populate("contentUpdatedBy", "name role")
+      .populate("draftUpdatedBy", "name role")
       .sort({ createdAt: -1 });
 
     const stageNumber = normalizeStageQuery(stage);
@@ -241,6 +265,19 @@ router.get("/topic/:subjectId", async (req, res) => {
       });
       const allowed = new Set(activeTopicIds.map((id) => String(id)));
       topics = topics.filter((t) => allowed.has(String(t._id)));
+    }
+
+    if (!includeAllStatuses) {
+      res.json(
+        topics.map((t) => {
+          const obj = t.toObject();
+          delete obj.draftTopicSummary;
+          delete obj.draftLearningOutcome;
+          delete obj.draftUpdatedBy;
+          return obj;
+        })
+      );
+      return;
     }
 
     res.json(topics);
@@ -325,12 +362,6 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
       return res.status(404).json({ message: "Topic not found" });
     }
 
-    if (role === "teacher" && String(existingTopic.createdBy) !== String(req.user.id)) {
-      return res
-        .status(403)
-        .json({ message: "Not permitted. This topic belongs to another user." });
-    }
-
     const {
       name,
       subject,
@@ -345,21 +376,29 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
 
     const isContentUpdate =
       typeof topicSummary === "string" || typeof learningOutcome === "string";
+    const isTopicFieldUpdate = Boolean(
+      name || subject || board || className || typeof topicImage === "string" || typeof shortDescription === "string"
+    );
+
+    // Topic-level fields (name/board/class/subject/image/description) stay
+    // restricted to the topic's own creator — any teacher may still propose
+    // a content-only update below, since that now goes through admin review
+    // rather than applying immediately.
+    if (isTeacher && isTopicFieldUpdate && String(existingTopic.createdBy) !== String(req.user.id)) {
+      return res
+        .status(403)
+        .json({ message: "Not permitted. This topic belongs to another user." });
+    }
 
     if (isTeacher && isContentUpdate) {
-      const hasExistingContent = Boolean(
-        String(existingTopic.topicSummary || "").trim() ||
-        String(existingTopic.learningOutcome || "").trim()
-      );
-      const ownerId = existingTopic.contentUpdatedBy
-        ? String(existingTopic.contentUpdatedBy)
-        : hasExistingContent && existingTopic.createdBy
-          ? String(existingTopic.createdBy)
-          : "";
+      const hasPendingDraft = existingTopic.contentStatus === "pending";
+      const ownerId = hasPendingDraft && existingTopic.draftUpdatedBy
+        ? String(existingTopic.draftUpdatedBy)
+        : "";
       if (ownerId && ownerId !== String(req.user.id)) {
         return res
           .status(403)
-          .json({ message: "Not permitted. This content belongs to another user." });
+          .json({ message: "Not permitted. Another teacher already has a pending content submission for this topic." });
       }
     }
 
@@ -370,9 +409,35 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
     if (className) updateData.class = className;
     if (typeof topicImage === "string") updateData.topicImage = topicImage;
     if (typeof shortDescription === "string") updateData.shortDescription = shortDescription;
-    if (typeof topicSummary === "string") updateData.topicSummary = topicSummary;
-    if (typeof learningOutcome === "string") updateData.learningOutcome = learningOutcome;
-    if (isContentUpdate) updateData.contentUpdatedBy = req.user.id;
+
+    if (isContentUpdate) {
+      if (isTeacher) {
+        // Teacher submissions land in draft form and wait for admin review;
+        // live content stays untouched so students keep seeing the last-approved version.
+        if (typeof topicSummary === "string") updateData.draftTopicSummary = topicSummary;
+        if (typeof learningOutcome === "string") updateData.draftLearningOutcome = learningOutcome;
+        updateData.draftUpdatedBy = req.user.id;
+        updateData.contentStatus = "pending";
+        updateData.contentRejectionReason = "";
+      } else {
+        // Admin writes go live immediately and are considered auto-reviewed.
+        if (typeof topicSummary === "string") updateData.topicSummary = topicSummary;
+        if (typeof learningOutcome === "string") updateData.learningOutcome = learningOutcome;
+        updateData.contentUpdatedBy = req.user.id;
+        updateData.contentStatus = "approved";
+        updateData.contentReviewedBy = req.user.id;
+        updateData.contentReviewedAt = new Date();
+        updateData.contentRejectionReason = "";
+        updateData.draftTopicSummary = "";
+        updateData.draftLearningOutcome = "";
+        updateData.draftUpdatedBy = null;
+      }
+    }
+
+    if (isTeacher && existingTopic.status === "rejected") {
+      updateData.status = "pending";
+      updateData.rejectionReason = "";
+    }
 
     const updated = await Topic.findByIdAndUpdate(
       req.params.id,
@@ -381,7 +446,8 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
     )
       .populate("board", "name")
       .populate("class", "name")
-      .populate("contentUpdatedBy", "name role");
+      .populate("contentUpdatedBy", "name role")
+      .populate("draftUpdatedBy", "name role");
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -409,6 +475,150 @@ router.delete("/topic/:id", requireAuth, async (req, res) => {
 
     await Topic.findByIdAndDelete(req.params.id);
     res.json({ message: "Topic deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* ---------- TOPIC REVIEW ROUTES (admin only) ---------- */
+
+// List topics for review (topic submissions or content submissions)
+router.get("/topic-review", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const { type = "topic", status = "pending", q, limit = 50, page = 1 } = req.query;
+    const isContentReview = type === "content";
+
+    const filter = {};
+    if (status && status !== "all") {
+      filter[isContentReview ? "contentStatus" : "status"] = status;
+    }
+    if (q) {
+      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (escaped) filter.name = { $regex: escaped, $options: "i" };
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const safePage = Math.max(Number(page) || 1, 1);
+
+    const [items, total] = await Promise.all([
+      Topic.find(filter)
+        .populate("board", "name")
+        .populate("class", "name")
+        .populate("subject", "name")
+        .populate("createdBy", "name email role")
+        .populate("reviewedBy", "name")
+        .populate("draftUpdatedBy", "name email role")
+        .populate("contentReviewedBy", "name")
+        .sort({ createdAt: -1 })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit),
+      Topic.countDocuments(filter),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Approve or reject a topic submission or a content submission
+router.patch("/topic/:id/review", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const { type = "topic", status, reason } = req.body || {};
+    const normalizedStatus = String(status || "").trim().toLowerCase();
+    const isContentReview = type === "content";
+
+    if (!TOPIC_REVIEW_STATUSES.has(normalizedStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    let updateData;
+    let existingTopic;
+    if (isContentReview) {
+      existingTopic = await Topic.findById(req.params.id);
+      if (!existingTopic) {
+        return res.status(404).json({ message: "Topic not found" });
+      }
+
+      if (normalizedStatus === "approved") {
+        updateData = {
+          topicSummary: existingTopic.draftTopicSummary,
+          learningOutcome: existingTopic.draftLearningOutcome,
+          contentUpdatedBy: existingTopic.draftUpdatedBy,
+          draftTopicSummary: "",
+          draftLearningOutcome: "",
+          contentStatus: "approved",
+          contentReviewedBy: req.user.id,
+          contentReviewedAt: new Date(),
+          contentRejectionReason: "",
+        };
+      } else {
+        updateData = {
+          contentStatus: "rejected",
+          contentReviewedBy: req.user.id,
+          contentReviewedAt: new Date(),
+          contentRejectionReason: String(reason || "").trim(),
+        };
+      }
+    } else {
+      updateData = {
+        status: normalizedStatus,
+        reviewedBy: req.user.id,
+        reviewedAt: new Date(),
+        rejectionReason: normalizedStatus === "rejected" ? String(reason || "").trim() : "",
+      };
+    }
+
+    const updated = await Topic.findByIdAndUpdate(req.params.id, updateData, { new: true })
+      .populate("subject", "name")
+      .populate("createdBy", "name email")
+      .populate("draftUpdatedBy", "name email");
+
+    if (!updated) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
+    const recipient = isContentReview ? updated.draftUpdatedBy : updated.createdBy;
+
+    if (recipient?.email) {
+      const kind = isContentReview ? "content" : "topic";
+      const title =
+        normalizedStatus === "approved"
+          ? isContentReview ? "Content Approved" : "Topic Approved"
+          : isContentReview ? "Content Needs Changes" : "Topic Needs Changes";
+      const message =
+        normalizedStatus === "approved"
+          ? isContentReview
+            ? `Your content update for "${updated.name}" was approved and is now live.`
+            : `Your topic "${updated.name}" was approved and is now live.`
+          : isContentReview
+            ? `Your content update for "${updated.name}" was not approved. Please review and resubmit.`
+            : `Your topic "${updated.name}" was not approved. Please review and resubmit.`;
+
+      sendTopicReviewStatusEmail({
+        to: recipient.email,
+        name: recipient.name,
+        topicName: updated.name,
+        subjectName: updated.subject?.name || "",
+        status: normalizedStatus,
+        reason: isContentReview ? updated.contentRejectionReason : updated.rejectionReason,
+        kind,
+      }).catch((mailErr) => {
+        console.error("Topic review email failed:", mailErr?.message || mailErr);
+      });
+
+      sendPushNotification(recipient._id, title, message).catch((pushErr) => {
+        console.error("Topic review push notification failed:", pushErr?.message || pushErr);
+      });
+    }
+
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

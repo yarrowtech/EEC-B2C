@@ -23,7 +23,7 @@ export default function TopicsList() {
     const final = [];
     for (const s of subjects) {
       const tRes = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/topic/${s._id}`,
+        `${import.meta.env.VITE_API_URL}/api/topic/${s._id}?manage=1`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
         }

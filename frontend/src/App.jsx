@@ -7,6 +7,7 @@ import Topbar from "./components/Topbar";
 import Navbar from "./components/Navbar";
 import EECFooter from "./components/EECFooter";
 import Home from "./pages/Home";
+import RegistrationPage from "./pages/RegistrationPage";
 import AboutUs from "./pages/AboutUs";
 import Analytics from "./pages/Analytics";
 import AI from "./pages/AI";
@@ -56,6 +57,9 @@ import ResultDetail from "./pages/admin/ResultDetail";
 import AdvancedStudentAnalytics from "./pages/admin/AdvancedStudentAnalytics";
 import TeacherAnalytics from "./pages/admin/TeacherAnalytics";
 import JobApplicationsPage from "./pages/admin/JobApplicationsPage";
+import RegistrationsPage from "./pages/admin/RegistrationsPage";
+import TopicReview from "./pages/admin/TopicReview";
+import QuestionReview from "./pages/admin/QuestionReview";
 import HeroSettings from "./components/settings/HeroSettings";
 import WhyEecSettings from "./components/settings/WhyEecSettings";
 import FeaturesSettings from "./components/settings/FeaturesSettings";
@@ -333,8 +337,8 @@ function RouteHelmet({ siteSettings }) {
       : location.pathname;
   const socialImage =
     typeof window !== "undefined"
-      ? `${window.location.origin}${String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png"}`
-      : String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png";
+      ? `${window.location.origin}${String(siteSettings?.logoUrl || "/icon.png").trim() || "/icon.png"}`
+      : String(siteSettings?.logoUrl || "/icon.png").trim() || "/icon.png";
   const siteBase =
     typeof window !== "undefined"
       ? window.location.origin
@@ -405,7 +409,7 @@ function RouteHelmet({ siteSettings }) {
     upsertMeta("property", "og:site_name", siteName);
     upsertMeta("property", "og:url", canonical);
 
-    const faviconHref = String(siteSettings?.faviconUrl || "/favicon.ico").trim() || "/favicon.ico";
+    const faviconHref = String(siteSettings?.faviconUrl || "/icon.ico").trim() || "/icon.ico";
     const upsertLink = (selector, rel) => {
       let node = document.head.querySelector(selector);
       if (!node) {
@@ -798,6 +802,7 @@ export default function App() {
       <Routes>
         <Route element={<ShellLayout />}>
           <Route index element={<Home />} />
+          <Route path="/registration" element={<RegistrationPage />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/ai" element={<AI />} />
@@ -865,6 +870,7 @@ export default function App() {
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />
             <Route path="questions/list" element={<RequireAdmin><QuestionsList /></RequireAdmin>} />
+            <Route path="questions/review" element={<RequireAdmin><QuestionReview /></RequireAdmin>} />
             <Route path="questions/edit/:id" element={<RequireAdmin><QuestionsEdit /></RequireAdmin>} />
             <Route path="questions/ai-generator" element={<RequireAdmin><AIQuestionGenerator /></RequireAdmin>} />
 
@@ -914,6 +920,8 @@ export default function App() {
             <Route path="student-analytics" element={<RequireAdmin><AdvancedStudentAnalytics /></RequireAdmin>} />
             <Route path="teacher-analytics" element={<RequireAdmin><TeacherAnalytics /></RequireAdmin>} />
             <Route path="job-applications" element={<RequireAdmin><JobApplicationsPage /></RequireAdmin>} />
+            <Route path="registrations" element={<RequireAdmin><RegistrationsPage /></RequireAdmin>} />
+            <Route path="topic-review" element={<RequireAdmin><TopicReview /></RequireAdmin>} />
 
             {/* Setttings */}
             <Route path="settings/home" element={<RequireAdmin><HeroSettings /></RequireAdmin>} />

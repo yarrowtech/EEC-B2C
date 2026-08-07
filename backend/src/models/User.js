@@ -3,11 +3,15 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    // Not unique: sibling accounts created via family registration intentionally
+    // share the parent's email — differentiated by familyId + Switch Account instead.
+    email: { type: String, required: true },
     phone: { type: String, default: "" },
     password: { type: String, required: true },
     role: { type: String, default: "student" },
     isGoogleAccount: { type: Boolean, default: false },
+    // Shared across siblings registered together, to enable password-less "Switch Account".
+    familyId: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
 
     // Old DB field
     class: { type: String, default: "" },

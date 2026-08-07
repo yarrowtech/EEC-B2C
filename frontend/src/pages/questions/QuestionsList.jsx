@@ -422,6 +422,9 @@ export default function QuestionsList() {
                     Uploaded By
                   </th>
                   <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
+                    Status
+                  </th>
+                  <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
                     Question Preview
                   </th>
                   <th className="text-center px-4 py-3 font-bold text-slate-700 uppercase tracking-wide text-xs">
@@ -495,6 +498,26 @@ export default function QuestionsList() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          r.status === "approved"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : r.status === "rejected"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {r.status === "approved"
+                          ? "Approved"
+                          : r.status === "rejected"
+                            ? "Rejected"
+                            : "Pending Review"}
+                      </span>
+                      {r.status === "rejected" && r.rejectionReason ? (
+                        <div className="text-xs text-rose-500 mt-1 max-w-40">{r.rejectionReason}</div>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="line-clamp-2 max-w-[300px] text-slate-700">
                         {r.question ||
                           r.prompt ||
@@ -535,7 +558,7 @@ export default function QuestionsList() {
                 {!rows.length && !busy && (
                   <tr>
                     <td
-                      colSpan={canDelete ? 12 : 11}
+                      colSpan={canDelete ? 13 : 12}
                       className="p-8 text-center text-slate-500"
                     >
                       <div className="text-6xl mb-3">📝</div>
@@ -547,7 +570,7 @@ export default function QuestionsList() {
 
                 {busy && (
                   <tr>
-                    <td colSpan={canDelete ? 12 : 11} className="p-8 text-center text-slate-500">
+                    <td colSpan={canDelete ? 13 : 12} className="p-8 text-center text-slate-500">
                       Loading questions...
                     </td>
                   </tr>

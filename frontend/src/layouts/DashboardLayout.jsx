@@ -231,6 +231,7 @@ import {
     User,
     BriefcaseBusiness,
     Shield,
+    UserPlus,
 } from "lucide-react";
 
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
@@ -553,6 +554,7 @@ export default function DashboardLayout() {
                 { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/teacher-analytics", label: "Teacher Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/job-applications", label: "Job Applications", icon: <BriefcaseBusiness size={18} /> },
+                { to: "/dashboard/registrations", label: "Registrations", icon: <UserPlus size={18} /> },
                 { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> },
                 { to: "/dashboard/flashcards/manage", label: "Flashcards", icon: <BookOpen size={18} /> },
                 { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },

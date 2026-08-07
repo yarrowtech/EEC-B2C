@@ -400,6 +400,7 @@ export const startExam = async (req, res) => {
     const match = {
       subject: await buildMatchValue(subject),
       topic: await buildMatchValue(topic),
+      status: "approved",
     };
 
     if (qType === "all") {
