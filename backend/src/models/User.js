@@ -20,6 +20,7 @@ const UserSchema = new mongoose.Schema(
     address: { type: String, default: "" },
     state: { type: String, default: "" },
     department: { type: String, default: "" },
+    designation: { type: String, default: "" },
     bio: { type: String, default: "" },
     avatar: { type: String, default: "" },
 

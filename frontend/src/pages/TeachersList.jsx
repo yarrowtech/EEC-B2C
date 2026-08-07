@@ -53,6 +53,7 @@ export default function TeachersList() {
     email: "",
     phone: "",
     password: "",
+    designation: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -98,9 +99,13 @@ export default function TeachersList() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      Swal.fire("Success", "Teacher created successfully", "success");
+      Swal.fire(
+        "Success",
+        "Teacher created successfully. Login credentials have been emailed to them.",
+        "success"
+      );
       setOpen(false);
-      setForm({ name: "", email: "", phone: "", password: "" });
+      setForm({ name: "", email: "", phone: "", password: "", designation: "" });
       load();
     } catch (err) {
       Swal.fire("Error", err.message || "Failed", "error");
@@ -242,6 +247,7 @@ export default function TeachersList() {
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Designation</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
@@ -253,6 +259,7 @@ export default function TeachersList() {
                     <td className="px-4 py-3">{t.name}</td>
                     <td className="px-4 py-3">{t.email}</td>
                     <td className="px-4 py-3">{t.phone}</td>
+                    <td className="px-4 py-3">{t.designation || "-"}</td>
                     <td className="px-4 py-3 flex gap-3">
                       <button
                         onClick={() => {
@@ -262,6 +269,7 @@ export default function TeachersList() {
                             email: t.email,
                             phone: t.phone,
                             password: "",
+                            designation: t.designation || "",
                           });
                           setEditOpen(true);
                         }}
@@ -381,6 +389,18 @@ export default function TeachersList() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
 
+              <input
+                className="w-full rounded-xl px-4 py-2.5 bg-white border border-slate-200
+          shadow-sm focus:ring-2 focus:ring-purple-500 focus:outline-none transition"
+                placeholder="Designation (e.g. Senior Teacher, Head of Mathematics)"
+                value={form.designation}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+              />
+
+              <p className="text-xs text-slate-500 -mt-2">
+                Login credentials and designation will be emailed to the teacher automatically.
+              </p>
+
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4">
                 <button
@@ -456,6 +476,14 @@ export default function TeachersList() {
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="Phone"
+              />
+
+              <input
+                className="w-full rounded-xl px-4 py-2.5 bg-white border border-slate-200
+          shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+                value={form.designation}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+                placeholder="Designation"
               />
 
               {/* Actions */}

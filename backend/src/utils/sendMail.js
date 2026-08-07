@@ -273,6 +273,88 @@ export async function sendWelcomeEmail({ to, name }) {
   await sendMail({ to, subject: `Welcome to ${siteName} — Let's get started!`, html });
 }
 
+export async function sendTeacherWelcomeEmail({ to, name, email, password, designation }) {
+  const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
+    await getWebsiteBranding();
+
+  const html = wrapEmail(`
+    ${buildEmailHeader({ siteName, siteTagline, logoUrl })}
+
+    <!-- BODY -->
+    <tr>
+      <td style="padding:36px 40px 28px;">
+
+        <!-- Welcome badge -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td align="center">
+              <div style="display:inline-block;background:#fff7ed;border:2px solid ${BRAND.yellow};border-radius:50px;padding:8px 20px;">
+                <span style="font-size:13px;font-weight:700;color:${BRAND.navy};">🎉 Welcome to the Team!</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:${BRAND.navy};text-align:center;">
+          Welcome to ${siteName}, ${name}!
+        </h2>
+
+        <p style="margin:0 0 20px;font-size:15px;color:${BRAND.textMuted};line-height:1.7;text-align:center;">
+          An administrator has created a teacher account for you${designation ? ` as <strong style="color:${BRAND.navy};">${designation}</strong>` : ""}.
+          Here are your login credentials.
+        </p>
+
+        <!-- Credentials card -->
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="background:#f8fafc;border-radius:14px;border:1px solid ${BRAND.borderLight};margin:24px 0;">
+          <tr>
+            <td style="padding:22px 26px;">
+              <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:${BRAND.navy};text-transform:uppercase;letter-spacing:0.6px;">
+                Your Account Details
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${buildInfoRow("Name", name)}
+                ${buildInfoRow("Email", email, true)}
+                ${buildInfoRow("Temporary Password", password, true)}
+                ${designation ? buildInfoRow("Designation", designation) : ""}
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- CTA -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 20px;">
+          <tr>
+            <td align="center">
+              ${buildCtaButton({ href: CLIENT_ORIGIN || "#", label: "Log In to Your Account &rarr;" })}
+            </td>
+          </tr>
+        </table>
+
+        <!-- Warning box -->
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="background:#fff7ed;border-left:4px solid ${BRAND.yellow};border-radius:8px;margin:20px 0;">
+          <tr>
+            <td style="padding:14px 18px;font-size:13px;color:#92400e;line-height:1.6;">
+              <strong>For your security, please change your password immediately after logging in.</strong><br/>
+              This temporary password was sent over email — do not share it with anyone.
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:24px 0 0;font-size:14px;color:${BRAND.textMuted};line-height:1.6;">
+          Warm regards,<br/>
+          <strong style="color:${BRAND.navy};">${siteName} Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    ${buildEmailFooter({ siteName, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone })}
+  `);
+
+  await sendMail({ to, subject: `Welcome to ${siteName} — Your Teacher Account Details`, html });
+}
+
 export async function sendNewsletterWelcomeEmail({ to, unsubscribeLink }) {
   const { siteName, siteTagline, logoUrl, websiteUrl, socialLinks, supportEmail, supportPhone } =
     await getWebsiteBranding();

@@ -328,7 +328,7 @@ export default function Navbar() {
                 onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
                 className="wiggle inline-flex items-center bg-[#FFD23F] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-full transition-all hover:scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] text-sm"
               >
-                Join Now 🎁
+                Login
               </button>
             )}
           </div>
@@ -341,7 +341,7 @@ export default function Navbar() {
                 onClick={() => { window.dispatchEvent(new Event("eec:open-login")); closeMobile(); }}
                 className="inline-flex items-center bg-[#FFD23F] text-slate-900 font-bold py-2 px-3 md:px-4 rounded-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,0.1)] text-[11px] md:text-xs hover:bg-yellow-400 transition-all hover:scale-105"
               >
-                Claim Free Gift! 🎁
+                Login
               </button>
             )}
             <button

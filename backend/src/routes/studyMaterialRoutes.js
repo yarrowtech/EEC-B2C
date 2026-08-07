@@ -88,11 +88,6 @@ router.post(
       return res.status(403).json({ message: "Access denied. Only admins and teachers can upload materials." });
     }
 
-    // Check if teacher is verified
-    if (user.role === "teacher" && !user.isTeacherVerified) {
-      return res.status(403).json({ message: "Teacher verification required. Please complete verification to upload materials." });
-    }
-
     next();
   },
   uploadPdf.single("pdf"),
@@ -291,11 +286,6 @@ router.put(
     const user = req.user;
     if (user.role !== "admin" && user.role !== "teacher") {
       return res.status(403).json({ message: "Access denied." });
-    }
-
-    // Check if teacher is verified
-    if (user.role === "teacher" && !user.isTeacherVerified) {
-      return res.status(403).json({ message: "Teacher verification required." });
     }
 
     next();

@@ -33,6 +33,7 @@ import {
   stageRevisionLabel,
   stageEstimateMinutes,
 } from "../lib/studentLearning";
+import { isTokenValid } from "../lib/jwt";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -43,15 +44,6 @@ function getUser() {
     return JSON.parse(localStorage.getItem("user") || "null");
   } catch {
     return null;
-  }
-}
-function isTokenValid(token) {
-  if (!token) return false;
-  try {
-    const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-    return typeof exp === "number" && Date.now() < exp * 1000;
-  } catch {
-    return false;
   }
 }
 

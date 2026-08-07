@@ -28,6 +28,7 @@ import { ToastContainer } from "react-toastify";
 import { Toaster } from "react-hot-toast";
 import { toast as hotToast } from "react-hot-toast";
 import { consumeManualLogoutFlag } from "./lib/confirmLogout";
+import { isTokenValid, decodeJwtPayload } from "./lib/jwt";
 import "react-toastify/dist/ReactToastify.css";
 import Dashboard from "./pages/Dashboard";
 import StudentsList from "./pages/StudentsList";
@@ -120,16 +121,6 @@ function getUser() {
     return null;
   }
 }
-function isTokenValid(token) {
-  if (!token) return false;
-  try {
-    const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-    return typeof exp === "number" && Date.now() < exp * 1000;
-  } catch {
-    return false;
-  }
-}
-
 /* ---------- guard: must have valid token + admin role ---------- */
 function AdminGuard({ children }) {
   const token = getToken();
@@ -568,23 +559,6 @@ export default function App() {
     const token = localStorage.getItem("jwt");
     if (!token) return;
 
-    try {
-      const { exp } = JSON.parse(atob(token.split(".")[1]));
-      const expiry = exp * 1000;
-      const now = Date.now();
-      if (now >= expiry) {
-        // token already expired → logout immediately
-        logoutUser();
-      } else {
-        // auto logout when it expires
-        const timeout = setTimeout(logoutUser, expiry - now);
-        return () => clearTimeout(timeout);
-      }
-    } catch (e) {
-      console.error("Invalid token", e);
-      logoutUser();
-    }
-
     function logoutUser() {
       localStorage.removeItem("jwt");
       localStorage.removeItem("user");
@@ -593,6 +567,22 @@ export default function App() {
           detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
         })
       );
+    }
+
+    const payload = decodeJwtPayload(token);
+    if (typeof payload?.exp !== "number") {
+      // Undecodable token: don't nuke the session on a decode hiccup, just
+      // skip scheduling an expiry timer for it.
+      return;
+    }
+
+    const expiry = payload.exp * 1000;
+    const now = Date.now();
+    if (now >= expiry) {
+      logoutUser();
+    } else {
+      const timeout = setTimeout(logoutUser, expiry - now);
+      return () => clearTimeout(timeout);
     }
   }, []);
 

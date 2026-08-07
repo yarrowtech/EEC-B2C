@@ -965,13 +965,9 @@ export const list = async (req, res) => {
       }
     }
 
-    // Teachers should not see admin-uploaded questions in list view.
+    // Teachers only see the questions they personally added; admins see everything.
     if (req.user?.role === "teacher") {
-      const adminUsers = await User.find({ role: { $regex: /^admin$/i } }).select("_id");
-      const adminIds = adminUsers.map((u) => u._id);
-      if (adminIds.length) {
-        filter.createdBy = { $nin: adminIds };
-      }
+      filter.createdBy = req.user.id;
     }
 
     // Optional "mine" filter for uploader-specific lists (admin/teacher usage).

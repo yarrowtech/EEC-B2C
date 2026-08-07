@@ -1,5 +1,6 @@
 // src/routes/users.js
 import { Router } from "express";
+import mongoose from "mongoose";
 import { requireAuth } from "../middleware/auth.js";
 import { listStudents } from "../controllers/users.js";
 import User from "../models/User.js";
@@ -7,7 +8,7 @@ import bcrypt from "bcrypt";
 import { autoPromoteStudent } from "../utils/autoPromoteStudent.js";
 import Redemption from "../models/Redemption.js";
 import GiftCard from "../models/GiftCard.js";
-import { sendGiftCardEmail } from "../utils/sendMail.js";
+import { sendGiftCardEmail, sendTeacherWelcomeEmail } from "../utils/sendMail.js";
 
 const router = Router();
 
@@ -83,6 +84,44 @@ router.get(
   }
 );
 
+// Bulk delete students in a single request — admin only.
+router.delete(
+  "/students",
+  requireAuth,
+  (req, res, next) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can delete students" });
+    }
+    next();
+  },
+  async (req, res) => {
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "No student IDs provided" });
+      }
+
+      const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+      if (validIds.length === 0) {
+        return res.status(400).json({ message: "No valid student IDs provided" });
+      }
+
+      const result = await User.deleteMany({
+        _id: { $in: validIds },
+        role: "student",
+      });
+
+      res.json({
+        message: `${result.deletedCount} student(s) deleted successfully.`,
+        deletedCount: result.deletedCount,
+      });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
+
 router.get("/teachers", async (req, res) => {
   try {
     const q = req.query.q?.trim() || "";
@@ -96,52 +135,89 @@ router.get("/teachers", async (req, res) => {
       ];
     }
 
-    const teachers = await User.find(filter).sort({ name: 1 });
+    const teachers = await User.find(filter).select("-password").sort({ name: 1 });
     res.json({ teachers });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post("/teachers", async (req, res) => {
-  try {
-    const { name, email, phone, password } = req.body;
-
-    if (!name || !email || !phone || !password) {
-      return res.status(400).json({ message: "All fields are required." });
+router.post(
+  "/teachers",
+  requireAuth,
+  (req, res, next) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can create teachers." });
     }
+    next();
+  },
+  async (req, res) => {
+    try {
+      const { name, email, phone, password, designation } = req.body;
 
-    const exists = await User.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ message: "Email already exists." });
+      if (!name || !email || !phone || !password) {
+        return res.status(400).json({ message: "All fields are required." });
+      }
+      if (!String(designation || "").trim()) {
+        return res.status(400).json({ message: "Designation is required." });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const exists = await User.findOne({ email: normalizedEmail });
+      if (exists) {
+        return res.status(400).json({ message: "Email already exists." });
+      }
+
+      // Hash password BEFORE saving
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const user = new User({
+        name,
+        email: normalizedEmail,
+        phone,
+        password: hashedPassword, // 🔐 hashed password
+        role: "teacher",
+        designation: String(designation).trim(),
+      });
+
+      await user.save();
+
+      sendTeacherWelcomeEmail({
+        to: user.email,
+        name: user.name,
+        email: user.email,
+        password, // plaintext, pre-hash — only ever sent, never stored
+        designation: user.designation,
+      }).catch((err) => console.error("Teacher welcome email failed:", err?.message));
+
+      const teacherResponse = user.toObject();
+      delete teacherResponse.password;
+
+      res.json({ message: "Teacher created successfully.", teacher: teacherResponse });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
     }
-
-    // Hash password BEFORE saving
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      name,
-      email,
-      phone,
-      password: hashedPassword, // 🔐 hashed password
-      role: "teacher",
-    });
-
-    await user.save();
-    res.json({ message: "Teacher created successfully.", teacher: user });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 // Update teacher
-router.put("/teachers/:id", async (req, res) => {
+const requireAdminOnly = (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Only admin can perform this action." });
+  }
+  next();
+};
+
+router.put("/teachers/:id", requireAuth, requireAdminOnly, async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, email, phone, designation } = req.body;
+
+    const updateData = { name, email, phone };
+    if (designation !== undefined) updateData.designation = String(designation).trim();
 
     const teacher = await User.findByIdAndUpdate(
       req.params.id,
-      { name, email, phone },
+      updateData,
       { new: true }
     );
 
@@ -152,7 +228,7 @@ router.put("/teachers/:id", async (req, res) => {
 });
 
 // Delete teacher
-router.delete("/teachers/:id", async (req, res) => {
+router.delete("/teachers/:id", requireAuth, requireAdminOnly, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: "Teacher deleted." });
@@ -823,99 +899,6 @@ router.get("/gift-card-availability", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Check gift card availability error:", err);
     res.status(500).json({ message: "Failed to check availability" });
-  }
-});
-
-// ============================
-//   TEACHER VERIFICATION ENDPOINTS
-// ============================
-
-// Get teacher verification status
-router.get("/teacher-verification-status", requireAuth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select(
-      "isTeacherVerified legalTermsAccepted biometricVerified"
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.role !== "teacher") {
-      return res.status(400).json({ message: "Only teachers can check verification status" });
-    }
-
-    res.json({
-      isTeacherVerified: user.isTeacherVerified || false,
-      legalTermsAccepted: user.legalTermsAccepted || false,
-      biometricVerified: user.biometricVerified || false,
-    });
-  } catch (err) {
-    console.error("Get teacher verification status error:", err);
-    res.status(500).json({ message: "Failed to get verification status" });
-  }
-});
-
-// Accept legal terms
-router.post("/teacher/accept-legal-terms", requireAuth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.role !== "teacher") {
-      return res.status(400).json({ message: "Only teachers can accept legal terms" });
-    }
-
-    user.legalTermsAccepted = true;
-    user.legalTermsAcceptedAt = new Date();
-    await user.save();
-
-    res.json({
-      message: "Legal terms accepted successfully",
-      legalTermsAccepted: true,
-    });
-  } catch (err) {
-    console.error("Accept legal terms error:", err);
-    res.status(500).json({ message: "Failed to accept legal terms" });
-  }
-});
-
-// Complete biometric verification
-router.post("/teacher/biometric-verification", requireAuth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.role !== "teacher") {
-      return res.status(400).json({ message: "Only teachers can complete biometric verification" });
-    }
-
-    if (!user.legalTermsAccepted) {
-      return res.status(400).json({ message: "Please accept legal terms first" });
-    }
-
-    user.biometricVerified = true;
-    user.biometricVerifiedAt = new Date();
-
-    // Mark teacher as fully verified once both steps are complete
-    user.isTeacherVerified = true;
-
-    await user.save();
-
-    res.json({
-      message: "Biometric verification completed successfully",
-      biometricVerified: true,
-      isTeacherVerified: true,
-    });
-  } catch (err) {
-    console.error("Biometric verification error:", err);
-    res.status(500).json({ message: "Failed to complete biometric verification" });
   }
 });
 

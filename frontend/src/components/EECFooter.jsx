@@ -188,16 +188,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
+import { isTokenValid } from "../lib/jwt";
 
 export default function PaprIqFooterSection() {
   const API = import.meta.env.VITE_API_URL || "";
   const isLoggedIn = () => {
     const token = localStorage.getItem("jwt") || "";
-    if (!token) return false;
     try {
-      const payload = JSON.parse(atob(token.split(".")[1] || ""));
       const user = JSON.parse(localStorage.getItem("user") || "null");
-      return typeof payload?.exp === "number" && Date.now() < payload.exp * 1000 && Boolean(user?.role);
+      return isTokenValid(token) && Boolean(user?.role);
     } catch {
       return false;
     }

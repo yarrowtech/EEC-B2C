@@ -138,17 +138,19 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
           </NavLink>
 
           {/* AI QUESTION GENERATOR */}
-          <NavLink
-            to="/dashboard/questions/ai-generator"
-            className={({ isActive }) =>
-              `${linkBase} ${
-                isActive ? linkActive : "hover:bg-yellow-100"
-              }`
-            }
-          >
-            <Sparkles size={18} />
-            <span>AI Generator</span>
-          </NavLink>
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/questions/ai-generator"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <Sparkles size={18} />
+              <span>AI Generator</span>
+            </NavLink>
+          )}
 
         </div>
       </div>

@@ -237,10 +237,10 @@ import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock
 import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
-import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
 import { confirmAndLogout, consumeManualLogoutFlag } from "../lib/confirmLogout";
 import OnboardingTour, { isTourDone, markTourDone } from "../components/OnboardingTour";
+import { isTokenValid } from "../lib/jwt";
 
 /* ---- auth helpers (UNCHANGED) ---- */
 function getToken() {
@@ -251,15 +251,6 @@ function getUser() {
         return JSON.parse(localStorage.getItem("user") || "null");
     } catch {
         return null;
-    }
-}
-function isTokenValid(token) {
-    if (!token) return false;
-    try {
-        const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-        return typeof exp === "number" && Date.now() < exp * 1000;
-    } catch {
-        return false;
     }
 }
 
@@ -299,7 +290,6 @@ export default function DashboardLayout() {
     const [online, setOnline] = useState(
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
-    const [showTeacherVerification, setShowTeacherVerification] = useState(false);
     const [showTour, setShowTour] = useState(false);
     const [studyMaterialsUnreadIds, setStudyMaterialsUnreadIds] = useState([]);
     const [websiteSettings, setWebsiteSettings] = useState({
@@ -458,13 +448,6 @@ export default function DashboardLayout() {
         };
     }, [role, token, location.pathname, studyMaterialsUnreadIds]);
 
-    // Check if teacher needs verification
-    useEffect(() => {
-        if (user?.role === "teacher" && !user?.isTeacherVerified) {
-            setShowTeacherVerification(true);
-        }
-    }, [user]);
-
     // Auto-start onboarding tour for first-time users
     useEffect(() => {
         if (!isTourDone()) {
@@ -552,8 +535,8 @@ export default function DashboardLayout() {
             { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true, id: "tour-nav-dashboard" },
         ];
 
-        // Add Study link for non-admin users
-        if (role !== "admin") {
+        // Add Study link for students only
+        if (role === "student") {
             base.push({ to: "/dashboard/study", label: "Study", icon: <Library size={18} />, id: "tour-nav-study" });
         }
 
@@ -1059,19 +1042,6 @@ export default function DashboardLayout() {
                     Use bottom menu for quick navigation
                 </div>
             )} */}
-
-            {/* Teacher Verification Modal */}
-            {showTeacherVerification && user?.role === "teacher" && (
-                <TeacherVerification
-                    onComplete={() => {
-                        setShowTeacherVerification(false);
-                        // Refresh user data
-                        const updatedUser = { ...user, isTeacherVerified: true };
-                        localStorage.setItem("user", JSON.stringify(updatedUser));
-                        window.location.reload();
-                    }}
-                />
-            )}
 
             {/* Onboarding Tour */}
             {showTour && (

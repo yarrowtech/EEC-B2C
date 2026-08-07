@@ -116,7 +116,8 @@ export async function register(req, res) {
         .status(400)
         .json({ message: "Name, email and password are required." });
     }
-    if (!isEmail(email)) {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (!isEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Invalid email format." });
     }
     if (String(password).length < 6) {
@@ -125,7 +126,7 @@ export async function register(req, res) {
         .json({ message: "Password must be at least 6 characters." });
     }
 
-    const exists = await User.findOne({ email: email.toLowerCase() });
+    const exists = await User.findOne({ email: normalizedEmail });
     if (exists) {
       return res.status(409).json({ message: "Email already registered." });
     }
@@ -135,7 +136,7 @@ export async function register(req, res) {
 
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       phone: phone?.trim() || "",
       password: hash,
       class: (classValue || "").trim(), // <-- OLD FIELD
@@ -165,6 +166,20 @@ export async function register(req, res) {
     });
   } catch (err) {
     console.error("register error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function checkEmailExists(req, res) {
+  try {
+    const email = String(req.query.email || "").trim().toLowerCase();
+    if (!email || !isEmail(email)) {
+      return res.status(400).json({ message: "Valid email is required." });
+    }
+    const exists = await User.exists({ email });
+    res.json({ exists: Boolean(exists) });
+  } catch (err) {
+    console.error("check-email error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -228,7 +243,7 @@ export async function googleLogin(req, res) {
       return res.status(401).json({ message: "Google account email is not verified." });
     }
 
-    const email = googlePayload.email.toLowerCase();
+    const email = String(googlePayload.email).trim().toLowerCase();
     let user = await User.findOne({ email });
     let isNewGoogleUser = false;
 
