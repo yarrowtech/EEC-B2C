@@ -181,6 +181,24 @@ function parseChoiceMatrixCorrectCells(rawValue, rows = [], cols = []) {
   return [...new Set(cells)];
 }
 
+function extractClozeBlankKeys(text = "") {
+  const matches = String(text || "").match(/\[\[(.*?)\]\]/g) || [];
+  const normalized = matches.map((m) => m.replace(/\[\[|\]\]/g, "").trim()).filter(Boolean);
+  return [...new Set(normalized)];
+}
+
+function parseKeyValueList(rawValue) {
+  const tokens = parseDelimitedList(rawValue);
+  const map = {};
+  for (const token of tokens) {
+    const match = token.match(/^(.+?)\s*[:=]\s*(.+)$/);
+    if (match) {
+      map[match[1].trim()] = match[2].trim();
+    }
+  }
+  return map;
+}
+
 function parseTrueFalseAnswer(rawValue) {
   const raw = String(rawValue || "").trim().toLowerCase();
   if (!raw) return "";
@@ -1170,6 +1188,135 @@ export const bulkCreateClozeSelect = async (req, res) => {
     });
   } catch (error) {
     console.error("Bulk cloze select upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateClozeText = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const text = getBulkCellValue(normalizedRow, ["text", "question", "questionText", "question_text", "clozetext"]);
+      const answers = parseKeyValueList(
+        getBulkCellValue(normalizedRow, ["answers", "answer", "blanks"])
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      const blankKeys = extractClozeBlankKeys(text);
+      if (!text || !blankKeys.length) {
+        failures.push({
+          row: rowNumber,
+          reason: "text is required and must contain at least one [[blank_name]] placeholder",
+        });
+        continue;
+      }
+      const missing = blankKeys.filter((k) => !String(answers[k] || "").trim());
+      if (missing.length) {
+        failures.push({ row: rowNumber, reason: `Missing answers for: ${missing.join(", ")}` });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "cloze-text",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          explanationImage,
+          tags,
+          clozeText: { text, answers },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} cloze free-text question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk cloze text upload failed:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

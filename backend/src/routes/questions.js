@@ -15,6 +15,7 @@ import {
   bulkCreateTrueFalse,
   bulkCreateMatchList,
   bulkCreateClozeSelect,
+  bulkCreateClozeText,
   metaSubjects,
   metaTopics,
   metaStages,
@@ -91,6 +92,7 @@ router.post("/bulk/choice-matrix", requireAuth, uploadExcel.single("file"), bulk
 router.post("/bulk/true-false", requireAuth, uploadExcel.single("file"), bulkCreateTrueFalse);
 router.post("/bulk/match-list", requireAuth, uploadExcel.single("file"), bulkCreateMatchList);
 router.post("/bulk/cloze-select", requireAuth, uploadExcel.single("file"), bulkCreateClozeSelect);
+router.post("/bulk/cloze-text", requireAuth, uploadExcel.single("file"), bulkCreateClozeText);
 
 // Create question by type
 router.post("/:type", requireAuth, create);
