@@ -13,6 +13,8 @@ import {
   bulkCreateMcqMulti,
   bulkCreateChoiceMatrix,
   bulkCreateTrueFalse,
+  bulkCreateMatchList,
+  bulkCreateClozeSelect,
   metaSubjects,
   metaTopics,
   metaStages,
@@ -87,6 +89,8 @@ router.post("/bulk/mcq-single", requireAuth, uploadExcel.single("file"), bulkCre
 router.post("/bulk/mcq-multi", requireAuth, uploadExcel.single("file"), bulkCreateMcqMulti);
 router.post("/bulk/choice-matrix", requireAuth, uploadExcel.single("file"), bulkCreateChoiceMatrix);
 router.post("/bulk/true-false", requireAuth, uploadExcel.single("file"), bulkCreateTrueFalse);
+router.post("/bulk/match-list", requireAuth, uploadExcel.single("file"), bulkCreateMatchList);
+router.post("/bulk/cloze-select", requireAuth, uploadExcel.single("file"), bulkCreateClozeSelect);
 
 // Create question by type
 router.post("/:type", requireAuth, create);

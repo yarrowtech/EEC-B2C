@@ -912,6 +912,268 @@ export const bulkCreateTrueFalse = async (req, res) => {
   }
 };
 
+export const bulkCreateMatchList = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const prompt = getBulkCellValue(normalizedRow, ["prompt", "question", "questionText", "question_text"]);
+      const left = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["left", "leftList", "leftItems", "column a", "columna"])
+      );
+      const right = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["right", "rightList", "rightItems", "column b", "columnb"])
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!prompt || left.length < 2 || left.length !== right.length) {
+        failures.push({
+          row: rowNumber,
+          reason: "prompt is required, and left/right must each list 2+ items in matching order",
+        });
+        continue;
+      }
+
+      const pairs = {};
+      left.forEach((_, idx) => {
+        pairs[String(idx)] = idx;
+      });
+
+      const { ok, doc, message } = shapeByType(
+        "match-list",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          explanationImage,
+          tags,
+          matchList: { prompt, left, right, pairs },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} match list question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk match list upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateClozeSelect = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const text = getBulkCellValue(normalizedRow, ["text", "question", "questionText", "question_text", "clozetext"]);
+      const options = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["options", "option", "choices"])
+      );
+      const correct = getBulkCellValue(normalizedRow, ["correct", "correctAnswer", "correct_answer", "answer"]);
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!text || options.length < 2 || !correct) {
+        failures.push({
+          row: rowNumber,
+          reason: "text, at least 2 options, and correct are required",
+        });
+        continue;
+      }
+      if (!options.some((opt) => opt.toLowerCase() === correct.toLowerCase())) {
+        failures.push({ row: rowNumber, reason: "correct must match one of the listed options" });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "cloze-select",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          explanationImage,
+          tags,
+          clozeSelect: {
+            text,
+            blanks: { blank1: { options, correct } },
+          },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} cloze drop-down question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk cloze select upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // export const list = async (req, res) => {
 //   try {
 //     // authenticated read

@@ -121,6 +121,28 @@ export async function postTrueFalseBulk(formData) {
   return json;
 }
 
+export async function postMatchListBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/match-list`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postClozeSelectBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/cloze-select`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
 export async function uploadImage(file) {
   const formData = new FormData();
   formData.append("image", file);

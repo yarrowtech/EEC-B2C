@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
-import { postQuestion } from "../../lib/api";
+import { postQuestion, postMatchListBulk } from "../../lib/api";
 import { buildQuestionStagePayload } from "../../lib/stage";
 import ExplanationEditor from "../../components/questions/ExplanationEditor";
 import {
@@ -13,10 +13,14 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
+import * as XLSX from "xlsx";
 
 export default function QuestionsMatchList() {
   const { scope } = useQuestionScope();
   const [busy, setBusy] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [bulkInputKey, setBulkInputKey] = useState(0);
   const [questionCount, setQuestionCount] = useState(1);
 
   const createEmptyQuestion = () => ({
@@ -130,6 +134,69 @@ export default function QuestionsMatchList() {
     setQuestionCount(nextCount);
   }
 
+  function downloadBulkTemplate() {
+    const worksheet = XLSX.utils.json_to_sheet([
+      {
+        prompt: "Match the animal to its sound",
+        left: "Cat | Dog | Cow",
+        right: "Meow | Bark | Moo",
+        explanation: "Each animal is matched to the sound it makes.",
+        tags: "animals, science",
+      },
+    ]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Match List");
+    XLSX.writeFile(workbook, "match_list_bulk_template.xlsx");
+  }
+
+  async function submitBulkUpload() {
+    if (
+      !scope.board ||
+      !scope.class ||
+      !scope.subject ||
+      !scope.topic ||
+      !scope.stage ||
+      !scope.difficulty ||
+      !scope.questionType
+    ) {
+      return toast.warn("Please complete all fields in the parameter selector above");
+    }
+
+    if (!bulkFile) {
+      return toast.warn("Please choose an Excel file first");
+    }
+
+    setBulkBusy(true);
+    try {
+      const stagePayload = buildQuestionStagePayload(scope.stage);
+      const payload = new FormData();
+      payload.append("file", bulkFile);
+      payload.append("board", scope.board);
+      payload.append("class", scope.class);
+      payload.append("subject", scope.subject);
+      payload.append("topic", scope.topic);
+      payload.append("stage", String(stagePayload.stage));
+      payload.append("level", stagePayload.level);
+      payload.append("difficulty", scope.difficulty.toLowerCase());
+      payload.append("questionType", "match-list");
+
+      const res = await postMatchListBulk(payload);
+      const failed = Number(res?.failed || 0);
+      if (failed > 0) {
+        toast.success(`Uploaded ${res.inserted} questions. ${failed} rows were skipped.`);
+      } else {
+        toast.success(`Uploaded ${res.inserted} questions successfully!`);
+      }
+
+      setBulkFile(null);
+      setBulkInputKey((k) => k + 1);
+    } catch (err) {
+      toast.error(err.message || "Failed to upload file.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function submit(e) {
     e.preventDefault();
 
@@ -235,7 +302,61 @@ export default function QuestionsMatchList() {
             </p>
           </div>
         ) : (
-          <form onSubmit={submit} className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8">
+          <div className="space-y-6">
+            <div className="rounded-3xl bg-white border border-slate-200 shadow-xl p-8 space-y-5">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Bulk Upload (Excel)</h2>
+                  <p className="text-slate-600 text-sm mt-1">
+                    Upload multiple match-the-following questions using one Excel file.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadBulkTemplate}
+                  className="rounded-xl px-4 py-2 bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
+                >
+                  Download Template
+                </button>
+              </div>
+
+              <div className="grid sm:grid-cols-[1fr_auto] gap-4">
+                <input
+                  key={bulkInputKey}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+                  className="w-full rounded-xl px-4 py-3 bg-slate-50 border border-slate-300
+                           focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={submitBulkUpload}
+                  disabled={bulkBusy}
+                  className="rounded-xl px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold
+                           shadow hover:from-emerald-700 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {bulkBusy ? "Uploading..." : "Upload File"}
+                </button>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                <p className="font-semibold text-slate-800 mb-2">Excel columns for match list bulk upload:</p>
+                <p className="text-sm text-slate-700">
+                  <strong>Required:</strong> prompt, left, right
+                </p>
+                <p className="text-sm text-slate-700">
+                  List <code>left</code> and <code>right</code> items separated by <code>|</code>, in matching
+                  order — e.g. <code>left</code>: "Cat | Dog | Cow" and <code>right</code>: "Meow | Bark | Moo"
+                  pairs Cat→Meow, Dog→Bark, Cow→Moo. Both columns need the same number of items (2 or more).
+                </p>
+                <p className="text-sm text-slate-700 mt-1">
+                  <strong>Optional:</strong> explanation, tags
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={submit} className="space-y-6 rounded-3xl bg-white border border-slate-200 shadow-xl p-8">
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <label className="font-bold text-slate-800 mb-2 block">
@@ -381,7 +502,8 @@ export default function QuestionsMatchList() {
             >
               <FiUpload size={20} /> {busy ? "Saving Question..." : "Save Question"}
             </button>
-          </form>
+            </form>
+          </div>
         )}
       </div>
     </>
