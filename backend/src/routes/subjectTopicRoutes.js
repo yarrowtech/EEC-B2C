@@ -100,7 +100,9 @@ router.post("/subject", requireAuth, async (req, res) => {
 });
 
 // Get all subjects (filtered by board and class if provided)
-router.get("/subject", requireAuth, async (req, res) => {
+// Public: guests can browse subjects too. Auth is only used to scope
+// results to "my subjects" for teachers via ?mine=1.
+router.get("/subject", async (req, res) => {
   try {
     const { board, class: className, stage, mine } = req.query;
     // console.log("GET /api/subject - board:", board, "class:", className);
@@ -120,9 +122,21 @@ router.get("/subject", requireAuth, async (req, res) => {
       filter.class = { $in: classValues };
     }
 
-    const role = String(req.user?.role || "").toLowerCase();
-    if (mine === "1" && role === "teacher") {
-      filter.createdBy = req.user.id;
+    let role = "";
+    let userId = null;
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        role = String(decoded.role || "").toLowerCase();
+        userId = decoded.sub || null;
+      } catch {
+        // ignore invalid/expired token, fall back to guest view
+      }
+    }
+    if (mine === "1" && role === "teacher" && userId) {
+      filter.createdBy = userId;
     }
 
     // console.log("Final filter:", JSON.stringify(filter));
