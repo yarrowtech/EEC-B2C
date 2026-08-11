@@ -1,36 +1,37 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const FAQS = [
   {
-    q: "What is Edify Eight and who is it for?",
-    a: "Edify Eight is an adaptive learning platform for students in Grades 3–10. It supports CBSE, ICSE, IB, and State Board syllabi. Teachers can upload materials and questions, while students practice, track progress, and compete on the leaderboard.",
+    q: "What is Edify Eight?",
+    a: "Edify Eight is a self-learning platform for individual students. It helps you practice, prepare and improve through exam-style questions, self-study materials all at your own pace, with no fixed schedules or classes to enroll in.",
     color: "#FFD23F",
     open: true,
   },
   {
-    q: "Is the content aligned with the latest syllabus?",
-    a: "Yes! Our team of qualified teachers continuously updates the question bank and study materials to stay aligned with the latest board guidelines for CBSE, ICSE, and IB curricula.",
+    q: "Who can join Edify Eight?",
+    a: "Edify Eight is open to school students class 3 to 10.",
     color: "#F4736E",
   },
   {
-    q: "What types of questions are available?",
-    a: "We support 8+ question types — MCQ (single & multiple answer), True/False, Match the List, Choice Matrix, Cloze (fill-in-the-blank), Essay, and more. Each question is tagged by subject, topic, board, grade, and difficulty stage.",
+    q: "Can I learn at my own pace?",
+    a: "Yes. Edify Eight is fully self-paced — there are no fixed schedules or live classes, so you can practice and study whenever it suits you.",
     color: "#4ECDC4",
   },
   {
-    q: "How does the Daily Challenge work?",
-    a: "Every day, a new question is unlocked based on your board and grade. Answer it correctly to maintain your streak and earn badges. Miss a day and your streak resets — so stay consistent!",
+    q: "Will I receive a certificate?",
+    a: "Yes. You can earn badges for completing milestones and challenges as you progress.",
     color: "#6C63FF",
   },
   {
-    q: "Can I track my weak areas?",
-    a: "Absolutely. After each practice session, the platform automatically identifies the topics where you're struggling most and surfaces them in your Weak Areas Auto-Revision section so you can focus your effort where it counts.",
+    q: "Is my payment secure?",
+    a: "Yes. Payments are processed through trusted payment gateways with industry-standard security and encryption.",
     color: "#FF9F1C",
   },
   {
-    q: "Is Edify Eight free to use?",
-    a: "Yes — you can sign up for free and access a range of features immediately. Premium subscription packages are also available for students and schools that want full access to all content, analytics, and advanced features.",
+    q: "Can I access my account on mobile devices?",
+    a: "Yes. Edify Eight is designed to work across desktops, tablets, and smartphones for a seamless learning experience.",
     color: "#F4736E",
   },
 ];
@@ -91,6 +92,21 @@ export default function QuestionsAnswersSection() {
               </div>
             </motion.details>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            to="/faq"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-[#F4736E]/40 hover:text-[#F4736E]"
+          >
+            View All FAQs
+            <span
+              className="material-symbols-outlined text-base"
+              style={{ fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}
+            >
+              arrow_forward
+            </span>
+          </Link>
         </div>
       </div>
     </section>

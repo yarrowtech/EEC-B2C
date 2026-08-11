@@ -23,6 +23,7 @@ import LearnTopicContentPage from "./pages/LearnTopicContentPage";
 import EECPartner from "./pages/EECMarketing";
 import EECMarketing from "./pages/EECMarketing";
 import SupportCenter from "./pages/SupportCenter";
+import FAQPage from "./pages/FAQPage";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import GlobalLoginModal from "./components/GlobalLoginModal";
 import { ToastContainer } from "react-toastify";
@@ -244,6 +245,11 @@ function getSeoForPath(pathname) {
       title: "Edify Eight Support Center | Help for Students and Parents",
       description: "Get help with Edify Eight accounts, subscriptions, and learning workflows.",
       keywords: "Edify Eight help center, student support, education app support",
+    },
+    "/faq": {
+      title: "Frequently Asked Questions | Edify Eight",
+      description: "Answers to common questions about enrolling, learning, payments, certificates, and support on Edify Eight.",
+      keywords: "Edify Eight FAQ, frequently asked questions, edtech FAQ, course enrollment questions",
     },
     "/meet-the-developer": {
       title: "Meet The Developers | Edify Eight",
@@ -822,6 +828,7 @@ export default function App() {
           <Route path="/flashcards" element={<FlashcardsCatalogPage />} />
           <Route path="/learn/topic/:subjectId/:topicId" element={<LearnTopicContentPage />} />
           <Route path="/support" element={<SupportCenter />} />
+          <Route path="/faq" element={<FAQPage />} />
           <Route path="/meet-the-developer" element={<MeetTheDeveloper />} />
           <Route path="/marketing" element={<EECMarketing />} />
           <Route path="/eec-b2c" element={<B2B />} />

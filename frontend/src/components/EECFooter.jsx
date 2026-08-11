@@ -224,6 +224,7 @@ export default function PaprIqFooterSection() {
     { label: "Study Materials", to: "/dashboard/study-materials" },
     { label: "Leaderboard", to: "/dashboard/leaderboard" },
     { label: "Careers", to: "/careers" },
+    { label: "FAQ", to: "/faq" },
     { label: "Contact Us", to: "/contact-us" },
     { label: "Privacy Policy", to: "/privacy-policy" },
     // { label: "Meet The Developer", to: "/meet-the-developer" },
