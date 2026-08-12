@@ -269,12 +269,12 @@ export default function TeacherHome() {
       <div>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Quick Actions</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <QuickAction
+          {/* <QuickAction
             to="/dashboard/submit-chapter"
             icon={Send}
             title="Submit a Chapter"
             description="Walk through subject, content, and tryouts step by step"
-          />
+          /> */}
           <QuickAction
             to="/dashboard/add-chapter-workspace"
             icon={FileText}
@@ -296,7 +296,7 @@ export default function TeacherHome() {
         </div>
       </div>
 
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-base">Recent Submissions</CardTitle>
           <CardDescription>Your most recent chapter submissions and their review status</CardDescription>
@@ -339,7 +339,7 @@ export default function TeacherHome() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

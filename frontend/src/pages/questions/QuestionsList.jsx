@@ -1,10 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { getJSON, deleteQuestion, reviewQuestion } from "../../lib/api";
 import { normalizeStageNumber } from "../../lib/stage";
-import { FiFilter, FiSearch, FiTrash2, FiEdit3, FiList, FiCheckCircle } from "react-icons/fi";
+import {
+  FiFilter,
+  FiSearch,
+  FiTrash2,
+  FiEdit3,
+  FiList,
+  FiCheckCircle,
+  FiBookOpen,
+  FiLayers,
+  FiTag,
+  FiHash,
+  FiBarChart2,
+  FiSliders,
+} from "react-icons/fi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -13,6 +25,30 @@ const TYPES = [
   "cloze-drag", "cloze-select", "cloze-text", "match-list",
   "essay-rich", "essay-plain",
 ];
+
+function FilterSelect({ label, icon, value, onChange, options, disabled, placeholder }) {
+  const Icon = icon;
+  return (
+    <div>
+      <label className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
+        <Icon className="text-indigo-600" />
+        {label}
+      </label>
+      <select
+        className="w-full rounded-xl px-4 py-2 bg-slate-50 border border-slate-300 shadow-sm
+                 focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 export default function QuestionsList() {
   const { scope, clear } = useQuestionScope();
@@ -42,6 +78,16 @@ export default function QuestionsList() {
   // Filter options
   const [classes, setClasses] = useState([]);
   const [boards, setBoards] = useState([]);
+
+  // Advanced filters (teacher view)
+  const [filterBoard, setFilterBoard] = useState("");
+  const [filterClass, setFilterClass] = useState("");
+  const [filterSubject, setFilterSubject] = useState("");
+  const [filterTopic, setFilterTopic] = useState("");
+  const [filterDifficulty, setFilterDifficulty] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterSubjects, setFilterSubjects] = useState([]);
+  const [filterTopics, setFilterTopics] = useState([]);
 
   const canSearch = useMemo(
     () => !!scope.subject || !!scope.topic || !!type || !!q || !!selectedClass,
@@ -79,7 +125,7 @@ export default function QuestionsList() {
 
       // Load classes
       const classesData = await getJSON("/api/classes");
-      setClasses(classesData.map(c => c.name) || []);
+      setClasses(classesData || []);
       const cMap = {};
       classesData.forEach((c) => (cMap[c._id] = c.name));
       setClassMap(cMap);
@@ -102,26 +148,54 @@ export default function QuestionsList() {
     }
   }
 
+  // Advanced filter cascading — subjects for the chosen board + class
+  useEffect(() => {
+    setFilterSubjects([]);
+    setFilterSubject("");
+    if (!filterBoard || !filterClass) return;
+    getJSON(`/api/subject?board=${filterBoard}&class=${filterClass}`)
+      .then((rows) => setFilterSubjects(Array.isArray(rows) ? rows : []))
+      .catch(() => setFilterSubjects([]));
+  }, [filterBoard, filterClass]);
+
+  // Advanced filter cascading — topics for the chosen subject
+  useEffect(() => {
+    setFilterTopics([]);
+    setFilterTopic("");
+    if (!filterSubject) return;
+    getJSON(`/api/topic/${filterSubject}?board=${filterBoard}&class=${filterClass}&manage=1`)
+      .then((rows) => setFilterTopics(Array.isArray(rows) ? rows : []))
+      .catch(() => setFilterTopics([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSubject]);
+
   async function load() {
     setBusy(true);
     setErr("");
     try {
       const qs = new URLSearchParams();
-      if (scope.board) qs.set("board", scope.board);
-      if (scope.class) qs.set("class", scope.class);
-      if (scope.subject) qs.set("subject", scope.subject);
-      if (scope.topic) qs.set("topic", scope.topic);
+      const effectiveBoard = scope.board || filterBoard;
+      const effectiveClass = scope.class || filterClass;
+      const effectiveSubject = scope.subject || filterSubject;
+      const effectiveTopic = scope.topic || filterTopic;
+      const effectiveDifficulty = scope.difficulty || filterDifficulty;
+
+      if (effectiveBoard) qs.set("board", effectiveBoard);
+      if (effectiveClass) qs.set("class", effectiveClass);
+      if (effectiveSubject) qs.set("subject", effectiveSubject);
+      if (effectiveTopic) qs.set("topic", effectiveTopic);
 
       if (scope.stage) {
         qs.set("stage", String(normalizeStageNumber(scope.stage)));
       }
 
       // Ensure difficulty is lowercase
-      if (scope.difficulty) {
-        qs.set("difficulty", scope.difficulty.toLowerCase());
+      if (effectiveDifficulty) {
+        qs.set("difficulty", effectiveDifficulty.toLowerCase());
       }
 
       if (scope.questionType) qs.set("questionType", scope.questionType);
+      if (filterStatus) qs.set("status", filterStatus);
       if (type) qs.set("type", type);
       if (q) qs.set("q", q);
       if (selectedClass) qs.set("class", selectedClass);
@@ -165,6 +239,12 @@ export default function QuestionsList() {
     if (scope.stage) next.stage = scope.stage;
     if (scope.difficulty) next.difficulty = scope.difficulty;
     if (scope.questionType) next.questionType = scope.questionType;
+    if (filterBoard) next.board = filterBoard;
+    if (filterClass) next.class = filterClass;
+    if (filterSubject) next.subject = filterSubject;
+    if (filterTopic) next.topic = filterTopic;
+    if (filterDifficulty) next.difficulty = filterDifficulty;
+    if (filterStatus) next.status = filterStatus;
     if (type) next.type = type;
     if (q) next.q = q;
     if (selectedClass) next.class = selectedClass;
@@ -356,14 +436,81 @@ export default function QuestionsList() {
           </div>
         </div>
 
-        {/* Cascading Picker for filtering */}
-        <SubjectTopicPicker />
-
         {/* Additional Filters */}
         <form
           onSubmit={applyFilters}
-          className="grid sm:grid-cols-3 gap-6 bg-white shadow-md rounded-2xl p-6"
+          className="space-y-6 bg-white shadow-md rounded-2xl p-6"
         >
+          {/* Advanced Filters */}
+          <div className="space-y-3 pb-6 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FiSliders className="text-indigo-600" size={18} />
+                <h2 className="text-base font-bold text-slate-800">Advanced Filters</h2>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <FilterSelect
+                  label="Board"
+                  icon={FiBookOpen}
+                  value={filterBoard}
+                  onChange={(v) => { setFilterBoard(v); setFilterClass(""); }}
+                  options={boards.map((b) => ({ value: b._id, label: b.name }))}
+                  placeholder="All boards"
+                />
+                <FilterSelect
+                  label="Class"
+                  icon={FiLayers}
+                  value={filterClass}
+                  onChange={setFilterClass}
+                  options={classes.map((c) => ({ value: c._id, label: c.name }))}
+                  disabled={!filterBoard}
+                  placeholder="All classes"
+                />
+                <FilterSelect
+                  label="Subject"
+                  icon={FiTag}
+                  value={filterSubject}
+                  onChange={setFilterSubject}
+                  options={filterSubjects.map((s) => ({ value: s._id, label: s.name }))}
+                  disabled={!filterClass}
+                  placeholder="All subjects"
+                />
+                <FilterSelect
+                  label="Topic"
+                  icon={FiHash}
+                  value={filterTopic}
+                  onChange={setFilterTopic}
+                  options={filterTopics.map((t) => ({ value: t._id, label: t.name }))}
+                  disabled={!filterSubject}
+                  placeholder="All topics"
+                />
+                <FilterSelect
+                  label="Difficulty"
+                  icon={FiBarChart2}
+                  value={filterDifficulty}
+                  onChange={setFilterDifficulty}
+                  options={[
+                    { value: "easy", label: "Easy" },
+                    { value: "moderate", label: "Moderate" },
+                    { value: "hard", label: "Hard" },
+                  ]}
+                  placeholder="All difficulties"
+                />
+                <FilterSelect
+                  label="Status"
+                  icon={FiCheckCircle}
+                  value={filterStatus}
+                  onChange={setFilterStatus}
+                  options={[
+                    { value: "pending", label: "Pending Review" },
+                    { value: "approved", label: "Approved" },
+                    { value: "rejected", label: "Rejected" },
+                  ]}
+                  placeholder="All statuses"
+                />
+              </div>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-6">
           {/* Type Filter */}
           <div>
             <label className="font-semibold text-slate-700 mb-2 block flex items-center gap-2">
@@ -410,6 +557,7 @@ export default function QuestionsList() {
             >
               Apply Filters
             </button>
+          </div>
           </div>
         </form>
 

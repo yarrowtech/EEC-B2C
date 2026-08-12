@@ -2,7 +2,29 @@ import { useEffect, useMemo, useState } from "react";
 import JoditEditor from "jodit-react";
 import "jodit/es2021/jodit.min.css";
 import { toast, ToastContainer } from "react-toastify";
-import { Check, ChevronLeft, ChevronRight, BookOpen, FileText, Sliders, ListChecks, Plus } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  FileText,
+  Sliders,
+  ListChecks,
+  Plus,
+  Sparkles,
+  GraduationCap,
+  Layers,
+  CircleDot,
+  CheckSquare,
+  ToggleLeft,
+  Grid3x3,
+  Move,
+  ListFilter,
+  Type as TypeIcon,
+  GitCompare,
+  AlignLeft,
+  Rocket,
+} from "lucide-react";
 
 import { useQuestionScope } from "../../context/QuestionScopeContext";
 import { buildStageOptions, formatStageLabel, normalizeStageNumber } from "../../lib/stage";
@@ -11,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -33,26 +55,31 @@ import QuestionsEssayRich from "./QuestionsEssayRich";
 import QuestionsEssayPlain from "./QuestionsEssayPlain";
 
 const API = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-const DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"];
+
+const DIFFICULTY_META = [
+  { label: "Easy", swatch: "bg-emerald-500", ring: "ring-emerald-500/30", tint: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+  { label: "Medium", swatch: "bg-amber-500", ring: "ring-amber-500/30", tint: "bg-amber-50 border-amber-200 text-amber-700" },
+  { label: "Hard", swatch: "bg-rose-500", ring: "ring-rose-500/30", tint: "bg-rose-50 border-rose-200 text-rose-700" },
+];
 
 const QUESTION_TYPES = [
-  { label: "MCQ — Single Correct", Component: QuestionsMCQUpload },
-  { label: "MCQ — Multiple Correct", Component: QuestionsMCQMulti },
-  { label: "True / False", Component: QuestionsTrueFalse },
-  { label: "Choice Matrix", Component: QuestionsChoiceMatrix },
-  { label: "Cloze — Drag & Drop", Component: QuestionsClozeDrag },
-  { label: "Cloze — Drop-Down", Component: QuestionsClozeSelect },
-  { label: "Cloze — Free Text", Component: QuestionsClozeText },
-  { label: "Match List", Component: QuestionsMatchList },
-  { label: "Essay — Rich Text", Component: QuestionsEssayRich },
-  { label: "Essay — Plain Text", Component: QuestionsEssayPlain },
+  { label: "MCQ — Single Correct", short: "MCQ Single", icon: CircleDot, Component: QuestionsMCQUpload },
+  { label: "MCQ — Multiple Correct", short: "MCQ Multi", icon: CheckSquare, Component: QuestionsMCQMulti },
+  { label: "True / False", short: "True / False", icon: ToggleLeft, Component: QuestionsTrueFalse },
+  { label: "Choice Matrix", short: "Choice Matrix", icon: Grid3x3, Component: QuestionsChoiceMatrix },
+  { label: "Cloze — Drag & Drop", short: "Cloze Drag", icon: Move, Component: QuestionsClozeDrag },
+  { label: "Cloze — Drop-Down", short: "Cloze Dropdown", icon: ListFilter, Component: QuestionsClozeSelect },
+  { label: "Cloze — Free Text", short: "Cloze Text", icon: TypeIcon, Component: QuestionsClozeText },
+  { label: "Match List", short: "Match List", icon: GitCompare, Component: QuestionsMatchList },
+  { label: "Essay — Rich Text", short: "Essay Rich", icon: FileText, Component: QuestionsEssayRich },
+  { label: "Essay — Plain Text", short: "Essay Plain", icon: AlignLeft, Component: QuestionsEssayPlain },
 ];
 
 const STEPS = [
-  { id: 1, label: "Chapter", icon: BookOpen },
-  { id: 2, label: "Content", icon: FileText },
-  { id: 3, label: "Parameters", icon: Sliders },
-  { id: 4, label: "Tryouts", icon: ListChecks },
+  { id: 1, label: "Chapter", icon: BookOpen, bubble: "bg-indigo-100 text-indigo-600" },
+  { id: 2, label: "Content", icon: FileText, bubble: "bg-teal-100 text-teal-600" },
+  { id: 3, label: "Parameters", icon: Sliders, bubble: "bg-amber-100 text-amber-600" },
+  { id: 4, label: "Tryouts", icon: ListChecks, bubble: "bg-rose-100 text-rose-600" },
 ];
 
 function headers() {
@@ -103,6 +130,7 @@ export default function AddChapterWorkspace() {
 
   const [stages, setStages] = useState([1, 2, 3]);
   const [customStage, setCustomStage] = useState("");
+  const [showCustomStage, setShowCustomStage] = useState(false);
 
   const editorConfig = useMemo(
     () => ({
@@ -323,6 +351,7 @@ export default function AddChapterWorkspace() {
     setStages(buildStageOptions([...stages, parsed], false));
     setStage(String(parsed));
     setCustomStage("");
+    setShowCustomStage(false);
   }
 
   const stepValid = useMemo(() => {
@@ -335,8 +364,6 @@ export default function AddChapterWorkspace() {
         return true;
     }
   }, [step, scope.board, scope.class, scope.subject, scope.topic, scope.stage, scope.difficulty, scope.questionType]);
-
-  const progressPct = (step / STEPS.length) * 100;
 
   function goNext() {
     if (!stepValid) {
@@ -361,6 +388,18 @@ export default function AddChapterWorkspace() {
   }
 
   const ActiveTypeComponent = QUESTION_TYPES.find((t) => t.label === scope.questionType)?.Component || null;
+  const activeTypeMeta = QUESTION_TYPES.find((t) => t.label === scope.questionType) || null;
+  const currentStepMeta = STEPS[step - 1];
+
+  const breadcrumbChips = [
+    { label: boards.find((b) => b._id === scope.board)?.name, tone: "bg-indigo-100 text-indigo-700" },
+    { label: classes.find((c) => c._id === scope.class)?.name, tone: "bg-teal-100 text-teal-700" },
+    { label: subjects.find((s) => s._id === scope.subject)?.name, tone: "bg-amber-100 text-amber-700" },
+    { label: selectedTopicDoc?.name, tone: "bg-rose-100 text-rose-700" },
+    { label: scope.stage && `Stage ${scope.stage}`, tone: "bg-violet-100 text-violet-700" },
+    { label: scope.difficulty, tone: "bg-sky-100 text-sky-700" },
+    { label: activeTypeMeta?.short, tone: "bg-emerald-100 text-emerald-700" },
+  ].filter((c) => c.label);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
@@ -368,65 +407,96 @@ export default function AddChapterWorkspace() {
           ToastContainer — avoid a second one stacking duplicate toasts. */}
       {step < 4 && <ToastContainer />}
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Add Content &amp; Questions</h1>
-        <p className="text-sm text-muted-foreground">
-          Pick a chapter, write its content, then add tryout questions of any type — all in one place.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <Progress value={progressPct} className="h-1.5" />
-        <div className="flex items-center justify-between">
-          {STEPS.map((s) => {
-            const Icon = s.icon;
-            const isActive = s.id === step;
-            const isDone = s.id < step;
-            return (
-              <div key={s.id} className="flex flex-1 flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    "flex size-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
-                    isDone && "border-primary bg-primary text-primary-foreground",
-                    isActive && !isDone && "border-primary text-primary",
-                    !isActive && !isDone && "border-border text-muted-foreground"
-                  )}
-                >
-                  {isDone ? <Check className="size-4" /> : <Icon className="size-4" />}
-                </div>
-                <span className={cn("text-[11px] font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>
-                  {s.label}
-                </span>
-              </div>
-            );
-          })}
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl border bg-linear-to-br from-primary/10 via-background to-accent/30 p-6 sm:p-7">
+        <div className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-14 left-1/3 size-36 rounded-full bg-accent/40 blur-3xl" />
+        <div className="relative flex items-start gap-4">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+            <Sparkles className="size-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Add Content &amp; Questions</h1>
+            <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+              Pick a chapter, write its content, then add tryout questions of any type — all in one guided flow.
+            </p>
+          </div>
         </div>
       </div>
 
+      {/* Connected stepper */}
+      <div className="flex items-start">
+        {STEPS.map((s, idx) => {
+          const Icon = s.icon;
+          const isActive = s.id === step;
+          const isDone = s.id < step;
+          return (
+            <div key={s.id} className="flex items-start" style={{ flex: idx === STEPS.length - 1 ? "0 0 auto" : "1 1 0%" }}>
+              <div className="flex shrink-0 flex-col items-center gap-1.5">
+                <div
+                  className={cn(
+                    "flex size-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-300",
+                    isDone && "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/30",
+                    isActive && !isDone && "scale-110 border-primary bg-primary/10 text-primary ring-4 ring-primary/15",
+                    !isActive && !isDone && "border-border bg-background text-muted-foreground"
+                  )}
+                >
+                  {isDone ? <Check className="size-4.5" /> : <Icon className="size-4.5" />}
+                </div>
+                <span className={cn("whitespace-nowrap text-[11px] font-semibold", isActive ? "text-foreground" : "text-muted-foreground")}>
+                  {s.label}
+                </span>
+              </div>
+              {idx < STEPS.length - 1 && (
+                <div className="relative mt-5 h-0.5 w-full flex-1 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                    style={{ width: s.id < step ? "100%" : "0%" }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       {step < 4 && (
-        <Card>
+        <Card className="overflow-hidden rounded-3xl shadow-lg shadow-primary/5">
           <CardHeader>
-            <CardTitle>{STEPS[step - 1].label}</CardTitle>
-            <CardDescription>
-              {step === 1 && "Select the board, class, subject, and chapter you're allocated to."}
-              {step === 2 && "Write the chapter content and its learning outcome."}
-              {step === 3 && "Choose the stage, difficulty, and question type for your tryouts."}
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", currentStepMeta.bubble)}>
+                <currentStepMeta.icon className="size-5" />
+              </div>
+              <div>
+                <CardTitle>{currentStepMeta.label}</CardTitle>
+                <CardDescription>
+                  {step === 1 && "Select the board, class, subject, and chapter you're allocated to."}
+                  {step === 2 && "Write the chapter content and its learning outcome."}
+                  {step === 3 && "Choose the stage, difficulty, and question type for your tryouts."}
+                </CardDescription>
+              </div>
+            </div>
             {step > 1 && selectedTopicDoc && (
-              <p className="text-xs font-medium text-primary">Chapter: {selectedTopicDoc.name}</p>
+              <Badge variant="secondary" className="mt-1 w-fit gap-1.5">
+                <BookOpen className="size-3.5" />
+                {selectedTopicDoc.name}
+              </Badge>
             )}
           </CardHeader>
           <CardContent className="space-y-5">
             {step === 1 && (
               <div className="space-y-4">
                 {hasAssignments && (
-                  <p className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+                    <GraduationCap className="size-4 shrink-0" />
                     Showing only the board, class, subject, and chapters your admin has assigned to you.
-                  </p>
+                  </div>
                 )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label>Board</Label>
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <GraduationCap className="size-3.5" /> Board
+                    </Label>
                     <Select
                       value={scope.board}
                       onValueChange={(v) => { setBoard(v); setClass(""); setSubject(""); setTopic(""); }}
@@ -441,7 +511,9 @@ export default function AddChapterWorkspace() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Class</Label>
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Layers className="size-3.5" /> Class
+                    </Label>
                     <Select value={scope.class} onValueChange={(v) => { setClass(v); setSubject(""); setTopic(""); }} disabled={!scope.board}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select class" /></SelectTrigger>
                       <SelectContent>
@@ -452,7 +524,9 @@ export default function AddChapterWorkspace() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Subject</Label>
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <BookOpen className="size-3.5" /> Subject
+                    </Label>
                     <Select value={scope.subject} onValueChange={(v) => { setSubject(v); setTopic(""); }} disabled={!scope.class}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select subject" /></SelectTrigger>
                       <SelectContent>
@@ -463,7 +537,9 @@ export default function AddChapterWorkspace() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Chapter</Label>
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <FileText className="size-3.5" /> Chapter
+                    </Label>
                     <Select value={scope.topic} onValueChange={setTopic} disabled={!scope.subject}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select chapter" /></SelectTrigger>
                       <SelectContent>
@@ -475,17 +551,30 @@ export default function AddChapterWorkspace() {
                   </div>
                 </div>
 
+                {breadcrumbChips.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {breadcrumbChips.slice(0, 4).map((c, i) => (
+                      <span key={i} className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", c.tone)}>
+                        <Check className="size-3" />
+                        {c.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {scope.subject && canCreateNewTopic && (
-                  <div className="flex items-end gap-2 rounded-lg border border-dashed p-3">
+                  <div className="flex items-end gap-2 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-3.5">
                     <div className="flex-1 space-y-1.5">
-                      <Label>Don't see your chapter? Create it</Label>
+                      <Label className="flex items-center gap-1.5">
+                        <Plus className="size-3.5 text-primary" /> Don't see your chapter? Create it
+                      </Label>
                       <Input
                         value={newTopicName}
                         onChange={(e) => setNewTopicName(e.target.value)}
                         placeholder="New chapter name"
                       />
                     </div>
-                    <Button type="button" variant="outline" onClick={createTopic} disabled={creatingTopic}>
+                    <Button type="button" onClick={createTopic} disabled={creatingTopic}>
                       <Plus className="size-4" />
                       {creatingTopic ? "Creating..." : "Create"}
                     </Button>
@@ -500,15 +589,24 @@ export default function AddChapterWorkspace() {
                   <p className="text-sm text-muted-foreground">Go back and select a chapter first.</p>
                 ) : (
                   <>
-                    <div className="space-y-1.5">
-                      <Label>Chapter Content</Label>
-                      <JoditEditor value={topicSummary} config={editorConfig} onBlur={(v) => setTopicSummary(v || "")} />
+                    <div className="space-y-1.5 rounded-2xl border bg-muted/20 p-3.5">
+                      <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <FileText className="size-3.5" /> Chapter Content
+                      </Label>
+                      <div className="overflow-hidden rounded-xl border bg-background">
+                        <JoditEditor value={topicSummary} config={editorConfig} onBlur={(v) => setTopicSummary(v || "")} />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>Learning Outcome</Label>
-                      <JoditEditor value={learningOutcome} config={editorConfig} onBlur={(v) => setLearningOutcome(v || "")} />
+                    <div className="space-y-1.5 rounded-2xl border bg-muted/20 p-3.5">
+                      <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <Rocket className="size-3.5" /> Learning Outcome
+                      </Label>
+                      <div className="overflow-hidden rounded-xl border bg-background">
+                        <JoditEditor value={learningOutcome} config={editorConfig} onBlur={(v) => setLearningOutcome(v || "")} />
+                      </div>
                     </div>
-                    <Button type="button" onClick={saveContent} disabled={savingContent}>
+                    <Button type="button" onClick={saveContent} disabled={savingContent} className="gap-1.5">
+                      <Check className="size-4" />
                       {savingContent ? "Saving..." : "Save Content"}
                     </Button>
                   </>
@@ -517,51 +615,106 @@ export default function AddChapterWorkspace() {
             )}
 
             {step === 3 && (
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label>Stage</Label>
-                  <Select value={scope.stage} onValueChange={(v) => { setStage(v); setDifficulty(""); setQuestionType(""); }}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select stage" /></SelectTrigger>
-                    <SelectContent>
-                      {stages.map((s) => (
-                        <SelectItem key={s} value={String(s)}>{formatStageLabel(s)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex gap-2 pt-1">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={customStage}
-                      onChange={(e) => setCustomStage(e.target.value)}
-                      placeholder="Add stage e.g. 4"
-                    />
-                    <Button type="button" variant="outline" onClick={addCustomStage} disabled={!customStage}>
-                      Add
-                    </Button>
+              <div className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Layers className="size-3.5" /> Stage
+                    </Label>
+                    <Select value={scope.stage} onValueChange={(v) => { setStage(v); setDifficulty(""); setQuestionType(""); }}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="Select stage" /></SelectTrigger>
+                      <SelectContent>
+                        {stages.map((s) => (
+                          <SelectItem key={s} value={String(s)}>{formatStageLabel(s)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {showCustomStage ? (
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          type="number"
+                          min="1"
+                          autoFocus
+                          value={customStage}
+                          onChange={(e) => setCustomStage(e.target.value)}
+                          placeholder="Add stage e.g. 4"
+                        />
+                        <Button type="button" variant="outline" onClick={addCustomStage} disabled={!customStage}>
+                          Add
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => { setShowCustomStage(false); setCustomStage(""); }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomStage(true)}
+                        className="flex items-center gap-1 pt-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <Plus className="size-3.5" /> More
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Sliders className="size-3.5" /> Difficulty
+                    </Label>
+                    <div className={cn("grid grid-cols-3 gap-2", !scope.stage && "pointer-events-none opacity-40")}>
+                      {DIFFICULTY_META.map((d) => {
+                        const isSelected = scope.difficulty === d.label;
+                        return (
+                          <button
+                            key={d.label}
+                            type="button"
+                            onClick={() => { setDifficulty(d.label); setQuestionType(""); }}
+                            className={cn(
+                              "flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-2.5 text-xs font-semibold transition-all",
+                              isSelected ? cn(d.tint, "ring-2 ring-offset-1", d.ring) : "border-border bg-background text-muted-foreground hover:border-primary/30"
+                            )}
+                          >
+                            <span className={cn("size-2.5 rounded-full", d.swatch)} />
+                            {d.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Difficulty</Label>
-                  <Select value={scope.difficulty} onValueChange={(v) => { setDifficulty(v); setQuestionType(""); }} disabled={!scope.stage}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select difficulty" /></SelectTrigger>
-                    <SelectContent>
-                      {DIFFICULTY_LEVELS.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Question Type</Label>
-                  <Select value={scope.questionType} onValueChange={setQuestionType} disabled={!scope.difficulty}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select type" /></SelectTrigger>
-                    <SelectContent>
-                      {QUESTION_TYPES.map((t) => (
-                        <SelectItem key={t.label} value={t.label}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <ListChecks className="size-3.5" /> Question Type
+                  </Label>
+                  <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5", !scope.difficulty && "pointer-events-none opacity-40")}>
+                    {QUESTION_TYPES.map((t) => {
+                      const TypeIconEl = t.icon;
+                      const isSelected = scope.questionType === t.label;
+                      return (
+                        <button
+                          key={t.label}
+                          type="button"
+                          onClick={() => setQuestionType(t.label)}
+                          className={cn(
+                            "flex flex-col items-center gap-2 rounded-2xl border-2 px-2 py-3.5 text-center text-[11px] font-semibold transition-all",
+                            isSelected
+                              ? "border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20"
+                              : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5"
+                          )}
+                        >
+                          <span className={cn("flex size-9 items-center justify-center rounded-xl", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}>
+                            <TypeIconEl className="size-4.5" />
+                          </span>
+                          {t.short}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -571,11 +724,11 @@ export default function AddChapterWorkspace() {
 
       {step < 4 && (
         <div className="flex items-center justify-between">
-          <Button type="button" variant="outline" onClick={goBack} disabled={step === 1}>
+          <Button type="button" variant="outline" size="lg" className="rounded-full" onClick={goBack} disabled={step === 1}>
             <ChevronLeft className="size-4" />
             Back
           </Button>
-          <Button type="button" onClick={goNext}>
+          <Button type="button" size="lg" className="rounded-full shadow-md shadow-primary/25" onClick={goNext}>
             Next
             <ChevronRight className="size-4" />
           </Button>
@@ -585,31 +738,28 @@ export default function AddChapterWorkspace() {
       {step === 4 && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Button type="button" variant="outline" onClick={goBack}>
+            <Button type="button" variant="outline" size="lg" className="rounded-full" onClick={goBack}>
               <ChevronLeft className="size-4" />
               Back
             </Button>
             {ActiveTypeComponent && (
-              <Button type="button" onClick={addAnotherType}>
+              <Button type="button" size="lg" className="rounded-full shadow-md shadow-primary/25" onClick={addAnotherType}>
                 <Plus className="size-4" />
                 Add Another Question Type
               </Button>
             )}
           </div>
-          {ActiveTypeComponent && (
-            <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              {[
-                boards.find((b) => b._id === scope.board)?.name,
-                classes.find((c) => c._id === scope.class)?.name,
-                subjects.find((s) => s._id === scope.subject)?.name,
-                selectedTopicDoc?.name,
-                scope.stage && `Stage ${scope.stage}`,
-                scope.difficulty,
-                scope.questionType,
-              ]
-                .filter(Boolean)
-                .join(" → ")}
-            </p>
+          {ActiveTypeComponent && breadcrumbChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border bg-muted/20 px-3.5 py-3">
+              {breadcrumbChips.map((c, i) => (
+                <span key={i} className="inline-flex items-center gap-1">
+                  <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", c.tone)}>
+                    {c.label}
+                  </span>
+                  {i < breadcrumbChips.length - 1 && <ChevronRight className="size-3 text-muted-foreground" />}
+                </span>
+              ))}
+            </div>
           )}
           {ActiveTypeComponent ? (
             <div className="-mx-6">

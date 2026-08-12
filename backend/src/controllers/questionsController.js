@@ -1389,6 +1389,8 @@ export const list = async (req, res) => {
       board,
       mine,
       q,
+      difficulty,
+      status,
       page = 1,
       limit = 20,
     } = req.query;
@@ -1433,6 +1435,15 @@ export const list = async (req, res) => {
     if (topic) filter.topic = topic;
     if (stage) filter.stage = normalizeStageValue(stage);
     if (level) filter.level = level;
+    if (difficulty) filter.difficulty = String(difficulty).trim().toLowerCase();
+    // Students are always locked to approved-only above; everyone else may
+    // narrow by status explicitly (e.g. a teacher filtering their own list).
+    if (status && req.user?.role !== "student") {
+      const normalizedStatus = String(status).trim().toLowerCase();
+      if (["pending", "approved", "rejected"].includes(normalizedStatus)) {
+        filter.status = normalizedStatus;
+      }
+    }
     if (q) {
       filter.$or = [
         { question: { $regex: q, $options: "i" } },

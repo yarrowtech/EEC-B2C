@@ -9,6 +9,7 @@ import {
   User,
   LogOut,
   GraduationCap,
+  Users,
 } from "lucide-react";
 
 import {
@@ -53,15 +54,18 @@ const NAV_GROUPS = [
   },
   {
     label: "My Work",
-    items: [{ to: "/dashboard/my-payments", label: "My Payments", icon: Wallet }],
-  },
-  {
-    label: "Resources",
     items: [
-      // { to: "/dashboard/study-materials", label: "Study Materials", icon: Library },
-      { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: Library },
+      { to: "/dashboard/my-payments", label: "My Payments", icon: Wallet },
+      { to: "/dashboard/student-engagement", label: "Student Engagement", icon: Users },
     ],
   },
+  // {
+  //   label: "Resources",
+  //   items: [
+  //     // { to: "/dashboard/study-materials", label: "Study Materials", icon: Library },
+  //     // { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: Library },
+  //   ],
+  // },
 ];
 
 function pageTitleFromPath(pathname) {
