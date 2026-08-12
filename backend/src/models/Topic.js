@@ -24,6 +24,11 @@ const topicSchema = new mongoose.Schema(
     contentReviewedAt: { type: Date, default: null },
     contentRejectionReason: { type: String, default: "" },
     submissionId: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
+    assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: "ChapterAssignment", default: null },
+    budgetAmount: { type: Number, default: 0, min: 0 },
+    paymentStatus: { type: String, enum: ["unpaid", "paid"], default: "unpaid" },
+    paidAt: { type: Date, default: null },
+    paidBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }
 );

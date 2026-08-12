@@ -6,6 +6,7 @@ import Question from "../models/Question.js";
 import { requireAuth, requireRole } from "../middleware/auth.js"; // ✅ FIXED IMPORT
 import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
 import { sendPushNotification } from "./pushNotificationRoutes.js";
+import { assertScopeWriteAccess, findMatchingAssignment, computeChapterCompletion } from "../utils/chapterAssignment.js";
 
 const router = express.Router();
 const ALLOWED_WRITE_ROLES = new Set(["admin", "teacher"]);
@@ -190,6 +191,16 @@ router.post("/topic", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Name, subject, board, and class are required" });
     }
 
+    const access = await assertScopeWriteAccess({ board, classId: className, subject }, req.user);
+    if (!access.ok) {
+      return res.status(403).json({ message: access.message });
+    }
+
+    const matchingAssignment = await findMatchingAssignment(
+      { board, classId: className, subject },
+      req.user.id
+    );
+
     const topic = await Topic.create({
       name,
       subject,
@@ -201,6 +212,8 @@ router.post("/topic", requireAuth, async (req, res) => {
       learningOutcome,
       createdBy: req.user.id,
       status: role === "admin" ? "approved" : "pending",
+      assignmentId: matchingAssignment?._id || null,
+      budgetAmount: matchingAssignment?.amount || 0,
     });
     res.json(topic);
   } catch (err) {
@@ -413,6 +426,19 @@ router.put("/topic/:id", requireAuth, async (req, res) => {
         return res
           .status(403)
           .json({ message: "Not permitted. Another teacher already has a pending content submission for this topic." });
+      }
+
+      const access = await assertScopeWriteAccess(
+        {
+          board: existingTopic.board,
+          classId: existingTopic.class,
+          subject: existingTopic.subject,
+          topicId: existingTopic._id,
+        },
+        req.user
+      );
+      if (!access.ok) {
+        return res.status(403).json({ message: access.message });
       }
     }
 
@@ -633,6 +659,268 @@ router.patch("/topic/:id/review", requireAuth, requireRole("admin"), async (req,
     }
 
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* ---------- CONSOLIDATED CHAPTER REVIEW (admin only) ---------- */
+/* Groups a chapter's topic/content submission together with its tryout
+   questions so admin can see everything a teacher uploaded for that
+   chapter, and its author, in one place — instead of checking the topic
+   review and question review queues separately. */
+
+router.get("/topic-review/chapters", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const { status = "pending", q, limit = 50, page = 1 } = req.query;
+    const isPending = status !== "all";
+
+    const filter = isPending ? { $or: [{ status: "pending" }, { contentStatus: "pending" }] } : {};
+    if (q) {
+      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (escaped) filter.name = { $regex: escaped, $options: "i" };
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const safePage = Math.max(Number(page) || 1, 1);
+
+    const [topicDocs, total] = await Promise.all([
+      Topic.find(filter)
+        .populate("board", "name")
+        .populate("class", "name")
+        .populate("subject", "name")
+        .populate("createdBy", "name email role")
+        .populate("draftUpdatedBy", "name email role")
+        .sort({ createdAt: -1 })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit),
+      Topic.countDocuments(filter),
+    ]);
+
+    const items = await Promise.all(
+      topicDocs.map(async (topic) => {
+        const questionFilter = { topic: String(topic._id) };
+        if (isPending) questionFilter.status = "pending";
+        const questions = await Question.find(questionFilter)
+          .populate("createdBy", "name email role")
+          .sort({ createdAt: 1 });
+        return { topic, questions };
+      })
+    );
+
+    res.json({ items, total, page: safePage, limit: safeLimit, totalPages: Math.ceil(total / safeLimit) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Approve everything pending for one chapter — the topic, its content
+// draft, and all of its pending questions — in a single action.
+router.patch("/topic-review/chapters/:topicId/approve-all", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const topic = await Topic.findById(req.params.topicId);
+    if (!topic) return res.status(404).json({ message: "Chapter not found" });
+
+    if (topic.status === "pending") {
+      topic.status = "approved";
+      topic.reviewedBy = req.user.id;
+      topic.reviewedAt = new Date();
+      topic.rejectionReason = "";
+    }
+
+    if (topic.contentStatus === "pending") {
+      topic.topicSummary = topic.draftTopicSummary;
+      topic.learningOutcome = topic.draftLearningOutcome;
+      topic.contentUpdatedBy = topic.draftUpdatedBy;
+      topic.draftTopicSummary = "";
+      topic.draftLearningOutcome = "";
+      topic.contentStatus = "approved";
+      topic.contentReviewedBy = req.user.id;
+      topic.contentReviewedAt = new Date();
+      topic.contentRejectionReason = "";
+    }
+
+    await topic.save();
+
+    const questionResult = await Question.updateMany(
+      { topic: String(topic._id), status: "pending" },
+      { status: "approved", reviewedBy: req.user.id, reviewedAt: new Date(), rejectionReason: "" }
+    );
+
+    const populated = await Topic.findById(topic._id)
+      .populate("board", "name")
+      .populate("class", "name")
+      .populate("subject", "name")
+      .populate("createdBy", "name email role");
+
+    const recipient = populated.createdBy;
+    if (recipient?.email) {
+      sendTopicReviewStatusEmail({
+        to: recipient.email,
+        name: recipient.name,
+        topicName: populated.name,
+        subjectName: populated.subject?.name || "",
+        status: "approved",
+        reason: "",
+        kind: "topic",
+      }).catch((mailErr) => console.error("Chapter review email failed:", mailErr?.message || mailErr));
+
+      sendPushNotification(
+        recipient._id,
+        "Chapter Approved",
+        `Your chapter "${populated.name}" and its ${questionResult.modifiedCount} question(s) were approved and are now live.`
+      ).catch((pushErr) => console.error("Chapter review push notification failed:", pushErr?.message || pushErr));
+    }
+
+    res.json({ topic: populated, questionsApproved: questionResult.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* ---------- CHAPTER PAYMENT ROUTES ---------- */
+/* Budget/payment is tracked per Topic ("chapter"), auto-filled from the
+   writer's ChapterAssignment when the chapter is created (see POST
+   /topic above). Admin can still override the budget manually. */
+
+// Admin: list all chapters with writer, budget, and payment info
+router.get("/topic-payments", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const { board, class: className, subject, paymentStatus, q, limit = 50, page = 1 } = req.query;
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const empty = () => res.json({ items: [], total: 0, page: safePage, limit: safeLimit, totalPages: 0 });
+
+    const filter = {};
+    if (board) {
+      const boardValues = await resolveRefFilterValues(board, "../models/Board.js");
+      if (boardValues.length === 0) return empty();
+      filter.board = { $in: boardValues };
+    }
+    if (className) {
+      const classValues = await resolveRefFilterValues(className, "../models/Class.js");
+      if (classValues.length === 0) return empty();
+      filter.class = { $in: classValues };
+    }
+    if (subject) filter.subject = subject;
+    if (paymentStatus && paymentStatus !== "all") filter.paymentStatus = paymentStatus;
+    if (q) {
+      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (escaped) filter.name = { $regex: escaped, $options: "i" };
+    }
+
+    const [topics, total] = await Promise.all([
+      Topic.find(filter)
+        .populate("board", "name")
+        .populate("class", "name")
+        .populate("subject", "name")
+        .populate("createdBy", "name email role")
+        .populate("paidBy", "name")
+        .sort({ createdAt: -1 })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit),
+      Topic.countDocuments(filter),
+    ]);
+
+    const items = await Promise.all(
+      topics.map(async (t) => ({ ...t.toObject(), ...(await computeChapterCompletion(t)) }))
+    );
+
+    res.json({
+      items,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Admin: manually override the budget for a chapter
+router.patch("/topic/:id/budget", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const budgetAmount = Number(req.body?.budgetAmount);
+    if (!Number.isFinite(budgetAmount) || budgetAmount < 0) {
+      return res.status(400).json({ message: "budgetAmount must be a non-negative number" });
+    }
+
+    const updated = await Topic.findByIdAndUpdate(req.params.id, { budgetAmount }, { new: true })
+      .populate("createdBy", "name email role")
+      .populate("paidBy", "name");
+
+    if (!updated) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Admin: mark a chapter's payment as paid or unpaid
+router.patch("/topic/:id/payment", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const status = String(req.body?.paymentStatus || "").trim().toLowerCase();
+    if (!["paid", "unpaid"].includes(status)) {
+      return res.status(400).json({ message: "paymentStatus must be 'paid' or 'unpaid'" });
+    }
+
+    const topic = await Topic.findById(req.params.id);
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
+
+    if (status === "paid") {
+      const { contentDone, questionsDone } = await computeChapterCompletion(topic);
+      if (!contentDone || !questionsDone) {
+        return res.status(400).json({
+          message: "Cannot mark as paid until both the chapter content and its questions are approved.",
+        });
+      }
+    }
+
+    topic.paymentStatus = status;
+    topic.paidAt = status === "paid" ? new Date() : null;
+    topic.paidBy = status === "paid" ? req.user.id : null;
+    await topic.save();
+
+    if (status === "paid") {
+      sendPushNotification(
+        topic.createdBy,
+        "Payment Done",
+        `Your payment for "${topic.name}" has been marked as paid.`
+      ).catch((pushErr) => {
+        console.error("Payment notification failed:", pushErr?.message || pushErr);
+      });
+    }
+
+    const populated = await Topic.findById(topic._id)
+      .populate("createdBy", "name email role")
+      .populate("paidBy", "name");
+
+    res.json(populated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Writer: view their own chapters' budget & payment status
+router.get("/my-payments", requireAuth, async (req, res) => {
+  try {
+    const topics = await Topic.find({ createdBy: req.user.id })
+      .select("name status contentStatus topicSummary learningOutcome budgetAmount paymentStatus paidAt board class subject createdAt")
+      .populate("board", "name")
+      .populate("class", "name")
+      .populate("subject", "name")
+      .sort({ createdAt: -1 });
+
+    const items = await Promise.all(
+      topics.map(async (t) => ({ ...t.toObject(), ...(await computeChapterCompletion(t)) }))
+    );
+
+    res.json({ items });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

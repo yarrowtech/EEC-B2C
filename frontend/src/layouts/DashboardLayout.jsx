@@ -240,6 +240,7 @@ import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
 import { toast } from "react-toastify";
 import { confirmAndLogout, consumeManualLogoutFlag } from "../lib/confirmLogout";
+import TeacherDashboardLayout from "./TeacherDashboardLayout";
 import OnboardingTour, { isTourDone, markTourDone } from "../components/OnboardingTour";
 import { isTokenValid } from "../lib/jwt";
 
@@ -626,6 +627,10 @@ export default function DashboardLayout() {
                     ? "Streak uncompleted. Attempt today to restart."
                     : `Attempt today to continue your ${dailyChallenge.streak} day streak.`;
     const showDashboardChrome = !isExamTakeRoute;
+
+    if (role === "teacher") {
+        return <TeacherDashboardLayout user={user} onLogout={handleLogout} />;
+    }
 
     return (
         // <div className="h-screen overflow-hidden bg-[#FFFBEA]">

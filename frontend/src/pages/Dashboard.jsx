@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { myAttempts, adminAttempts, getJSON } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
-import WelcomeCard from "./WelcomeCard";
 import WelcomeModal from "../components/WelcomeModal";
 import AdventureStatCard from '../components/student/AdventureStatCard';
 import DailyQuestCard from '../components/student/DailyQuestCard';
@@ -34,6 +33,7 @@ import {
   stageEstimateMinutes,
 } from "../lib/studentLearning";
 import { isTokenValid } from "../lib/jwt";
+import TeacherHome from "../components/dashboard/TeacherHome";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -569,136 +569,6 @@ function AdminContent() {
 }
 
 
-
-function TeacherContent() {
-  const [uploadedQuestions, setUploadedQuestions] = useState(0);
-  const [uploadedQuestionTypes, setUploadedQuestionTypes] = useState(0);
-  const [uploadedStudyMaterials, setUploadedStudyMaterials] = useState(0);
-  const [uploadTrend, setUploadTrend] = useState([]);
-
-  function toLocalDateKey(dateValue) {
-    const d = new Date(dateValue);
-    if (Number.isNaN(d.getTime())) return "";
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }
-
-  function buildLast7DaysTrend(items = []) {
-    const dailyCounts = {};
-    items.forEach((q) => {
-      const key = toLocalDateKey(q.createdAt);
-      if (!key) return;
-      dailyCounts[key] = (dailyCounts[key] || 0) + 1;
-    });
-
-    const trend = [];
-    for (let i = 6; i >= 0; i -= 1) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      const key = toLocalDateKey(d);
-      trend.push({
-        key,
-        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        count: dailyCounts[key] || 0,
-      });
-    }
-    return trend;
-  }
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const currentUser = getUser();
-        const currentUserId = String(currentUser?._id || currentUser?.id || "");
-        const currentUserEmail = String(currentUser?.email || "").toLowerCase();
-
-        let ownQuestions = [];
-
-        // Primary: server-side mine filter
-        const qData = await getJSON("/api/questions?mine=1&page=1&limit=5000");
-        ownQuestions = qData.items || [];
-
-        // Fallback: client-side filter on full list if mine filter returns empty.
-        if (!ownQuestions.length) {
-          const fallback = await getJSON("/api/questions?page=1&limit=5000");
-          const items = fallback.items || [];
-          ownQuestions = items.filter((item) => {
-            const uploaderId = String(item?.createdBy?._id || item?.createdBy || "");
-            const uploaderEmail = String(item?.createdBy?.email || "").toLowerCase();
-            return (
-              (currentUserId && uploaderId === currentUserId) ||
-              (currentUserEmail && uploaderEmail === currentUserEmail)
-            );
-          });
-        }
-
-        setUploadedQuestions(ownQuestions.length);
-        setUploadedQuestionTypes(new Set(ownQuestions.map((q) => q.type).filter(Boolean)).size);
-
-        const materials = await getJSON("/api/study-materials/admin/all");
-        setUploadedStudyMaterials(Array.isArray(materials) ? materials.length : 0);
-
-        setUploadTrend(buildLast7DaysTrend(ownQuestions));
-      } catch (error) {
-        console.error("Failed to load teacher upload trend", error);
-        setUploadedQuestions(0);
-        setUploadedQuestionTypes(0);
-        setUploadedStudyMaterials(0);
-        setUploadTrend(buildLast7DaysTrend([]));
-      }
-    })();
-  }, []);
-
-  const maxTrendValue = Math.max(1, ...uploadTrend.map((d) => d.count));
-
-  return (
-    <>
-      <WelcomeCard />
-      <Section title="Teacher Overview" icon={<GraduationCap size={18} />}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Uploaded Questions"
-            value={uploadedQuestions}
-            icon={<ClipboardList size={18} />}
-            gradient={["from-indigo-600", "to-violet-600"]}
-          />
-          <StatCard
-            title="Uploaded Question Types"
-            value={uploadedQuestionTypes}
-            icon={<Activity size={18} />}
-            gradient={["from-emerald-600", "to-teal-600"]}
-          />
-          <StatCard
-            title="Uploaded Study Materials"
-            value={uploadedStudyMaterials}
-            icon={<FileText size={18} />}
-            gradient={["from-amber-600", "to-orange-600"]}
-          />
-        </div>
-      </Section>
-      <Section title="Upload Trend (Last 7 Days)" subtitle="Date-wise by you">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="grid grid-cols-7 gap-3 items-end h-48">
-            {uploadTrend.map((d) => (
-              <div key={d.key} className="flex flex-col items-center justify-end h-full">
-                <div className="text-[11px] font-semibold text-slate-700 mb-1">{d.count}</div>
-                <div
-                  className="w-full rounded-md bg-gradient-to-t from-indigo-600 to-purple-500"
-                  style={{ height: `${Math.max(6, (d.count / maxTrendValue) * 130)}px` }}
-                  title={`${d.label}: ${d.count}`}
-                />
-                <div className="text-[11px] text-slate-500 mt-2 text-center">{d.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Section>
-    </>
-  );
-}
 
 function StudentContent() {
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -1778,7 +1648,7 @@ export default function Dashboard() {
   const roleKey = String(user.role || "").toLowerCase();
   const roleContent = useMemo(() => {
     if (roleKey === "admin") return <AdminContent />;
-    if (roleKey === "teacher") return <TeacherContent />;
+    if (roleKey === "teacher") return <TeacherHome />;
     return <StudentContent />; // default
   }, [roleKey]);
 

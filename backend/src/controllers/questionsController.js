@@ -9,6 +9,7 @@ import Attempt from "../models/Attempt.js";
 import { resolveLevelAccessForUser } from "../utils/levelAccess.js";
 import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
 import { sendPushNotification } from "../routes/pushNotificationRoutes.js";
+import { assertScopeWriteAccess } from "../utils/chapterAssignment.js";
 import * as XLSX from "xlsx";
 
 // Helpers
@@ -389,6 +390,12 @@ export const create = async (req, res) => {
   try {
     if (!requireAdminOrTeacher(req, res)) return;
 
+    const access = await assertScopeWriteAccess(
+      { board: req.body.board, classId: req.body.class, subject: req.body.subject, topicId: req.body.topic },
+      req.user
+    );
+    if (!access.ok) return res.status(403).json({ message: access.message });
+
     const type = String(req.params.type || "").trim();
     const { ok, doc, message } = shapeByType(type, req.body, req.user.id);
     if (!ok) return res.status(400).json({ message });
@@ -428,6 +435,9 @@ export const bulkCreateMcqSingle = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -559,6 +569,9 @@ export const bulkCreateMcqMulti = async (req, res) => {
       });
     }
 
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
     if (!firstSheetName) {
@@ -688,6 +701,9 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -825,6 +841,9 @@ export const bulkCreateTrueFalse = async (req, res) => {
       });
     }
 
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
     if (!firstSheetName) {
@@ -953,6 +972,9 @@ export const bulkCreateMatchList = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -1085,6 +1107,9 @@ export const bulkCreateClozeSelect = async (req, res) => {
       });
     }
 
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
     if (!firstSheetName) {
@@ -1215,6 +1240,9 @@ export const bulkCreateClozeText = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];

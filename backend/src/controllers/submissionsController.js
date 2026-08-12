@@ -5,6 +5,7 @@ import Question from "../models/Question.js";
 import { shapeByType } from "./questionsController.js";
 import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
 import { sendPushNotification } from "../routes/pushNotificationRoutes.js";
+import { assertScopeWriteAccess, findMatchingAssignment } from "../utils/chapterAssignment.js";
 
 const ALLOWED_WRITE_ROLES = new Set(["admin", "teacher"]);
 const SUBMISSION_QUESTION_TYPES = new Set(["mcq-single", "mcq-multi", "true-false"]);
@@ -64,9 +65,16 @@ export const createSubmission = async (req, res) => {
       questions = [],
     } = req.body;
 
+    const access = await assertScopeWriteAccess({ board, classId: className, subject }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+
     const role = String(req.user.role || "").toLowerCase();
     const status = role === "admin" ? "approved" : "pending";
     const submissionId = new mongoose.Types.ObjectId();
+    const matchingAssignment = await findMatchingAssignment(
+      { board, classId: className, subject },
+      req.user.id
+    );
 
     const topic = await Topic.create({
       name: String(topicName).trim(),
@@ -81,6 +89,8 @@ export const createSubmission = async (req, res) => {
       status,
       contentStatus: "approved",
       submissionId,
+      assignmentId: matchingAssignment?._id || null,
+      budgetAmount: matchingAssignment?.amount || 0,
     });
 
     const { ok, docs, message } = buildQuestionDocs(questions, {
@@ -119,8 +129,8 @@ export const getMySubmissions = async (req, res) => {
 
     const items = await Promise.all(
       topics.map(async (t) => {
-        const questionCount = await Question.countDocuments({ submissionId: t.submissionId });
-        return { ...t.toObject(), questionCount };
+        const questions = await Question.find({ submissionId: t.submissionId }).sort({ createdAt: 1 });
+        return { ...t.toObject(), questions, questionCount: questions.length };
       })
     );
 

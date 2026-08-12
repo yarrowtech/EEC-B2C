@@ -60,6 +60,12 @@ import TeacherAnalytics from "./pages/admin/TeacherAnalytics";
 import JobApplicationsPage from "./pages/admin/JobApplicationsPage";
 import RegistrationsPage from "./pages/admin/RegistrationsPage";
 import TopicReview from "./pages/admin/TopicReview";
+import ChapterReview from "./pages/admin/ChapterReview";
+import ChapterPayments from "./pages/admin/ChapterPayments";
+import PaymentStructures from "./pages/admin/PaymentStructures";
+import SubmissionReview from "./pages/admin/SubmissionReview";
+import SubmitChapterWizard from "./pages/questions/SubmitChapterWizard";
+import MyPayments from "./pages/MyPayments";
 import QuestionReview from "./pages/admin/QuestionReview";
 import HeroSettings from "./components/settings/HeroSettings";
 import WhyEecSettings from "./components/settings/WhyEecSettings";
@@ -74,6 +80,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AddSubject from "./pages/questions/AddSubject";
 import AddTopic from "./pages/questions/AddTopic";
 import AddContent from "./pages/questions/AddContent";
+import AddChapterWorkspace from "./pages/questions/AddChapterWorkspace";
 import SubjectsList from "./pages/questions/SubjectsList";
 import TopicsList from "./pages/questions/TopicsList";
 import ChatBox from "./pages/ChatBox";
@@ -842,6 +849,7 @@ export default function App() {
             <Route path="add-subject" element={<AddSubject />} />
             <Route path="add-topic" element={<AddTopic />} />
             <Route path="add-content" element={<RequireAdmin><AddContent /></RequireAdmin>} />
+            <Route path="add-chapter-workspace" element={<RequireAdmin><AddChapterWorkspace /></RequireAdmin>} />
             <Route path="/dashboard/add-class" element={<AddClass />} />
             <Route path="/dashboard/add-board" element={<AddBoard />} />
             <Route path="students" element={<StudentsList />} />
@@ -929,6 +937,12 @@ export default function App() {
             <Route path="job-applications" element={<RequireAdmin><JobApplicationsPage /></RequireAdmin>} />
             <Route path="registrations" element={<RequireAdmin><RegistrationsPage /></RequireAdmin>} />
             <Route path="topic-review" element={<RequireAdmin><TopicReview /></RequireAdmin>} />
+            <Route path="chapter-review" element={<RequireAdmin><ChapterReview /></RequireAdmin>} />
+            <Route path="chapter-payments" element={<RequireAdmin><ChapterPayments /></RequireAdmin>} />
+            <Route path="submission-review" element={<RequireAdmin><SubmissionReview /></RequireAdmin>} />
+            <Route path="submit-chapter" element={<RequireAdmin><SubmitChapterWizard /></RequireAdmin>} />
+            <Route path="payment-structures" element={<RequireAdmin><PaymentStructures /></RequireAdmin>} />
+            <Route path="my-payments" element={<MyPayments />} />
 
             {/* Setttings */}
             <Route path="settings/home" element={<RequireAdmin><HeroSettings /></RequireAdmin>} />
