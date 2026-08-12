@@ -1796,7 +1796,7 @@ export default function Dashboard() {
         </div>
       </div> */}
 
-      <main className="mx-auto max-w-6xl px-3 md:px-4 py-3 md:py-5 space-y-4 md:space-y-6">
+      <main className="mx-auto max-w-6xl space-y-4 md:space-y-6">
         {roleContent}
 
         {/* <Section title="Announcements" icon={<Bell size={18} />}>
