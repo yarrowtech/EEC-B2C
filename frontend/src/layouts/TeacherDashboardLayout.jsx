@@ -83,7 +83,7 @@ export default function TeacherDashboardLayout({ user, onLogout }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <SidebarProvider>
+      <SidebarProvider className="teacher-portal">
         <Sidebar collapsible="icon">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
@@ -163,7 +163,7 @@ export default function TeacherDashboardLayout({ user, onLogout }) {
             <Separator orientation="vertical" className="h-4" />
             <p className="text-sm font-medium">{pageTitleFromPath(location.pathname)}</p>
           </header>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main className="flex-1 overflow-y-auto">
             <Outlet />
           </main>
         </SidebarInset>

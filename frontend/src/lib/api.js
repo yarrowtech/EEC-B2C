@@ -188,6 +188,17 @@ export async function deleteQuestion(id) {
   return json;
 }
 
+export async function reviewQuestion(id, status, reason) {
+  const res = await fetch(`${API_BASE}/api/questions/${id}/review`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ status, reason }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
 export async function startExam(payload) {
   const res = await fetch(`${API_BASE}/api/exams/start`, {
     method: "POST",

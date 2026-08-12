@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import SubjectTopicPicker from "../../components/questions/SubjectTopicPicker";
 import { useQuestionScope } from "../../context/QuestionScopeContext";
-import { getJSON, deleteQuestion } from "../../lib/api";
+import { getJSON, deleteQuestion, reviewQuestion } from "../../lib/api";
 import { normalizeStageNumber } from "../../lib/stage";
-import { FiFilter, FiSearch, FiTrash2, FiEdit3, FiList } from "react-icons/fi";
+import { FiFilter, FiSearch, FiTrash2, FiEdit3, FiList, FiCheckCircle } from "react-icons/fi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -22,6 +22,7 @@ export default function QuestionsList() {
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkApproving, setBulkApproving] = useState(false);
   const [err, setErr] = useState("");
   const [initialized, setInitialized] = useState(false);
 
@@ -278,6 +279,62 @@ export default function QuestionsList() {
     }
   }
 
+  async function onApproveSelected() {
+    if (!selectedIds.length) {
+      toast.warn("Please select at least one question.");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: `Approve ${selectedIds.length} selected question(s)?`,
+      text: "These questions will become visible to students.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#059669",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, approve all",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    setBulkApproving(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedIds.map((id) => reviewQuestion(id, "approved"))
+      );
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      const failCount = results.length - successCount;
+
+      await load();
+
+      if (failCount === 0) {
+        await Swal.fire({
+          icon: "success",
+          title: "Approved!",
+          text: `${successCount} question(s) approved successfully.`,
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await Swal.fire({
+          icon: "warning",
+          title: "Partial approval",
+          text: `${successCount} approved, ${failCount} failed.`,
+        });
+      }
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: "Approval failed",
+        text: e.message || "Something went wrong",
+      });
+    } finally {
+      setBulkApproving(false);
+    }
+  }
+
   const pages = Math.max(1, Math.ceil(total / limit));
 
   return (
@@ -369,15 +426,26 @@ export default function QuestionsList() {
               <div className="text-sm text-slate-700 font-medium">
                 {selectedIds.length} selected
               </div>
-              <button
-                onClick={onDeleteSelected}
-                disabled={!selectedIds.length || bulkDeleting}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-2
-                         border border-red-300 text-red-700 bg-white
-                         hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FiTrash2 size={15} /> {bulkDeleting ? "Deleting..." : "Delete Selected"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onApproveSelected}
+                  disabled={!selectedIds.length || bulkApproving || bulkDeleting}
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2
+                           border border-emerald-300 text-emerald-700 bg-white
+                           hover:bg-emerald-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiCheckCircle size={15} /> {bulkApproving ? "Approving..." : "Approve Selected"}
+                </button>
+                <button
+                  onClick={onDeleteSelected}
+                  disabled={!selectedIds.length || bulkDeleting || bulkApproving}
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2
+                           border border-red-300 text-red-700 bg-white
+                           hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiTrash2 size={15} /> {bulkDeleting ? "Deleting..." : "Delete Selected"}
+                </button>
+              </div>
             </div>
           )}
           <div className="overflow-x-auto">

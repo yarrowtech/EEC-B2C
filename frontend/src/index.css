@@ -74,6 +74,15 @@ textarea {
   font-family: "Balsamiq Sans", "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/* Teacher portal uses a plain, professional font instead of the app-wide Balsamiq Sans default */
+.teacher-portal,
+.teacher-portal button,
+.teacher-portal input,
+.teacher-portal select,
+.teacher-portal textarea {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 /* Material Symbols defaults */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined";
@@ -498,6 +507,34 @@ details[open] summary .rotate-icon {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Teacher portal — vibrant color theme instead of the default black-and-white shadcn palette */
+.teacher-portal {
+  --primary: #6c63ff;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2ff;
+  --secondary-foreground: #4338ca;
+  --muted: #f5f4ff;
+  --muted-foreground: #6b7280;
+  --accent: #e0fbf8;
+  --accent-foreground: #0f766e;
+  --border: #e4e1ff;
+  --input: #e4e1ff;
+  --ring: #6c63ff;
+  --chart-1: #6c63ff;
+  --chart-2: #4ecdc4;
+  --chart-3: #f4736e;
+  --chart-4: #f59e0b;
+  --chart-5: #22c55e;
+  --sidebar: #f8f7ff;
+  --sidebar-foreground: #1b1f3b;
+  --sidebar-primary: #6c63ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ece9ff;
+  --sidebar-accent-foreground: #4338ca;
+  --sidebar-border: #e4e1ff;
+  --sidebar-ring: #6c63ff;
 }
 
 @layer base {

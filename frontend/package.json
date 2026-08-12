@@ -33,6 +33,7 @@
     "react-router-dom": "^7.9.3",
     "react-simple-typewriter": "^5.0.1",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.10.1",
     "shadcn": "^4.16.2",
     "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.26.10",

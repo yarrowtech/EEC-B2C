@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Send,
@@ -9,7 +9,18 @@ import {
   CheckCircle2,
   Library,
   ArrowRight,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 import { getJSON } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -69,6 +80,8 @@ export default function TeacherHome() {
     pendingPaymentAmount: 0,
   });
   const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [questionDates, setQuestionDates] = useState([]);
+  const [trendRange, setTrendRange] = useState(14);
 
   useEffect(() => {
     let mounted = true;
@@ -76,7 +89,7 @@ export default function TeacherHome() {
       try {
         const [submissionsData, questionsData, paymentsData] = await Promise.all([
           getJSON("/api/submissions/mine").catch(() => ({ items: [] })),
-          getJSON("/api/questions?mine=1&page=1&limit=1").catch(() => ({ total: 0 })),
+          getJSON("/api/questions?mine=1&page=1&limit=5000").catch(() => ({ items: [], total: 0 })),
           getJSON("/api/my-payments").catch(() => ({ items: [] })),
         ]);
 
@@ -84,16 +97,18 @@ export default function TeacherHome() {
 
         const submissions = Array.isArray(submissionsData?.items) ? submissionsData.items : [];
         const chapters = Array.isArray(paymentsData?.items) ? paymentsData.items : [];
+        const questionItems = Array.isArray(questionsData?.items) ? questionsData.items : [];
 
         setStats({
           pendingSubmissions: submissions.filter((s) => s.status === "pending").length,
           approvedChapters: submissions.filter((s) => s.status === "approved").length,
-          questionsUploaded: Number(questionsData?.total || 0),
+          questionsUploaded: Number(questionsData?.total || questionItems.length || 0),
           pendingPaymentAmount: chapters
             .filter((t) => t.paymentStatus !== "paid")
             .reduce((sum, t) => sum + (Number(t.budgetAmount) || 0), 0),
         });
         setRecentSubmissions(submissions.slice(0, 4));
+        setQuestionDates(questionItems.map((item) => item.createdAt).filter(Boolean));
       } catch {
         // stats just stay at defaults if this fails
       } finally {
@@ -104,6 +119,41 @@ export default function TeacherHome() {
       mounted = false;
     };
   }, []);
+
+  const { trendData, trendChangePercent } = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = trendRange - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      days.push(d);
+    }
+    const dayKey = (d) => d.toISOString().slice(0, 10);
+    const countsByDay = new Map(days.map((d) => [dayKey(d), 0]));
+    for (const raw of questionDates) {
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) continue;
+      d.setHours(0, 0, 0, 0);
+      const key = dayKey(d);
+      if (countsByDay.has(key)) {
+        countsByDay.set(key, countsByDay.get(key) + 1);
+      }
+    }
+    const data = days.map((d) => ({
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      questions: countsByDay.get(dayKey(d)) || 0,
+    }));
+
+    const half = Math.floor(trendRange / 2) || 1;
+    const firstHalfTotal = data.slice(0, half).reduce((s, r) => s + r.questions, 0);
+    const secondHalfTotal = data.slice(-half).reduce((s, r) => s + r.questions, 0);
+    const changePercent = firstHalfTotal > 0
+      ? Math.round(((secondHalfTotal - firstHalfTotal) / firstHalfTotal) * 100)
+      : secondHalfTotal > 0 ? 100 : 0;
+
+    return { trendData: data, trendChangePercent: changePercent };
+  }, [questionDates, trendRange]);
 
   return (
     <div className="space-y-6">
@@ -140,6 +190,81 @@ export default function TeacherHome() {
           accent="bg-rose-100 text-rose-700"
         />
       </div>
+
+      <Card>
+        <CardContent className="py-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
+            <div>
+              <p className="text-sm font-semibold">Question Upload Trends</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Date-wise count of your uploaded questions.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                  trendChangePercent >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                }`}
+              >
+                {trendChangePercent >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                {trendChangePercent >= 0 ? "+" : ""}{trendChangePercent}%
+              </span>
+              <div className="flex items-center rounded-lg border p-0.5">
+                {[7, 14, 30].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setTrendRange(n)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                      trendRange === n ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {n}d
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="h-56 md:h-64 mt-3 -ml-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="teacherQuestionTrendFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6c63ff" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#6c63ff" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eeecff" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#9891c9" }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={trendRange > 14 ? Math.ceil(trendRange / 8) : 0}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: "#9891c9" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={28}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: 12, border: "1px solid #e4e1ff", fontSize: 12, boxShadow: "0 6px 20px -8px rgba(76,99,255,0.25)" }}
+                  labelStyle={{ fontWeight: 700, color: "#1e293b" }}
+                  formatter={(value) => [`${value} question${value === 1 ? "" : "s"}`, "Uploaded"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="questions"
+                  stroke="#6c63ff"
+                  strokeWidth={2.5}
+                  fill="url(#teacherQuestionTrendFill)"
+                  activeDot={{ r: 4 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Quick Actions</h2>
