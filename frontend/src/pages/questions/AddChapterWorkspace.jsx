@@ -441,17 +441,17 @@ export default function AddChapterWorkspace() {
   ].filter((c) => c.label);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-6 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(191,219,254,0.38),transparent_24%),linear-gradient(to_bottom,#eff6ff,#f8fbff)] p-4 sm:p-6">
       {/* Step 4 renders an existing question-type page, which mounts its own
           ToastContainer — avoid a second one stacking duplicate toasts. */}
       {step < 4 && <ToastContainer />}
 
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl border bg-linear-to-br from-primary/10 via-background to-accent/30 p-6 sm:p-7">
-        <div className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-14 left-1/3 size-36 rounded-full bg-accent/40 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-blue-100 bg-[linear-gradient(135deg,#ffffff,#eff6ff)] p-6 shadow-sm sm:p-7">
+        <div className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-14 left-1/3 size-36 rounded-full bg-blue-100/80 blur-3xl" />
         <div className="relative flex items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1877f2,#4f9ef8)] text-white shadow-lg shadow-blue-200/70">
             <Sparkles className="size-6" />
           </div>
           <div>
@@ -475,8 +475,8 @@ export default function AddChapterWorkspace() {
                 <div
                   className={cn(
                     "flex size-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-300",
-                    isDone && "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/30",
-                    isActive && !isDone && "scale-110 border-primary bg-primary/10 text-primary ring-4 ring-primary/15",
+                    isDone && "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-200/60",
+                    isActive && !isDone && "scale-110 border-blue-600 bg-blue-50 text-blue-700 ring-4 ring-blue-100",
                     !isActive && !isDone && "border-border bg-background text-muted-foreground"
                   )}
                 >
@@ -487,9 +487,9 @@ export default function AddChapterWorkspace() {
                 </span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div className="relative mt-5 h-0.5 w-full flex-1 overflow-hidden rounded-full bg-border">
+                <div className="relative mt-5 h-0.5 w-full flex-1 overflow-hidden rounded-full bg-blue-100">
                   <div
-                    className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                    className="h-full rounded-full bg-[linear-gradient(90deg,#1877f2,#4f9ef8)] transition-all duration-500 ease-out"
                     style={{ width: s.id < step ? "100%" : "0%" }}
                   />
                 </div>
@@ -500,7 +500,7 @@ export default function AddChapterWorkspace() {
       </div>
 
       {step < 4 && (
-        <Card className="overflow-hidden rounded-3xl shadow-lg shadow-primary/5">
+        <Card className="overflow-hidden rounded-3xl border-blue-100 shadow-lg shadow-blue-100/40">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", currentStepMeta.bubble)}>
@@ -526,7 +526,7 @@ export default function AddChapterWorkspace() {
             {step === 1 && (
               <div className="space-y-4">
                 {hasAssignments && (
-                  <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+                  <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
                     <GraduationCap className="size-4 shrink-0" />
                     Showing only the board, class, subject, and chapters your admin has assigned to you.
                   </div>
@@ -602,10 +602,10 @@ export default function AddChapterWorkspace() {
                 )}
 
                 {scope.subject && canCreateNewTopic && (
-                  <div className="flex items-end gap-2 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-3.5">
+                  <div className="flex items-end gap-2 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50 p-3.5">
                     <div className="flex-1 space-y-1.5">
                       <Label className="flex items-center gap-1.5">
-                        <Plus className="size-3.5 text-primary" /> Don't see your chapter? Create it
+                        <Plus className="size-3.5 text-blue-600" /> Don't see your chapter? Create it
                       </Label>
                       <Input
                         value={newTopicName}
@@ -685,19 +685,19 @@ export default function AddChapterWorkspace() {
                   <p className="text-sm text-muted-foreground">Go back and select a chapter first.</p>
                 ) : (
                   <>
-                    <div className="space-y-1.5 rounded-2xl border bg-muted/20 p-3.5">
-                      <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        <FileText className="size-3.5" /> Chapter Content
-                      </Label>
-                      <div className="overflow-hidden rounded-xl border bg-background">
-                        <JoditEditor value={topicSummary} config={editorConfig} onBlur={(v) => setTopicSummary(v || "")} />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 rounded-2xl border bg-muted/20 p-3.5">
+              <div className="space-y-1.5 rounded-2xl border bg-muted/20 p-3.5">
+                <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <FileText className="size-3.5" /> Chapter Content
+                </Label>
+                <div className="overflow-hidden rounded-xl border border-blue-100 bg-white">
+                  <JoditEditor value={topicSummary} config={editorConfig} onBlur={(v) => setTopicSummary(v || "")} />
+                </div>
+              </div>
+                    <div className="space-y-1.5 rounded-2xl border border-blue-100 bg-blue-50/50 p-3.5">
                       <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         <Rocket className="size-3.5" /> Learning Outcome
                       </Label>
-                      <div className="overflow-hidden rounded-xl border bg-background">
+                      <div className="overflow-hidden rounded-xl border border-blue-100 bg-white">
                         <JoditEditor value={learningOutcome} config={editorConfig} onBlur={(v) => setLearningOutcome(v || "")} />
                       </div>
                     </div>
@@ -771,7 +771,7 @@ export default function AddChapterWorkspace() {
                             onClick={() => { setDifficulty(d.label); setQuestionType(""); }}
                             className={cn(
                               "flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-2.5 text-xs font-semibold transition-all",
-                              isSelected ? cn(d.tint, "ring-2 ring-offset-1", d.ring) : "border-border bg-background text-muted-foreground hover:border-primary/30"
+                              isSelected ? cn(d.tint, "ring-2 ring-offset-1", d.ring) : "border-border bg-background text-muted-foreground hover:border-blue-300"
                             )}
                           >
                             <span className={cn("size-2.5 rounded-full", d.swatch)} />
@@ -799,11 +799,11 @@ export default function AddChapterWorkspace() {
                           className={cn(
                             "flex flex-col items-center gap-2 rounded-2xl border-2 px-2 py-3.5 text-center text-[11px] font-semibold transition-all",
                             isSelected
-                              ? "border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20"
-                              : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5"
+                              ? "border-blue-600 bg-blue-50 text-blue-700 shadow-sm ring-2 ring-blue-100"
+                              : "border-border bg-background text-muted-foreground hover:border-blue-300 hover:bg-blue-50"
                           )}
                         >
-                          <span className={cn("flex size-9 items-center justify-center rounded-xl", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}>
+                          <span className={cn("flex size-9 items-center justify-center rounded-xl", isSelected ? "bg-[linear-gradient(135deg,#1877f2,#4f9ef8)] text-white" : "bg-muted text-foreground")}>
                             <TypeIconEl className="size-4.5" />
                           </span>
                           {t.short}
@@ -820,11 +820,11 @@ export default function AddChapterWorkspace() {
 
       {step < 4 && (
         <div className="flex items-center justify-between">
-          <Button type="button" variant="outline" size="lg" className="rounded-full" onClick={goBack} disabled={step === 1}>
+          <Button type="button" variant="outline" size="lg" className="rounded-full border-blue-200 text-blue-700 hover:bg-blue-50" onClick={goBack} disabled={step === 1}>
             <ChevronLeft className="size-4" />
             Back
           </Button>
-          <Button type="button" size="lg" className="rounded-full shadow-md shadow-primary/25" onClick={goNext}>
+          <Button type="button" size="lg" className="rounded-full bg-[linear-gradient(135deg,#1877f2,#4f9ef8)] text-white shadow-md shadow-blue-200/50" onClick={goNext}>
             Next
             <ChevronRight className="size-4" />
           </Button>
@@ -834,19 +834,19 @@ export default function AddChapterWorkspace() {
       {step === 4 && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Button type="button" variant="outline" size="lg" className="rounded-full" onClick={goBack}>
+            <Button type="button" variant="outline" size="lg" className="rounded-full border-blue-200 text-blue-700 hover:bg-blue-50" onClick={goBack}>
               <ChevronLeft className="size-4" />
               Back
             </Button>
             {ActiveTypeComponent && (
-              <Button type="button" size="lg" className="rounded-full shadow-md shadow-primary/25" onClick={addAnotherType}>
+              <Button type="button" size="lg" className="rounded-full bg-[linear-gradient(135deg,#1877f2,#4f9ef8)] text-white shadow-md shadow-blue-200/50" onClick={addAnotherType}>
                 <Plus className="size-4" />
                 Add Another Question Type
               </Button>
             )}
           </div>
           {ActiveTypeComponent && breadcrumbChips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border bg-muted/20 px-3.5 py-3">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-blue-100 bg-blue-50/70 px-3.5 py-3">
               {breadcrumbChips.map((c, i) => (
                 <span key={i} className="inline-flex items-center gap-1">
                   <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", c.tone)}>

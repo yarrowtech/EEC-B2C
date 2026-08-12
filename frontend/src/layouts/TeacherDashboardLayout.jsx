@@ -10,6 +10,7 @@ import {
   Users,
   Sparkles,
   ChevronRight,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -57,6 +58,7 @@ const NAV_GROUPS = [
   {
     label: "My Work",
     items: [
+      { to: "/dashboard/my-chapters", label: "My Chapters", icon: BookOpen },
       { to: "/dashboard/my-payments", label: "My Payments", icon: Wallet },
       { to: "/dashboard/student-engagement", label: "Student Engagement", icon: Users },
     ],
@@ -103,7 +105,6 @@ export default function TeacherDashboardLayout({ user, onLogout }) {
                 <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-semibold">Edify Eight</p>
-                    
                   </div>
                   <Badge className="h-5 bg-white/15 px-2 text-[10px] font-semibold text-white">Teacher</Badge>
                   {/* <p className="mt-1 text-xs leading-5 text-blue-50">Content workspace and review dashboard</p> */}

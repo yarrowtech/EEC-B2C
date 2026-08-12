@@ -33,12 +33,30 @@ export default function MyPayments() {
     load();
   }, [API]);
 
-  const totalAmount = items.reduce((sum, t) => sum + (Number(t.budgetAmount) || 0), 0);
+  const assignmentAmountById = new Map(
+    assignments
+      .map((a) => [String(a?.topic?._id || a?.topic || ""), Number(a?.amount || 0)])
+      .filter(([id]) => id)
+  );
+
+  function getChapterAmount(item) {
+    const directAmount = Number(item?.budgetAmount);
+    if (Number.isFinite(directAmount) && directAmount > 0) return directAmount;
+    const assignmentAmount = Number(item?.assignmentId?.amount || 0);
+    if (Number.isFinite(assignmentAmount) && assignmentAmount > 0) return assignmentAmount;
+    const assignmentFallback = assignmentAmountById.get(String(item?.assignmentId || "")) || 0;
+    if (assignmentFallback > 0) return assignmentFallback;
+    const topicAmount = Number(item?.assignment?.amount);
+    if (Number.isFinite(topicAmount) && topicAmount > 0) return topicAmount;
+    return 0;
+  }
+
+  const totalAmount = items.reduce((sum, t) => sum + getChapterAmount(t), 0);
   const paidAmount = items
-    .filter((t) => t.paymentStatus === "paid")
-    .reduce((sum, t) => sum + (Number(t.budgetAmount) || 0), 0);
+    .filter((t) => String(t.paymentStatus || "").toLowerCase() === "paid")
+    .reduce((sum, t) => sum + getChapterAmount(t), 0);
   const pendingAmount = totalAmount - paidAmount;
-  const paidCount = items.filter((t) => t.paymentStatus === "paid").length;
+  const paidCount = items.filter((t) => String(t.paymentStatus || "").toLowerCase() === "paid").length;
   const pendingCount = items.length - paidCount;
 
   function ChecklistBadge({ done, label }) {
@@ -51,6 +69,31 @@ export default function MyPayments() {
         {done ? <CheckCircle2 className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
         {label}
       </span>
+    );
+  }
+
+  function PaymentBadge({ status, paidAt }) {
+    const isPaid = String(status || "").toLowerCase() === "paid";
+    return (
+      <div className="flex flex-col gap-1 items-start">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+            isPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+          }`}
+        >
+          {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+          {isPaid ? "Paid" : "Unpaid"}
+        </span>
+        {isPaid && paidAt ? (
+          <span className="text-[11px] text-gray-500">
+            {new Date(paidAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "2-digit",
+            })}
+          </span>
+        ) : null}
+      </div>
     );
   }
 
@@ -111,19 +154,20 @@ export default function MyPayments() {
                   <th className="text-left p-4 font-semibold">Chapter</th>
                   <th className="text-left p-4 font-semibold">Rate Card</th>
                   <th className="text-left p-4 font-semibold">Amount (₹)</th>
+                  <th className="text-left p-4 font-semibold">Payment</th>
                   <th className="text-left p-4 font-semibold">Assigned On</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-gray-500">
+                    <td colSpan={8} className="p-6 text-center text-gray-500">
                       Loading your assigned scopes...
                     </td>
                   </tr>
                 ) : assignments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-gray-500">
+                    <td colSpan={8} className="p-6 text-center text-gray-500">
                       No scopes have been assigned to you yet.
                     </td>
                   </tr>
@@ -146,6 +190,9 @@ export default function MyPayments() {
                           <IndianRupee className="w-3.5 h-3.5" />
                           {Number(a.amount || 0).toLocaleString("en-IN")}
                         </span>
+                      </td>
+                      <td className="p-4">
+                        <PaymentBadge status={a.topic?.paymentStatus} paidAt={a.topic?.paidAt} />
                       </td>
                       <td className="p-4 text-xs text-gray-500">
                         {a.createdAt
@@ -210,7 +257,7 @@ export default function MyPayments() {
                       </div>
                     </td>
                     <td className="p-4 font-semibold text-gray-800">
-                      ₹{Number(item.budgetAmount || 0).toLocaleString("en-IN")}
+                      ₹{getChapterAmount(item).toLocaleString("en-IN")}
                     </td>
                     <td className="p-4">
                       {item.paymentStatus === "paid" ? (

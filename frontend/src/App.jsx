@@ -66,6 +66,7 @@ import PaymentStructures from "./pages/admin/PaymentStructures";
 import SubmissionReview from "./pages/admin/SubmissionReview";
 import SubmitChapterWizard from "./pages/questions/SubmitChapterWizard";
 import MyPayments from "./pages/MyPayments";
+import MyChaptersPage from "./pages/MyChaptersPage";
 import StudentEngagement from "./pages/StudentEngagement";
 import QuestionReview from "./pages/admin/QuestionReview";
 import HeroSettings from "./components/settings/HeroSettings";
@@ -943,6 +944,7 @@ export default function App() {
             <Route path="submission-review" element={<RequireAdmin><SubmissionReview /></RequireAdmin>} />
             <Route path="submit-chapter" element={<RequireAdmin><SubmitChapterWizard /></RequireAdmin>} />
             <Route path="payment-structures" element={<RequireAdmin><PaymentStructures /></RequireAdmin>} />
+            <Route path="my-chapters" element={<MyChaptersPage />} />
             <Route path="my-payments" element={<MyPayments />} />
             <Route path="student-engagement" element={<StudentEngagement />} />
 

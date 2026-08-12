@@ -915,7 +915,17 @@ router.get("/my-payments", requireAuth, async (req, res) => {
     const filter = isAdmin ? {} : { createdBy: req.user.id };
 
     const topics = await Topic.find(filter)
-      .select("name status contentStatus topicSummary learningOutcome budgetAmount paymentStatus paidAt board class subject createdBy createdAt")
+      .select("name status contentStatus topicSummary learningOutcome assignmentId budgetAmount paymentStatus paidAt board class subject createdBy createdAt")
+      .populate({
+        path: "assignmentId",
+        select: "amount topic board class subject createdAt",
+        populate: [
+          { path: "topic", select: "name" },
+          { path: "board", select: "name" },
+          { path: "class", select: "name" },
+          { path: "subject", select: "name" },
+        ],
+      })
       .populate("board", "name")
       .populate("class", "name")
       .populate("subject", "name")
