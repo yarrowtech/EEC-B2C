@@ -24,6 +24,7 @@ import {
   GitCompare,
   AlignLeft,
   Rocket,
+  Pencil,
 } from "lucide-react";
 
 import { useQuestionScope } from "../../context/QuestionScopeContext";
@@ -111,6 +112,16 @@ export default function AddChapterWorkspace() {
     clear,
   } = useQuestionScope();
 
+  const userRole = useMemo(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      return String(user?.role || "").toLowerCase();
+    } catch {
+      return "";
+    }
+  }, []);
+  const isAdmin = userRole === "admin";
+
   const [step, setStep] = useState(1);
 
   const [boards, setBoards] = useState([]);
@@ -120,6 +131,9 @@ export default function AddChapterWorkspace() {
 
   const [assignments, setAssignments] = useState([]);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
+
+  const [myChapters, setMyChapters] = useState([]);
+  const [loadingMyChapters, setLoadingMyChapters] = useState(true);
 
   const [newTopicName, setNewTopicName] = useState("");
   const [creatingTopic, setCreatingTopic] = useState(false);
@@ -170,7 +184,21 @@ export default function AddChapterWorkspace() {
       .then((d) => setAssignments(Array.isArray(d?.items) ? d.items : []))
       .catch(() => setAssignments([]))
       .finally(() => setLoadingAssignments(false));
+    refreshMyChapters();
   }, []);
+
+  async function refreshMyChapters() {
+    setLoadingMyChapters(true);
+    try {
+      const res = await fetch(`${API}/api/my-payments`, { headers: headers() });
+      const data = await res.json().catch(() => ({}));
+      setMyChapters(Array.isArray(data?.items) ? data.items : []);
+    } catch {
+      setMyChapters([]);
+    } finally {
+      setLoadingMyChapters(false);
+    }
+  }
 
   // If the admin has assigned this teacher specific boards/classes/subjects,
   // only those show up here — otherwise every board/class/subject is open
@@ -311,6 +339,7 @@ export default function AddChapterWorkspace() {
       toast.success("Chapter created");
       setNewTopicName("");
       await refreshTopics(data._id);
+      await refreshMyChapters();
     } catch (err) {
       toast.error(err?.message || "Failed to create chapter");
     } finally {
@@ -339,6 +368,7 @@ export default function AddChapterWorkspace() {
 
       toast.success("Content saved");
       await refreshTopics(scope.topic);
+      await refreshMyChapters();
     } catch (err) {
       toast.error(err?.message || "Failed to save content");
     } finally {
@@ -385,6 +415,15 @@ export default function AddChapterWorkspace() {
     setDifficulty("");
     setQuestionType("");
     setStep(3);
+  }
+
+  // Jump straight into editing the content of a chapter the teacher already added.
+  function editChapterContent(row) {
+    setBoard(String(row.board?._id || row.board || ""));
+    setClass(String(row.class?._id || row.class || ""));
+    setSubject(String(row.subject?._id || row.subject || ""));
+    setTopic(String(row._id));
+    setStep(2);
   }
 
   const ActiveTypeComponent = QUESTION_TYPES.find((t) => t.label === scope.questionType)?.Component || null;
@@ -578,6 +617,63 @@ export default function AddChapterWorkspace() {
                       <Plus className="size-4" />
                       {creatingTopic ? "Creating..." : "Create"}
                     </Button>
+                  </div>
+                )}
+
+                {(myChapters.length > 0 || loadingMyChapters) && (
+                  <div className="space-y-2 pt-2">
+                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Pencil className="size-3.5" /> {isAdmin ? "All Uploaded Chapters" : "Your Added Chapters"}
+                    </Label>
+                    {loadingMyChapters ? (
+                      <p className="text-sm text-muted-foreground">Loading chapters...</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {myChapters.map((row) => {
+                          const preview = getPlainText(row.topicSummary);
+                          return (
+                            <div key={row._id} className="flex flex-col gap-2 rounded-2xl border p-3.5 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="truncate font-semibold">{row.name}</p>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      row.contentStatus === "approved" && "border-emerald-200 bg-emerald-100 text-emerald-700",
+                                      row.contentStatus === "rejected" && "border-rose-200 bg-rose-100 text-rose-700",
+                                      row.contentStatus === "pending" && "border-amber-200 bg-amber-100 text-amber-700"
+                                    )}
+                                  >
+                                    {row.contentStatus === "approved" && "Content Approved"}
+                                    {row.contentStatus === "rejected" && "Content Rejected"}
+                                    {row.contentStatus === "pending" && "Content Pending"}
+                                  </Badge>
+                                  {isAdmin && row.createdBy?.name && (
+                                    <Badge variant="secondary">Uploaded by {row.createdBy.name}</Badge>
+                                  )}
+                                </div>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  {[row.board?.name, row.class?.name, row.subject?.name].filter(Boolean).join(" → ") || "—"}
+                                </p>
+                                {preview && (
+                                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{preview}</p>
+                                )}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="shrink-0"
+                                onClick={() => editChapterContent(row)}
+                              >
+                                <Pencil className="size-3.5" />
+                                Edit Content
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

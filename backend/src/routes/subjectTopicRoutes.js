@@ -906,14 +906,20 @@ router.patch("/topic/:id/payment", requireAuth, requireRole("admin"), async (req
   }
 });
 
-// Writer: view their own chapters' budget & payment status
+// Writer: view their own chapters' budget & payment status.
+// Admins get the same view across every writer, so uploaded content is
+// visible to them too — not just to the writer who created it.
 router.get("/my-payments", requireAuth, async (req, res) => {
   try {
-    const topics = await Topic.find({ createdBy: req.user.id })
-      .select("name status contentStatus topicSummary learningOutcome budgetAmount paymentStatus paidAt board class subject createdAt")
+    const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+    const filter = isAdmin ? {} : { createdBy: req.user.id };
+
+    const topics = await Topic.find(filter)
+      .select("name status contentStatus topicSummary learningOutcome budgetAmount paymentStatus paidAt board class subject createdBy createdAt")
       .populate("board", "name")
       .populate("class", "name")
       .populate("subject", "name")
+      .populate("createdBy", "name email role")
       .sort({ createdAt: -1 });
 
     const items = await Promise.all(
