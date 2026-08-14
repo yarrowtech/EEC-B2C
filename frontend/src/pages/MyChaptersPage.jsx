@@ -47,6 +47,19 @@ function stripHtml(html) {
     .trim();
 }
 
+function hasContent(item) {
+  return Boolean(stripHtml(item?.topicSummary) || stripHtml(item?.learningOutcome));
+}
+
+// A brand-new chapter defaults to contentStatus "approved" even though no
+// content has ever been written for it — treat that as still pending
+// instead of showing a misleading "approved" badge for empty content.
+function effectiveContentStatus(item) {
+  const status = String(item?.contentStatus || "pending").toLowerCase();
+  if (status === "approved" && !hasContent(item)) return "pending";
+  return status;
+}
+
 function editChapterUrl(item) {
   const params = new URLSearchParams({
     editTopic: String(item?._id || ""),
@@ -90,7 +103,8 @@ function StatusBadge({ status }) {
 
 function ChapterCard({ item, showUploader }) {
   const paymentStatus = String(item?.paymentStatus || "unpaid").toLowerCase();
-  const contentStatus = String(item?.contentStatus || "pending").toLowerCase();
+  const contentStatus = effectiveContentStatus(item);
+  const emptyContentText = "Content not added by you yet.";
 
   const contentTone =
     contentStatus === "approved"
@@ -133,13 +147,13 @@ function ChapterCard({ item, showUploader }) {
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Summary</p>
           <p className="mt-1 line-clamp-3 text-sm text-blue-800">
-            {stripHtml(item?.topicSummary) || "No chapter summary available yet."}
+            {stripHtml(item?.topicSummary) || emptyContentText}
           </p>
         </div>
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Learning Outcome</p>
           <p className="mt-1 line-clamp-3 text-sm text-blue-800">
-            {stripHtml(item?.learningOutcome) || "No learning outcome available yet."}
+            {stripHtml(item?.learningOutcome) || emptyContentText}
           </p>
         </div>
       </div>
@@ -198,7 +212,7 @@ export default function MyChaptersPage() {
     const totalAmount = items.reduce((sum, item) => sum + Number(item?.budgetAmount || 0), 0);
     const paidItems = items.filter((item) => String(item?.paymentStatus || "").toLowerCase() === "paid");
     const unpaidItems = items.filter((item) => String(item?.paymentStatus || "").toLowerCase() !== "paid");
-    const approvedItems = items.filter((item) => String(item?.contentStatus || "").toLowerCase() === "approved");
+    const approvedItems = items.filter((item) => effectiveContentStatus(item) === "approved");
     return {
       total: items.length,
       paid: paidItems.length,

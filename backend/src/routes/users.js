@@ -549,8 +549,10 @@ router.put("/change-password", requireAuth, async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(newPassword, salt);
 
-    user.password = hashed;
-    await user.save();
+    // Update only the password field directly, instead of user.save() —
+    // save() re-validates the whole document, including unrelated fields
+    // like `board` that can be stored as "" and aren't in its enum.
+    await User.findByIdAndUpdate(user._id, { password: hashed });
 
     res.json({ message: "Password updated successfully" });
   } catch (err) {

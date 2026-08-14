@@ -1760,6 +1760,18 @@ export default function Dashboard() {
   const token = getToken();
   const user = getUser();
 
+  // Hooks must run unconditionally on every render, so this has to be
+  // declared before the auth guard's early return below — otherwise the
+  // number of hooks this component calls differs between a valid-session
+  // render and an invalid-session render, which corrupts React's hook
+  // bookkeeping and can misfire as a broken/expired session on re-render.
+  const roleKey = String(user?.role || "").toLowerCase();
+  const roleContent = useMemo(() => {
+    if (roleKey === "admin") return <AdminContent />;
+    if (roleKey === "teacher") return <TeacherHome />;
+    return <StudentContent />; // default
+  }, [roleKey]);
+
   if (!isTokenValid(token) || !user?.role) {
     // mirror your guard behavior
     localStorage.removeItem("jwt");
@@ -1771,13 +1783,6 @@ export default function Dashboard() {
     );
     return <Navigate to="/" replace />;
   }
-
-  const roleKey = String(user.role || "").toLowerCase();
-  const roleContent = useMemo(() => {
-    if (roleKey === "admin") return <AdminContent />;
-    if (roleKey === "teacher") return <TeacherHome />;
-    return <StudentContent />; // default
-  }, [roleKey]);
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#f5f3ef]">

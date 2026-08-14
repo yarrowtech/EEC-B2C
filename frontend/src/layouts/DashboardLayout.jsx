@@ -519,19 +519,13 @@ export default function DashboardLayout() {
         };
     }, [role, token, location.pathname]);
 
-    /* ---- auth guard (UNCHANGED) ---- */
-    if (!isTokenValid(token) || !user?.role) {
-        localStorage.removeItem("jwt");
-        localStorage.removeItem("user");
-        window.dispatchEvent(
-            new CustomEvent("eec:auth", {
-                detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
-            })
-        );
-        return <Navigate to="/" replace />;
-    }
-
-    /* ---- role-based nav (UNCHANGED) ---- */
+    /* ---- role-based nav (UNCHANGED) ----
+       Hooks must run unconditionally on every render, so this (and the
+       effect below it) has to be declared before the auth guard's early
+       return — otherwise the number of hooks this component calls differs
+       between a valid-session render and an invalid-session render, which
+       corrupts React's hook bookkeeping and can misfire as a broken/expired
+       session on the next render. */
     const NAV = useMemo(() => {
         const base = [
             { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true, id: "tour-nav-dashboard" },
@@ -589,6 +583,18 @@ export default function DashboardLayout() {
         setOpen(false);
         setPracticeMenuOpen(false);
     }, [location.pathname]);
+
+    /* ---- auth guard (UNCHANGED) ---- */
+    if (!isTokenValid(token) || !user?.role) {
+        localStorage.removeItem("jwt");
+        localStorage.removeItem("user");
+        window.dispatchEvent(
+            new CustomEvent("eec:auth", {
+                detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+            })
+        );
+        return <Navigate to="/" replace />;
+    }
 
     const blockOfflineNavigation = (e) => {
         if (online) return;

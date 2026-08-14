@@ -360,10 +360,15 @@ export async function forgotPassword(req, res) {
 
     const token = crypto.randomBytes(32).toString("hex");
     const hash = crypto.createHash("sha256").update(token).digest("hex");
+    const resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
 
-    user.resetPasswordToken = hash;
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
-    await user.save();
+    // Update only the reset-token fields directly, instead of user.save() —
+    // save() re-validates the whole document, including unrelated fields
+    // like `board` that can be stored as "" and aren't in its enum.
+    await User.findByIdAndUpdate(user._id, {
+      resetPasswordToken: hash,
+      resetPasswordExpire,
+    });
 
     const appOrigin = String(
       process.env.CLIENT_ORIGIN || req.get("origin") || req.headers.origin || ""
@@ -423,11 +428,17 @@ export async function resetPassword(req, res) {
       return res.status(400).json({ message: "Invalid or expired link" });
     }
 
-    user.password = await bcrypt.hash(password, SALT_ROUNDS);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    await user.save();
+    // Update only the password + reset-token fields directly, instead of
+    // user.save() — save() re-validates the whole document, including
+    // unrelated fields like `board` that can be stored as "" and aren't
+    // in its enum.
+    await User.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+      $unset: { resetPasswordToken: "", resetPasswordExpire: "" },
+    });
+
     sendPasswordResetSuccessEmail({
       to: user.email,
       name: user.name,
