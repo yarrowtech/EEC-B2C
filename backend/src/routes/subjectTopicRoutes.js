@@ -5,7 +5,6 @@ import Topic from "../models/Topic.js";
 import Question from "../models/Question.js";
 import ChapterAssignment from "../models/ChapterAssignment.js";
 import { requireAuth, requireRole } from "../middleware/auth.js"; // ✅ FIXED IMPORT
-import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
 import { sendPushNotification } from "./pushNotificationRoutes.js";
 import { assertScopeWriteAccess, findMatchingAssignment, computeChapterCompletion } from "../utils/chapterAssignment.js";
 
@@ -628,7 +627,6 @@ router.patch("/topic/:id/review", requireAuth, requireRole("admin"), async (req,
     const recipient = isContentReview ? updated.draftUpdatedBy : updated.createdBy;
 
     if (recipient?.email) {
-      const kind = isContentReview ? "content" : "topic";
       const title =
         normalizedStatus === "approved"
           ? isContentReview ? "Content Approved" : "Topic Approved"
@@ -642,18 +640,8 @@ router.patch("/topic/:id/review", requireAuth, requireRole("admin"), async (req,
             ? `Your content update for "${updated.name}" was not approved. Please review and resubmit.`
             : `Your topic "${updated.name}" was not approved. Please review and resubmit.`;
 
-      sendTopicReviewStatusEmail({
-        to: recipient.email,
-        name: recipient.name,
-        topicName: updated.name,
-        subjectName: updated.subject?.name || "",
-        status: normalizedStatus,
-        reason: isContentReview ? updated.contentRejectionReason : updated.rejectionReason,
-        kind,
-      }).catch((mailErr) => {
-        console.error("Topic review email failed:", mailErr?.message || mailErr);
-      });
-
+      // Review status emails are disabled — teachers get an in-app push
+      // notification only, for both approval and rejection.
       sendPushNotification(recipient._id, title, message).catch((pushErr) => {
         console.error("Topic review push notification failed:", pushErr?.message || pushErr);
       });
@@ -756,16 +744,8 @@ router.patch("/topic-review/chapters/:topicId/approve-all", requireAuth, require
 
     const recipient = populated.createdBy;
     if (recipient?.email) {
-      sendTopicReviewStatusEmail({
-        to: recipient.email,
-        name: recipient.name,
-        topicName: populated.name,
-        subjectName: populated.subject?.name || "",
-        status: "approved",
-        reason: "",
-        kind: "topic",
-      }).catch((mailErr) => console.error("Chapter review email failed:", mailErr?.message || mailErr));
-
+      // Approval emails are skipped here — the teacher still gets an
+      // in-app push notification that their chapter went live.
       sendPushNotification(
         recipient._id,
         "Chapter Approved",
