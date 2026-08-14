@@ -12,6 +12,35 @@ import { sendGiftCardEmail, sendTeacherWelcomeEmail } from "../utils/sendMail.js
 
 const router = Router();
 
+const QUESTION_TYPE_VALUES = [
+  "mcq-single",
+  "mcq-multi",
+  "choice-matrix",
+  "true-false",
+  "cloze-drag",
+  "cloze-select",
+  "cloze-text",
+  "match-list",
+  "essay-rich",
+  "essay-plain",
+];
+
+function sanitizeAllowedStages(value) {
+  if (!Array.isArray(value)) return undefined;
+  const stages = value
+    .map((v) => Number(v))
+    .filter((n) => Number.isFinite(n) && n >= 1);
+  return Array.from(new Set(stages)).sort((a, b) => a - b);
+}
+
+function sanitizeAllowedQuestionTypes(value) {
+  if (!Array.isArray(value)) return undefined;
+  const types = value
+    .map((v) => String(v || "").trim())
+    .filter((v) => QUESTION_TYPE_VALUES.includes(v));
+  return Array.from(new Set(types));
+}
+
 // Allow admin AND teacher. We gate with requireAuth, then manual role check.
 
 router.get("/students-count", async (req, res) => {
@@ -153,7 +182,7 @@ router.post(
   },
   async (req, res) => {
     try {
-      const { name, email, phone, password, designation } = req.body;
+      const { name, email, phone, password, designation, allowedStages, allowedQuestionTypes } = req.body;
 
       if (!name || !email || !phone || !password) {
         return res.status(400).json({ message: "All fields are required." });
@@ -178,6 +207,8 @@ router.post(
         password: hashedPassword, // 🔐 hashed password
         role: "teacher",
         designation: String(designation).trim(),
+        allowedStages: sanitizeAllowedStages(allowedStages) || [],
+        allowedQuestionTypes: sanitizeAllowedQuestionTypes(allowedQuestionTypes) || [],
       });
 
       await user.save();
@@ -210,10 +241,14 @@ const requireAdminOnly = (req, res, next) => {
 
 router.put("/teachers/:id", requireAuth, requireAdminOnly, async (req, res) => {
   try {
-    const { name, email, phone, designation } = req.body;
+    const { name, email, phone, designation, allowedStages, allowedQuestionTypes } = req.body;
 
     const updateData = { name, email, phone };
     if (designation !== undefined) updateData.designation = String(designation).trim();
+    if (allowedStages !== undefined) updateData.allowedStages = sanitizeAllowedStages(allowedStages) || [];
+    if (allowedQuestionTypes !== undefined) {
+      updateData.allowedQuestionTypes = sanitizeAllowedQuestionTypes(allowedQuestionTypes) || [];
+    }
 
     const teacher = await User.findByIdAndUpdate(
       req.params.id,

@@ -21,6 +21,8 @@ export async function requireAuth(req, res, next) {
       board: user.board,
       isTeacherVerified: user.isTeacherVerified,
       createdAt: user.createdAt,
+      allowedStages: user.allowedStages || [],
+      allowedQuestionTypes: user.allowedQuestionTypes || [],
     };
     next();
   } catch (err) {

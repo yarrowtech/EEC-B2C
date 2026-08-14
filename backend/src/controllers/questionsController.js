@@ -10,6 +10,7 @@ import { resolveLevelAccessForUser } from "../utils/levelAccess.js";
 import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
 import { sendPushNotification } from "../routes/pushNotificationRoutes.js";
 import { assertScopeWriteAccess } from "../utils/chapterAssignment.js";
+import { assertQuestionPermission } from "../utils/questionPermission.js";
 import * as XLSX from "xlsx";
 
 // Helpers
@@ -397,6 +398,10 @@ export const create = async (req, res) => {
     if (!access.ok) return res.status(403).json({ message: access.message });
 
     const type = String(req.params.type || "").trim();
+
+    const permission = assertQuestionPermission({ stage: req.body.stage, type }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
+
     const { ok, doc, message } = shapeByType(type, req.body, req.user.id);
     if (!ok) return res.status(400).json({ message });
 
@@ -438,6 +443,8 @@ export const bulkCreateMcqSingle = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "mcq-single" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -571,6 +578,8 @@ export const bulkCreateMcqMulti = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "mcq-multi" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -704,6 +713,8 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "choice-matrix" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -843,6 +854,8 @@ export const bulkCreateTrueFalse = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "true-false" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -975,6 +988,8 @@ export const bulkCreateMatchList = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "match-list" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -1109,6 +1124,8 @@ export const bulkCreateClozeSelect = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "cloze-select" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -1243,6 +1260,8 @@ export const bulkCreateClozeText = async (req, res) => {
 
     const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
     if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "cloze-text" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];

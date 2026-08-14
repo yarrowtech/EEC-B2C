@@ -122,6 +122,30 @@ const UserSchema = new mongoose.Schema(
       qualificationCertificate: { type: String, default: "" },
       experienceLetter: { type: String, default: "" },
     },
+
+    // Teacher content-creation permissions, set by admin. An empty array
+    // means unrestricted (matches every teacher's default state) — once
+    // admin sets specific values, the teacher is limited to those.
+    allowedStages: {
+      type: [Number],
+      default: [],
+    },
+    allowedQuestionTypes: {
+      type: [String],
+      enum: [
+        "mcq-single",
+        "mcq-multi",
+        "choice-matrix",
+        "true-false",
+        "cloze-drag",
+        "cloze-select",
+        "cloze-text",
+        "match-list",
+        "essay-rich",
+        "essay-plain",
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

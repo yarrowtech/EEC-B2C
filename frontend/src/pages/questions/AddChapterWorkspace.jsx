@@ -67,16 +67,16 @@ const DIFFICULTY_META = [
 ];
 
 const QUESTION_TYPES = [
-  { label: "MCQ — Single Correct", short: "MCQ Single", icon: CircleDot, Component: QuestionsMCQUpload },
-  { label: "MCQ — Multiple Correct", short: "MCQ Multi", icon: CheckSquare, Component: QuestionsMCQMulti },
-  { label: "True / False", short: "True / False", icon: ToggleLeft, Component: QuestionsTrueFalse },
-  { label: "Choice Matrix", short: "Choice Matrix", icon: Grid3x3, Component: QuestionsChoiceMatrix },
-  { label: "Cloze — Drag & Drop", short: "Cloze Drag", icon: Move, Component: QuestionsClozeDrag },
-  { label: "Cloze — Drop-Down", short: "Cloze Dropdown", icon: ListFilter, Component: QuestionsClozeSelect },
-  { label: "Cloze — Free Text", short: "Cloze Text", icon: TypeIcon, Component: QuestionsClozeText },
-  { label: "Match List", short: "Match List", icon: GitCompare, Component: QuestionsMatchList },
-  { label: "Essay — Rich Text", short: "Essay Rich", icon: FileText, Component: QuestionsEssayRich },
-  { label: "Essay — Plain Text", short: "Essay Plain", icon: AlignLeft, Component: QuestionsEssayPlain },
+  { label: "MCQ — Single Correct", short: "MCQ Single", value: "mcq-single", icon: CircleDot, Component: QuestionsMCQUpload },
+  { label: "MCQ — Multiple Correct", short: "MCQ Multi", value: "mcq-multi", icon: CheckSquare, Component: QuestionsMCQMulti },
+  { label: "True / False", short: "True / False", value: "true-false", icon: ToggleLeft, Component: QuestionsTrueFalse },
+  { label: "Choice Matrix", short: "Choice Matrix", value: "choice-matrix", icon: Grid3x3, Component: QuestionsChoiceMatrix },
+  { label: "Cloze — Drag & Drop", short: "Cloze Drag", value: "cloze-drag", icon: Move, Component: QuestionsClozeDrag },
+  { label: "Cloze — Drop-Down", short: "Cloze Dropdown", value: "cloze-select", icon: ListFilter, Component: QuestionsClozeSelect },
+  { label: "Cloze — Free Text", short: "Cloze Text", value: "cloze-text", icon: TypeIcon, Component: QuestionsClozeText },
+  { label: "Match List", short: "Match List", value: "match-list", icon: GitCompare, Component: QuestionsMatchList },
+  { label: "Essay — Rich Text", short: "Essay Rich", value: "essay-rich", icon: FileText, Component: QuestionsEssayRich },
+  { label: "Essay — Plain Text", short: "Essay Plain", value: "essay-plain", icon: AlignLeft, Component: QuestionsEssayPlain },
 ];
 
 const STEPS = [
@@ -147,6 +147,9 @@ export default function AddChapterWorkspace() {
   const [customStage, setCustomStage] = useState("");
   const [showCustomStage, setShowCustomStage] = useState(false);
 
+  const [allowedStages, setAllowedStages] = useState([]);
+  const [allowedQuestionTypes, setAllowedQuestionTypes] = useState([]);
+
   const editorConfig = useMemo(
     () => ({
       minHeight: 220,
@@ -201,6 +204,18 @@ export default function AddChapterWorkspace() {
       .then((d) => setAssignments(Array.isArray(d?.items) ? d.items : []))
       .catch(() => setAssignments([]))
       .finally(() => setLoadingAssignments(false));
+    // Fetch fresh (not from localStorage) so a permission change by admin
+    // takes effect without the teacher having to log out and back in.
+    fetch(`${API}/api/users/profile`, { headers: headers() })
+      .then((r) => r.json())
+      .then((d) => {
+        setAllowedStages(Array.isArray(d?.user?.allowedStages) ? d.user.allowedStages : []);
+        setAllowedQuestionTypes(Array.isArray(d?.user?.allowedQuestionTypes) ? d.user.allowedQuestionTypes : []);
+      })
+      .catch(() => {
+        setAllowedStages([]);
+        setAllowedQuestionTypes([]);
+      });
   }, []);
 
   // If the admin has assigned this teacher specific boards/classes/subjects,
@@ -265,6 +280,18 @@ export default function AddChapterWorkspace() {
     );
     return matching.some((a) => !a.topic);
   }, [assignments, hasAssignments, scope.board, scope.class, scope.subject]);
+
+  // If the admin has restricted this teacher to specific stages/question
+  // types, only those show up here — an empty list means unrestricted.
+  const allowedStagesList = useMemo(() => {
+    if (!allowedStages.length) return stages;
+    return stages.filter((s) => allowedStages.includes(Number(s)));
+  }, [stages, allowedStages]);
+
+  const allowedQuestionTypesList = useMemo(() => {
+    if (!allowedQuestionTypes.length) return QUESTION_TYPES;
+    return QUESTION_TYPES.filter((t) => allowedQuestionTypes.includes(t.value));
+  }, [allowedQuestionTypes]);
 
   useEffect(() => {
     setSubjects([]);
@@ -680,6 +707,12 @@ export default function AddChapterWorkspace() {
 
             {step === 3 && (
               <div className="space-y-6">
+                {!isAdmin && (allowedStages.length > 0 || allowedQuestionTypes.length > 0) && (
+                  <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+                    <GraduationCap className="size-4 shrink-0" />
+                    Showing only the stages and question types your admin has allowed you to add.
+                  </div>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -688,7 +721,7 @@ export default function AddChapterWorkspace() {
                     <Select value={scope.stage} onValueChange={(v) => { setStage(v); setDifficulty(""); setQuestionType(""); }}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select stage" /></SelectTrigger>
                       <SelectContent>
-                        {stages.map((s) => (
+                        {allowedStagesList.map((s) => (
                           <SelectItem key={s} value={String(s)}>{formatStageLabel(s)}</SelectItem>
                         ))}
                       </SelectContent>
@@ -714,7 +747,7 @@ export default function AddChapterWorkspace() {
                           Cancel
                         </Button>
                       </div>
-                    ) : (
+                    ) : (isAdmin || allowedStages.length === 0) && (
                       <button
                         type="button"
                         onClick={() => setShowCustomStage(true)}
@@ -756,7 +789,7 @@ export default function AddChapterWorkspace() {
                     <ListChecks className="size-3.5" /> Question Type
                   </Label>
                   <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5", !scope.difficulty && "pointer-events-none opacity-40")}>
-                    {QUESTION_TYPES.map((t) => {
+                    {allowedQuestionTypesList.map((t) => {
                       const TypeIconEl = t.icon;
                       const isSelected = scope.questionType === t.label;
                       return (
