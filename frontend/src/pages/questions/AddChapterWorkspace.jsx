@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import JoditEditor from "jodit-react";
 import "jodit/es2021/jodit.min.css";
 import { toast, ToastContainer } from "react-toastify";
@@ -24,7 +25,9 @@ import {
   GitCompare,
   AlignLeft,
   Rocket,
-  Pencil,
+  Clock3,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 import { useQuestionScope } from "../../context/QuestionScopeContext";
@@ -112,15 +115,16 @@ export default function AddChapterWorkspace() {
     clear,
   } = useQuestionScope();
 
-  const userRole = useMemo(() => {
+  const [searchParams] = useSearchParams();
+
+  const isAdmin = useMemo(() => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
-      return String(user?.role || "").toLowerCase();
+      return String(user?.role || "").toLowerCase() === "admin";
     } catch {
-      return "";
+      return false;
     }
   }, []);
-  const isAdmin = userRole === "admin";
 
   const [step, setStep] = useState(1);
 
@@ -131,9 +135,6 @@ export default function AddChapterWorkspace() {
 
   const [assignments, setAssignments] = useState([]);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
-
-  const [myChapters, setMyChapters] = useState([]);
-  const [loadingMyChapters, setLoadingMyChapters] = useState(true);
 
   const [newTopicName, setNewTopicName] = useState("");
   const [creatingTopic, setCreatingTopic] = useState(false);
@@ -164,6 +165,22 @@ export default function AddChapterWorkspace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Arriving from "My Chapters" with a specific chapter to edit — pre-fill
+  // the scope from the URL and jump straight to the Content step.
+  useEffect(() => {
+    const editTopicId = searchParams.get("editTopic");
+    if (!editTopicId) return;
+    const boardId = searchParams.get("board") || "";
+    const classId = searchParams.get("class") || "";
+    const subjectId = searchParams.get("subject") || "";
+    if (boardId) setBoard(boardId);
+    if (classId) setClass(classId);
+    if (subjectId) setSubject(subjectId);
+    setTopic(editTopicId);
+    setStep(2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Step 4 embeds an existing question-type page that renders its own
   // SubjectTopicPicker — we've already collected all 7 fields by then, so
   // hide that redundant picker and show a compact summary instead.
@@ -184,21 +201,7 @@ export default function AddChapterWorkspace() {
       .then((d) => setAssignments(Array.isArray(d?.items) ? d.items : []))
       .catch(() => setAssignments([]))
       .finally(() => setLoadingAssignments(false));
-    refreshMyChapters();
   }, []);
-
-  async function refreshMyChapters() {
-    setLoadingMyChapters(true);
-    try {
-      const res = await fetch(`${API}/api/my-payments`, { headers: headers() });
-      const data = await res.json().catch(() => ({}));
-      setMyChapters(Array.isArray(data?.items) ? data.items : []);
-    } catch {
-      setMyChapters([]);
-    } finally {
-      setLoadingMyChapters(false);
-    }
-  }
 
   // If the admin has assigned this teacher specific boards/classes/subjects,
   // only those show up here — otherwise every board/class/subject is open
@@ -288,18 +291,26 @@ export default function AddChapterWorkspace() {
     [topics, scope.topic]
   );
 
+  // A teacher's content submission lands in the draft fields and waits for
+  // admin review — this tells us whether we should be showing that draft
+  // (their last submission) instead of the last-approved live content.
+  const hasPendingDraft = useMemo(() => {
+    if (!selectedTopicDoc) return false;
+    return Boolean(
+      selectedTopicDoc.contentStatus === "pending" &&
+        (getPlainText(selectedTopicDoc.draftTopicSummary) || getPlainText(selectedTopicDoc.draftLearningOutcome))
+    );
+  }, [selectedTopicDoc]);
+
   useEffect(() => {
     if (!selectedTopicDoc) {
       setTopicSummary("");
       setLearningOutcome("");
       return;
     }
-    const hasPendingDraft =
-      selectedTopicDoc.contentStatus === "pending" &&
-      (getPlainText(selectedTopicDoc.draftTopicSummary) || getPlainText(selectedTopicDoc.draftLearningOutcome));
     setTopicSummary(hasPendingDraft ? selectedTopicDoc.draftTopicSummary : selectedTopicDoc.topicSummary || "");
     setLearningOutcome(hasPendingDraft ? selectedTopicDoc.draftLearningOutcome : selectedTopicDoc.learningOutcome || "");
-  }, [selectedTopicDoc]);
+  }, [selectedTopicDoc, hasPendingDraft]);
 
   async function refreshTopics(selectId) {
     if (!scope.subject) return;
@@ -339,7 +350,6 @@ export default function AddChapterWorkspace() {
       toast.success("Chapter created");
       setNewTopicName("");
       await refreshTopics(data._id);
-      await refreshMyChapters();
     } catch (err) {
       toast.error(err?.message || "Failed to create chapter");
     } finally {
@@ -366,9 +376,12 @@ export default function AddChapterWorkspace() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.message || "Failed to save content");
 
-      toast.success("Content saved");
+      toast.success(
+        isAdmin
+          ? "Content saved and published"
+          : "Content submitted for admin review"
+      );
       await refreshTopics(scope.topic);
-      await refreshMyChapters();
     } catch (err) {
       toast.error(err?.message || "Failed to save content");
     } finally {
@@ -417,14 +430,6 @@ export default function AddChapterWorkspace() {
     setStep(3);
   }
 
-  // Jump straight into editing the content of a chapter the teacher already added.
-  function editChapterContent(row) {
-    setBoard(String(row.board?._id || row.board || ""));
-    setClass(String(row.class?._id || row.class || ""));
-    setSubject(String(row.subject?._id || row.subject || ""));
-    setTopic(String(row._id));
-    setStep(2);
-  }
 
   const ActiveTypeComponent = QUESTION_TYPES.find((t) => t.label === scope.questionType)?.Component || null;
   const activeTypeMeta = QUESTION_TYPES.find((t) => t.label === scope.questionType) || null;
@@ -619,63 +624,6 @@ export default function AddChapterWorkspace() {
                     </Button>
                   </div>
                 )}
-
-                {(myChapters.length > 0 || loadingMyChapters) && (
-                  <div className="space-y-2 pt-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <Pencil className="size-3.5" /> {isAdmin ? "All Uploaded Chapters" : "Your Added Chapters"}
-                    </Label>
-                    {loadingMyChapters ? (
-                      <p className="text-sm text-muted-foreground">Loading chapters...</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {myChapters.map((row) => {
-                          const preview = getPlainText(row.topicSummary);
-                          return (
-                            <div key={row._id} className="flex flex-col gap-2 rounded-2xl border p-3.5 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className="truncate font-semibold">{row.name}</p>
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      row.contentStatus === "approved" && "border-emerald-200 bg-emerald-100 text-emerald-700",
-                                      row.contentStatus === "rejected" && "border-rose-200 bg-rose-100 text-rose-700",
-                                      row.contentStatus === "pending" && "border-amber-200 bg-amber-100 text-amber-700"
-                                    )}
-                                  >
-                                    {row.contentStatus === "approved" && "Content Approved"}
-                                    {row.contentStatus === "rejected" && "Content Rejected"}
-                                    {row.contentStatus === "pending" && "Content Pending"}
-                                  </Badge>
-                                  {isAdmin && row.createdBy?.name && (
-                                    <Badge variant="secondary">Uploaded by {row.createdBy.name}</Badge>
-                                  )}
-                                </div>
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                  {[row.board?.name, row.class?.name, row.subject?.name].filter(Boolean).join(" → ") || "—"}
-                                </p>
-                                {preview && (
-                                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{preview}</p>
-                                )}
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="shrink-0"
-                                onClick={() => editChapterContent(row)}
-                              >
-                                <Pencil className="size-3.5" />
-                                Edit Content
-                              </Button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 
@@ -685,6 +633,26 @@ export default function AddChapterWorkspace() {
                   <p className="text-sm text-muted-foreground">Go back and select a chapter first.</p>
                 ) : (
                   <>
+              {hasPendingDraft && (
+                <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                  <Clock3 className="size-4 shrink-0" />
+                  You're viewing your submitted draft — it's pending admin review. Students still see the previously approved version until it's approved.
+                </div>
+              )}
+              {!hasPendingDraft && selectedTopicDoc?.contentStatus === "approved" && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                  <CheckCircle2 className="size-4 shrink-0" />
+                  This content is approved and live for students. Saving changes will submit a new version for review.
+                </div>
+              )}
+              {!hasPendingDraft && selectedTopicDoc?.contentStatus === "rejected" && (
+                <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>
+                    Your last submission was rejected{selectedTopicDoc.contentRejectionReason ? `: ${selectedTopicDoc.contentRejectionReason}` : "."} Please revise and save again.
+                  </span>
+                </div>
+              )}
               <div className="space-y-1.5 rounded-2xl border bg-muted/20 p-3.5">
                 <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <FileText className="size-3.5" /> Chapter Content

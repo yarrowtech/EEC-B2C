@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
 import Question from "../models/Question.js";
+import ChapterAssignment from "../models/ChapterAssignment.js";
 import { requireAuth, requireRole } from "../middleware/auth.js"; // ✅ FIXED IMPORT
 import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
 import { sendPushNotification } from "./pushNotificationRoutes.js";
@@ -906,13 +907,31 @@ router.patch("/topic/:id/payment", requireAuth, requireRole("admin"), async (req
   }
 });
 
-// Writer: view their own chapters' budget & payment status.
+// Writer: view the chapters they can work on — chapters they created, plus
+// any chapter that falls within a scope (board/class/subject/topic) an
+// admin has assigned to them, even if someone else created it.
 // Admins get the same view across every writer, so uploaded content is
 // visible to them too — not just to the writer who created it.
 router.get("/my-payments", requireAuth, async (req, res) => {
   try {
     const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-    const filter = isAdmin ? {} : { createdBy: req.user.id };
+
+    let filter = {};
+    if (!isAdmin) {
+      const assignments = await ChapterAssignment.find({ writer: req.user.id }).lean();
+      const orConditions = [{ createdBy: req.user.id }];
+      for (const a of assignments) {
+        if (a.topic) {
+          orConditions.push({ _id: a.topic });
+          continue;
+        }
+        const cond = { board: a.board };
+        if (a.class) cond.class = a.class;
+        if (a.subject) cond.subject = a.subject;
+        orConditions.push(cond);
+      }
+      filter = { $or: orConditions };
+    }
 
     const topics = await Topic.find(filter)
       .select("name status contentStatus topicSummary learningOutcome assignmentId budgetAmount paymentStatus paidAt board class subject createdBy createdAt")

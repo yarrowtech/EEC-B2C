@@ -39,6 +39,24 @@ function formatMoney(value) {
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
 }
 
+function stripHtml(html) {
+  return String(html || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function editChapterUrl(item) {
+  const params = new URLSearchParams({
+    editTopic: String(item?._id || ""),
+    board: String(item?.board?._id || ""),
+    class: String(item?.class?._id || ""),
+    subject: String(item?.subject?._id || ""),
+  });
+  return `/dashboard/add-chapter-workspace?${params.toString()}`;
+}
+
 function StatCard(props) {
   return (
     <Card className="border-blue-100 shadow-sm">
@@ -70,7 +88,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function ChapterCard({ item }) {
+function ChapterCard({ item, showUploader }) {
   const paymentStatus = String(item?.paymentStatus || "unpaid").toLowerCase();
   const contentStatus = String(item?.contentStatus || "pending").toLowerCase();
 
@@ -90,6 +108,9 @@ function ChapterCard({ item }) {
             <Badge variant="outline" className={contentTone}>
               {contentStatus === "approved" ? "Content Approved" : contentStatus === "rejected" ? "Content Rejected" : "Content Pending"}
             </Badge>
+            {showUploader && item?.createdBy?.name && (
+              <Badge variant="secondary">Uploaded by {item.createdBy.name}</Badge>
+            )}
           </div>
           <p className="mt-1 text-sm text-blue-700/80">
             {[item?.board?.name, item?.class?.name, item?.subject?.name].filter(Boolean).join(" · ") ||
@@ -112,17 +133,28 @@ function ChapterCard({ item }) {
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Summary</p>
           <p className="mt-1 line-clamp-3 text-sm text-blue-800">
-            {String(item?.topicSummary || "").trim() ? item.topicSummary : "No chapter summary available yet."}
+            {stripHtml(item?.topicSummary) || "No chapter summary available yet."}
           </p>
         </div>
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Learning Outcome</p>
           <p className="mt-1 line-clamp-3 text-sm text-blue-800">
-            {String(item?.learningOutcome || "").trim()
-              ? item.learningOutcome
-              : "No learning outcome available yet."}
+            {stripHtml(item?.learningOutcome) || "No learning outcome available yet."}
           </p>
         </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-full border-blue-200 text-blue-700 hover:bg-blue-50"
+        >
+          <Link to={editChapterUrl(item)}>
+            <Edit3 className="mr-2 size-3.5" />
+            Edit Content
+          </Link>
+        </Button>
       </div>
     </div>
   );
@@ -180,6 +212,8 @@ export default function MyChaptersPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const isAdmin = role === "admin";
+
   return (
     <div className="space-y-6 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(191,219,254,0.42),transparent_24%),linear-gradient(to_bottom,#eff6ff,#f8fbff)] p-4 sm:p-6">
       <ToastContainer position="bottom-right" />
@@ -189,9 +223,13 @@ export default function MyChaptersPage() {
           <Badge className="w-fit bg-[linear-gradient(135deg,#1877f2,#4f9ef8)] text-white hover:bg-[linear-gradient(135deg,#1877f2,#4f9ef8)]">
             Chapter Library
           </Badge>
-          <h1 className="text-3xl font-black tracking-tight text-blue-950 sm:text-4xl">Your Uploaded Chapters</h1>
+          <h1 className="text-3xl font-black tracking-tight text-blue-950 sm:text-4xl">
+            {isAdmin ? "All Uploaded Chapters" : "Your Uploaded Chapters"}
+          </h1>
           <p className="max-w-2xl text-sm leading-6 text-blue-700/80 sm:text-base">
-            View all chapters you&apos;ve added, their content status, and whether payment has been marked paid or unpaid.
+            {isAdmin
+              ? "View every chapter uploaded by any teacher, its content status, and whether payment has been marked paid or unpaid."
+              : "View all chapters you’ve added, their content status, and whether payment has been marked paid or unpaid."}
           </p>
         </div>
       </section>
@@ -227,7 +265,7 @@ export default function MyChaptersPage() {
               You haven&apos;t uploaded any chapters yet.
             </div>
           ) : (
-            items.map((item) => <ChapterCard key={item._id} item={item} />)
+            items.map((item) => <ChapterCard key={item._id} item={item} showUploader={isAdmin} />)
           )}
         </CardContent>
       </Card>

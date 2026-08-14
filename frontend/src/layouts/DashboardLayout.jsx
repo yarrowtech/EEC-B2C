@@ -552,6 +552,7 @@ export default function DashboardLayout() {
                 { to: "/dashboard/students", label: "Students", icon: <Users size={18} />, id: "tour-nav-students" },
                 { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} />, id: "tour-nav-teachers" },
                 { to: "/dashboard/questions/list", label: "All Questions", icon: <ListChecks size={18} /> },
+                { to: "/dashboard/my-chapters", label: "Uploaded Chapters", icon: <BookOpen size={18} /> },
                 { to: "/dashboard/button-analytics", label: "Button Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/teacher-analytics", label: "Teacher Analytics", icon: <BarChart3 size={18} /> },
@@ -746,6 +747,7 @@ export default function DashboardLayout() {
                                                              item.to.includes('upload') || item.to.includes('material') ? 'menu_book' :
                                                              item.to.includes('notification') ? 'notifications' :
                                                              item.to.includes('questions') ? 'checklist' :
+                                                             item.to.includes('chapters') ? 'auto_stories' :
                                                              'description'}
                                                         </span>
                                                         <span className="text-[13px] truncate">{item.label}</span>
