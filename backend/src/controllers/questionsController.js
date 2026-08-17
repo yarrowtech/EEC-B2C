@@ -1031,6 +1031,7 @@ export const bulkCreateMatchList = async (req, res) => {
         "solution_image",
       ]);
       const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+      const pairsRaw = getBulkCellValue(normalizedRow, ["pairs", "correctpairs", "correct_pairs", "matches"]);
 
       const rowNumber = i + 2; // header on row 1
       if (!prompt || left.length < 2 || left.length !== right.length) {
@@ -1041,10 +1042,54 @@ export const bulkCreateMatchList = async (req, res) => {
         continue;
       }
 
-      const pairs = {};
-      left.forEach((_, idx) => {
-        pairs[String(idx)] = idx;
-      });
+      // "pairs" is optional — when given, it lets left/right be listed in
+      // any order (e.g. right shuffled) with the real mapping specified
+      // explicitly as "Left=Right | Left=Right | ...". When omitted, we
+      // fall back to positional pairing (left[i] matches right[i]), which
+      // is the original bulk-upload behavior.
+      let pairs = null;
+      if (pairsRaw) {
+        const segments = parseDelimitedList(pairsRaw);
+        const resolved = {};
+        const usedRight = new Set();
+        let allResolved = segments.length === left.length;
+
+        for (const segment of segments) {
+          const eqIndex = segment.indexOf("=");
+          if (eqIndex === -1) {
+            allResolved = false;
+            break;
+          }
+          const leftText = segment.slice(0, eqIndex).trim().toLowerCase();
+          const rightText = segment.slice(eqIndex + 1).trim().toLowerCase();
+          const leftIndex = left.findIndex((v) => v.trim().toLowerCase() === leftText);
+          const rightIndex = right.findIndex((v) => v.trim().toLowerCase() === rightText);
+          if (leftIndex === -1 || rightIndex === -1 || usedRight.has(rightIndex)) {
+            allResolved = false;
+            break;
+          }
+          resolved[String(leftIndex)] = rightIndex;
+          usedRight.add(rightIndex);
+        }
+
+        if (allResolved && Object.keys(resolved).length === left.length) {
+          pairs = resolved;
+        } else {
+          failures.push({
+            row: rowNumber,
+            reason:
+              'pairs column could not be matched — use "Left=Right | Left=Right", with text matching left/right exactly',
+          });
+          continue;
+        }
+      }
+
+      if (!pairs) {
+        pairs = {};
+        left.forEach((_, idx) => {
+          pairs[String(idx)] = idx;
+        });
+      }
 
       const { ok, doc, message } = shapeByType(
         "match-list",

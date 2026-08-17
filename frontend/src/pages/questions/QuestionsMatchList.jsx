@@ -140,6 +140,15 @@ export default function QuestionsMatchList() {
         prompt: "Match the animal to its sound",
         left: "Cat | Dog | Cow",
         right: "Meow | Bark | Moo",
+        pairs: "",
+        explanation: "Each animal is matched to the sound it makes.",
+        tags: "animals, science",
+      },
+      {
+        prompt: "Match the animal to its sound (right list shuffled)",
+        left: "Cat | Dog | Cow",
+        right: "Bark | Moo | Meow",
+        pairs: "Cat=Meow | Dog=Bark | Cow=Moo",
         explanation: "Each animal is matched to the sound it makes.",
         tags: "animals, science",
       },
@@ -346,12 +355,18 @@ export default function QuestionsMatchList() {
                   <strong>Required:</strong> prompt, left, right
                 </p>
                 <p className="text-sm text-slate-700">
-                  List <code>left</code> and <code>right</code> items separated by <code>|</code>, in matching
-                  order — e.g. <code>left</code>: "Cat | Dog | Cow" and <code>right</code>: "Meow | Bark | Moo"
-                  pairs Cat→Meow, Dog→Bark, Cow→Moo. Both columns need the same number of items (2 or more).
+                  List <code>left</code> and <code>right</code> items separated by <code>|</code>. Both columns need
+                  the same number of items (2 or more). If you leave <code>pairs</code> blank, items are matched by
+                  position — <code>left</code>: "Cat | Dog | Cow" with <code>right</code>: "Meow | Bark | Moo" pairs
+                  Cat→Meow, Dog→Bark, Cow→Moo.
                 </p>
                 <p className="text-sm text-slate-700 mt-1">
-                  <strong>Optional:</strong> explanation, tags
+                  <strong>Optional:</strong> explanation, tags, <code>pairs</code>
+                </p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Use <code>pairs</code> when <code>right</code> is listed in a different (shuffled) order than the
+                  correct matches — format: <code>Left=Right | Left=Right</code>, e.g. "Cat=Meow | Dog=Bark |
+                  Cow=Moo". Each left/right text must match exactly what's typed in those columns.
                 </p>
               </div>
             </div>
