@@ -97,8 +97,8 @@ const Home = () => {
           <FeatureCardsSection />
           <StatsStripSection />
           <StarExplorersSection />
-          <QuestionsAnswersSection />
           <QuickBundleSection />
+          <QuestionsAnswersSection />
           {/* <PaprIqFooterSection />  */}
           {/* <WhatIsEEC />
           <EECFeaturesSection />

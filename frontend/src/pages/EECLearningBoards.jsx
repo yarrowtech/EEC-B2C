@@ -44,7 +44,6 @@ export default function EECLearningBoards() {
   const [topicLoadingBySubject, setTopicLoadingBySubject] = useState({});
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
-  const [unlockingSubject, setUnlockingSubject] = useState("");
   const [expandedSubjects, setExpandedSubjects] = useState({});
   const [profileReady, setProfileReady] = useState(false);
 
@@ -159,7 +158,7 @@ export default function EECLearningBoards() {
   }
 
   useEffect(() => {
-    if (!isLoggedIn || !profileReady || metaLoading) return;
+    if (!profileReady || metaLoading) return;
     if (!board || !grade) return;
     handleFindContent();
   }, [isLoggedIn, profileReady, metaLoading, board, grade]);
@@ -326,8 +325,6 @@ export default function EECLearningBoards() {
               const topics = topicsBySubject[subject._id];
               const topicsLoading = Boolean(topicLoadingBySubject[subject._id]);
               const isExpanded = Boolean(expandedSubjects[subject._id]);
-              const guestVisible = Array.isArray(topics) ? topics.slice(0, 5) : [];
-              const lockedCount = Array.isArray(topics) ? Math.max(0, topics.length - 5) : 0;
 
               // Build a gradient from the color
               const gradientBg = `linear-gradient(135deg, ${color}dd, ${color}88)`;
@@ -361,7 +358,7 @@ export default function EECLearningBoards() {
 
                     {/* Board / class badge — top left */}
                     <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-md border border-white/20 text-white/90 text-xs font-semibold px-3 py-1 rounded-full">
-                      {isLoggedIn ? `${boardLabel} · ${classLabel}` : "Preview"}
+                      {boardLabel} · {classLabel}
                     </div>
 
                     {/* Subject name */}
@@ -421,7 +418,7 @@ export default function EECLearningBoards() {
                             </button>
 
                             <div className="space-y-1.5">
-                              {(isLoggedIn ? topics : guestVisible).map((topic, ti) => (
+                              {topics.map((topic, ti) => (
                                 <button
                                   key={topic._id}
                                   type="button"
@@ -443,36 +440,6 @@ export default function EECLearningBoards() {
                                 </button>
                               ))}
                             </div>
-
-                            {/* Locked topics overlay for guests */}
-                            {!isLoggedIn && lockedCount > 0 && (
-                              <div className="relative mt-2">
-                                <div className="space-y-1.5 pointer-events-none select-none blur-[3px]">
-                                  {topics.slice(5, 8).map((t) => (
-                                    <div key={`lk-${t._id}`} className="rounded-xl px-3 py-2.5 bg-slate-50 text-sm text-slate-400 border border-slate-100">
-                                      {t.name}
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="absolute inset-0 flex items-center justify-center rounded-xl">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setUnlockingSubject(subject._id);
-                                      window.dispatchEvent(new Event("eec:open-login"));
-                                      setTimeout(() => setUnlockingSubject(""), 1200);
-                                    }}
-                                    className="rounded-full text-white text-xs font-black px-5 py-2.5 shadow-xl transition hover:brightness-110 active:scale-95 flex items-center gap-1.5"
-                                    style={{ background: color, boxShadow: `0 8px 20px ${color}50` }}
-                                  >
-                                    <MIcon name="lock_open" className="text-sm" fill />
-                                    {unlockingSubject === subject._id
-                                      ? "Opening login…"
-                                      : `Unlock ${lockedCount} more topic${lockedCount > 1 ? "s" : ""}`}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </>
                         )
                     )}

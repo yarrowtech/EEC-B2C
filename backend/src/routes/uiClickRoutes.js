@@ -117,6 +117,10 @@ router.get("/admin/summary", requireAuth, async (req, res) => {
 
     const rangeDays = Math.max(1, Math.min(365, Number(req.query.days || 30) || 30));
     const search = cleanText(req.query.search);
+    const buttonFilter = cleanText(req.query.button);
+    const pageFilter = cleanText(req.query.page);
+    const eventsSkip = Math.max(0, Number(req.query.skip || 0) || 0);
+    const eventsLimit = Math.max(1, Math.min(200, Number(req.query.limit || 50) || 50));
     const since = new Date();
     since.setHours(0, 0, 0, 0);
     since.setDate(since.getDate() - (rangeDays - 1));
@@ -131,6 +135,10 @@ router.get("/admin/summary", requireAuth, async (req, res) => {
         { userEmail: { $regex: pattern, $options: "i" } },
       ];
     }
+    if (buttonFilter) match.buttonLabel = buttonFilter;
+    if (pageFilter) match.pagePath = pageFilter;
+
+    const optionsMatch = { createdAt: match.createdAt, userRole: "student" };
 
     const [
       overview,
@@ -139,6 +147,8 @@ router.get("/admin/summary", requireAuth, async (req, res) => {
       topUsers,
       recentEvents,
       dailyTrend,
+      buttonOptions,
+      pageOptions,
     ] = await Promise.all([
       UiClickEvent.aggregate([
         { $match: match },
@@ -259,7 +269,8 @@ router.get("/admin/summary", requireAuth, async (req, res) => {
       ]),
       UiClickEvent.find(match)
         .sort({ createdAt: -1 })
-        .limit(50)
+        .skip(eventsSkip)
+        .limit(eventsLimit)
         .populate("userId", "name email role")
         .lean(),
       UiClickEvent.aggregate([
@@ -285,11 +296,15 @@ router.get("/admin/summary", requireAuth, async (req, res) => {
         },
         { $sort: { year: 1, month: 1, day: 1 } },
       ]),
+      UiClickEvent.distinct("buttonLabel", optionsMatch),
+      UiClickEvent.distinct("pagePath", optionsMatch),
     ]);
+
+    const totalClicks = overview?.[0]?.totalClicks || 0;
 
     res.json({
       summary: {
-        totalClicks: overview?.[0]?.totalClicks || 0,
+        totalClicks,
         uniqueUsers: overview?.[0]?.uniqueUsers || 0,
         uniqueButtons: overview?.[0]?.uniqueButtons || 0,
         uniquePages: overview?.[0]?.uniquePages || 0,
@@ -300,6 +315,16 @@ router.get("/admin/summary", requireAuth, async (req, res) => {
       topUsers,
       recentEvents,
       dailyTrend,
+      filters: {
+        buttonOptions: (buttonOptions || []).filter(Boolean).sort(),
+        pageOptions: (pageOptions || []).filter(Boolean).sort(),
+      },
+      pagination: {
+        skip: eventsSkip,
+        limit: eventsLimit,
+        total: totalClicks,
+        hasMore: eventsSkip + recentEvents.length < totalClicks,
+      },
     });
   } catch (error) {
     console.error("ui-click summary error:", error);

@@ -231,16 +231,18 @@ import {
     User,
     BriefcaseBusiness,
     Shield,
+    UserPlus,
 } from "lucide-react";
 
 import QuestionsSidebarBlock from "../components/questions/QuestionsSidebarBlock";
 import ExamSidebarBlock from "../components/exams/ExamSidebarBlock";
 import SettingsSidebarBlock from "../components/settings/SettingsSidebarBlock";
 import SyllabusSidebarBlock from "../components/syllabus/SyllabusSidebarBlock";
-import TeacherVerification from "../components/TeacherVerification";
 import { toast } from "react-toastify";
 import { confirmAndLogout, consumeManualLogoutFlag } from "../lib/confirmLogout";
+import TeacherDashboardLayout from "./TeacherDashboardLayout";
 import OnboardingTour, { isTourDone, markTourDone } from "../components/OnboardingTour";
+import { isTokenValid } from "../lib/jwt";
 
 /* ---- auth helpers (UNCHANGED) ---- */
 function getToken() {
@@ -251,15 +253,6 @@ function getUser() {
         return JSON.parse(localStorage.getItem("user") || "null");
     } catch {
         return null;
-    }
-}
-function isTokenValid(token) {
-    if (!token) return false;
-    try {
-        const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-        return typeof exp === "number" && Date.now() < exp * 1000;
-    } catch {
-        return false;
     }
 }
 
@@ -299,7 +292,6 @@ export default function DashboardLayout() {
     const [online, setOnline] = useState(
         typeof navigator !== "undefined" ? navigator.onLine : true
     );
-    const [showTeacherVerification, setShowTeacherVerification] = useState(false);
     const [showTour, setShowTour] = useState(false);
     const [studyMaterialsUnreadIds, setStudyMaterialsUnreadIds] = useState([]);
     const [websiteSettings, setWebsiteSettings] = useState({
@@ -458,13 +450,6 @@ export default function DashboardLayout() {
         };
     }, [role, token, location.pathname, studyMaterialsUnreadIds]);
 
-    // Check if teacher needs verification
-    useEffect(() => {
-        if (user?.role === "teacher" && !user?.isTeacherVerified) {
-            setShowTeacherVerification(true);
-        }
-    }, [user]);
-
     // Auto-start onboarding tour for first-time users
     useEffect(() => {
         if (!isTourDone()) {
@@ -534,26 +519,20 @@ export default function DashboardLayout() {
         };
     }, [role, token, location.pathname]);
 
-    /* ---- auth guard (UNCHANGED) ---- */
-    if (!isTokenValid(token) || !user?.role) {
-        localStorage.removeItem("jwt");
-        localStorage.removeItem("user");
-        window.dispatchEvent(
-            new CustomEvent("eec:auth", {
-                detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
-            })
-        );
-        return <Navigate to="/" replace />;
-    }
-
-    /* ---- role-based nav (UNCHANGED) ---- */
+    /* ---- role-based nav (UNCHANGED) ----
+       Hooks must run unconditionally on every render, so this (and the
+       effect below it) has to be declared before the auth guard's early
+       return — otherwise the number of hooks this component calls differs
+       between a valid-session render and an invalid-session render, which
+       corrupts React's hook bookkeeping and can misfire as a broken/expired
+       session on the next render. */
     const NAV = useMemo(() => {
         const base = [
             { to: "/dashboard", label: "Dashboard", icon: <Home size={18} />, end: true, id: "tour-nav-dashboard" },
         ];
 
-        // Add Study link for non-admin users
-        if (role !== "admin") {
+        // Add Study link for students only
+        if (role === "student") {
             base.push({ to: "/dashboard/study", label: "Study", icon: <Library size={18} />, id: "tour-nav-study" });
         }
 
@@ -566,10 +545,13 @@ export default function DashboardLayout() {
             base.push(
                 { to: "/dashboard/students", label: "Students", icon: <Users size={18} />, id: "tour-nav-students" },
                 { to: "/dashboard/teachers", label: "Teachers", icon: <Users size={18} />, id: "tour-nav-teachers" },
+                { to: "/dashboard/questions/list", label: "All Questions", icon: <ListChecks size={18} /> },
+                { to: "/dashboard/my-chapters", label: "Uploaded Chapters", icon: <BookOpen size={18} /> },
                 { to: "/dashboard/button-analytics", label: "Button Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/student-analytics", label: "Student Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/teacher-analytics", label: "Teacher Analytics", icon: <BarChart3 size={18} /> },
                 { to: "/dashboard/job-applications", label: "Job Applications", icon: <BriefcaseBusiness size={18} /> },
+                { to: "/dashboard/registrations", label: "Registrations", icon: <UserPlus size={18} /> },
                 { to: "/dashboard/results", label: "Results", icon: <LayoutGrid size={18} /> },
                 { to: "/dashboard/flashcards/manage", label: "Flashcards", icon: <BookOpen size={18} /> },
                 { to: "/dashboard/study-materials/upload", label: "Upload Materials", icon: <Library size={18} /> },
@@ -601,6 +583,18 @@ export default function DashboardLayout() {
         setOpen(false);
         setPracticeMenuOpen(false);
     }, [location.pathname]);
+
+    /* ---- auth guard (UNCHANGED) ---- */
+    if (!isTokenValid(token) || !user?.role) {
+        localStorage.removeItem("jwt");
+        localStorage.removeItem("user");
+        window.dispatchEvent(
+            new CustomEvent("eec:auth", {
+                detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
+            })
+        );
+        return <Navigate to="/" replace />;
+    }
 
     const blockOfflineNavigation = (e) => {
         if (online) return;
@@ -641,6 +635,10 @@ export default function DashboardLayout() {
                     ? "Streak uncompleted. Attempt today to restart."
                     : `Attempt today to continue your ${dailyChallenge.streak} day streak.`;
     const showDashboardChrome = !isExamTakeRoute;
+
+    if (role === "teacher") {
+        return <TeacherDashboardLayout user={user} onLogout={handleLogout} />;
+    }
 
     return (
         // <div className="h-screen overflow-hidden bg-[#FFFBEA]">
@@ -754,6 +752,8 @@ export default function DashboardLayout() {
                                                              item.to.includes('syllabus') || item.to.includes('study') ? 'school' :
                                                              item.to.includes('upload') || item.to.includes('material') ? 'menu_book' :
                                                              item.to.includes('notification') ? 'notifications' :
+                                                             item.to.includes('questions') ? 'checklist' :
+                                                             item.to.includes('chapters') ? 'auto_stories' :
                                                              'description'}
                                                         </span>
                                                         <span className="text-[13px] truncate">{item.label}</span>
@@ -1059,19 +1059,6 @@ export default function DashboardLayout() {
                     Use bottom menu for quick navigation
                 </div>
             )} */}
-
-            {/* Teacher Verification Modal */}
-            {showTeacherVerification && user?.role === "teacher" && (
-                <TeacherVerification
-                    onComplete={() => {
-                        setShowTeacherVerification(false);
-                        // Refresh user data
-                        const updatedUser = { ...user, isTeacherVerified: true };
-                        localStorage.setItem("user", JSON.stringify(updatedUser));
-                        window.location.reload();
-                    }}
-                />
-            )}
 
             {/* Onboarding Tour */}
             {showTour && (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { isTokenValid } from "../lib/jwt";
 
 const STARS = Array.from({ length: 45 }, (_, i) => ({
   id: i,
@@ -264,15 +265,8 @@ export default function NotFound() {
 
   const handleDashboardClick = () => {
     const token = localStorage.getItem("jwt") || "";
-    let isLoggedIn = false;
-    try {
-      const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-      isLoggedIn = typeof exp === "number" && Date.now() < exp * 1000;
-    } catch {
-      isLoggedIn = false;
-    }
 
-    if (isLoggedIn) {
+    if (isTokenValid(token)) {
       navigate("/dashboard");
       return;
     }

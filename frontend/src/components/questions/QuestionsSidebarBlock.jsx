@@ -7,6 +7,10 @@ import {
   ListChecks,
   Sparkles,
   BookText,
+  ClipboardCheck,
+  Wallet,
+  CreditCard,
+  Send,
 } from "lucide-react";
 
 /* MATCH DASHBOARD SIDEBAR STYLE */
@@ -98,6 +102,90 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
 
           {(role === "admin" || role === "teacher") && (
             <NavLink
+              to="/dashboard/submit-chapter"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <Send size={18} />
+              <span>Submit Chapter</span>
+            </NavLink>
+          )}
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/submission-review"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <ClipboardCheck size={18} />
+              <span>Chapter Submissions</span>
+            </NavLink>
+          )}
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/chapter-review"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <ClipboardCheck size={18} />
+              <span>Chapter Review</span>
+            </NavLink>
+          )}
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/topic-review"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <ClipboardCheck size={18} />
+              <span>Topic Review</span>
+            </NavLink>
+          )}
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/chapter-payments"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <Wallet size={18} />
+              <span>Chapter Payments</span>
+            </NavLink>
+          )}
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/payment-structures"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <CreditCard size={18} />
+              <span>Payment Structures</span>
+            </NavLink>
+          )}
+
+          {(role === "admin" || role === "teacher") && (
+            <NavLink
               to="/dashboard/add-content"
               className={({ isActive }) =>
                 `${linkBase} ${
@@ -107,6 +195,20 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             >
               <BookText size={18} />
               <span>Add Content</span>
+            </NavLink>
+          )}
+
+          {(role === "admin" || role === "teacher") && (
+            <NavLink
+              to="/dashboard/my-payments"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <Wallet size={18} />
+              <span>My Payments</span>
             </NavLink>
           )}
 
@@ -137,18 +239,34 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             All Questions
           </NavLink>
 
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/questions/review"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <ClipboardCheck size={18} />
+              <span>Question Review</span>
+            </NavLink>
+          )}
+
           {/* AI QUESTION GENERATOR */}
-          <NavLink
-            to="/dashboard/questions/ai-generator"
-            className={({ isActive }) =>
-              `${linkBase} ${
-                isActive ? linkActive : "hover:bg-yellow-100"
-              }`
-            }
-          >
-            <Sparkles size={18} />
-            <span>AI Generator</span>
-          </NavLink>
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/questions/ai-generator"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <Sparkles size={18} />
+              <span>AI Generator</span>
+            </NavLink>
+          )}
 
         </div>
       </div>

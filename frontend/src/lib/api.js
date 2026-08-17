@@ -121,6 +121,39 @@ export async function postTrueFalseBulk(formData) {
   return json;
 }
 
+export async function postMatchListBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/match-list`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postClozeSelectBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/cloze-select`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function postClozeTextBulk(formData) {
+  const res = await fetch(`${API_BASE}/api/questions/bulk/cloze-text`, {
+    method: "POST",
+    headers: authOnlyHeaders(),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
 export async function uploadImage(file) {
   const formData = new FormData();
   formData.append("image", file);
@@ -149,6 +182,17 @@ export async function deleteQuestion(id) {
   const res = await fetch(`${API_BASE}/api/questions/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export async function reviewQuestion(id, status, reason) {
+  const res = await fetch(`${API_BASE}/api/questions/${id}/review`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ status, reason }),
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);

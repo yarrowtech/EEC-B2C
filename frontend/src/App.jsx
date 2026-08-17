@@ -7,6 +7,7 @@ import Topbar from "./components/Topbar";
 import Navbar from "./components/Navbar";
 import EECFooter from "./components/EECFooter";
 import Home from "./pages/Home";
+import RegistrationPage from "./pages/RegistrationPage";
 import AboutUs from "./pages/AboutUs";
 import Analytics from "./pages/Analytics";
 import AI from "./pages/AI";
@@ -22,12 +23,14 @@ import LearnTopicContentPage from "./pages/LearnTopicContentPage";
 import EECPartner from "./pages/EECMarketing";
 import EECMarketing from "./pages/EECMarketing";
 import SupportCenter from "./pages/SupportCenter";
+import FAQPage from "./pages/FAQPage";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import GlobalLoginModal from "./components/GlobalLoginModal";
 import { ToastContainer } from "react-toastify";
 import { Toaster } from "react-hot-toast";
 import { toast as hotToast } from "react-hot-toast";
 import { consumeManualLogoutFlag } from "./lib/confirmLogout";
+import { isTokenValid, decodeJwtPayload } from "./lib/jwt";
 import "react-toastify/dist/ReactToastify.css";
 import Dashboard from "./pages/Dashboard";
 import StudentsList from "./pages/StudentsList";
@@ -55,6 +58,17 @@ import ResultDetail from "./pages/admin/ResultDetail";
 import AdvancedStudentAnalytics from "./pages/admin/AdvancedStudentAnalytics";
 import TeacherAnalytics from "./pages/admin/TeacherAnalytics";
 import JobApplicationsPage from "./pages/admin/JobApplicationsPage";
+import RegistrationsPage from "./pages/admin/RegistrationsPage";
+import TopicReview from "./pages/admin/TopicReview";
+import ChapterReview from "./pages/admin/ChapterReview";
+import ChapterPayments from "./pages/admin/ChapterPayments";
+import PaymentStructures from "./pages/admin/PaymentStructures";
+import SubmissionReview from "./pages/admin/SubmissionReview";
+import SubmitChapterWizard from "./pages/questions/SubmitChapterWizard";
+import MyPayments from "./pages/MyPayments";
+import MyChaptersPage from "./pages/MyChaptersPage";
+import StudentEngagement from "./pages/StudentEngagement";
+import QuestionReview from "./pages/admin/QuestionReview";
 import HeroSettings from "./components/settings/HeroSettings";
 import WhyEecSettings from "./components/settings/WhyEecSettings";
 import FeaturesSettings from "./components/settings/FeaturesSettings";
@@ -68,6 +82,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AddSubject from "./pages/questions/AddSubject";
 import AddTopic from "./pages/questions/AddTopic";
 import AddContent from "./pages/questions/AddContent";
+import AddChapterWorkspace from "./pages/questions/AddChapterWorkspace";
 import SubjectsList from "./pages/questions/SubjectsList";
 import TopicsList from "./pages/questions/TopicsList";
 import ChatBox from "./pages/ChatBox";
@@ -120,16 +135,6 @@ function getUser() {
     return null;
   }
 }
-function isTokenValid(token) {
-  if (!token) return false;
-  try {
-    const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-    return typeof exp === "number" && Date.now() < exp * 1000;
-  } catch {
-    return false;
-  }
-}
-
 /* ---------- guard: must have valid token + admin role ---------- */
 function AdminGuard({ children }) {
   const token = getToken();
@@ -250,6 +255,11 @@ function getSeoForPath(pathname) {
       description: "Get help with Edify Eight accounts, subscriptions, and learning workflows.",
       keywords: "Edify Eight help center, student support, education app support",
     },
+    "/faq": {
+      title: "Frequently Asked Questions | Edify Eight",
+      description: "Answers to common questions about enrolling, learning, payments, certificates, and support on Edify Eight.",
+      keywords: "Edify Eight FAQ, frequently asked questions, edtech FAQ, course enrollment questions",
+    },
     "/meet-the-developer": {
       title: "Meet The Developers | Edify Eight",
       description: "Meet the developers behind Edify Eight and connect with them on LinkedIn.",
@@ -342,8 +352,8 @@ function RouteHelmet({ siteSettings }) {
       : location.pathname;
   const socialImage =
     typeof window !== "undefined"
-      ? `${window.location.origin}${String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png"}`
-      : String(siteSettings?.logoUrl || "/logo_new.png").trim() || "/logo_new.png";
+      ? `${window.location.origin}${String(siteSettings?.logoUrl || "/icon.png").trim() || "/icon.png"}`
+      : String(siteSettings?.logoUrl || "/icon.png").trim() || "/icon.png";
   const siteBase =
     typeof window !== "undefined"
       ? window.location.origin
@@ -414,7 +424,7 @@ function RouteHelmet({ siteSettings }) {
     upsertMeta("property", "og:site_name", siteName);
     upsertMeta("property", "og:url", canonical);
 
-    const faviconHref = String(siteSettings?.faviconUrl || "/favicon.ico").trim() || "/favicon.ico";
+    const faviconHref = String(siteSettings?.faviconUrl || "/icon.ico").trim() || "/icon.ico";
     const upsertLink = (selector, rel) => {
       let node = document.head.querySelector(selector);
       if (!node) {
@@ -568,23 +578,6 @@ export default function App() {
     const token = localStorage.getItem("jwt");
     if (!token) return;
 
-    try {
-      const { exp } = JSON.parse(atob(token.split(".")[1]));
-      const expiry = exp * 1000;
-      const now = Date.now();
-      if (now >= expiry) {
-        // token already expired → logout immediately
-        logoutUser();
-      } else {
-        // auto logout when it expires
-        const timeout = setTimeout(logoutUser, expiry - now);
-        return () => clearTimeout(timeout);
-      }
-    } catch (e) {
-      console.error("Invalid token", e);
-      logoutUser();
-    }
-
     function logoutUser() {
       localStorage.removeItem("jwt");
       localStorage.removeItem("user");
@@ -593,6 +586,22 @@ export default function App() {
           detail: { type: consumeManualLogoutFlag() ? "manual-logout" : "logout" },
         })
       );
+    }
+
+    const payload = decodeJwtPayload(token);
+    if (typeof payload?.exp !== "number") {
+      // Undecodable token: don't nuke the session on a decode hiccup, just
+      // skip scheduling an expiry timer for it.
+      return;
+    }
+
+    const expiry = payload.exp * 1000;
+    const now = Date.now();
+    if (now >= expiry) {
+      logoutUser();
+    } else {
+      const timeout = setTimeout(logoutUser, expiry - now);
+      return () => clearTimeout(timeout);
     }
   }, []);
 
@@ -808,6 +817,7 @@ export default function App() {
       <Routes>
         <Route element={<ShellLayout />}>
           <Route index element={<Home />} />
+          <Route path="/registration" element={<RegistrationPage />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/ai" element={<AI />} />
@@ -827,6 +837,7 @@ export default function App() {
           <Route path="/flashcards" element={<FlashcardsCatalogPage />} />
           <Route path="/learn/topic/:subjectId/:topicId" element={<LearnTopicContentPage />} />
           <Route path="/support" element={<SupportCenter />} />
+          <Route path="/faq" element={<FAQPage />} />
           <Route path="/meet-the-developer" element={<MeetTheDeveloper />} />
           <Route path="/marketing" element={<EECMarketing />} />
           <Route path="/eec-b2c" element={<B2B />} />
@@ -840,6 +851,7 @@ export default function App() {
             <Route path="add-subject" element={<AddSubject />} />
             <Route path="add-topic" element={<AddTopic />} />
             <Route path="add-content" element={<RequireAdmin><AddContent /></RequireAdmin>} />
+            <Route path="add-chapter-workspace" element={<RequireAdmin><AddChapterWorkspace /></RequireAdmin>} />
             <Route path="/dashboard/add-class" element={<AddClass />} />
             <Route path="/dashboard/add-board" element={<AddBoard />} />
             <Route path="students" element={<StudentsList />} />
@@ -875,6 +887,7 @@ export default function App() {
               <RequireAdmin><QuestionsIndex /></RequireAdmin>
             } />
             <Route path="questions/list" element={<RequireAdmin><QuestionsList /></RequireAdmin>} />
+            <Route path="questions/review" element={<RequireAdmin><QuestionReview /></RequireAdmin>} />
             <Route path="questions/edit/:id" element={<RequireAdmin><QuestionsEdit /></RequireAdmin>} />
             <Route path="questions/ai-generator" element={<RequireAdmin><AIQuestionGenerator /></RequireAdmin>} />
 
@@ -924,6 +937,16 @@ export default function App() {
             <Route path="student-analytics" element={<RequireAdmin><AdvancedStudentAnalytics /></RequireAdmin>} />
             <Route path="teacher-analytics" element={<RequireAdmin><TeacherAnalytics /></RequireAdmin>} />
             <Route path="job-applications" element={<RequireAdmin><JobApplicationsPage /></RequireAdmin>} />
+            <Route path="registrations" element={<RequireAdmin><RegistrationsPage /></RequireAdmin>} />
+            <Route path="topic-review" element={<RequireAdmin><TopicReview /></RequireAdmin>} />
+            <Route path="chapter-review" element={<RequireAdmin><ChapterReview /></RequireAdmin>} />
+            <Route path="chapter-payments" element={<RequireAdmin><ChapterPayments /></RequireAdmin>} />
+            <Route path="submission-review" element={<RequireAdmin><SubmissionReview /></RequireAdmin>} />
+            <Route path="submit-chapter" element={<RequireAdmin><SubmitChapterWizard /></RequireAdmin>} />
+            <Route path="payment-structures" element={<RequireAdmin><PaymentStructures /></RequireAdmin>} />
+            <Route path="my-chapters" element={<MyChaptersPage />} />
+            <Route path="my-payments" element={<MyPayments />} />
+            <Route path="student-engagement" element={<StudentEngagement />} />
 
             {/* Setttings */}
             <Route path="settings/home" element={<RequireAdmin><HeroSettings /></RequireAdmin>} />

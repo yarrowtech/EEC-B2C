@@ -340,6 +340,7 @@ export default function HeroFilterBar() {
                 onClick={() => {
                   if (isLoggedIn) return;
                   setActiveBoard(board.value);
+                  setActiveBoardQuery(board.value);
                 }}
                 className={`px-7 py-3 rounded-full text-sm font-bold transition-all ${
                   activeBoard === board.value
@@ -358,7 +359,10 @@ export default function HeroFilterBar() {
             <div className="relative">
               <select
                 value={activeGrade}
-                onChange={(e) => setActiveGrade(e.target.value)}
+                onChange={(e) => {
+                  setActiveGrade(e.target.value);
+                  setActiveGradeQuery(e.target.value);
+                }}
                 disabled={isLoggedIn}
                 className="h-12 appearance-none rounded-full border-2 border-[#4ECDC4] bg-[#cdeceb] pl-6 pr-11 font-bold text-[#24496c] focus:outline-none"
               >
@@ -376,7 +380,7 @@ export default function HeroFilterBar() {
           </div>
 
           <button
-            onClick={handleFindQuest}
+            onClick={() => handleFindQuest()}
             disabled={loading}
             className="ml-auto bg-[#F5C518] disabled:opacity-70 disabled:cursor-not-allowed text-slate-900 font-black px-8 py-3 rounded-full text-sm whitespace-nowrap hover:brightness-105 active:scale-95 transition-all duration-200 shadow-[0_4px_0_0_#c79204]"
           >

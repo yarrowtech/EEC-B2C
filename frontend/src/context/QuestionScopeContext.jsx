@@ -12,9 +12,15 @@ export function QuestionScopeProvider({ children }) {
     difficulty: "",
     questionType: "",
   });
+  // When a page renders its own <SubjectTopicPicker /> while embedded inside
+  // a flow that already collected these fields (e.g. AddChapterWorkspace),
+  // that flow sets this so the redundant picker UI stays hidden.
+  const [hidePicker, setHidePicker] = useState(false);
 
   const value = {
     scope,
+    hidePicker,
+    setHidePicker,
     setBoard: (b) => setScope((prev) => ({ ...prev, board: b })),
     setClass: (c) => setScope((prev) => ({ ...prev, class: c })),
     setSubject: (s) => setScope((prev) => ({ ...prev, subject: s })),

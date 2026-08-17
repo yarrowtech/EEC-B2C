@@ -97,6 +97,7 @@ router.post(
         createdBy: req.user.id,
         stage: 1,
         level: difficulty === "easy" ? "basic" : difficulty === "hard" ? "advanced" : "intermediate",
+        status: "approved",
       }));
 
       // Auto-save if requested
@@ -149,6 +150,7 @@ router.post("/save-generated", requireAuth, async (req, res) => {
     const questionsWithCreator = questions.map((q) => ({
       ...q,
       createdBy: req.user._id,
+      status: "approved",
     }));
 
     const savedQuestions = await Question.insertMany(questionsWithCreator);

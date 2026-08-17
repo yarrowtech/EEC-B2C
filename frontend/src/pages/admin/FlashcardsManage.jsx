@@ -97,7 +97,7 @@ export default function FlashcardsManage() {
   async function loadTopics() {
     try {
       const rows = await getJSON(
-        `/api/topic/${encodeURIComponent(form.subject)}?board=${encodeURIComponent(form.board)}&class=${encodeURIComponent(form.class)}`
+        `/api/topic/${encodeURIComponent(form.subject)}?board=${encodeURIComponent(form.board)}&class=${encodeURIComponent(form.class)}&manage=1`
       );
       setTopics(Array.isArray(rows) ? rows : []);
     } catch {

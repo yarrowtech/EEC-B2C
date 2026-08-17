@@ -16,10 +16,20 @@ import {
   Info,
   Sparkles,
   User,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { myAttempts, adminAttempts, getJSON } from "../lib/api";
 import { Trophy, Target, Table as TableIcon } from "lucide-react";
-import WelcomeCard from "./WelcomeCard";
 import WelcomeModal from "../components/WelcomeModal";
 import AdventureStatCard from '../components/student/AdventureStatCard';
 import DailyQuestCard from '../components/student/DailyQuestCard';
@@ -33,6 +43,8 @@ import {
   stageRevisionLabel,
   stageEstimateMinutes,
 } from "../lib/studentLearning";
+import { isTokenValid } from "../lib/jwt";
+import TeacherHome from "../components/dashboard/TeacherHome";
 
 /* small local helpers (mirrors your App.jsx approach) */
 function getToken() {
@@ -43,15 +55,6 @@ function getUser() {
     return JSON.parse(localStorage.getItem("user") || "null");
   } catch {
     return null;
-  }
-}
-function isTokenValid(token) {
-  if (!token) return false;
-  try {
-    const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-    return typeof exp === "number" && Date.now() < exp * 1000;
-  } catch {
-    return false;
   }
 }
 
@@ -210,6 +213,8 @@ function AdminContent() {
   const [uploadedQuestions, setUploadedQuestions] = useState(0);
   const [uploadedQuestionTypes, setUploadedQuestionTypes] = useState(0);
   const [totalStudyMaterials, setTotalStudyMaterials] = useState(0);
+  const [questionDates, setQuestionDates] = useState([]);
+  const [trendRange, setTrendRange] = useState(14);
   const [subjectMap, setSubjectMap] = useState({});
   const [topicMap, setTopicMap] = useState({});
   const adminUser = getUser() || {};
@@ -268,6 +273,7 @@ function AdminContent() {
       setUploadedQuestions(cached.uploadedQuestions || 0);
       setUploadedQuestionTypes(cached.uploadedQuestionTypes || 0);
       setTotalStudyMaterials(cached.totalStudyMaterials || 0);
+      setQuestionDates(cached.questionDates || []);
       loadSubjectTopicNames();
       return;
     }
@@ -304,8 +310,12 @@ function AdminContent() {
         const questionTypeCount = new Set(
           questionItems.map((item) => item.type).filter(Boolean)
         ).size;
+        const questionDatesList = questionItems
+          .map((item) => item.createdAt)
+          .filter(Boolean);
         setUploadedQuestions(questionCount);
         setUploadedQuestionTypes(questionTypeCount);
+        setQuestionDates(questionDatesList);
 
         // load total study materials
         const studyMaterials = await getJSON("/api/study-materials/admin/all");
@@ -319,6 +329,7 @@ function AdminContent() {
           uploadedQuestions: questionCount,
           uploadedQuestionTypes: questionTypeCount,
           totalStudyMaterials: materialsCount,
+          questionDates: questionDatesList,
         });
 
       } catch (e) {
@@ -341,6 +352,41 @@ function AdminContent() {
   const indexOfFirst = indexOfLast - rowsPerPage;
   const paginatedRows = rows.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+  const { trendData, trendChangePercent } = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = trendRange - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      days.push(d);
+    }
+    const dayKey = (d) => d.toISOString().slice(0, 10);
+    const countsByDay = new Map(days.map((d) => [dayKey(d), 0]));
+    for (const raw of questionDates) {
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) continue;
+      d.setHours(0, 0, 0, 0);
+      const key = dayKey(d);
+      if (countsByDay.has(key)) {
+        countsByDay.set(key, countsByDay.get(key) + 1);
+      }
+    }
+    const data = days.map((d) => ({
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      questions: countsByDay.get(dayKey(d)) || 0,
+    }));
+
+    const half = Math.floor(trendRange / 2) || 1;
+    const firstHalfTotal = data.slice(0, half).reduce((s, r) => s + r.questions, 0);
+    const secondHalfTotal = data.slice(-half).reduce((s, r) => s + r.questions, 0);
+    const changePercent = firstHalfTotal > 0
+      ? Math.round(((secondHalfTotal - firstHalfTotal) / firstHalfTotal) * 100)
+      : secondHalfTotal > 0 ? 100 : 0;
+
+    return { trendData: data, trendChangePercent: changePercent };
+  }, [questionDates, trendRange]);
 
   function resolveMappedLabel(value, mapObject) {
     if (!value) return "—";
@@ -443,6 +489,79 @@ function AdminContent() {
 
         </div>
       </Section>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
+          <div>
+            <h2 className="text-sm md:text-base font-bold text-slate-800 tracking-tight">Question Upload Trends</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Date-wise count of questions uploaded to the platform.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                trendChangePercent >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+              }`}
+            >
+              {trendChangePercent >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+              {trendChangePercent >= 0 ? "+" : ""}{trendChangePercent}%
+            </span>
+            <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              {[7, 14, 30].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setTrendRange(n)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    trendRange === n ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {n}d
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="h-56 md:h-64 mt-3 -ml-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="questionTrendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6C63FF" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#6C63FF" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                axisLine={false}
+                tickLine={false}
+                interval={trendRange > 14 ? Math.ceil(trendRange / 8) : 0}
+              />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                axisLine={false}
+                tickLine={false}
+                width={28}
+              />
+              <Tooltip
+                contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 6px 20px -8px rgba(2,6,23,0.2)" }}
+                labelStyle={{ fontWeight: 700, color: "#1e293b" }}
+                formatter={(value) => [`${value} question${value === 1 ? "" : "s"}`, "Uploaded"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="questions"
+                stroke="#6C63FF"
+                strokeWidth={2.5}
+                fill="url(#questionTrendFill)"
+                activeDot={{ r: 4 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
       {/* <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`} icon={<Sparkles size={18} />}> */}
       <Section title="Recent Attempts" subtitle={busy ? "Loading…" : err ? "Error" : `${rows.length} items`}>
@@ -577,136 +696,6 @@ function AdminContent() {
 }
 
 
-
-function TeacherContent() {
-  const [uploadedQuestions, setUploadedQuestions] = useState(0);
-  const [uploadedQuestionTypes, setUploadedQuestionTypes] = useState(0);
-  const [uploadedStudyMaterials, setUploadedStudyMaterials] = useState(0);
-  const [uploadTrend, setUploadTrend] = useState([]);
-
-  function toLocalDateKey(dateValue) {
-    const d = new Date(dateValue);
-    if (Number.isNaN(d.getTime())) return "";
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }
-
-  function buildLast7DaysTrend(items = []) {
-    const dailyCounts = {};
-    items.forEach((q) => {
-      const key = toLocalDateKey(q.createdAt);
-      if (!key) return;
-      dailyCounts[key] = (dailyCounts[key] || 0) + 1;
-    });
-
-    const trend = [];
-    for (let i = 6; i >= 0; i -= 1) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      const key = toLocalDateKey(d);
-      trend.push({
-        key,
-        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        count: dailyCounts[key] || 0,
-      });
-    }
-    return trend;
-  }
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const currentUser = getUser();
-        const currentUserId = String(currentUser?._id || currentUser?.id || "");
-        const currentUserEmail = String(currentUser?.email || "").toLowerCase();
-
-        let ownQuestions = [];
-
-        // Primary: server-side mine filter
-        const qData = await getJSON("/api/questions?mine=1&page=1&limit=5000");
-        ownQuestions = qData.items || [];
-
-        // Fallback: client-side filter on full list if mine filter returns empty.
-        if (!ownQuestions.length) {
-          const fallback = await getJSON("/api/questions?page=1&limit=5000");
-          const items = fallback.items || [];
-          ownQuestions = items.filter((item) => {
-            const uploaderId = String(item?.createdBy?._id || item?.createdBy || "");
-            const uploaderEmail = String(item?.createdBy?.email || "").toLowerCase();
-            return (
-              (currentUserId && uploaderId === currentUserId) ||
-              (currentUserEmail && uploaderEmail === currentUserEmail)
-            );
-          });
-        }
-
-        setUploadedQuestions(ownQuestions.length);
-        setUploadedQuestionTypes(new Set(ownQuestions.map((q) => q.type).filter(Boolean)).size);
-
-        const materials = await getJSON("/api/study-materials/admin/all");
-        setUploadedStudyMaterials(Array.isArray(materials) ? materials.length : 0);
-
-        setUploadTrend(buildLast7DaysTrend(ownQuestions));
-      } catch (error) {
-        console.error("Failed to load teacher upload trend", error);
-        setUploadedQuestions(0);
-        setUploadedQuestionTypes(0);
-        setUploadedStudyMaterials(0);
-        setUploadTrend(buildLast7DaysTrend([]));
-      }
-    })();
-  }, []);
-
-  const maxTrendValue = Math.max(1, ...uploadTrend.map((d) => d.count));
-
-  return (
-    <>
-      <WelcomeCard />
-      <Section title="Teacher Overview" icon={<GraduationCap size={18} />}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Uploaded Questions"
-            value={uploadedQuestions}
-            icon={<ClipboardList size={18} />}
-            gradient={["from-indigo-600", "to-violet-600"]}
-          />
-          <StatCard
-            title="Uploaded Question Types"
-            value={uploadedQuestionTypes}
-            icon={<Activity size={18} />}
-            gradient={["from-emerald-600", "to-teal-600"]}
-          />
-          <StatCard
-            title="Uploaded Study Materials"
-            value={uploadedStudyMaterials}
-            icon={<FileText size={18} />}
-            gradient={["from-amber-600", "to-orange-600"]}
-          />
-        </div>
-      </Section>
-      <Section title="Upload Trend (Last 7 Days)" subtitle="Date-wise by you">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="grid grid-cols-7 gap-3 items-end h-48">
-            {uploadTrend.map((d) => (
-              <div key={d.key} className="flex flex-col items-center justify-end h-full">
-                <div className="text-[11px] font-semibold text-slate-700 mb-1">{d.count}</div>
-                <div
-                  className="w-full rounded-md bg-gradient-to-t from-indigo-600 to-purple-500"
-                  style={{ height: `${Math.max(6, (d.count / maxTrendValue) * 130)}px` }}
-                  title={`${d.label}: ${d.count}`}
-                />
-                <div className="text-[11px] text-slate-500 mt-2 text-center">{d.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Section>
-    </>
-  );
-}
 
 function StudentContent() {
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -1771,6 +1760,18 @@ export default function Dashboard() {
   const token = getToken();
   const user = getUser();
 
+  // Hooks must run unconditionally on every render, so this has to be
+  // declared before the auth guard's early return below — otherwise the
+  // number of hooks this component calls differs between a valid-session
+  // render and an invalid-session render, which corrupts React's hook
+  // bookkeeping and can misfire as a broken/expired session on re-render.
+  const roleKey = String(user?.role || "").toLowerCase();
+  const roleContent = useMemo(() => {
+    if (roleKey === "admin") return <AdminContent />;
+    if (roleKey === "teacher") return <TeacherHome />;
+    return <StudentContent />; // default
+  }, [roleKey]);
+
   if (!isTokenValid(token) || !user?.role) {
     // mirror your guard behavior
     localStorage.removeItem("jwt");
@@ -1782,13 +1783,6 @@ export default function Dashboard() {
     );
     return <Navigate to="/" replace />;
   }
-
-  const roleKey = String(user.role || "").toLowerCase();
-  const roleContent = useMemo(() => {
-    if (roleKey === "admin") return <AdminContent />;
-    if (roleKey === "teacher") return <TeacherContent />;
-    return <StudentContent />; // default
-  }, [roleKey]);
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#f5f3ef]">
@@ -1807,7 +1801,7 @@ export default function Dashboard() {
         </div>
       </div> */}
 
-      <main className="mx-auto max-w-6xl px-3 md:px-4 py-3 md:py-5 space-y-4 md:space-y-6">
+      <main className="mx-auto max-w-6xl space-y-4 md:space-y-6">
         {roleContent}
 
         {/* <Section title="Announcements" icon={<Bell size={18} />}>

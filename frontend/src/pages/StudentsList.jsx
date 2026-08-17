@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Eye, Pencil, X, Search, Users, GraduationCap, BadgeCheck, Loader2, AlertTriangle, Filter, XCircle, Download, ChevronDown } from "lucide-react";
+import { Eye, Pencil, X, Search, Users, GraduationCap, BadgeCheck, Loader2, AlertTriangle, Filter, XCircle, Download, ChevronDown, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
 
 /* pull role the same way the layout does (read-only) */
 function getUser() {
@@ -45,6 +46,11 @@ export default function StudentsList() {
   const [page, setPage] = useState(1);
   const pageSize = 10; // show 10 rows per page
 
+  // Bulk selection / delete (admin only)
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const canBulkDelete = role === "admin";
+
 
 
   // Esc to close modal
@@ -79,6 +85,7 @@ export default function StudentsList() {
       try {
         setLoading(true);
         setErr("");
+        setSelectedIds(new Set());
         const token = getToken();
         const url = new URL(`${API_BASE}/api/users/students`);
         if (query.trim()) url.searchParams.set("q", query.trim());
@@ -222,6 +229,68 @@ export default function StudentsList() {
     return filtered.slice(start, start + pageSize);
   }, [page, filtered]);
 
+  const allOnPageSelected =
+    paginatedRows.length > 0 && paginatedRows.every((r) => selectedIds.has(r.id));
+
+  const tableColSpan = 7 + (role !== "student" ? 1 : 0) + (canBulkDelete ? 1 : 0);
+
+  function toggleRowSelected(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        paginatedRows.forEach((r) => next.delete(r.id));
+      } else {
+        paginatedRows.forEach((r) => next.add(r.id));
+      }
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Delete ${ids.length} selected student${ids.length === 1 ? "" : "s"}? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setBulkDeleting(true);
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/api/users/students`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ ids }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.message || `Request failed (${res.status})`);
+      }
+
+      setRows((prev) => prev.filter((r) => !selectedIds.has(r.id)));
+      setSelectedIds(new Set());
+      toast.success(data?.message || `${ids.length} student(s) deleted.`);
+    } catch (e) {
+      toast.error(e.message || "Failed to delete selected students.");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   // Export students to Excel
   function exportToExcel(dataToExport = rows, filenameSuffix = "") {
     // Create organized data with only relevant fields in a specific order
@@ -338,6 +407,22 @@ export default function StudentsList() {
                   <GraduationCap size={14} />
                   {filtered.length} {filtered.length === 1 ? 'student' : 'students'}
                 </span>
+              )}
+
+              {/* Bulk delete */}
+              {canBulkDelete && selectedIds.size > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="inline-flex items-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white px-4 py-2 text-sm shadow-md transition-all font-medium"
+                >
+                  {bulkDeleting ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  Delete Selected ({selectedIds.size})
+                </button>
               )}
 
               {/* Export Dropdown */}
@@ -463,6 +548,17 @@ export default function StudentsList() {
           <table className="min-w-full text-sm">
             <thead className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white text-left">
               <tr>
+                {canBulkDelete && (
+                  <th className="px-4 py-3 font-medium w-10">
+                    <input
+                      type="checkbox"
+                      checked={allOnPageSelected}
+                      onChange={toggleSelectAllOnPage}
+                      aria-label="Select all students on this page"
+                      className="size-4 rounded border-white/60 accent-white"
+                    />
+                  </th>
+                )}
                 <th className="px-4 py-3 font-medium">#</th>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Class</th>
@@ -477,14 +573,14 @@ export default function StudentsList() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={role !== "student" ? 8 : 7} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={tableColSpan} className="px-4 py-6 text-center text-slate-500">
                     <Loader2 className="inline-block animate-spin mr-2" size={16} />
                     Fetching students data...
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={role !== "student" ? 8 : 7} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={tableColSpan} className="px-4 py-6 text-center text-slate-500">
                     No students found.
                   </td>
                 </tr>
@@ -492,8 +588,19 @@ export default function StudentsList() {
                 paginatedRows.map((r, i) => (
                   <tr
                     key={r.id}
-                    className={`transition-all ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"} hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50`}
+                    className={`transition-all ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"} hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 ${selectedIds.has(r.id) ? "bg-rose-50/70!" : ""}`}
                   >
+                    {canBulkDelete && (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(r.id)}
+                          onChange={() => toggleRowSelected(r.id)}
+                          aria-label={`Select ${r.name}`}
+                          className="size-4 rounded border-slate-300 accent-rose-600"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-slate-700">{(page - 1) * pageSize + i + 1}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{r.name}</td>
                     <td className="px-4 py-3 text-slate-700">{r.grade}</td>

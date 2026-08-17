@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { toast as hotToast } from "react-hot-toast";
 import { getUiClickSessionId, mergeUiClickSession } from "../lib/api";
+import { isTokenValid } from "../lib/jwt";
 
 const PROFILE_CACHE_KEY = "eec:user-profile-cache:v1";
 const PROFILE_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -40,16 +41,6 @@ const FALLBACK_STATES = [
   "Uttarakhand",
   "West Bengal",
 ];
-
-function isTokenValid(token) {
-  if (!token) return false;
-  try {
-    const { exp } = JSON.parse(atob(token.split(".")[1] || ""));
-    return typeof exp === "number" && Date.now() < exp * 1000;
-  } catch {
-    return false;
-  }
-}
 
 function getUserCacheId(user) {
   return String(user?._id || user?.id || user?.email || user?.phone || "").toLowerCase();

@@ -1,10 +1,12 @@
 // src/components/Hero.jsx
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Rocket, BookOpen, GraduationCap, Brain, PencilRuler, FlaskConical } from "lucide-react";
+import { Rocket, BookOpen, GraduationCap, Brain, PencilRuler, FlaskConical, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getUiClickSessionId, mergeUiClickSession } from "../lib/api";
+import { decodeJwtPayload } from "../lib/jwt";
 
 
 function CustomSelect({
@@ -194,6 +196,7 @@ function CustomSelect({
 
 
 const Hero = () => {
+  const navigate = useNavigate();
   const [hero, setHero] = useState(null);
   const [websiteSettings, setWebsiteSettings] = useState({
     siteName: "Edify Eight",
@@ -211,6 +214,11 @@ const Hero = () => {
   const [signSubmitting, setSignSubmitting] = useState(false);
   const [classes, setClasses] = useState([]);
   const [boards, setBoards] = useState([]);
+
+  // ── Live email-availability check (basic form) ──
+  const [emailInput, setEmailInput] = useState("");
+  // status: "idle" | "checking" | "available" | "taken" | "error"
+  const [emailCheck, setEmailCheck] = useState({ status: "idle", checkedEmail: "" });
 
   // ── Stepper modal state ──
   const [showStepper, setShowStepper] = useState(false);
@@ -264,6 +272,41 @@ const Hero = () => {
     loadMeta();
   }, []);
 
+  // Check email availability as the user types, debounced — no submit needed.
+  useEffect(() => {
+    const email = emailInput.trim().toLowerCase();
+    const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isValidFormat) {
+      setEmailCheck({ status: "idle", checkedEmail: "" });
+      return;
+    }
+
+    let cancelled = false;
+    setEmailCheck((prev) => ({ ...prev, status: "checking" }));
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/auth/check-email?email=${encodeURIComponent(email)}`
+        );
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok) {
+          setEmailCheck({ status: "idle", checkedEmail: "" });
+          return;
+        }
+        setEmailCheck({ status: data?.exists ? "taken" : "available", checkedEmail: email });
+      } catch {
+        if (!cancelled) setEmailCheck({ status: "idle", checkedEmail: "" });
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [emailInput, API_BASE]);
+
   useEffect(() => {
     let mounted = true;
     async function loadWebsiteSettings() {
@@ -291,10 +334,14 @@ const Hero = () => {
     const form = e.currentTarget;
     const name = form.elements["name"]?.value?.trim();
     const klass = form.elements["class"]?.value;
-    const email = form.elements["email"]?.value?.trim().toLowerCase();
+    const email = emailInput.trim().toLowerCase();
     if (!name) { toast.error("Please enter your name"); return; }
     if (!klass) { toast.error("Please choose your class"); return; }
     if (!email) { toast.error("Please enter your email"); return; }
+    if (emailCheck.status === "taken" && emailCheck.checkedEmail === email) {
+      toast.error("This email is already registered. Please login instead.");
+      return;
+    }
     setBasicInfo({ name, klass, email });
     setStepValues({ board: "", mobile: "", state: "", password: "", confirm: "" });
     setStepIdx(0);
@@ -357,12 +404,7 @@ const Hero = () => {
       if (!res.ok) throw new Error(data?.message || "Registration failed");
       localStorage.setItem("jwt", data.token);
 
-      let tokenPayload = {};
-      try {
-        tokenPayload = JSON.parse(atob(String(data?.token || "").split(".")[1] || ""));
-      } catch {
-        tokenPayload = {};
-      }
+      const tokenPayload = decodeJwtPayload(data?.token) || {};
 
       let hydratedUser = data?.user || {};
       try {
@@ -392,11 +434,11 @@ const Hero = () => {
       }
       setStepDone(true);
       toast.success(`Welcome, ${hydratedUser?.name || data?.user?.name || "Explorer"}! 🎉`);
+      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "register", user: hydratedUser } }));
       setTimeout(() => {
         setShowStepper(false);
-        window.location.replace("/dashboard");
+        navigate("/dashboard", { replace: true });
       }, 1800);
-      window.dispatchEvent(new CustomEvent("eec:auth", { detail: { type: "register", user: hydratedUser } }));
     } catch (err) {
       setStepError(err?.message || "Registration failed");
       toast.error(err?.message || "Registration failed");
@@ -679,12 +721,44 @@ const Hero = () => {
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="grow space-y-1">
                     <label className="text-xs font-bold text-slate-500 ml-2">Explorer's Email</label>
-                    <input
-                      className={inputCls + " w-full"}
-                      name="email"
-                      placeholder="example@gmail.com"
-                      type="email"
-                    />
+                    <div className="relative">
+                      <input
+                        className={
+                          inputCls +
+                          " w-full pr-10" +
+                          (emailCheck.status === "taken" ? " border-rose-400! focus:border-rose-400!" : "") +
+                          (emailCheck.status === "available" ? " border-emerald-400! focus:border-emerald-400!" : "")
+                        }
+                        name="email"
+                        placeholder="example@gmail.com"
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        autoComplete="email"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                        {emailCheck.status === "checking" && (
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                        )}
+                        {emailCheck.status === "taken" && (
+                          <AlertCircle className="h-4 w-4 text-rose-500" />
+                        )}
+                        {emailCheck.status === "available" && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        )}
+                      </span>
+                    </div>
+                    {emailCheck.status === "taken" && (
+                      <p className="ml-2 text-[11px] font-semibold text-rose-500">
+                        This email is already registered.{" "}
+                        <span
+                          onClick={() => window.dispatchEvent(new Event("eec:open-login"))}
+                          className="cursor-pointer underline"
+                        >
+                          Login instead
+                        </span>
+                      </p>
+                    )}
                   </div>
                   <button
                     type="submit"

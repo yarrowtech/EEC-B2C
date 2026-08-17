@@ -158,6 +158,7 @@ async function buildDailyQuestionFilter({ board, className }) {
 
   return {
     type: { $in: ["mcq-single", "mcq-multi"] },
+    status: "approved",
     $and: [
       { board: { $in: [...boardValues, ...boardRegex] } },
       { class: { $in: [...classValues, ...classRegex] } },

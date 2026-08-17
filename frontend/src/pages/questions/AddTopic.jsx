@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -22,6 +22,9 @@ export default function AddTopic() {
     const [editShortDescription, setEditShortDescription] = useState("");
     const [editTopicImage, setEditTopicImage] = useState("");
     const [editUploadingImage, setEditUploadingImage] = useState(false);
+    const [filterBoard, setFilterBoard] = useState("");
+    const [filterClass, setFilterClass] = useState("");
+    const [filterSubject, setFilterSubject] = useState("");
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user?.id || user?._id || "";
     const userRole = String(user?.role || "").toLowerCase();
@@ -34,6 +37,23 @@ export default function AddTopic() {
         loadBoards();
         loadClasses();
         loadTopics();
+    }, []);
+
+    // Re-fetch whenever this tab/page regains focus, so a topic approved or
+    // rejected elsewhere (e.g. the admin Topic Review page) shows its latest
+    // status here without needing a manual reload.
+    useEffect(() => {
+        const handleFocus = () => loadTopics();
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") loadTopics();
+        };
+        window.addEventListener("focus", handleFocus);
+        document.addEventListener("visibilitychange", handleVisibility);
+        return () => {
+            window.removeEventListener("focus", handleFocus);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Load subjects when board or class changes
@@ -73,7 +93,6 @@ export default function AddTopic() {
             const params = [];
             if (boardId) params.push(`board=${boardId}`);
             if (classId) params.push(`class=${classId}`);
-            if (isTeacher) params.push("mine=1");
             if (params.length > 0) url += `?${params.join("&")}`;
 
             const res = await axios.get(url, { headers });
@@ -85,25 +104,24 @@ export default function AddTopic() {
 
     const loadTopics = async () => {
         try {
-            const subjectParams = isTeacher ? { mine: 1 } : {};
-            const subRes = await axios.get(`${API}/api/subject`, { params: subjectParams, headers });
+            const subRes = await axios.get(`${API}/api/subject`, { headers });
 
             const subjectRows = subRes.data;
             const final = [];
 
             for (const s of subjectRows) {
                 const tRes = await axios.get(
-                    `${API}/api/topic/${s._id}`,
+                    `${API}/api/topic/${s._id}?manage=1`,
                     { headers }
                 );
-                const topics = isTeacher
-                    ? (tRes.data || []).filter((t) => String(t?.createdBy?._id || "") === String(userId))
-                    : (tRes.data || []);
+                const topics = tRes.data || [];
 
                 final.push({
                     subjectName: s.name,
                     subjectId: s._id,
+                    boardId: s.board?._id || "",
                     boardName: s.board?.name,
+                    classId: s.class?._id || "",
                     className: s.class?.name,
                     topics
                 });
@@ -250,6 +268,30 @@ export default function AddTopic() {
         }
     };
 
+    const filterSubjectOptions = useMemo(() => {
+        const seen = new Set();
+        const options = [];
+        for (const row of data) {
+            if (filterBoard && row.boardId !== filterBoard) continue;
+            if (filterClass && row.classId !== filterClass) continue;
+            if (seen.has(row.subjectId)) continue;
+            seen.add(row.subjectId);
+            options.push({ id: row.subjectId, name: row.subjectName });
+        }
+        return options;
+    }, [data, filterBoard, filterClass]);
+
+    const filteredData = useMemo(() => {
+        return data.filter((row) => {
+            if (filterBoard && row.boardId !== filterBoard) return false;
+            if (filterClass && row.classId !== filterClass) return false;
+            if (filterSubject && row.subjectId !== filterSubject) return false;
+            return true;
+        });
+    }, [data, filterBoard, filterClass, filterSubject]);
+
+    const hasActiveFilters = Boolean(filterBoard || filterClass || filterSubject);
+
     return (
         <div className="max-w-7xl mx-auto p-6 space-y-8">
             <ToastContainer />
@@ -382,17 +424,91 @@ export default function AddTopic() {
                 </div>
             )}
 
+            {/* ---------- Topic Filters ---------- */}
+            <div className="bg-white shadow-md rounded-2xl border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                    <span className="text-xl"></span>
+                    Filter Topics
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <select
+                        value={filterBoard}
+                        onChange={(e) => {
+                            setFilterBoard(e.target.value);
+                            setFilterSubject("");
+                        }}
+                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
+                    >
+                        <option value="">All Boards</option>
+                        {boards.map((b) => (
+                            <option key={b._id} value={b._id}>
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={filterClass}
+                        onChange={(e) => {
+                            setFilterClass(e.target.value);
+                            setFilterSubject("");
+                        }}
+                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
+                    >
+                        <option value="">All Classes</option>
+                        {classes.map((c) => (
+                            <option key={c._id} value={c._id}>
+                                {c.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={filterSubject}
+                        onChange={(e) => setFilterSubject(e.target.value)}
+                        className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none transition-all"
+                    >
+                        <option value="">All Subjects</option>
+                        {filterSubjectOptions.map((s) => (
+                            <option key={s.id} value={s.id}>
+                                {s.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilterBoard("");
+                            setFilterClass("");
+                            setFilterSubject("");
+                        }}
+                        disabled={!hasActiveFilters}
+                        className={`px-6 py-3 rounded-xl transition-all font-semibold shadow-sm ${hasActiveFilters ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+                    >
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+
             {/* ---------- Topic List (Grouped by Subject) - Enhanced ---------- */}
             <div className="bg-white shadow-md rounded-2xl border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-gray-200 flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                         <span className="text-xl"></span>
-                        Topics Inside Subjects ({data.reduce((acc, curr) => acc + curr.topics.length, 0)})
+                        Topics Inside Subjects ({filteredData.reduce((acc, curr) => acc + curr.topics.length, 0)})
                     </h3>
+                    <button
+                        type="button"
+                        onClick={loadTopics}
+                        className="px-4 py-2 rounded-xl bg-white border border-purple-200 text-purple-700 text-sm font-semibold hover:bg-purple-50 transition-all"
+                    >
+                        Refresh
+                    </button>
                 </div>
 
                 <div className="p-6 space-y-6">
-                    {data.map((row, idx) => (
+                    {filteredData.map((row, idx) => (
                         <div key={idx} className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
 
                             {/* Subject Title with Board & Class */}
@@ -426,6 +542,7 @@ export default function AddTopic() {
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Image</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Short Description</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Added By</th>
+            <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Status</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Time</th>
             <th className="p-4 font-semibold text-gray-700 border-b-2 border-gray-200 w-48 text-center">Actions</th>
         </tr>
@@ -548,6 +665,29 @@ export default function AddTopic() {
                     {topic.createdBy?.name || "Unknown"}
                 </td>
 
+                {/* Status */}
+                <td className="p-4">
+                    <span
+                        title={topic.status === "rejected" ? (topic.rejectionReason || "") : ""}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                            topic.status === "approved"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : topic.status === "rejected"
+                                    ? "bg-rose-100 text-rose-700"
+                                    : "bg-amber-100 text-amber-700"
+                        }`}
+                    >
+                        {topic.status === "approved"
+                            ? "Approved"
+                            : topic.status === "rejected"
+                                ? "Rejected"
+                                : "Pending Review"}
+                    </span>
+                    {topic.status === "rejected" && topic.rejectionReason ? (
+                        <p className="text-xs text-rose-500 mt-1 max-w-40">{topic.rejectionReason}</p>
+                    ) : null}
+                </td>
+
                 {/* Time */}
                 <td className="p-4 text-xs text-gray-500">
                     {new Date(topic.createdAt).toLocaleString("en-US", {
@@ -609,7 +749,7 @@ export default function AddTopic() {
         {row.topics.length === 0 && (
             <tr>
                         <td
-                    colSpan={9}
+                    colSpan={10}
                     className="p-12 text-center"
                 >
                     <div className="flex flex-col items-center gap-3">
@@ -626,11 +766,15 @@ export default function AddTopic() {
                         </div>
                     ))}
 
-                    {data.length === 0 && (
+                    {filteredData.length === 0 && (
                         <div className="text-center py-12">
                             <div className="text-6xl mb-4">📚</div>
-                            <p className="text-gray-500 font-medium">No subjects with topics yet</p>
-                            <p className="text-sm text-gray-400">Add topics to subjects using the form above</p>
+                            <p className="text-gray-500 font-medium">
+                                {hasActiveFilters ? "No topics match your filters" : "No subjects with topics yet"}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                                {hasActiveFilters ? "Try clearing filters to see more" : "Add topics to subjects using the form above"}
+                            </p>
                         </div>
                     )}
                 </div>

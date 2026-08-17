@@ -34,7 +34,7 @@ function signToken(user) {
   });
 }
 
-async function buildLoginPayload(user) {
+export async function buildLoginPayload(user) {
   // Look up Board and Class IDs
   let boardId = null;
   let classId = null;
@@ -116,7 +116,8 @@ export async function register(req, res) {
         .status(400)
         .json({ message: "Name, email and password are required." });
     }
-    if (!isEmail(email)) {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (!isEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Invalid email format." });
     }
     if (String(password).length < 6) {
@@ -125,7 +126,7 @@ export async function register(req, res) {
         .json({ message: "Password must be at least 6 characters." });
     }
 
-    const exists = await User.findOne({ email: email.toLowerCase() });
+    const exists = await User.findOne({ email: normalizedEmail });
     if (exists) {
       return res.status(409).json({ message: "Email already registered." });
     }
@@ -135,7 +136,7 @@ export async function register(req, res) {
 
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       phone: phone?.trim() || "",
       password: hash,
       class: (classValue || "").trim(), // <-- OLD FIELD
@@ -165,6 +166,72 @@ export async function register(req, res) {
     });
   } catch (err) {
     console.error("register error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function checkEmailExists(req, res) {
+  try {
+    const email = String(req.query.email || "").trim().toLowerCase();
+    if (!email || !isEmail(email)) {
+      return res.status(400).json({ message: "Valid email is required." });
+    }
+    const exists = await User.exists({ email });
+    res.json({ exists: Boolean(exists) });
+  } catch (err) {
+    console.error("check-email error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+// List every account that shares the current user's familyId (siblings
+// registered together), so the UI can offer password-less switching between them.
+export async function getFamilyAccounts(req, res) {
+  try {
+    const currentUser = await User.findById(req.user.id).select("familyId");
+    if (!currentUser?.familyId) {
+      return res.json({ items: [] });
+    }
+
+    const members = await User.find({ familyId: currentUser.familyId }).select(
+      "name email className board avatar role"
+    );
+
+    const items = members.map((m) => ({
+      _id: m._id,
+      name: m.name,
+      className: m.className,
+      board: m.board,
+      avatar: m.avatar || "",
+      role: m.role,
+      isCurrent: String(m._id) === String(req.user.id),
+    }));
+
+    res.json({ items });
+  } catch (err) {
+    console.error("getFamilyAccounts error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+// Switch the active session to a sibling account without re-entering a
+// password — trust boundary is "already authenticated + proven same family".
+export async function switchAccount(req, res) {
+  try {
+    const currentUser = await User.findById(req.user.id).select("familyId");
+    if (!currentUser?.familyId) {
+      return res.status(403).json({ message: "Not permitted" });
+    }
+
+    const target = await User.findById(req.params.userId);
+    if (!target || !target.familyId || String(target.familyId) !== String(currentUser.familyId)) {
+      return res.status(403).json({ message: "Not permitted" });
+    }
+
+    const payload = await buildLoginPayload(target);
+    res.json(payload);
+  } catch (err) {
+    console.error("switchAccount error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -228,7 +295,7 @@ export async function googleLogin(req, res) {
       return res.status(401).json({ message: "Google account email is not verified." });
     }
 
-    const email = googlePayload.email.toLowerCase();
+    const email = String(googlePayload.email).trim().toLowerCase();
     let user = await User.findOne({ email });
     let isNewGoogleUser = false;
 
@@ -293,10 +360,15 @@ export async function forgotPassword(req, res) {
 
     const token = crypto.randomBytes(32).toString("hex");
     const hash = crypto.createHash("sha256").update(token).digest("hex");
+    const resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
 
-    user.resetPasswordToken = hash;
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
-    await user.save();
+    // Update only the reset-token fields directly, instead of user.save() —
+    // save() re-validates the whole document, including unrelated fields
+    // like `board` that can be stored as "" and aren't in its enum.
+    await User.findByIdAndUpdate(user._id, {
+      resetPasswordToken: hash,
+      resetPasswordExpire,
+    });
 
     const appOrigin = String(
       process.env.CLIENT_ORIGIN || req.get("origin") || req.headers.origin || ""
@@ -356,11 +428,17 @@ export async function resetPassword(req, res) {
       return res.status(400).json({ message: "Invalid or expired link" });
     }
 
-    user.password = await bcrypt.hash(password, SALT_ROUNDS);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    await user.save();
+    // Update only the password + reset-token fields directly, instead of
+    // user.save() — save() re-validates the whole document, including
+    // unrelated fields like `board` that can be stored as "" and aren't
+    // in its enum.
+    await User.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+      $unset: { resetPasswordToken: "", resetPasswordExpire: "" },
+    });
+
     sendPasswordResetSuccessEmail({
       to: user.email,
       name: user.name,

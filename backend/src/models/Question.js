@@ -159,6 +159,13 @@ const QuestionSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    // Approval workflow
+    status: { type: String, enum: ["pending", "approved", "rejected"], default: "approved" },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    reviewedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: "" },
+    submissionId: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
   },
   { timestamps: true }
 );

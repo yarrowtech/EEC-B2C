@@ -7,6 +7,10 @@ import Subject from "../models/Subject.js";
 import Topic from "../models/Topic.js";
 import Attempt from "../models/Attempt.js";
 import { resolveLevelAccessForUser } from "../utils/levelAccess.js";
+import { sendTopicReviewStatusEmail } from "../utils/sendMail.js";
+import { sendPushNotification } from "../routes/pushNotificationRoutes.js";
+import { assertScopeWriteAccess } from "../utils/chapterAssignment.js";
+import { assertQuestionPermission } from "../utils/questionPermission.js";
 import * as XLSX from "xlsx";
 
 // Helpers
@@ -179,6 +183,24 @@ function parseChoiceMatrixCorrectCells(rawValue, rows = [], cols = []) {
   return [...new Set(cells)];
 }
 
+function extractClozeBlankKeys(text = "") {
+  const matches = String(text || "").match(/\[\[(.*?)\]\]/g) || [];
+  const normalized = matches.map((m) => m.replace(/\[\[|\]\]/g, "").trim()).filter(Boolean);
+  return [...new Set(normalized)];
+}
+
+function parseKeyValueList(rawValue) {
+  const tokens = parseDelimitedList(rawValue);
+  const map = {};
+  for (const token of tokens) {
+    const match = token.match(/^(.+?)\s*[:=]\s*(.+)$/);
+    if (match) {
+      map[match[1].trim()] = match[2].trim();
+    }
+  }
+  return map;
+}
+
 function parseTrueFalseAnswer(rawValue) {
   const raw = String(rawValue || "").trim().toLowerCase();
   if (!raw) return "";
@@ -191,7 +213,7 @@ function parseTrueFalseAnswer(rawValue) {
  * Validate and normalize payload by type.
  * Returns: { ok: true, doc } OR { ok: false, message }
  */
-function shapeByType(type, body, userId) {
+export function shapeByType(type, body, userId) {
   const common = {
     type,
     subject: String(body.subject || "").trim(),
@@ -369,12 +391,23 @@ export const create = async (req, res) => {
   try {
     if (!requireAdminOrTeacher(req, res)) return;
 
+    const access = await assertScopeWriteAccess(
+      { board: req.body.board, classId: req.body.class, subject: req.body.subject, topicId: req.body.topic },
+      req.user
+    );
+    if (!access.ok) return res.status(403).json({ message: access.message });
+
     const type = String(req.params.type || "").trim();
+
+    const permission = assertQuestionPermission({ stage: req.body.stage, type }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
+
     const { ok, doc, message } = shapeByType(type, req.body, req.user.id);
     if (!ok) return res.status(400).json({ message });
 
     doc.class = req.body.class;
     doc.board = req.body.board;
+    doc.status = req.user.role === "admin" ? "approved" : "pending";
 
     const saved = await Question.create(doc);
     res.status(201).json({ message: "Created", id: saved._id });
@@ -407,6 +440,11 @@ export const bulkCreateMcqSingle = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "mcq-single" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -487,6 +525,7 @@ export const bulkCreateMcqSingle = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -536,6 +575,11 @@ export const bulkCreateMcqMulti = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "mcq-multi" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -616,6 +660,7 @@ export const bulkCreateMcqMulti = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -665,6 +710,11 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "choice-matrix" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -751,6 +801,7 @@ export const bulkCreateChoiceMatrix = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -800,6 +851,11 @@ export const bulkCreateTrueFalse = async (req, res) => {
         message: "board, class, subject, topic, stage, and difficulty are required",
       });
     }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "true-false" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const firstSheetName = workbook.SheetNames?.[0];
@@ -879,6 +935,7 @@ export const bulkCreateTrueFalse = async (req, res) => {
 
       doc.class = classValue;
       doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
       docs.push(doc);
     }
 
@@ -901,6 +958,457 @@ export const bulkCreateTrueFalse = async (req, res) => {
     });
   } catch (error) {
     console.error("Bulk true/false upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateMatchList = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "match-list" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const prompt = getBulkCellValue(normalizedRow, ["prompt", "question", "questionText", "question_text"]);
+      const left = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["left", "leftList", "leftItems", "column a", "columna"])
+      );
+      const right = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["right", "rightList", "rightItems", "column b", "columnb"])
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+      const pairsRaw = getBulkCellValue(normalizedRow, ["pairs", "correctpairs", "correct_pairs", "matches"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!prompt || left.length < 2 || left.length !== right.length) {
+        failures.push({
+          row: rowNumber,
+          reason: "prompt is required, and left/right must each list 2+ items in matching order",
+        });
+        continue;
+      }
+
+      // "pairs" is optional — when given, it lets left/right be listed in
+      // any order (e.g. right shuffled) with the real mapping specified
+      // explicitly as "Left=Right | Left=Right | ...". When omitted, we
+      // fall back to positional pairing (left[i] matches right[i]), which
+      // is the original bulk-upload behavior.
+      let pairs = null;
+      if (pairsRaw) {
+        const segments = parseDelimitedList(pairsRaw);
+        const resolved = {};
+        const usedRight = new Set();
+        let allResolved = segments.length === left.length;
+
+        for (const segment of segments) {
+          const eqIndex = segment.indexOf("=");
+          if (eqIndex === -1) {
+            allResolved = false;
+            break;
+          }
+          const leftText = segment.slice(0, eqIndex).trim().toLowerCase();
+          const rightText = segment.slice(eqIndex + 1).trim().toLowerCase();
+          const leftIndex = left.findIndex((v) => v.trim().toLowerCase() === leftText);
+          const rightIndex = right.findIndex((v) => v.trim().toLowerCase() === rightText);
+          if (leftIndex === -1 || rightIndex === -1 || usedRight.has(rightIndex)) {
+            allResolved = false;
+            break;
+          }
+          resolved[String(leftIndex)] = rightIndex;
+          usedRight.add(rightIndex);
+        }
+
+        if (allResolved && Object.keys(resolved).length === left.length) {
+          pairs = resolved;
+        } else {
+          failures.push({
+            row: rowNumber,
+            reason:
+              'pairs column could not be matched — use "Left=Right | Left=Right", with text matching left/right exactly',
+          });
+          continue;
+        }
+      }
+
+      if (!pairs) {
+        pairs = {};
+        left.forEach((_, idx) => {
+          pairs[String(idx)] = idx;
+        });
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "match-list",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          explanationImage,
+          tags,
+          matchList: { prompt, left, right, pairs },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} match list question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk match list upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateClozeSelect = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "cloze-select" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const text = getBulkCellValue(normalizedRow, ["text", "question", "questionText", "question_text", "clozetext"]);
+      const options = parseDelimitedList(
+        getBulkCellValue(normalizedRow, ["options", "option", "choices"])
+      );
+      const correct = getBulkCellValue(normalizedRow, ["correct", "correctAnswer", "correct_answer", "answer"]);
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      if (!text || options.length < 2 || !correct) {
+        failures.push({
+          row: rowNumber,
+          reason: "text, at least 2 options, and correct are required",
+        });
+        continue;
+      }
+      if (!options.some((opt) => opt.toLowerCase() === correct.toLowerCase())) {
+        failures.push({ row: rowNumber, reason: "correct must match one of the listed options" });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "cloze-select",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          explanationImage,
+          tags,
+          clozeSelect: {
+            text,
+            blanks: { blank1: { options, correct } },
+          },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} cloze drop-down question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk cloze select upload failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const bulkCreateClozeText = async (req, res) => {
+  try {
+    if (!requireAdminOrTeacher(req, res)) return;
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const {
+      board = "",
+      class: classValue = "",
+      subject = "",
+      topic = "",
+      stage = "",
+      level = "",
+      difficulty = "",
+    } = req.body || {};
+
+    if (!board || !classValue || !subject || !topic || !stage || !difficulty) {
+      return res.status(400).json({
+        message: "board, class, subject, topic, stage, and difficulty are required",
+      });
+    }
+
+    const access = await assertScopeWriteAccess({ board, classId: classValue, subject, topicId: topic }, req.user);
+    if (!access.ok) return res.status(403).json({ message: access.message });
+    const permission = assertQuestionPermission({ stage, type: "cloze-text" }, req.user);
+    if (!permission.ok) return res.status(403).json({ message: permission.message });
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return res.status(400).json({ message: "Excel file does not contain any sheet" });
+    }
+
+    const rowsData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false,
+      blankrows: false,
+    });
+    if (!rowsData.length) {
+      return res.status(400).json({ message: "Excel file has no data rows" });
+    }
+
+    const docs = [];
+    const failures = [];
+
+    for (let i = 0; i < rowsData.length; i += 1) {
+      const row = rowsData[i];
+      const normalizedRow = {};
+      for (const [k, v] of Object.entries(row)) {
+        normalizedRow[normalizeBulkHeader(k)] = String(v ?? "").trim();
+      }
+
+      const text = getBulkCellValue(normalizedRow, ["text", "question", "questionText", "question_text", "clozetext"]);
+      const answers = parseKeyValueList(
+        getBulkCellValue(normalizedRow, ["answers", "answer", "blanks"])
+      );
+      const explanation = getBulkCellValue(normalizedRow, ["explanation", "solution"]);
+      const explanationImage = getBulkCellValue(normalizedRow, [
+        "explanationImage",
+        "explanation_image",
+        "solutionImage",
+        "solution_image",
+      ]);
+      const tags = getBulkCellValue(normalizedRow, ["tags", "tag"]);
+
+      const rowNumber = i + 2; // header on row 1
+      const blankKeys = extractClozeBlankKeys(text);
+      if (!text || !blankKeys.length) {
+        failures.push({
+          row: rowNumber,
+          reason: "text is required and must contain at least one [[blank_name]] placeholder",
+        });
+        continue;
+      }
+      const missing = blankKeys.filter((k) => !String(answers[k] || "").trim());
+      if (missing.length) {
+        failures.push({ row: rowNumber, reason: `Missing answers for: ${missing.join(", ")}` });
+        continue;
+      }
+
+      const { ok, doc, message } = shapeByType(
+        "cloze-text",
+        {
+          board,
+          class: classValue,
+          subject,
+          topic,
+          stage,
+          level,
+          difficulty,
+          explanation,
+          explanationImage,
+          tags,
+          clozeText: { text, answers },
+        },
+        req.user.id
+      );
+
+      if (!ok) {
+        failures.push({ row: rowNumber, reason: message || "Invalid row data" });
+        continue;
+      }
+
+      doc.class = classValue;
+      doc.board = board;
+      doc.status = req.user.role === "admin" ? "approved" : "pending";
+      docs.push(doc);
+    }
+
+    if (!docs.length) {
+      return res.status(400).json({
+        message: "No valid rows found in uploaded file",
+        inserted: 0,
+        failed: failures.length,
+        failures: failures.slice(0, 25),
+      });
+    }
+
+    await Question.insertMany(docs);
+
+    res.status(201).json({
+      message: `Uploaded ${docs.length} cloze free-text question(s) successfully`,
+      inserted: docs.length,
+      failed: failures.length,
+      failures: failures.slice(0, 25),
+    });
+  } catch (error) {
+    console.error("Bulk cloze text upload failed:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -945,6 +1453,8 @@ export const list = async (req, res) => {
       board,
       mine,
       q,
+      difficulty,
+      status,
       page = 1,
       limit = 20,
     } = req.query;
@@ -963,15 +1473,12 @@ export const list = async (req, res) => {
       if (req.user.board) {
         filter.board = req.user.board; // ✅ AUTO board filter
       }
+      filter.status = "approved";
     }
 
-    // Teachers should not see admin-uploaded questions in list view.
+    // Teachers only see the questions they personally added; admins see everything.
     if (req.user?.role === "teacher") {
-      const adminUsers = await User.find({ role: { $regex: /^admin$/i } }).select("_id");
-      const adminIds = adminUsers.map((u) => u._id);
-      if (adminIds.length) {
-        filter.createdBy = { $nin: adminIds };
-      }
+      filter.createdBy = req.user.id;
     }
 
     // Optional "mine" filter for uploader-specific lists (admin/teacher usage).
@@ -992,6 +1499,15 @@ export const list = async (req, res) => {
     if (topic) filter.topic = topic;
     if (stage) filter.stage = normalizeStageValue(stage);
     if (level) filter.level = level;
+    if (difficulty) filter.difficulty = String(difficulty).trim().toLowerCase();
+    // Students are always locked to approved-only above; everyone else may
+    // narrow by status explicitly (e.g. a teacher filtering their own list).
+    if (status && req.user?.role !== "student") {
+      const normalizedStatus = String(status).trim().toLowerCase();
+      if (["pending", "approved", "rejected"].includes(normalizedStatus)) {
+        filter.status = normalizedStatus;
+      }
+    }
     if (q) {
       filter.$or = [
         { question: { $regex: q, $options: "i" } },
@@ -1175,6 +1691,11 @@ export const update = async (req, res) => {
     doc.class = merged.class || existing.class;
     doc.board = merged.board || existing.board;
 
+    if (isTeacher && existing.status === "rejected") {
+      doc.status = "pending";
+      doc.rejectionReason = "";
+    }
+
     await Question.findByIdAndUpdate(req.params.id, doc, { new: true });
 
     res.json({ message: "Updated" });
@@ -1220,6 +1741,117 @@ export const remove = async (req, res) => {
 
     await existing.deleteOne();
     res.json({ message: "Deleted" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const QUESTION_REVIEW_STATUSES = new Set(["approved", "rejected"]);
+
+// List questions for review (admin only)
+export const listForReview = async (req, res) => {
+  try {
+    const { status = "pending", q, limit = 50, page = 1 } = req.query;
+
+    const filter = {};
+    if (status && status !== "all") filter.status = status;
+    if (q) {
+      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (escaped) {
+        filter.$or = [
+          { question: { $regex: escaped, $options: "i" } },
+          { prompt: { $regex: escaped, $options: "i" } },
+        ];
+      }
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const safePage = Math.max(Number(page) || 1, 1);
+
+    const [items, total] = await Promise.all([
+      Question.find(filter)
+        .populate("createdBy", "name email role")
+        .populate("reviewedBy", "name")
+        .sort({ createdAt: -1 })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit),
+      Question.countDocuments(filter),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Approve or reject a question (admin only)
+export const reviewQuestion = async (req, res) => {
+  try {
+    const { status, reason } = req.body || {};
+    const normalizedStatus = String(status || "").trim().toLowerCase();
+
+    if (!QUESTION_REVIEW_STATUSES.has(normalizedStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const updated = await Question.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: normalizedStatus,
+        reviewedBy: req.user.id,
+        reviewedAt: new Date(),
+        rejectionReason: normalizedStatus === "rejected" ? String(reason || "").trim() : "",
+      },
+      { new: true }
+    ).populate("createdBy", "name email");
+
+    if (!updated) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    const recipient = updated.createdBy;
+    if (recipient?.email) {
+      const preview =
+        updated.question ||
+        updated.prompt ||
+        updated.choiceMatrix?.prompt ||
+        updated.clozeDrag?.text ||
+        updated.clozeSelect?.text ||
+        updated.clozeText?.text ||
+        updated.matchList?.prompt ||
+        "Question";
+      const title = normalizedStatus === "approved" ? "Question Approved" : "Question Needs Changes";
+      const message =
+        normalizedStatus === "approved"
+          ? `Your question was approved and is now live.`
+          : `Your question was not approved. Please review and resubmit.`;
+
+      sendTopicReviewStatusEmail({
+        to: recipient.email,
+        name: recipient.name,
+        topicName: preview,
+        subjectName: "",
+        status: normalizedStatus,
+        reason: updated.rejectionReason,
+        kind: "question",
+      }).catch((mailErr) => {
+        console.error("Question review email failed:", mailErr?.message || mailErr);
+      });
+
+      sendPushNotification(recipient._id, title, message).catch((pushErr) => {
+        console.error("Question review push notification failed:", pushErr?.message || pushErr);
+      });
+    }
+
+    res.json(updated);
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });

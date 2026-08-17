@@ -13,6 +13,9 @@ import {
   bulkCreateMcqMulti,
   bulkCreateChoiceMatrix,
   bulkCreateTrueFalse,
+  bulkCreateMatchList,
+  bulkCreateClozeSelect,
+  bulkCreateClozeText,
   metaSubjects,
   metaTopics,
   metaStages,
@@ -20,8 +23,10 @@ import {
   getLevelAccess,
   getTryoutSummary,
   uploadPerformanceAnalytics,
+  listForReview,
+  reviewQuestion,
 } from "../controllers/questionsController.js";
-import {requireAuth} from "../middleware/auth.js";
+import {requireAuth, requireRole} from "../middleware/auth.js";
 
 const router = Router();
 const uploadExcel = multer({
@@ -69,18 +74,25 @@ router.get("/types", requireAuth, getQuestionTypes);
 router.get("/level-access", requireAuth, getLevelAccess);
 router.get("/upload-performance", requireAuth, uploadPerformanceAnalytics);
 
+// Question review (admin only, MUST be before /:id route)
+router.get("/review", requireAuth, requireRole("admin"), listForReview);
+
 // Dynamic routes (place these LAST)
 router.get("/:id", requireAuth, getOne);
 
 // Writes
 router.put("/:id", requireAuth, update);
 router.delete("/:id", requireAuth, remove);
+router.patch("/:id/review", requireAuth, requireRole("admin"), reviewQuestion);
 
 // Bulk upload
 router.post("/bulk/mcq-single", requireAuth, uploadExcel.single("file"), bulkCreateMcqSingle);
 router.post("/bulk/mcq-multi", requireAuth, uploadExcel.single("file"), bulkCreateMcqMulti);
 router.post("/bulk/choice-matrix", requireAuth, uploadExcel.single("file"), bulkCreateChoiceMatrix);
 router.post("/bulk/true-false", requireAuth, uploadExcel.single("file"), bulkCreateTrueFalse);
+router.post("/bulk/match-list", requireAuth, uploadExcel.single("file"), bulkCreateMatchList);
+router.post("/bulk/cloze-select", requireAuth, uploadExcel.single("file"), bulkCreateClozeSelect);
+router.post("/bulk/cloze-text", requireAuth, uploadExcel.single("file"), bulkCreateClozeText);
 
 // Create question by type
 router.post("/:type", requireAuth, create);

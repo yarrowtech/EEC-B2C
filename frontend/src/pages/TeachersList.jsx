@@ -6,6 +6,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  Layers,
+  ListChecks,
 } from "lucide-react";
 import Swal from "sweetalert2";
 
@@ -25,6 +27,100 @@ const API_BASE =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_BACKEND_URL ||
   "http://localhost:5000/api";
+
+const QUESTION_TYPE_OPTIONS = [
+  { label: "MCQ — Single Correct", value: "mcq-single" },
+  { label: "MCQ — Multiple Correct", value: "mcq-multi" },
+  { label: "True / False", value: "true-false" },
+  { label: "Choice Matrix", value: "choice-matrix" },
+  { label: "Cloze — Drag & Drop", value: "cloze-drag" },
+  { label: "Cloze — Drop-Down", value: "cloze-select" },
+  { label: "Cloze — Free Text", value: "cloze-text" },
+  { label: "Match List", value: "match-list" },
+  { label: "Essay — Rich Text", value: "essay-rich" },
+  { label: "Essay — Plain Text", value: "essay-plain" },
+];
+
+// Permission picker shared by the Add and Edit teacher modals — lets admin
+// restrict a teacher to specific stages and question types. Leaving
+// everything unchecked means unrestricted (the default for every teacher).
+function PermissionsPicker({ form, setForm, stageOptions }) {
+  function toggleStage(stage) {
+    setForm((f) => ({
+      ...f,
+      allowedStages: f.allowedStages.includes(stage)
+        ? f.allowedStages.filter((s) => s !== stage)
+        : [...f.allowedStages, stage],
+    }));
+  }
+
+  function toggleType(value) {
+    setForm((f) => ({
+      ...f,
+      allowedQuestionTypes: f.allowedQuestionTypes.includes(value)
+        ? f.allowedQuestionTypes.filter((t) => t !== value)
+        : [...f.allowedQuestionTypes, value],
+    }));
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+      <div>
+        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <Layers size={13} /> Allowed Stages
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {stageOptions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => toggleStage(s)}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                form.allowedStages.includes(s)
+                  ? "border-purple-600 bg-purple-600 text-white"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-purple-300"
+              }`}
+            >
+              Stage {s}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-[11px] text-slate-400">
+          {form.allowedStages.length === 0
+            ? "None selected — teacher can add tryouts for any stage."
+            : "Teacher can only add tryouts for the selected stage(s)."}
+        </p>
+      </div>
+
+      <div>
+        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <ListChecks size={13} /> Allowed Question Types
+        </label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {QUESTION_TYPE_OPTIONS.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => toggleType(t.value)}
+              className={`rounded-lg border px-2.5 py-1.5 text-left text-[11px] font-semibold transition ${
+                form.allowedQuestionTypes.includes(t.value)
+                  ? "border-fuchsia-600 bg-fuchsia-600 text-white"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-fuchsia-300"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-[11px] text-slate-400">
+          {form.allowedQuestionTypes.length === 0
+            ? "None selected — teacher can add any question type."
+            : "Teacher can only add the selected question type(s)."}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function TeachersList() {
   const user = getUser();
@@ -53,13 +149,30 @@ export default function TeachersList() {
     email: "",
     phone: "",
     password: "",
+    designation: "",
+    allowedStages: [],
+    allowedQuestionTypes: [],
   });
 
   const [loading, setLoading] = useState(false);
+  const [stageOptions, setStageOptions] = useState([1, 2, 3]);
 
   useEffect(() => {
     load();
   }, [query]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/questions/stages`);
+        const data = await res.json();
+        const stages = Array.isArray(data?.stages) ? data.stages : [];
+        setStageOptions(stages.length ? stages : [1, 2, 3]);
+      } catch {
+        setStageOptions([1, 2, 3]);
+      }
+    })();
+  }, []);
 
   async function load() {
     try {
@@ -98,9 +211,13 @@ export default function TeachersList() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      Swal.fire("Success", "Teacher created successfully", "success");
+      Swal.fire(
+        "Success",
+        "Teacher created successfully. Login credentials have been emailed to them.",
+        "success"
+      );
       setOpen(false);
-      setForm({ name: "", email: "", phone: "", password: "" });
+      setForm({ name: "", email: "", phone: "", password: "", designation: "", allowedStages: [], allowedQuestionTypes: [] });
       load();
     } catch (err) {
       Swal.fire("Error", err.message || "Failed", "error");
@@ -242,6 +359,7 @@ export default function TeachersList() {
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Designation</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
@@ -253,6 +371,7 @@ export default function TeachersList() {
                     <td className="px-4 py-3">{t.name}</td>
                     <td className="px-4 py-3">{t.email}</td>
                     <td className="px-4 py-3">{t.phone}</td>
+                    <td className="px-4 py-3">{t.designation || "-"}</td>
                     <td className="px-4 py-3 flex gap-3">
                       <button
                         onClick={() => {
@@ -262,6 +381,9 @@ export default function TeachersList() {
                             email: t.email,
                             phone: t.phone,
                             password: "",
+                            designation: t.designation || "",
+                            allowedStages: Array.isArray(t.allowedStages) ? t.allowedStages : [],
+                            allowedQuestionTypes: Array.isArray(t.allowedQuestionTypes) ? t.allowedQuestionTypes : [],
                           });
                           setEditOpen(true);
                         }}
@@ -381,6 +503,20 @@ export default function TeachersList() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
 
+              <input
+                className="w-full rounded-xl px-4 py-2.5 bg-white border border-slate-200
+          shadow-sm focus:ring-2 focus:ring-purple-500 focus:outline-none transition"
+                placeholder="Designation (e.g. Senior Teacher, Head of Mathematics)"
+                value={form.designation}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+              />
+
+              <PermissionsPicker form={form} setForm={setForm} stageOptions={stageOptions} />
+
+              <p className="text-xs text-slate-500 -mt-2">
+                Login credentials and designation will be emailed to the teacher automatically.
+              </p>
+
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4">
                 <button
@@ -457,6 +593,16 @@ export default function TeachersList() {
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="Phone"
               />
+
+              <input
+                className="w-full rounded-xl px-4 py-2.5 bg-white border border-slate-200
+          shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+                value={form.designation}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+                placeholder="Designation"
+              />
+
+              <PermissionsPicker form={form} setForm={setForm} stageOptions={stageOptions} />
 
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4">

@@ -3,11 +3,15 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    // Not unique: sibling accounts created via family registration intentionally
+    // share the parent's email — differentiated by familyId + Switch Account instead.
+    email: { type: String, required: true },
     phone: { type: String, default: "" },
     password: { type: String, required: true },
     role: { type: String, default: "student" },
     isGoogleAccount: { type: Boolean, default: false },
+    // Shared across siblings registered together, to enable password-less "Switch Account".
+    familyId: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
 
     // Old DB field
     class: { type: String, default: "" },
@@ -20,6 +24,7 @@ const UserSchema = new mongoose.Schema(
     address: { type: String, default: "" },
     state: { type: String, default: "" },
     department: { type: String, default: "" },
+    designation: { type: String, default: "" },
     bio: { type: String, default: "" },
     avatar: { type: String, default: "" },
 
@@ -116,6 +121,30 @@ const UserSchema = new mongoose.Schema(
       idProof: { type: String, default: "" },
       qualificationCertificate: { type: String, default: "" },
       experienceLetter: { type: String, default: "" },
+    },
+
+    // Teacher content-creation permissions, set by admin. An empty array
+    // means unrestricted (matches every teacher's default state) — once
+    // admin sets specific values, the teacher is limited to those.
+    allowedStages: {
+      type: [Number],
+      default: [],
+    },
+    allowedQuestionTypes: {
+      type: [String],
+      enum: [
+        "mcq-single",
+        "mcq-multi",
+        "choice-matrix",
+        "true-false",
+        "cloze-drag",
+        "cloze-select",
+        "cloze-text",
+        "match-list",
+        "essay-rich",
+        "essay-plain",
+      ],
+      default: [],
     },
   },
   { timestamps: true }

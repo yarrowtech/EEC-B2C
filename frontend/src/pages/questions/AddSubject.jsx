@@ -53,9 +53,7 @@ export default function AddSubject() {
     };
 
     const loadSubjects = async () => {
-        const params = isTeacher ? { mine: 1 } : {};
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/subject`, {
-            params,
             headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
         });
         setSubjects(res.data);

@@ -45,7 +45,7 @@ export default function ResultDetail() {
         sMap[s._id] = s.name;
 
         const tRes = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/topic/${s._id}`,
+          `${import.meta.env.VITE_API_URL}/api/topic/${s._id}?manage=1`,
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
           }

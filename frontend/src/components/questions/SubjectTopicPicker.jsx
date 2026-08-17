@@ -22,6 +22,7 @@ const QUESTION_TYPES = [
 export default function SubjectTopicPicker() {
   const {
     scope,
+    hidePicker,
     setBoard,
     setClass,
     setSubject,
@@ -103,7 +104,7 @@ export default function SubjectTopicPicker() {
   const loadTopics = async (subjectId, boardId, classId) => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/topic/${subjectId}?board=${boardId}&class=${classId}`,
+        `${import.meta.env.VITE_API_URL}/api/topic/${subjectId}?board=${boardId}&class=${classId}&manage=1`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("jwt")}` },
         }
@@ -136,6 +137,8 @@ export default function SubjectTopicPicker() {
 
   const isComplete = scope.board && scope.class && scope.subject && scope.topic &&
                      scope.stage && scope.difficulty && scope.questionType;
+
+  if (hidePicker) return null;
 
   return (
     <div className="relative rounded-[2.5rem] bg-gradient-to-br from-yellow-50 via-pink-50 to-sky-50 p-8 shadow-xl overflow-hidden">
