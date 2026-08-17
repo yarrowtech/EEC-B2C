@@ -43,6 +43,9 @@ import careerApplicationsRoutes from "./routes/careerApplicationsRoutes.js";
 import dailyChallengeRoutes from "./routes/dailyChallengeRoutes.js";
 import flashcardRoutes from "./routes/flashcards.js";
 import uiClickRoutes from "./routes/uiClickRoutes.js";
+import internalTeacherContentRoutes from "./routes/internal/teacherContent.js";
+import internalTeacherRoutes from "./routes/internal/teachers.js";
+import internalStudyMaterialRoutes from "./routes/internal/studyMaterials.js";
 
 const app = express();
 
@@ -121,6 +124,9 @@ app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/daily-challenge", dailyChallengeRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/ui-clicks", uiClickRoutes);
+app.use("/api/internal/teacher-content", internalTeacherContentRoutes);
+app.use("/api/internal/teachers", internalTeacherRoutes);
+app.use("/api/internal/study-materials", internalStudyMaterialRoutes);
 
 /* ---------- Boot ---------- */
 const PORT = process.env.PORT || 5000;
