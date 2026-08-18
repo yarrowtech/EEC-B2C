@@ -21,5 +21,11 @@ export function decodeJwtPayload(token) {
 export function isTokenValid(token) {
   if (!token) return false;
   const payload = decodeJwtPayload(token);
-  return typeof payload?.exp === "number" && Date.now() < payload.exp * 1000;
+  if (!payload) return false;
+  // Tokens are no longer issued with an expiry, so no `exp` claim means the
+  // session is valid indefinitely. Older tokens minted before this change
+  // may still carry an `exp` — honor it for those until they're replaced by
+  // a fresh login.
+  if (typeof payload.exp !== "number") return true;
+  return Date.now() < payload.exp * 1000;
 }

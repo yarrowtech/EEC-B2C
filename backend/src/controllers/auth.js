@@ -29,9 +29,8 @@ function signToken(user) {
     board: user.board,
     state: user.state,
   }; // ✅ role added
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "24h",
-  });
+  // No expiresIn — sessions never expire once a user logs in.
+  return jwt.sign(payload, process.env.JWT_SECRET);
 }
 
 export async function buildLoginPayload(user) {
