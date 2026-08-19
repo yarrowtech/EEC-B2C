@@ -1,7 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet";
 
 import Topbar from "./components/Topbar";
 import Navbar from "./components/Navbar";
@@ -449,7 +448,7 @@ function RouteHelmet({ siteSettings }) {
   }, [finalTitle, description, keywords, noindex, canonical, socialImage, siteSettings?.faviconUrl]);
 
   return (
-    <Helmet>
+    <>
       <title>{finalTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
@@ -469,7 +468,7 @@ function RouteHelmet({ siteSettings }) {
       <script type="application/ld+json">{JSON.stringify(organizationSchema)}</script>
       <script type="application/ld+json">{JSON.stringify(websiteSchema)}</script>
       <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
-    </Helmet>
+    </>
   );
 }
 

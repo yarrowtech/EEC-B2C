@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getJSON } from "../lib/api";
-import { Helmet } from "react-helmet";
 
 function MIcon({ name, className = "", fill = false, style }) {
   return (
@@ -206,25 +205,23 @@ export default function EECTryouts() {
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Helmet>
-        <title>Free Tryouts and Practice Tests for Students | Edify Eight</title>
-        <meta
-          name="description"
-          content="Explore free online tryouts and practice tests by board and class. Improve speed, accuracy, and exam readiness with Edify Eight."
-        />
-        <meta
-          name="keywords"
-          content="free tryouts, online practice tests, student mock tests, board wise tests, class wise tests, Edify Eight"
-        />
-        <link rel="canonical" href="https://www.edifyeight.com/tryouts" />
-        <meta property="og:title" content="Free Tryouts and Practice Tests for Students | Edify Eight" />
-        <meta
-          property="og:description"
-          content="Take board and class based tryouts online and prepare better with structured practice."
-        />
-        <meta property="og:url" content="https://www.edifyeight.com/tryouts" />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      <title>Free Tryouts and Practice Tests for Students | Edify Eight</title>
+      <meta
+        name="description"
+        content="Explore free online tryouts and practice tests by board and class. Improve speed, accuracy, and exam readiness with Edify Eight."
+      />
+      <meta
+        name="keywords"
+        content="free tryouts, online practice tests, student mock tests, board wise tests, class wise tests, Edify Eight"
+      />
+      <link rel="canonical" href="https://www.edifyeight.com/tryouts" />
+      <meta property="og:title" content="Free Tryouts and Practice Tests for Students | Edify Eight" />
+      <meta
+        property="og:description"
+        content="Take board and class based tryouts online and prepare better with structured practice."
+      />
+      <meta property="og:url" content="https://www.edifyeight.com/tryouts" />
+      <meta property="og:type" content="website" />
 
       {/* ── Hero ── */}
       <div className="bg-linear-to-br from-[#1B1F3B] to-[#2d3561] px-4 py-14 md:py-20">

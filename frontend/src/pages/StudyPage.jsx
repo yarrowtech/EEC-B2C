@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet";
 import { getJSON, myAttempts } from "../lib/api";
 import { Loader2, SearchX } from "lucide-react";
 
@@ -228,13 +227,11 @@ export default function StudyPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f6]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <Helmet>
-        <title>Study Subjects | Edify Eight</title>
-        <meta
-          name="description"
-          content="Browse your study subjects based on your board and class."
-        />
-      </Helmet>
+      <title>Study Subjects | Edify Eight</title>
+      <meta
+        name="description"
+        content="Browse your study subjects based on your board and class."
+      />
 
       <div className="mx-auto max-w-6xl px-4 py-10">
         {loading && (
