@@ -3,7 +3,8 @@ export default function serviceTokenAuth(req, res, next) {
   const clientSource = String(req.headers["x-client-source"] || "").trim();
   const expectedToken =
     process.env.SUPER_ADMIN_PORTAL_SERVICE_TOKEN ||
-    process.env.TEACHER_CONTENT_SERVICE_TOKEN;
+    process.env.TEACHER_CONTENT_SERVICE_TOKEN ||
+    process.env.EDIFYEIGHT_API_TOKEN;
 
   if (!expectedToken) {
     return res.status(500).json({
