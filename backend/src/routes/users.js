@@ -262,6 +262,32 @@ router.put("/teachers/:id", requireAuth, requireAdminOnly, async (req, res) => {
   }
 });
 
+// Update a teacher's payout bank details (used for auto-generating their
+// content bill on /dashboard/chapter-bill)
+router.patch("/teachers/:id/bank-details", requireAuth, requireAdminOnly, async (req, res) => {
+  try {
+    const { bankName = "", accountNumber = "", ifscCode = "", branch = "" } = req.body || {};
+
+    const teacher = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        bankDetails: {
+          bankName: String(bankName).trim(),
+          accountNumber: String(accountNumber).trim(),
+          ifscCode: String(ifscCode).trim(),
+          branch: String(branch).trim(),
+        },
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+    res.json({ message: "Bank details updated.", teacher });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Delete teacher
 router.delete("/teachers/:id", requireAuth, requireAdminOnly, async (req, res) => {
   try {

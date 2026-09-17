@@ -11,6 +11,7 @@ import {
   Wallet,
   CreditCard,
   Send,
+  Receipt,
 } from "lucide-react";
 
 /* MATCH DASHBOARD SIDEBAR STYLE */
@@ -47,7 +48,7 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
       {/* DROPDOWN */}
       <div
         className={`overflow-hidden transition-all duration-300 ${
-          open ? "max-h-[500px] opacity-100 mt-1" : "max-h-0 opacity-0"
+          open ? "max-h-[1200px] opacity-100 mt-1" : "max-h-0 opacity-0"
         }`}
       >
         <div className="ml-4 pl-3 border-l-2 border-yellow-300 space-y-1">
@@ -167,6 +168,20 @@ export default function QuestionsSidebarBlock({ role = "student" }) {
             >
               <Wallet size={18} />
               <span>Chapter Payments</span>
+            </NavLink>
+          )}
+
+          {role === "admin" && (
+            <NavLink
+              to="/dashboard/chapter-bill"
+              className={({ isActive }) =>
+                `${linkBase} ${
+                  isActive ? linkActive : "hover:bg-yellow-100"
+                }`
+              }
+            >
+              <Receipt size={18} />
+              <span>Generate Bill</span>
             </NavLink>
           )}
 

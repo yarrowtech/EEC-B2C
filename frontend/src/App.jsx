@@ -61,6 +61,7 @@ import RegistrationsPage from "./pages/admin/RegistrationsPage";
 import TopicReview from "./pages/admin/TopicReview";
 import ChapterReview from "./pages/admin/ChapterReview";
 import ChapterPayments from "./pages/admin/ChapterPayments";
+import ChapterBill from "./pages/admin/ChapterBill";
 import PaymentStructures from "./pages/admin/PaymentStructures";
 import SubmissionReview from "./pages/admin/SubmissionReview";
 import SubmitChapterWizard from "./pages/questions/SubmitChapterWizard";
@@ -940,6 +941,7 @@ export default function App() {
             <Route path="topic-review" element={<RequireAdmin><TopicReview /></RequireAdmin>} />
             <Route path="chapter-review" element={<RequireAdmin><ChapterReview /></RequireAdmin>} />
             <Route path="chapter-payments" element={<RequireAdmin><ChapterPayments /></RequireAdmin>} />
+            <Route path="chapter-bill" element={<RequireAdmin><ChapterBill /></RequireAdmin>} />
             <Route path="submission-review" element={<RequireAdmin><SubmissionReview /></RequireAdmin>} />
             <Route path="submit-chapter" element={<RequireAdmin><SubmitChapterWizard /></RequireAdmin>} />
             <Route path="payment-structures" element={<RequireAdmin><PaymentStructures /></RequireAdmin>} />

@@ -146,6 +146,15 @@ const UserSchema = new mongoose.Schema(
       ],
       default: [],
     },
+
+    // Payout bank details for a teacher/writer, used to auto-fill their
+    // content bill (see /dashboard/chapter-bill).
+    bankDetails: {
+      bankName: { type: String, default: "" },
+      accountNumber: { type: String, default: "" },
+      ifscCode: { type: String, default: "" },
+      branch: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );

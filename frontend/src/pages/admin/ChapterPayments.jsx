@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Wallet, Users, Search, CheckCircle2, RotateCcw, Plus, X, Trash2, Save, ChevronDown } from "lucide-react";
+import { Wallet, Users, Search, CheckCircle2, RotateCcw, Plus, X, Trash2, Save, ChevronDown, Pencil } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 
 export default function ChapterPayments() {
@@ -42,6 +42,10 @@ export default function ChapterPayments() {
   const [removingId, setRemovingId] = useState("");
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [expandedTeacherKey, setExpandedTeacherKey] = useState("");
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [editStructure, setEditStructure] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   /* ---------------- Chapter (topic) payments ---------------- */
   const [topics, setTopics] = useState([]);
@@ -281,6 +285,47 @@ export default function ChapterPayments() {
       toast.error(err?.message || "Failed to remove assignment");
     } finally {
       setRemovingId("");
+    }
+  }
+
+  function openEditAssignment(item) {
+    setEditingAssignment(item);
+    setEditStructure(item.structure?._id || "");
+    setEditAmount(String(item.amount ?? 0));
+  }
+
+  function closeEditAssignment() {
+    setEditingAssignment(null);
+    setEditStructure("");
+    setEditAmount("");
+  }
+
+  async function saveEditAssignment(e) {
+    e.preventDefault();
+    if (!editingAssignment) return;
+    const amount = Number(editAmount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      toast.warn("Enter a valid non-negative amount");
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`${API}/api/chapter-assignments/${editingAssignment._id}`, {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify({ amount, structureId: editStructure || null }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || "Failed to update assignment");
+
+      setAssignments((prev) => prev.map((a) => (a._id === data._id ? data : a)));
+      toast.success("Assignment updated");
+      closeEditAssignment();
+    } catch (err) {
+      toast.error(err?.message || "Failed to update assignment");
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -544,15 +589,25 @@ export default function ChapterPayments() {
                                   ₹{Number(item.amount || 0).toLocaleString("en-IN")}
                                 </td>
                                 <td className="p-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => removeAssignment(item)}
-                                    disabled={removingId === item._id}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-40"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    {removingId === item._id ? "..." : "Revoke"}
-                                  </button>
+                                  <div className="inline-flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditAssignment(item)}
+                                      className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeAssignment(item)}
+                                      disabled={removingId === item._id}
+                                      className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-40"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      {removingId === item._id ? "..." : "Revoke"}
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -767,6 +822,85 @@ export default function ChapterPayments() {
           </div>
         </div>
       </section>
+
+      {editingAssignment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Edit Assignment</h3>
+              <button
+                type="button"
+                onClick={closeEditAssignment}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-3 text-xs text-gray-600">
+              <div className="font-semibold text-gray-800">{editingAssignment.writer?.name || "Unknown"}</div>
+              <div>{editingAssignment.writer?.email || ""}</div>
+              <div className="mt-1">
+                {[
+                  editingAssignment.board?.name,
+                  editingAssignment.class?.name || "All classes",
+                  editingAssignment.subject?.name || "All subjects",
+                  editingAssignment.topic?.name,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </div>
+            </div>
+
+            <form onSubmit={saveEditAssignment} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-600">Rate Card</label>
+                <select
+                  value={editStructure}
+                  onChange={(e) => {
+                    setEditStructure(e.target.value);
+                    const structure = structures.find((s) => s._id === e.target.value);
+                    if (structure) setEditAmount(String(structure.amountPerChapter));
+                  }}
+                  className="w-full border-2 border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                >
+                  <option value="">No rate card (custom amount)</option>
+                  {structures.map((s) => (
+                    <option key={s._id} value={s._id}>{s.name} — ₹{s.amountPerChapter}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-600">Amount per Chapter (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  className="w-full border-2 border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeEditAssignment}
+                  className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingEdit ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
