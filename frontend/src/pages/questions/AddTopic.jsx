@@ -257,6 +257,35 @@ export default function AddTopic() {
         }
     };
 
+    const approveTopic = async (id) => {
+        try {
+            await axios.patch(
+                `${API}/api/topic/${id}/review`,
+                { type: "topic", status: "approved" },
+                { headers }
+            );
+            toast.success("Topic approved");
+            loadTopics();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to approve topic");
+        }
+    };
+
+    const rejectTopic = async (id) => {
+        const reason = window.prompt("Reason for rejecting this topic (optional):", "") || "";
+        try {
+            await axios.patch(
+                `${API}/api/topic/${id}/review`,
+                { type: "topic", status: "rejected", reason },
+                { headers }
+            );
+            toast.success("Topic rejected");
+            loadTopics();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to reject topic");
+        }
+    };
+
     const deleteTopic = async (id) => {
         if (!confirm("Delete this topic?")) return;
         try {
@@ -703,7 +732,7 @@ export default function AddTopic() {
                 {/* Actions with Permission */}
                 <td className="p-4">
                     {(isAdmin || topic.createdBy?._id === userId) ? (
-                        <div className="flex gap-2 justify-center">
+                        <div className="flex flex-wrap gap-2 justify-center">
                             {editingId === topic._id ? (
                                 <>
                                     <button
@@ -721,6 +750,22 @@ export default function AddTopic() {
                                 </>
                             ) : (
                                 <>
+                                    {isAdmin && topic.status === "pending" && (
+                                        <>
+                                            <button
+                                                onClick={() => approveTopic(topic._id)}
+                                                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg hover:from-emerald-700 hover:to-green-700 shadow-sm hover:shadow-md transition-all font-semibold text-xs"
+                                            >
+                                                ✓ Approve
+                                            </button>
+                                            <button
+                                                onClick={() => rejectTopic(topic._id)}
+                                                className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 shadow-sm hover:shadow-md transition-all font-semibold text-xs"
+                                            >
+                                                ✕ Reject
+                                            </button>
+                                        </>
+                                    )}
                                     <button
                                         onClick={() => startEdit(topic, row)}
                                         className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 shadow-sm hover:shadow-md transition-all font-semibold text-xs"

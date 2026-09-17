@@ -218,27 +218,31 @@ export default function AddChapterWorkspace() {
       });
   }, []);
 
-  // If the admin has assigned this teacher specific boards/classes/subjects,
-  // only those show up here — otherwise every board/class/subject is open
-  // (same "unassigned teachers stay open" rule the backend enforces).
+  // Only admins and teachers with an explicit chapter assignment may pick a
+  // board/class/subject/chapter here — an unassigned teacher gets no
+  // selectable options until an admin assigns them a scope.
   const hasAssignments = assignments.length > 0;
+  const canBrowseUnrestricted = isAdmin || hasAssignments;
 
   const allowedBoards = useMemo(() => {
+    if (!canBrowseUnrestricted) return [];
     if (!hasAssignments) return boards;
     const ids = new Set(assignments.map((a) => String(a.board?._id || a.board)));
     return boards.filter((b) => ids.has(String(b._id)));
-  }, [boards, assignments, hasAssignments]);
+  }, [boards, assignments, hasAssignments, canBrowseUnrestricted]);
 
   const allowedClasses = useMemo(() => {
+    if (!canBrowseUnrestricted) return [];
     if (!hasAssignments) return classes;
     if (!scope.board) return [];
     const matching = assignments.filter((a) => String(a.board?._id || a.board) === String(scope.board));
     if (matching.some((a) => !a.class)) return classes;
     const ids = new Set(matching.map((a) => String(a.class?._id || a.class)).filter(Boolean));
     return classes.filter((c) => ids.has(String(c._id)));
-  }, [classes, assignments, hasAssignments, scope.board]);
+  }, [classes, assignments, hasAssignments, scope.board, canBrowseUnrestricted]);
 
   const allowedSubjects = useMemo(() => {
+    if (!canBrowseUnrestricted) return [];
     if (!hasAssignments) return subjects;
     if (!scope.board || !scope.class) return [];
     const matching = assignments.filter(
@@ -249,9 +253,10 @@ export default function AddChapterWorkspace() {
     if (matching.some((a) => !a.subject)) return subjects;
     const ids = new Set(matching.map((a) => String(a.subject?._id || a.subject)).filter(Boolean));
     return subjects.filter((s) => ids.has(String(s._id)));
-  }, [subjects, assignments, hasAssignments, scope.board, scope.class]);
+  }, [subjects, assignments, hasAssignments, scope.board, scope.class, canBrowseUnrestricted]);
 
   const allowedTopics = useMemo(() => {
+    if (!canBrowseUnrestricted) return [];
     if (!hasAssignments) return topics;
     if (!scope.board || !scope.class || !scope.subject) return [];
     const matching = assignments.filter(
@@ -265,11 +270,12 @@ export default function AddChapterWorkspace() {
     if (matching.some((a) => !a.topic)) return topics;
     const ids = new Set(matching.map((a) => String(a.topic?._id || a.topic)).filter(Boolean));
     return topics.filter((t) => ids.has(String(t._id)));
-  }, [topics, assignments, hasAssignments, scope.board, scope.class, scope.subject]);
+  }, [topics, assignments, hasAssignments, scope.board, scope.class, scope.subject, canBrowseUnrestricted]);
 
   // A chapter-level grant only covers the one chapter it names — the
   // writer can't create additional chapters under that subject with it.
   const canCreateNewTopic = useMemo(() => {
+    if (!canBrowseUnrestricted) return false;
     if (!hasAssignments) return true;
     if (!scope.board || !scope.class || !scope.subject) return false;
     const matching = assignments.filter(
@@ -279,7 +285,7 @@ export default function AddChapterWorkspace() {
         (!a.subject || String(a.subject?._id || a.subject) === String(scope.subject))
     );
     return matching.some((a) => !a.topic);
-  }, [assignments, hasAssignments, scope.board, scope.class, scope.subject]);
+  }, [assignments, hasAssignments, scope.board, scope.class, scope.subject, canBrowseUnrestricted]);
 
   // If the admin has restricted this teacher to specific stages/question
   // types, only those show up here — an empty list means unrestricted.
@@ -563,6 +569,12 @@ export default function AddChapterWorkspace() {
                     Showing only the board, class, subject, and chapters your admin has assigned to you.
                   </div>
                 )}
+                {!isAdmin && !loadingAssignments && !hasAssignments && (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                    <AlertCircle className="size-4 shrink-0" />
+                    You haven't been assigned any board, class, subject, or chapter yet. Please contact your admin to get assigned before you can add content.
+                  </div>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -571,7 +583,7 @@ export default function AddChapterWorkspace() {
                     <Select
                       value={scope.board}
                       onValueChange={(v) => { setBoard(v); setClass(""); setSubject(""); setTopic(""); }}
-                      disabled={loadingAssignments}
+                      disabled={loadingAssignments || !canBrowseUnrestricted}
                     >
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select board" /></SelectTrigger>
                       <SelectContent>
@@ -585,7 +597,7 @@ export default function AddChapterWorkspace() {
                     <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <Layers className="size-3.5" /> Class
                     </Label>
-                    <Select value={scope.class} onValueChange={(v) => { setClass(v); setSubject(""); setTopic(""); }} disabled={!scope.board}>
+                    <Select value={scope.class} onValueChange={(v) => { setClass(v); setSubject(""); setTopic(""); }} disabled={!scope.board || !canBrowseUnrestricted}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select class" /></SelectTrigger>
                       <SelectContent>
                         {allowedClasses.map((c) => (
@@ -598,7 +610,7 @@ export default function AddChapterWorkspace() {
                     <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <BookOpen className="size-3.5" /> Subject
                     </Label>
-                    <Select value={scope.subject} onValueChange={(v) => { setSubject(v); setTopic(""); }} disabled={!scope.class}>
+                    <Select value={scope.subject} onValueChange={(v) => { setSubject(v); setTopic(""); }} disabled={!scope.class || !canBrowseUnrestricted}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select subject" /></SelectTrigger>
                       <SelectContent>
                         {allowedSubjects.map((s) => (
@@ -611,7 +623,7 @@ export default function AddChapterWorkspace() {
                     <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <FileText className="size-3.5" /> Chapter
                     </Label>
-                    <Select value={scope.topic} onValueChange={setTopic} disabled={!scope.subject}>
+                    <Select value={scope.topic} onValueChange={setTopic} disabled={!scope.subject || !canBrowseUnrestricted}>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select chapter" /></SelectTrigger>
                       <SelectContent>
                         {allowedTopics.map((t) => (

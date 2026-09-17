@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Wallet, Users, Search, CheckCircle2, RotateCcw, Plus, X, Trash2, Save } from "lucide-react";
+import { Wallet, Users, Search, CheckCircle2, RotateCcw, Plus, X, Trash2, Save, ChevronDown } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 
 export default function ChapterPayments() {
@@ -40,6 +40,8 @@ export default function ChapterPayments() {
   const [formAmount, setFormAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [removingId, setRemovingId] = useState("");
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [expandedTeacherKey, setExpandedTeacherKey] = useState("");
 
   /* ---------------- Chapter (topic) payments ---------------- */
   const [topics, setTopics] = useState([]);
@@ -137,6 +139,47 @@ export default function ChapterPayments() {
       .reduce((sum, t) => sum + (Number(t.budgetAmount) || 0), 0);
     return { totalBudget, paidAmount, pendingAmount: totalBudget - paidAmount };
   }, [topics]);
+
+  // --- Assigned teachers dropdown (name + rate per scope) ---
+  const assignedTeacherOptions = useMemo(() => {
+    const map = new Map();
+    assignments.forEach((item) => {
+      const id = item.writer?._id;
+      if (!id) return;
+      if (!map.has(id)) {
+        map.set(id, { id, name: item.writer?.name || "Unknown", email: item.writer?.email || "", rates: [] });
+      }
+      map.get(id).rates.push(Number(item.amount || 0));
+    });
+    return Array.from(map.values());
+  }, [assignments]);
+
+  const selectedTeacher = useMemo(
+    () => assignedTeacherOptions.find((t) => t.id === selectedTeacherId) || null,
+    [assignedTeacherOptions, selectedTeacherId]
+  );
+
+  const visibleAssignments = useMemo(() => {
+    if (!selectedTeacherId) return assignments;
+    return assignments.filter((item) => item.writer?._id === selectedTeacherId);
+  }, [assignments, selectedTeacherId]);
+
+  const assignmentGroups = useMemo(() => {
+    const map = new Map();
+    visibleAssignments.forEach((item) => {
+      const key = item.writer?._id || "unknown";
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          name: item.writer?.name || "Unknown",
+          email: item.writer?.email || "",
+          items: [],
+        });
+      }
+      map.get(key).items.push(item);
+    });
+    return Array.from(map.values());
+  }, [visibleAssignments]);
 
   // --- New assignment form cascading pickers ---
   useEffect(() => {
@@ -321,15 +364,32 @@ export default function ChapterPayments() {
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-800">
             <Users className="w-5 h-5 text-indigo-600" />
             Teacher Assignments
+            {selectedTeacher && (
+              <span className="text-indigo-600"> — {selectedTeacher.name}</span>
+            )}
           </h2>
-          <button
-            type="button"
-            onClick={() => setShowForm((s) => !s)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-          >
-            {showForm ? <X size={16} /> : <Plus size={16} />}
-            {showForm ? "Close" : "Assign Writer"}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <select
+              value={selectedTeacherId}
+              onChange={(e) => setSelectedTeacherId(e.target.value)}
+              className="border-2 border-gray-300 px-3 py-2 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none bg-white min-w-60"
+            >
+              <option value="">All Teachers</option>
+              {assignedTeacherOptions.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} — ₹{t.rates.join(", ₹")}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setShowForm((s) => !s)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              {showForm ? <X size={16} /> : <Plus size={16} />}
+              {showForm ? "Close" : "Assign Writer"}
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -429,58 +489,82 @@ export default function ChapterPayments() {
         )}
 
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-[800px] w-full text-sm">
-              <thead className="bg-indigo-50 text-gray-700">
-                <tr>
-                  <th className="text-left p-4 font-semibold">Writer</th>
-                  <th className="text-left p-4 font-semibold">Scope</th>
-                  <th className="text-left p-4 font-semibold">Rate / Chapter</th>
-                  <th className="text-center p-4 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loadingAssignments ? (
-                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">Loading assignments...</td></tr>
-                ) : assignments.length === 0 ? (
-                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">No writers assigned yet.</td></tr>
-                ) : (
-                  assignments.map((item) => (
-                    <tr key={item._id}>
-                      <td className="p-4">
-                        <div className="font-medium text-gray-800">{item.writer?.name || "Unknown"}</div>
-                        <div className="text-xs text-gray-500">{item.writer?.email || ""}</div>
-                      </td>
-                      <td className="p-4 text-xs text-gray-600">
-                        {[
-                          item.board?.name,
-                          item.class?.name || "All classes",
-                          item.subject?.name || "All subjects",
-                          item.topic?.name,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </td>
-                      <td className="p-4 font-semibold text-gray-800">
-                        ₹{Number(item.amount || 0).toLocaleString("en-IN")}
-                      </td>
-                      <td className="p-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => removeAssignment(item)}
-                          disabled={removingId === item._id}
-                          className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-40"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          {removingId === item._id ? "..." : "Revoke"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {loadingAssignments ? (
+            <div className="p-6 text-center text-gray-500">Loading assignments...</div>
+          ) : assignmentGroups.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">No writers assigned yet.</div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {assignmentGroups.map((group) => {
+                const isOpen = expandedTeacherKey === group.key;
+                return (
+                  <div key={group.key}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedTeacherKey(isOpen ? "" : group.key)}
+                      className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-gray-50"
+                    >
+                      <div>
+                        <div className="font-semibold text-gray-800">{group.name}</div>
+                        <div className="text-xs text-gray-500">{group.email}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-medium text-gray-500">
+                          {group.items.length} assignment{group.items.length === 1 ? "" : "s"}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-gray-100 bg-gray-50/50 overflow-x-auto">
+                        <table className="min-w-[700px] w-full text-sm">
+                          <thead className="bg-indigo-50 text-gray-700">
+                            <tr>
+                              <th className="text-left p-3 font-semibold">Scope</th>
+                              <th className="text-left p-3 font-semibold">Rate / Chapter</th>
+                              <th className="text-center p-3 font-semibold">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {group.items.map((item) => (
+                              <tr key={item._id}>
+                                <td className="p-3 text-xs text-gray-600">
+                                  {[
+                                    item.board?.name,
+                                    item.class?.name || "All classes",
+                                    item.subject?.name || "All subjects",
+                                    item.topic?.name,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </td>
+                                <td className="p-3 font-semibold text-gray-800">
+                                  ₹{Number(item.amount || 0).toLocaleString("en-IN")}
+                                </td>
+                                <td className="p-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAssignment(item)}
+                                    disabled={removingId === item._id}
+                                    className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-40"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    {removingId === item._id ? "..." : "Revoke"}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
