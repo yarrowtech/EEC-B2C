@@ -213,7 +213,7 @@ export default function Navbar() {
   // return (
   return shouldHide ? null : (
     <>
-      <nav className="sticky top-0 z-40 w-full border-b-4 bg-white/90 backdrop-blur-md" style={{ borderBottomColor: "rgba(255,210,63,0.25)" }}>
+      <nav className="sticky top-0 z-40 w-full border-b-4 bg-white backdrop-blur-md" style={{ borderBottomColor: "rgba(255,210,63,0.25)" }}>
         <style>{`
         @keyframes wiggle {
           0%,100% { transform: rotate(-2deg); }
@@ -225,12 +225,13 @@ export default function Navbar() {
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
           {/* Brand — code.html style: coral bg, rotate-3, auto_stories icon */}
           <Link to="/" className="flex items-center gap-2 md:gap-3" onClick={closeMobile}>
-            <div className="flex h-16 w-16 md:h-18 md:w-18 lg:h-30 lg:w-30 items-center justify-center overflow-hidden text-white">
+            <div className="flex h-16 w-16 md:h-18 md:w-18 lg:h-30 lg:w-30 items-center justify-center text-white">
               {websiteSettings.logoUrl ? (
                 <img
                   src={websiteSettings.logoUrl}
                   alt={websiteSettings.siteName}
                   className="h-full w-full object-contain"
+                  style={{ filter: "drop-shadow(0 4px 3px rgba(0,0,0, 1))" }}
                 />
               ) : (
                 <BookOpen className="h-6 w-6" strokeWidth={2.4} />

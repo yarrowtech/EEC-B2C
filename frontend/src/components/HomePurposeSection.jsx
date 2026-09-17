@@ -1,5 +1,6 @@
 // src/components/HomePurposeSection.jsx
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const SUBJECTS = [
   { name: "Mathematics",      icon: "calculate",      color: "#4ECDC4", bg: "rgba(78,205,196,0.12)"  },
@@ -21,6 +22,8 @@ const GRADES = [
 const BOARDS = ["CBSE", "ICSE", "IB", "State Boards"];
 
 export default function HomePurposeSection() {
+  const navigate = useNavigate();
+
   return (
     <section className="py-16 md:py-24 bg-[#FEF4E8] overflow-hidden relative">
       {/* Static glow blobs — zero animation cost */}
@@ -64,7 +67,16 @@ export default function HomePurposeSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               whileHover={{ y: -5, scale: 1.03, transition: { duration: 0.2 } }}
-              className="flex flex-col items-center gap-3 rounded-2xl md:rounded-3xl border-2 bg-white p-5 md:p-6 shadow-md hover:shadow-xl cursor-default"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(`/boards?subject=${encodeURIComponent(s.name)}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  navigate(`/boards?subject=${encodeURIComponent(s.name)}`);
+                }
+              }}
+              className="flex flex-col items-center gap-3 rounded-2xl md:rounded-3xl border-2 bg-white p-5 md:p-6 shadow-md hover:shadow-xl cursor-pointer"
               style={{ borderColor: s.color + "30" }}
             >
               <div

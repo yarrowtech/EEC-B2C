@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getJSON } from "../lib/api";
 
 const DEFAULT_BOARDS = ["CBSE", "ICSE", "State Board", "IB"].map((n) => ({ value: n, label: n }));
@@ -28,6 +28,8 @@ function MIcon({ name, className = "", fill = false }) {
 
 export default function EECLearningBoards() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const subjectFilter = (searchParams.get("subject") || "").trim().toLowerCase();
   const token = localStorage.getItem("jwt") || "";
   const isLoggedIn = Boolean(token);
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -46,7 +48,16 @@ export default function EECLearningBoards() {
   const [expandedSubjects, setExpandedSubjects] = useState({});
   const [profileReady, setProfileReady] = useState(false);
 
-  const subjectCount = useMemo(() => subjects.length, [subjects]);
+  const filteredSubjects = useMemo(() => {
+    if (!subjectFilter) return subjects;
+    const matches = subjects.filter((s) => {
+      const name = s.name.toLowerCase();
+      return name.includes(subjectFilter) || subjectFilter.includes(name);
+    });
+    return matches.length > 0 ? matches : subjects;
+  }, [subjects, subjectFilter]);
+
+  const subjectCount = useMemo(() => filteredSubjects.length, [filteredSubjects]);
   const topicCount = useMemo(() => Object.values(topicsBySubject).reduce((s, l) => s + (Array.isArray(l) ? l.length : 0), 0), [topicsBySubject]);
   const boardLabel = boardOptions.find((b) => String(b.value) === String(board))?.label || String(board);
   const classLabel = classOptions.find((c) => String(c.value) === String(grade))?.label || String(grade);
@@ -161,6 +172,15 @@ export default function EECLearningBoards() {
     if (!board || !grade) return;
     handleFindContent();
   }, [isLoggedIn, profileReady, metaLoading, board, grade]);
+
+  // Arrived from a subject card (e.g. the homepage) — jump straight to that
+  // subject's topics once results are in, instead of making the user click
+  // "Show Topics" again.
+  useEffect(() => {
+    if (!isLoggedIn || !subjectFilter || loading || filteredSubjects.length === 0) return;
+    filteredSubjects.forEach((s) => loadTopicsForSubject(s._id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, subjectFilter, loading, filteredSubjects]);
 
   function toggleExpand(id) { setExpandedSubjects((p) => ({ ...p, [id]: !p[id] })); }
 
@@ -314,9 +334,9 @@ export default function EECLearningBoards() {
         )}
 
         {/* Subject grid */}
-        {!loading && !error && searched && subjects.length > 0 && (
+        {!loading && !error && searched && filteredSubjects.length > 0 && (
           <div className="grid gap-6 md:grid-cols-2">
-            {subjects.map((subject, index) => {
+            {filteredSubjects.map((subject, index) => {
               const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
               const icon = subjectIcon(subject.name);
               const topics = topicsBySubject[subject._id];
