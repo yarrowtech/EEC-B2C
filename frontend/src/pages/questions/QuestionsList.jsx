@@ -16,6 +16,7 @@ import {
   FiHash,
   FiBarChart2,
   FiSliders,
+  FiXCircle,
 } from "react-icons/fi";
 import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
@@ -59,6 +60,8 @@ export default function QuestionsList() {
   const [busy, setBusy] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkApproving, setBulkApproving] = useState(false);
+  const [bulkRejecting, setBulkRejecting] = useState(false);
+  const [selectingAll, setSelectingAll] = useState(false);
   const [err, setErr] = useState("");
   const [initialized, setInitialized] = useState(false);
 
@@ -169,36 +172,41 @@ export default function QuestionsList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterSubject]);
 
+  function buildQuery() {
+    const qs = new URLSearchParams();
+    const effectiveBoard = scope.board || filterBoard;
+    const effectiveClass = scope.class || filterClass;
+    const effectiveSubject = scope.subject || filterSubject;
+    const effectiveTopic = scope.topic || filterTopic;
+    const effectiveDifficulty = scope.difficulty || filterDifficulty;
+
+    if (effectiveBoard) qs.set("board", effectiveBoard);
+    if (effectiveClass) qs.set("class", effectiveClass);
+    if (effectiveSubject) qs.set("subject", effectiveSubject);
+    if (effectiveTopic) qs.set("topic", effectiveTopic);
+
+    if (scope.stage) {
+      qs.set("stage", String(normalizeStageNumber(scope.stage)));
+    }
+
+    // Ensure difficulty is lowercase
+    if (effectiveDifficulty) {
+      qs.set("difficulty", effectiveDifficulty.toLowerCase());
+    }
+
+    if (scope.questionType) qs.set("questionType", scope.questionType);
+    if (filterStatus) qs.set("status", filterStatus);
+    if (type) qs.set("type", type);
+    if (q) qs.set("q", q);
+    if (selectedClass) qs.set("class", selectedClass);
+    return qs;
+  }
+
   async function load() {
     setBusy(true);
     setErr("");
     try {
-      const qs = new URLSearchParams();
-      const effectiveBoard = scope.board || filterBoard;
-      const effectiveClass = scope.class || filterClass;
-      const effectiveSubject = scope.subject || filterSubject;
-      const effectiveTopic = scope.topic || filterTopic;
-      const effectiveDifficulty = scope.difficulty || filterDifficulty;
-
-      if (effectiveBoard) qs.set("board", effectiveBoard);
-      if (effectiveClass) qs.set("class", effectiveClass);
-      if (effectiveSubject) qs.set("subject", effectiveSubject);
-      if (effectiveTopic) qs.set("topic", effectiveTopic);
-
-      if (scope.stage) {
-        qs.set("stage", String(normalizeStageNumber(scope.stage)));
-      }
-
-      // Ensure difficulty is lowercase
-      if (effectiveDifficulty) {
-        qs.set("difficulty", effectiveDifficulty.toLowerCase());
-      }
-
-      if (scope.questionType) qs.set("questionType", scope.questionType);
-      if (filterStatus) qs.set("status", filterStatus);
-      if (type) qs.set("type", type);
-      if (q) qs.set("q", q);
-      if (selectedClass) qs.set("class", selectedClass);
+      const qs = buildQuery();
       qs.set("page", page.toString());
       qs.set("limit", limit.toString());
 
@@ -303,6 +311,30 @@ export default function QuestionsList() {
 
     const visibleIds = rows.map((r) => r._id);
     setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  }
+
+  const allMatchingSelected = total > 0 && selectedIds.length >= total;
+
+  async function toggleSelectAllMatching() {
+    if (allMatchingSelected) {
+      setSelectedIds([]);
+      return;
+    }
+    if (!total) return;
+
+    setSelectingAll(true);
+    try {
+      const qs = buildQuery();
+      qs.set("page", "1");
+      qs.set("limit", String(total));
+      const data = await getJSON(`/api/questions?${qs.toString()}`);
+      const ids = (data.items || []).map((r) => r._id);
+      setSelectedIds(ids);
+    } catch (e) {
+      toast.error(e.message || "Failed to select all questions");
+    } finally {
+      setSelectingAll(false);
+    }
   }
 
   async function onDeleteSelected() {
@@ -412,6 +444,65 @@ export default function QuestionsList() {
       });
     } finally {
       setBulkApproving(false);
+    }
+  }
+
+  async function onRejectSelected() {
+    if (!selectedIds.length) {
+      toast.warn("Please select at least one question.");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: `Reject ${selectedIds.length} selected question(s)?`,
+      text: "Optionally provide a reason for the rejection.",
+      icon: "warning",
+      input: "text",
+      inputPlaceholder: "Reason (optional)",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, reject all",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+    const reason = result.value || "";
+
+    setBulkRejecting(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedIds.map((id) => reviewQuestion(id, "rejected", reason))
+      );
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      const failCount = results.length - successCount;
+
+      await load();
+
+      if (failCount === 0) {
+        await Swal.fire({
+          icon: "success",
+          title: "Rejected!",
+          text: `${successCount} question(s) rejected successfully.`,
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await Swal.fire({
+          icon: "warning",
+          title: "Partial rejection",
+          text: `${successCount} rejected, ${failCount} failed.`,
+        });
+      }
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: "Rejection failed",
+        text: e.message || "Something went wrong",
+      });
+    } finally {
+      setBulkRejecting(false);
     }
   }
 
@@ -576,8 +667,21 @@ export default function QuestionsList() {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={toggleSelectAllMatching}
+                  disabled={!total || selectingAll}
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2
+                           border border-indigo-300 text-indigo-700 bg-white
+                           hover:bg-indigo-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {selectingAll
+                    ? "Selecting..."
+                    : allMatchingSelected
+                      ? "Deselect All"
+                      : `Select All (${total})`}
+                </button>
+                <button
                   onClick={onApproveSelected}
-                  disabled={!selectedIds.length || bulkApproving || bulkDeleting}
+                  disabled={!selectedIds.length || bulkApproving || bulkRejecting || bulkDeleting}
                   className="inline-flex items-center gap-2 rounded-lg px-3 py-2
                            border border-emerald-300 text-emerald-700 bg-white
                            hover:bg-emerald-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -585,8 +689,17 @@ export default function QuestionsList() {
                   <FiCheckCircle size={15} /> {bulkApproving ? "Approving..." : "Approve Selected"}
                 </button>
                 <button
+                  onClick={onRejectSelected}
+                  disabled={!selectedIds.length || bulkApproving || bulkRejecting || bulkDeleting}
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2
+                           border border-amber-300 text-amber-700 bg-white
+                           hover:bg-amber-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiXCircle size={15} /> {bulkRejecting ? "Rejecting..." : "Reject Selected"}
+                </button>
+                <button
                   onClick={onDeleteSelected}
-                  disabled={!selectedIds.length || bulkDeleting || bulkApproving}
+                  disabled={!selectedIds.length || bulkDeleting || bulkApproving || bulkRejecting}
                   className="inline-flex items-center gap-2 rounded-lg px-3 py-2
                            border border-red-300 text-red-700 bg-white
                            hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"

@@ -47,6 +47,7 @@ import chapterAssignmentRoutes from "./routes/chapterAssignmentRoutes.js";
 import dailyChallengeRoutes from "./routes/dailyChallengeRoutes.js";
 import flashcardRoutes from "./routes/flashcards.js";
 import uiClickRoutes from "./routes/uiClickRoutes.js";
+import siteEventRoutes from "./routes/siteEventRoutes.js";
 import internalTeacherRoutes from "./routes/internal/teachers.js";
 import internalStudyMaterialRoutes from "./routes/internal/studyMaterials.js";
 
@@ -134,6 +135,7 @@ app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/daily-challenge", dailyChallengeRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/ui-clicks", uiClickRoutes);
+app.use("/api/site-events", siteEventRoutes);
 app.use("/api/internal/teachers", internalTeacherRoutes);
 app.use("/api/internal/study-materials", internalStudyMaterialRoutes);
 

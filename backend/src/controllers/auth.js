@@ -1,7 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import SiteEvent from "../models/SiteEvent.js";
 import crypto from "crypto";
+
+function recordLogin(user) {
+  if (String(user?.role || "student").toLowerCase() !== "student") return;
+  SiteEvent.create({ type: "login", userId: user._id }).catch(() => {});
+}
 import { OAuth2Client } from "google-auth-library";
 import { isEmail, normalizeLoginId } from "../utils/validators.js";
 import {
@@ -260,6 +266,7 @@ export async function login(req, res) {
     if (!ok) return res.status(401).json({ message: "Invalid credentials." });
 
     const payload = await buildLoginPayload(user);
+    recordLogin(user);
     res.json({
       message: "Logged in",
       ...payload,
@@ -325,6 +332,7 @@ export async function googleLogin(req, res) {
     }
 
     const payload = await buildLoginPayload(user);
+    recordLogin(user);
     res.json({
       message: "Logged in with Google",
       profileIncomplete: isGoogleProfileIncomplete(user),

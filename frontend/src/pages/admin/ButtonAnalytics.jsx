@@ -1,485 +1,513 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import {
-  BarChart3,
-  Clock3,
-  Filter,
-  MousePointerClick,
-  Users,
-  Globe2,
-  X,
-  RotateCcw,
-  ChevronDown,
-} from "lucide-react";
+import { RefreshCw, Download } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getJSON } from "../../lib/api";
 
-const EVENTS_PAGE_SIZE = 50;
+const METRICS = [
+  { key: "uniqueVisitors", label: "Unique visitors", desc: "People who opened the site", color: "#6366f1" },
+  { key: "pageViews", label: "Page views", desc: "Every page opened by visitors", color: "#0ea5e9" },
+  { key: "linkVisits", label: "Link visits", desc: "Arrived through a coupon or campaign link", color: "#f59e0b" },
+  { key: "clicks", label: "Clicks", desc: "Buttons and links tapped", color: "#ec4899" },
+  { key: "logins", label: "Logins", desc: "Successful sign-ins", color: "#10b981" },
+  { key: "signups", label: "Sign-ups", desc: "New accounts created", color: "#8b5cf6" },
+  { key: "topicViews", label: "Topic views", desc: "Learning topic pages opened", color: "#14b8a6" },
+  { key: "purchaseAttempts", label: "Purchase attempts", desc: "Visitors who started a payment", color: "#f97316" },
+];
 
-function StatCard({ title, value, icon, color = "from-slate-700 to-slate-900" }) {
+const RANGES = [7, 30, 90];
+const FONT = "'Plus Jakarta Sans', 'Inter', sans-serif";
+
+function changeBadge(current, previous) {
+  if (!previous) return current ? "New" : "0%";
+  const pct = Math.round(((current - previous) / previous) * 100);
+  return `${pct > 0 ? "+" : ""}${pct}%`;
+}
+
+function formatDay(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+const DEVICES = [
+  { key: "desktop", label: "Desktop", color: "#0ea5e9" },
+  { key: "mobile", label: "Mobile", color: "#6366f1" },
+  { key: "tablet", label: "Tablet", color: "#f59e0b" },
+];
+const FUNNEL_COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f97316"];
+
+function Panel({ title, subtitle, children, className = "" }) {
   return (
-    <div className={`rounded-2xl p-4 text-white bg-gradient-to-r ${color} shadow-md sm:p-5`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-white/80 sm:text-sm">{title}</p>
-          <p className="mt-1 truncate text-xl font-bold sm:text-2xl">{value}</p>
+    <div className={`rounded-2xl bg-white p-4 sm:p-5 ${className}`}>
+      <h2 className="text-sm font-bold text-[#111]">{title}</h2>
+      <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+function Donut({ devices, total }) {
+  const sum = DEVICES.reduce((s, d) => s + (devices[d.key] || 0), 0);
+  const r = 40;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <div className="relative h-36 w-36 shrink-0">
+      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#eef0f4" strokeWidth="12" />
+        {sum > 0 &&
+          DEVICES.map((d) => {
+            const len = ((devices[d.key] || 0) / sum) * c;
+            const seg = (
+              <circle
+                key={d.key}
+                cx="50"
+                cy="50"
+                r={r}
+                fill="none"
+                stroke={d.color}
+                strokeWidth="12"
+                strokeDasharray={`${Math.max(0, len - 1.5)} ${c}`}
+                strokeDashoffset={-offset}
+              />
+            );
+            offset += len;
+            return seg;
+          })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-extrabold text-[#111]">{total}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Visitors</span>
+      </div>
+    </div>
+  );
+}
+
+function FunnelList({ steps }) {
+  const top = steps[0]?.count || 0;
+  return (
+    <div className="space-y-4">
+      {steps.map((step, i) => {
+        const prev = i > 0 ? steps[i - 1].count : 0;
+        const pct = prev ? Math.round((step.count / prev) * 100) : 0;
+        return (
+          <div key={step.label}>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-medium text-[#111]">{step.label}</span>
+              <span className="flex items-center gap-2">
+                <span className="font-bold text-[#111]">{step.count}</span>
+                {i > 0 && (
+                  <span className="rounded-md bg-[#f1f2f6] px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
+                    {pct}%
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="mt-1.5 h-2.5 rounded-full bg-[#f1f2f6]">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${top ? Math.max(step.count ? 3 : 0, (step.count / top) * 100) : 0}%`,
+                  background: FUNNEL_COLORS[i],
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function PeakHours({ grid }) {
+  const max = Math.max(0, ...grid.flat());
+  let busiest = null;
+  grid.forEach((row, d) =>
+    row.forEach((v, h) => {
+      if (v > 0 && (!busiest || v > busiest.v)) busiest = { d, h, v };
+    })
+  );
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
+          <div className="grid grid-cols-[40px_repeat(24,minmax(0,1fr))] gap-1">
+            <span />
+            {Array.from({ length: 24 }, (_, h) => (
+              <span key={h} className="text-[10px] font-bold text-slate-500">
+                {h % 3 === 0 ? String(h).padStart(2, "0") : ""}
+              </span>
+            ))}
+            {grid.map((row, d) => (
+              <div key={WEEKDAYS[d]} className="contents">
+                <span className="self-center text-[11px] font-bold text-slate-500">{WEEKDAYS[d]}</span>
+                {row.map((v, h) => (
+                  <div
+                    key={h}
+                    title={`${WEEKDAYS[d]} ${String(h).padStart(2, "0")}:00 — ${v} page views`}
+                    className="aspect-square rounded-md"
+                    style={{
+                      background: v && max ? `rgba(99,102,241,${0.15 + 0.85 * (v / max)})` : "#f4f5f8",
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="shrink-0 rounded-xl bg-white/15 p-2">{icon}</div>
       </div>
-    </div>
+      <p className="mt-4 text-xs text-slate-500">
+        Busiest:{" "}
+        {busiest ? (
+          <>
+            <span className="font-bold text-[#111]">
+              {WEEKDAYS[busiest.d]} {String(busiest.h).padStart(2, "0")}:00
+            </span>{" "}
+            ({busiest.v} page views)
+          </>
+        ) : (
+          "—"
+        )}
+      </p>
+    </>
   );
 }
 
-function formatTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString();
-}
-
-function Avatar({ name }) {
-  const initial = String(name || "A").trim().charAt(0).toUpperCase() || "A";
+function RankedList({ rows, empty, color = "#6366f1" }) {
+  if (!rows?.length) return <p className="text-sm text-slate-400">{empty}</p>;
+  const max = Math.max(1, ...rows.map((r) => r.count));
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 font-bold text-white">
-      {initial}
+    <div className="space-y-3">
+      {rows.map((r) => (
+        <div key={r.name}>
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="truncate font-medium text-[#111]">{r.name}</span>
+            <span className="font-bold text-[#111]">{r.count}</span>
+          </div>
+          <div className="mt-1.5 h-1.5 rounded-full bg-[#f1f2f6]">
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${Math.max(2, (r.count / max) * 100)}%`, background: color }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
-  );
-}
-
-function FilterSelect({ label, value, onChange, options, placeholder }) {
-  return (
-    <label className="flex w-full flex-col gap-1 sm:w-auto">
-      <span className="text-xs font-semibold text-slate-500">{label}</span>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-3 py-2 pr-9 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 sm:w-56"
-        >
-          <option value="">{placeholder}</option>
-          {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      </div>
-    </label>
   );
 }
 
 export default function ButtonAnalytics() {
+  const [days, setDays] = useState(7);
+  const [active, setActive] = useState("uniqueVisitors");
+  const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
-  const [days, setDays] = useState(30);
-  const [search, setSearch] = useState("");
-  const [buttonFilter, setButtonFilter] = useState("");
-  const [pageFilter, setPageFilter] = useState("");
-  const [data, setData] = useState({
-    summary: {},
-    topButtons: [],
-    topPages: [],
-    topUsers: [],
-    recentEvents: [],
-    dailyTrend: [],
-    filters: { buttonOptions: [], pageOptions: [] },
-    pagination: { hasMore: false },
-  });
 
   const role = useMemo(() => {
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "null");
-      return String(user?.role || "").toLowerCase();
+      return String(JSON.parse(localStorage.getItem("user") || "null")?.role || "").toLowerCase();
     } catch {
       return "";
     }
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setBusy(true);
-      setErr("");
-      try {
-        const qs = new URLSearchParams();
-        qs.set("days", String(days));
-        qs.set("limit", String(EVENTS_PAGE_SIZE));
-        if (search.trim()) qs.set("search", search.trim());
-        if (buttonFilter) qs.set("button", buttonFilter);
-        if (pageFilter) qs.set("page", pageFilter);
-        const result = await getJSON(`/api/ui-clicks/admin/summary?${qs.toString()}`);
-        if (cancelled) return;
-        setData({
-          summary: result?.summary || {},
-          topButtons: Array.isArray(result?.topButtons) ? result.topButtons : [],
-          topPages: Array.isArray(result?.topPages) ? result.topPages : [],
-          topUsers: Array.isArray(result?.topUsers) ? result.topUsers : [],
-          recentEvents: Array.isArray(result?.recentEvents) ? result.recentEvents : [],
-          dailyTrend: Array.isArray(result?.dailyTrend) ? result.dailyTrend : [],
-          filters: {
-            buttonOptions: Array.isArray(result?.filters?.buttonOptions) ? result.filters.buttonOptions : [],
-            pageOptions: Array.isArray(result?.filters?.pageOptions) ? result.filters.pageOptions : [],
-          },
-          pagination: result?.pagination || { hasMore: false },
-        });
-      } catch (e) {
-        if (!cancelled) setErr(e.message || "Failed to load analytics");
-      } finally {
-        if (!cancelled) setBusy(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [days, search, buttonFilter, pageFilter]);
-
-  async function loadMore() {
-    setLoadingMore(true);
+  const load = useCallback(async () => {
+    setBusy(true);
+    setErr("");
     try {
-      const qs = new URLSearchParams();
-      qs.set("days", String(days));
-      qs.set("limit", String(EVENTS_PAGE_SIZE));
-      qs.set("skip", String(data.recentEvents.length));
-      if (search.trim()) qs.set("search", search.trim());
-      if (buttonFilter) qs.set("button", buttonFilter);
-      if (pageFilter) qs.set("page", pageFilter);
-      const result = await getJSON(`/api/ui-clicks/admin/summary?${qs.toString()}`);
-      setData((prev) => ({
-        ...prev,
-        recentEvents: [...prev.recentEvents, ...(Array.isArray(result?.recentEvents) ? result.recentEvents : [])],
-        pagination: result?.pagination || { hasMore: false },
-      }));
+      const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+      setData(await getJSON(`/api/site-events/admin/overview?days=${days}&tz=${tz}`));
     } catch (e) {
-      setErr(e.message || "Failed to load more events");
+      setErr(e.message || "Failed to load analytics");
     } finally {
-      setLoadingMore(false);
+      setBusy(false);
     }
-  }
+  }, [days]);
 
-  const totals = data.summary || {};
-  const hasActiveFilters = Boolean(search || buttonFilter || pageFilter || days !== 30);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  function resetFilters() {
-    setSearch("");
-    setButtonFilter("");
-    setPageFilter("");
-    setDays(30);
-  }
-
-  const trendData = useMemo(
-    () =>
-      (data.dailyTrend || []).map((item) => {
-        const date = new Date(item.year, (item.month || 1) - 1, item.day || 1);
-        return {
-          label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          value: Number(item.count || 0),
-        };
-      }),
-    [data.dailyTrend]
+  const activeMetric = METRICS.find((m) => m.key === active);
+  const totals = data?.totals || {};
+  const previous = data?.previous || {};
+  const funnel = data?.funnel || [];
+  const audience = data?.audience || {};
+  const newsletterData = useMemo(
+    () => (data?.newsletter || []).map((row) => ({ ...row, label: formatDay(row.date) })),
+    [data]
+  );
+  const newsletterTotal = newsletterData.reduce((s, r) => s + r.count, 0);
+  const chartData = useMemo(
+    () => (data?.series || []).map((row) => ({ ...row, label: formatDay(row.date) })),
+    [data]
   );
 
-  const maxTrend = Math.max(1, ...trendData.map((item) => item.value));
+  function downloadCsv() {
+    if (!data?.series?.length) return;
+    const header = ["Date", ...METRICS.map((m) => m.label)];
+    const rows = data.series.map((r) => [r.date, ...METRICS.map((m) => r[m.key] || 0)]);
+    const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `analytics_${days}d_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   if (role && role !== "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">Button Analytics</h1>
-        <p className="mt-1 text-sm text-slate-600 sm:text-base">
-          Track which user clicked which button across the site.
-        </p>
-      </div>
+    <div className="p-3 sm:p-6" style={{ fontFamily: FONT }}>
+      <div className="rounded-3xl bg-[#f4f4f5] p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#111]">Analytics</h1>
+            <p className="mt-1 max-w-md text-sm text-slate-500">
+              Traffic, link visits, clicks and logins. Admin, teacher and dashboard pages are excluded.
+            </p>
+          </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex w-full flex-col gap-1 sm:w-auto sm:min-w-[240px] sm:flex-1">
-            <span className="text-xs font-semibold text-slate-500">Search</span>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search button, user, or page"
-                className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+          <div className="flex flex-wrap items-center gap-2 sm:mt-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-xs font-bold text-emerald-600">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              {data?.onlineNow ?? 0} online now
+            </span>
+            <div className="flex items-center rounded-xl border border-slate-200 bg-[#ececee] p-1">
+              {RANGES.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setDays(r)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    days === r ? "bg-white text-[#111] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {r} days
+                </button>
+              ))}
             </div>
-          </label>
-
-          <FilterSelect
-            label="Button"
-            value={buttonFilter}
-            onChange={setButtonFilter}
-            options={data.filters.buttonOptions}
-            placeholder="All buttons"
-          />
-
-          <FilterSelect
-            label="Page"
-            value={pageFilter}
-            onChange={setPageFilter}
-            options={data.filters.pageOptions}
-            placeholder="All pages"
-          />
-
-          <label className="flex w-full flex-col gap-1 sm:w-auto">
-            <span className="text-xs font-semibold text-slate-500">Date range</span>
-            <select
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value) || 30)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-40"
-            >
-              <option value={7}>Last 7 days</option>
-              <option value={30}>Last 30 days</option>
-              <option value={90}>Last 90 days</option>
-              <option value={180}>Last 180 days</option>
-            </select>
-          </label>
-
-          {hasActiveFilters && (
             <button
               type="button"
-              onClick={resetFilters}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+              onClick={load}
+              title="Refresh"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             >
-              <RotateCcw size={14} />
-              Reset
+              <RefreshCw size={15} className={busy ? "animate-spin" : ""} />
             </button>
-          )}
+            <button
+              type="button"
+              onClick={downloadCsv}
+              title="Download CSV"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            >
+              <Download size={15} />
+            </button>
+          </div>
         </div>
 
-        {(buttonFilter || pageFilter || search) && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {search && (
-              <span className="flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                Search: {search}
-                <button onClick={() => setSearch("")} aria-label="Clear search">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            {buttonFilter && (
-              <span className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                Button: {buttonFilter}
-                <button onClick={() => setButtonFilter("")} aria-label="Clear button filter">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            {pageFilter && (
-              <span className="flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-                Page: {pageFilter}
-                <button onClick={() => setPageFilter("")} aria-label="Clear page filter">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-          </div>
+        {err && (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{err}</div>
         )}
-      </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
-        <StatCard title="Total Clicks" value={totals.totalClicks || 0} icon={<MousePointerClick size={20} />} color="from-indigo-600 to-purple-600" />
-        <StatCard title="Unique Users" value={totals.uniqueUsers || 0} icon={<Users size={20} />} color="from-emerald-600 to-teal-600" />
-        <StatCard title="Unique Buttons" value={totals.uniqueButtons || 0} icon={<BarChart3 size={20} />} color="from-amber-600 to-orange-600" />
-        <StatCard title="Unique Pages" value={totals.uniquePages || 0} icon={<Globe2 size={20} />} color="from-rose-600 to-pink-600" />
-        <StatCard title="Range Days" value={totals.rangeDays || days} icon={<Clock3 size={20} />} color="from-slate-700 to-slate-900" />
-      </div>
-
-      {err && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-          {err}
+        {/* Metric cards */}
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {METRICS.map((m) => {
+            const isActive = m.key === active;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => setActive(m.key)}
+                className={`rounded-2xl border-2 bg-[#ececee] p-4 text-left transition sm:p-5 ${
+                  isActive ? "border-[#6366f1]" : "border-transparent hover:border-slate-300"
+                }`}
+              >
+                <p className="text-sm font-medium text-[#222]">{m.label}</p>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <span className="text-5xl font-extrabold leading-tight tracking-tight" style={{ color: m.color }}>
+                    {busy && !data ? "–" : (totals[m.key] ?? 0).toLocaleString("en-IN")}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                      changeBadge(totals[m.key] || 0, previous[m.key] || 0) === "New"
+                        ? "bg-indigo-100 text-indigo-500"
+                        : "bg-white text-slate-600"
+                    }`}
+                  >
+                    {changeBadge(totals[m.key] || 0, previous[m.key] || 0)}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">{m.desc}</p>
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">Click Trend</h2>
-              <span className="text-xs font-semibold text-slate-500">{days} day range</span>
+        {/* Chart */}
+        <div className="mt-5 rounded-2xl bg-white p-4 sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-[#111]">{activeMetric.label} over time</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {(totals[active] ?? 0).toLocaleString("en-IN")} in the last {days} days
+              </p>
             </div>
-            {trendData.length === 0 ? (
-              <p className="text-sm text-slate-500">No clicks recorded in this range.</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-6 xl:grid-cols-7">
-                {trendData.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3">
-                    <div className="flex h-24 items-end sm:h-32">
-                      <div
-                        className="w-full rounded-t-lg bg-gradient-to-t from-indigo-600 to-cyan-500"
-                        style={{ height: `${Math.max(8, (item.value / maxTrend) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-xs font-semibold text-slate-500">{item.label}</p>
-                      <p className="text-sm font-bold text-slate-900">{item.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
-              <h2 className="text-lg font-bold text-slate-900">Recent Clicks</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 sm:px-5">User</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 sm:px-5">Button</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 sm:px-5">Page</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 sm:px-5">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {busy && (
-                    <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-slate-500">
-                        Loading analytics...
-                      </td>
-                    </tr>
-                  )}
-                  {!busy && data.recentEvents.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-slate-500">
-                        No click events found.
-                      </td>
-                    </tr>
-                  )}
-                  {!busy && data.recentEvents.map((event) => {
-                    const userName = event.userName || event.userId?.name || "Anonymous";
-                    const userEmail = event.userEmail || event.userId?.email || "";
-                    const roleLabel = event.userRole || event.userId?.role || "";
-                    return (
-                      <tr key={event._id} className="border-t border-slate-100">
-                        <td className="px-4 py-3 sm:px-5">
-                          <div className="flex items-center gap-3">
-                            <Avatar name={userName} />
-                            <div className="min-w-0">
-                              <div className="truncate font-semibold text-slate-900">{userName}</div>
-                              <div className="truncate text-xs text-slate-500">
-                                {userEmail || "No email"}{roleLabel ? ` · ${roleLabel}` : ""}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 sm:px-5">
-                          <div className="font-semibold text-slate-900">{event.buttonLabel || "-"}</div>
-                          <div className="text-xs text-slate-500">{event.elementType || "button"}</div>
-                        </td>
-                        <td className="px-4 py-3 sm:px-5">
-                          <div className="max-w-[220px] truncate font-medium text-slate-800">{event.pagePath || "-"}</div>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-600 sm:px-5">{formatTime(event.createdAt)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {!busy && data.pagination?.hasMore && (
-              <div className="border-t border-slate-100 px-5 py-4 text-center">
+            <div className="flex flex-wrap gap-1.5">
+              {METRICS.map((m) => (
                 <button
+                  key={m.key}
                   type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  onClick={() => setActive(m.key)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    m.key === active
+                      ? "border-[#6366f1] bg-[#6366f1] text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
                 >
-                  {loadingMore ? "Loading..." : "Load more"}
+                  {m.label}
                 </button>
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="metricFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={activeMetric.color} stopOpacity={0.25} />
+                    <stop offset="100%" stopColor={activeMetric.color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ borderRadius: 12, border: "1px solid #e5e7eb", fontSize: 12 }}
+                  formatter={(v) => [v, activeMetric.label]}
+                />
+                <Area
+                  type="basis"
+                  dataKey={active}
+                  stroke={activeMetric.color}
+                  strokeWidth={2}
+                  fill="url(#metricFill)"
+                  dot={false}
+                  activeDot={{ r: 5 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <h2 className="mb-4 text-lg font-bold text-slate-900">Top Buttons</h2>
-            <div className="space-y-3">
-              {data.topButtons.length === 0 ? (
-                <p className="text-sm text-slate-500">No data yet.</p>
-              ) : (
-                data.topButtons.map((item) => (
-                  <button
-                    type="button"
-                    key={item.buttonLabel}
-                    onClick={() => setButtonFilter(item.buttonLabel)}
-                    className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900">{item.buttonLabel || "-"}</p>
-                        <p className="truncate text-xs text-slate-500">{item.samplePagePath || "Unknown page"}</p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
-                        {item.count || 0}
-                      </span>
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      Unique users: {item.uniqueUsers || 0}
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
+        {/* Funnel + Audience */}
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <Panel title="Conversion funnel" subtitle="How visitors move from landing to purchase">
+            <FunnelList steps={funnel} />
+          </Panel>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <h2 className="mb-4 text-lg font-bold text-slate-900">Top Pages</h2>
-            <div className="space-y-3">
-              {data.topPages.length === 0 ? (
-                <p className="text-sm text-slate-500">No page data yet.</p>
-              ) : (
-                data.topPages.map((item) => (
-                  <button
-                    type="button"
-                    key={item.pagePath || "blank"}
-                    onClick={() => setPageFilter(item.pagePath)}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-rose-300 hover:bg-rose-50/40"
-                  >
-                    <span className="truncate pr-2 text-sm font-semibold text-slate-900">
-                      {item.pagePath || "Unknown page"}
-                    </span>
-                    <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                      {item.count || 0}
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <h2 className="mb-4 text-lg font-bold text-slate-900">Top Users</h2>
-            <div className="space-y-3">
-              {data.topUsers.length === 0 ? (
-                <p className="text-sm text-slate-500">No user data yet.</p>
-              ) : (
-                data.topUsers.map((item, index) => (
-                  <div key={`${item.userId || "anon"}-${index}`} className="rounded-xl border border-slate-200 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900">{item.userName || "Anonymous"}</p>
-                        <p className="truncate text-xs text-slate-500">{item.userEmail || "No email"}</p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                        {item.count || 0}
-                      </span>
+          <Panel title="Audience" subtitle="Devices and returning visitors">
+            <div className="flex flex-col items-center justify-center gap-8 sm:flex-row">
+              <Donut devices={audience.devices || {}} total={audience.visitors || 0} />
+              <div className="space-y-3">
+                {DEVICES.map((d) => {
+                  const sum = DEVICES.reduce((s, x) => s + (audience.devices?.[x.key] || 0), 0);
+                  const pct = sum ? Math.round(((audience.devices?.[d.key] || 0) / sum) * 100) : 0;
+                  return (
+                    <div key={d.key} className="flex items-center gap-3 text-sm">
+                      <span className="h-2.5 w-2.5 rounded-sm" style={{ background: d.color }} />
+                      <span className="w-20 font-medium text-[#111]">{d.label}</span>
+                      <span className="font-bold text-[#111]">{pct}%</span>
                     </div>
-                  </div>
-                ))
-              )}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                ["New", audience.newVisitors],
+                ["Returning", audience.returning],
+                ["Signed in", audience.signedIn],
+                ["Sessions", audience.sessions],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl bg-[#f4f5f8] px-3 py-3">
+                  <p className="text-[11px] font-semibold text-slate-500">{label}</p>
+                  <p className="mt-1 text-base font-extrabold text-[#111]">{value ?? 0}</p>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </div>
+
+        {/* Top pages + Traffic sources */}
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <Panel title="Top pages" subtitle="By page views">
+            <RankedList rows={data?.topPages} empty="No page views yet." />
+          </Panel>
+          <Panel title="Traffic sources" subtitle="Where visitors come from">
+            <RankedList rows={data?.trafficSources} empty="No visits yet." color="#0ea5e9" />
+          </Panel>
+        </div>
+
+        {/* Campaign links + Most clicked */}
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <Panel title="Coupon and campaign links" subtitle="Visits through shared links">
+            <RankedList rows={data?.campaignLinks} empty="No campaign link visits yet." color="#f59e0b" />
+          </Panel>
+          <Panel title="Most clicked" subtitle="Buttons and links">
+            <RankedList rows={data?.mostClicked} empty="No clicks yet." color="#ec4899" />
+          </Panel>
+        </div>
+
+        {/* Peak hours */}
+        <Panel className="mt-5" title="Peak hours" subtitle="Page views by day and hour (your local time)">
+          <PeakHours grid={data?.heatmap || Array.from({ length: 7 }, () => Array(24).fill(0))} />
+        </Panel>
+
+        {/* Newsletter + CRM */}
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <Panel
+            title="Newsletter growth"
+            subtitle={`${newsletterTotal} new in this period`}
+          >
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={newsletterData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="newsletterFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    allowDecimals={false}
+                    domain={[0, (max) => Math.max(4, max)]}
+                    tick={{ fontSize: 11, fill: "#64748b" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: "1px solid #e5e7eb", fontSize: 12 }}
+                    formatter={(v) => [v, "New subscribers"]}
+                  />
+                  <Area type="basis" dataKey="count" stroke="#10b981" strokeWidth={2} fill="url(#newsletterFill)" dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Panel>
+          <Panel title="CRM lead funnel" subtitle="Leads captured in this period">
+            <FunnelList steps={data?.leadFunnel || []} />
+          </Panel>
         </div>
       </div>
     </div>

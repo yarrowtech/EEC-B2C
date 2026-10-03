@@ -52,6 +52,32 @@ export default function UiClickTracker() {
   const API = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   useEffect(() => {
+    const send = (type) => {
+      const token = localStorage.getItem("jwt") || "";
+      fetch(`${API.replace(/\/$/, "")}/api/site-events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          type,
+          sessionId: getUiClickSessionId(),
+          pagePath: `${window.location.pathname}${window.location.search}`,
+          referrer: document.referrer || "",
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+
+    send("pageview");
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") send("ping");
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [API, location.pathname, location.search]);
+
+  useEffect(() => {
     const handler = (event) => {
       const target = event.target?.closest?.(TRACKABLE_SELECTOR);
       if (!target || target.getAttribute("data-track-skip") === "true") return;
