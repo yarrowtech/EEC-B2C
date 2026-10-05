@@ -1,471 +1,383 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getJSON } from "../lib/api";
+import { BookOpen, ChevronRight, GraduationCap, Layers, FileText, ArrowLeft } from "lucide-react";
 
-const DEFAULT_BOARDS = ["CBSE", "ICSE", "State Board", "IB"].map((n) => ({ value: n, label: n }));
-const DEFAULT_CLASSES = ["Class 3","Class 4","Class 5","Class 6","Class 7","Class 8","Class 9","Class 10"].map((n) => ({ value: n, label: n }));
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const SUBJECT_ICONS = {
-  math: "calculate", maths: "calculate", mathematics: "calculate",
-  science: "science", physics: "bolt", chemistry: "colorize", biology: "genetics",
-  english: "menu_book", hindi: "translate", history: "history_edu",
-  geography: "travel_explore", evs: "eco", environment: "eco",
-  computer: "computer", social: "public", civics: "account_balance",
-  economics: "bar_chart", accounts: "receipt_long",
+const BOARD_INFO = {
+  cbse: "Central Board of Secondary Education",
+  icse: "Indian Certificate of Secondary Education",
+  isc: "Indian School Certificate",
+  ib: "International Baccalaureate",
+  igcse: "International General Certificate of Secondary Education",
+  "wb board": "West Bengal Board of Secondary Education",
+  wbbse: "West Bengal Board of Secondary Education",
+  "state board": "State Council of Educational Research and Training",
+  telangana: "State Council of Educational Research and Training, Telangana",
 };
-const SUBJECT_COLORS = ["#F4736E","#4ECDC4","#6C63FF","#FF9F1C","#22c55e","#3b82f6","#d946ef","#f97316"];
 
-function subjectIcon(name) {
-  const key = String(name || "").toLowerCase().replace(/[^a-z]/g, "");
-  return Object.entries(SUBJECT_ICONS).find(([k]) => key.includes(k))?.[1] || "menu_book";
+function boardDescription(name) {
+  const key = String(name || "").toLowerCase();
+  const match = Object.keys(BOARD_INFO).find((k) => key === k || key.startsWith(k));
+  return match ? BOARD_INFO[match] : "Board-aligned subjects, notes and practice";
 }
 
-function MIcon({ name, className = "", fill = false }) {
+function classNumber(name) {
+  const n = String(name || "").match(/\d+/);
+  return n ? Number(n[0]) : 999;
+}
+
+async function fetchJSON(path) {
+  const token = localStorage.getItem("jwt") || "";
+  const res = await fetch(`${API}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  const data = await res.json().catch(() => []);
+  if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
+  return Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+}
+
+const PALETTE = ["#F4736E", "#4ECDC4", "#6C63FF", "#FF9F1C", "#22c55e", "#3b82f6", "#d946ef", "#f97316"];
+const HEADING_FONT = { fontFamily: "'Balsamiq Sans', cursive" };
+
+function Card({ icon: Icon, title, subtitle, meta, onClick, index = 0, badge }) {
+  const color = PALETTE[index % PALETTE.length];
   return (
-    <span className={`material-symbols-outlined ${className}`} style={fill ? { fontVariationSettings: "'FILL' 1" } : undefined}>{name}</span>
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative flex w-full flex-col overflow-hidden rounded-3xl border-2 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-4"
+      style={{ borderColor: `${color}33`, "--tw-ring-color": `${color}55` }}
+    >
+      <span
+        className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-15 transition-transform duration-500 group-hover:scale-150"
+        style={{ background: color }}
+      />
+      <div className="relative flex items-center justify-between">
+        <span
+          className="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-md transition-transform duration-300 group-hover:rotate-6"
+          style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}
+        >
+          {badge ? <span className="text-lg font-black" style={HEADING_FONT}>{badge}</span> : <Icon className="h-7 w-7" strokeWidth={2.2} />}
+        </span>
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 group-hover:translate-x-1"
+          style={{ background: `${color}18`, color }}
+        >
+          <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+        </span>
+      </div>
+      <span className="relative mt-4 block text-xl font-black text-[#1B1F3B]" style={HEADING_FONT}>
+        {title}
+      </span>
+      {subtitle && <span className="relative mt-1 block text-sm leading-relaxed text-slate-600">{subtitle}</span>}
+      {meta && (
+        <span
+          className="relative mt-3 inline-flex w-fit rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
+          style={{ background: `${color}15`, color }}
+        >
+          {meta}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function Skeleton() {
+  return (
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-48 animate-pulse rounded-3xl border-2 border-slate-100 bg-white" />
+      ))}
+    </div>
+  );
+}
+
+const STEPS = [
+  { label: "Board", icon: BookOpen },
+  { label: "Class", icon: GraduationCap },
+  { label: "Subject", icon: Layers },
+  { label: "Chapter", icon: FileText },
+];
+
+function Stepper({ step, onJump }) {
+  return (
+    <div className="flex items-center">
+      {STEPS.map((s, i) => {
+        const n = i + 1;
+        const done = n < step;
+        const active = n === step;
+        const Icon = s.icon;
+        return (
+          <div key={s.label} className="flex flex-1 items-center last:flex-none">
+            <button
+              type="button"
+              disabled={!done}
+              onClick={() => onJump(n)}
+              className="flex flex-col items-center gap-1.5 disabled:cursor-default"
+            >
+              <span
+                className={`flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all ${
+                  active
+                    ? "scale-110 border-[#FFD23F] bg-[#FFD23F] text-[#1B1F3B] shadow-lg shadow-[#FFD23F]/40"
+                    : done
+                      ? "border-[#4ECDC4] bg-[#4ECDC4] text-white hover:brightness-110"
+                      : "border-white/25 bg-white/5 text-white/50"
+                }`}
+              >
+                <Icon className="h-5 w-5" strokeWidth={2.2} />
+              </span>
+              <span className={`text-xs font-bold ${active ? "text-[#FFD23F]" : done ? "text-[#4ECDC4]" : "text-white/50"}`}>
+                {s.label}
+              </span>
+            </button>
+            {i < STEPS.length - 1 && (
+              <span className="mx-2 mb-5 h-1 flex-1 rounded-full bg-white/10">
+                <span
+                  className="block h-full rounded-full bg-[#4ECDC4] transition-all duration-500"
+                  style={{ width: done ? "100%" : "0%" }}
+                />
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
 export default function EECLearningBoards() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const subjectFilter = (searchParams.get("subject") || "").trim().toLowerCase();
-  const token = localStorage.getItem("jwt") || "";
-  const isLoggedIn = Boolean(token);
-  const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const [params, setParams] = useSearchParams();
+  const boardId = params.get("board") || "";
+  const classId = params.get("class") || "";
+  const subjectId = params.get("subjectId") || "";
+  const subjectHint = (params.get("subject") || "").trim().toLowerCase();
 
-  const [boardOptions, setBoardOptions] = useState(DEFAULT_BOARDS);
-  const [classOptions, setClassOptions] = useState(DEFAULT_CLASSES);
-  const [board, setBoard] = useState(DEFAULT_BOARDS[0]?.value || "CBSE");
-  const [grade, setGrade] = useState(DEFAULT_CLASSES[3]?.value || "Class 6");
-  const [loading, setLoading] = useState(false);
-  const [metaLoading, setMetaLoading] = useState(false);
+  const [boards, setBoards] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
-  const [topicsBySubject, setTopicsBySubject] = useState({});
-  const [topicLoadingBySubject, setTopicLoadingBySubject] = useState({});
-  const [searched, setSearched] = useState(false);
+  const [topics, setTopics] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [expandedSubjects, setExpandedSubjects] = useState({});
-  const [profileReady, setProfileReady] = useState(false);
-
-  const filteredSubjects = useMemo(() => {
-    if (!subjectFilter) return subjects;
-    const matches = subjects.filter((s) => {
-      const name = s.name.toLowerCase();
-      return name.includes(subjectFilter) || subjectFilter.includes(name);
-    });
-    return matches.length > 0 ? matches : subjects;
-  }, [subjects, subjectFilter]);
-
-  const subjectCount = useMemo(() => filteredSubjects.length, [filteredSubjects]);
-  const topicCount = useMemo(() => Object.values(topicsBySubject).reduce((s, l) => s + (Array.isArray(l) ? l.length : 0), 0), [topicsBySubject]);
-  const boardLabel = boardOptions.find((b) => String(b.value) === String(board))?.label || String(board);
-  const classLabel = classOptions.find((c) => String(c.value) === String(grade))?.label || String(grade);
 
   useEffect(() => {
-    let mounted = true;
-    setMetaLoading(true);
-    (async () => {
-      try {
-        const [bRes, cRes] = await Promise.all([
-          fetch(`${API}/api/boards`),
-          fetch(`${API}/api/classes`),
-        ]);
-        const [bData, cData] = await Promise.all([bRes.json().catch(() => []), cRes.json().catch(() => [])]);
-        const boards = (Array.isArray(bData) ? bData : []).map((b) => ({ value: String(b?._id || "").trim(), label: String(b?.name || "").trim() })).filter((b) => b.value && b.label);
-        const classes = (Array.isArray(cData) ? cData : []).map((c) => ({ value: String(c?._id || "").trim(), label: String(c?.name || "").trim() })).filter((c) => c.value && c.label);
-        if (!mounted) return;
-        if (boards.length) { setBoardOptions(boards); setBoard(boards[0].value); }
-        if (classes.length) { setClassOptions(classes); setGrade(classes[0].value); }
+    Promise.all([fetchJSON("/api/boards"), fetchJSON("/api/classes")])
+      .then(([b, c]) => {
+        setBoards(b);
+        setClasses([...c].sort((x, y) => classNumber(x.name) - classNumber(y.name)));
+      })
+      .catch(() => setError("Failed to load boards. Please try again."))
+      .finally(() => setLoading(false));
+  }, []);
 
-        if (isLoggedIn) {
-          try {
-            const profile = await getJSON("/api/users/profile");
-            const user = profile?.user || {};
-            const userBoard = String(user.boardId || user.board || user.boardName || "").trim();
-            const userClass = String(user.classId || user.class || user.className || "").trim();
+  useEffect(() => {
+    setSubjects([]);
+    if (!boardId || !classId) return;
+    setLoading(true);
+    setError("");
+    fetchJSON(`/api/subject?board=${encodeURIComponent(boardId)}&class=${encodeURIComponent(classId)}`)
+      .then((rows) => setSubjects(rows.sort((a, b) => a.name.localeCompare(b.name))))
+      .catch(() => setError("Failed to load subjects."))
+      .finally(() => setLoading(false));
+  }, [boardId, classId]);
 
-            const boardMatch = boards.find(
-              (b) =>
-                String(b.value) === userBoard ||
-                String(b.label).toLowerCase() === userBoard.toLowerCase()
-            );
-            const classMatch = classes.find(
-              (c) =>
-                String(c.value) === userClass ||
-                String(c.label).toLowerCase() === userClass.toLowerCase()
-            );
+  useEffect(() => {
+    setTopics([]);
+    if (!boardId || !classId || !subjectId) return;
+    setLoading(true);
+    setError("");
+    fetchJSON(
+      `/api/topic/${encodeURIComponent(subjectId)}?board=${encodeURIComponent(boardId)}&class=${encodeURIComponent(classId)}`
+    )
+      .then((rows) => setTopics(rows))
+      .catch(() => setError("Failed to load topics."))
+      .finally(() => setLoading(false));
+  }, [boardId, classId, subjectId]);
 
-            if (boardMatch) setBoard(boardMatch.value);
-            if (classMatch) setGrade(classMatch.value);
-          } catch {
-            // fallback to current defaults
-          }
-        }
-      } catch {
-        if (!mounted) return;
-        setBoardOptions(DEFAULT_BOARDS); setClassOptions(DEFAULT_CLASSES);
-      } finally { if (mounted) setMetaLoading(false); }
-      if (mounted) setProfileReady(true);
-    })();
-    return () => { mounted = false; };
-  }, [API, isLoggedIn]);
+  const board = boards.find((b) => b._id === boardId);
+  const cls = classes.find((c) => c._id === classId);
+  const subject = subjects.find((s) => s._id === subjectId);
 
-  async function handleFindContent() {
-    setLoading(true); setSearched(true); setError("");
-    setTopicsBySubject({}); setTopicLoadingBySubject({}); setExpandedSubjects({});
-    try {
-      const query = `board=${encodeURIComponent(board)}&class=${encodeURIComponent(grade)}`;
-      const rows = isLoggedIn
-        ? await getJSON(`/api/subject?${query}`)
-        : await (async () => {
-            const res = await fetch(`${API}/api/subject?${query}`);
-            const data = await res.json().catch(() => []);
-            return Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
-          })();
-      const normalized = rows.map((s) => ({ _id: s?._id, name: String(s?.name || "").trim() })).filter((s) => s._id && s.name).sort((a, b) => a.name.localeCompare(b.name));
-      setSubjects(normalized);
-      if (!isLoggedIn && normalized.length > 0) {
-        const entries = await Promise.all(normalized.map(async (s) => {
-          try {
-            const res = await fetch(
-              `${API}/api/topic/${encodeURIComponent(s._id)}?${query}`
-            );
-            const data = await res.json().catch(() => []);
-            const rows = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
-            return [s._id, rows.map((t) => ({ _id: t?._id, name: String(t?.name || "").trim(), topicSummary: String(t?.topicSummary || ""), learningOutcome: String(t?.learningOutcome || "") })).filter((t) => t._id && t.name).sort((a, b) => a.name.localeCompare(b.name))];
-          } catch { return [s._id, []]; }
-        }));
-        setTopicsBySubject(Object.fromEntries(entries));
-        const expanded = {};
-        normalized.forEach((s) => { expanded[s._id] = true; });
-        setExpandedSubjects(expanded);
-      }
-      if (normalized.length === 0) setError(isLoggedIn ? `No subjects found for ${boardLabel} - ${classLabel}.` : "No subjects found.");
-    } catch (e) {
-      setSubjects([]);
-      setError(String(e?.message || "").toLowerCase().includes("401") ? "Please login first to view study contents." : "Failed to load study contents. Please try again.");
-    } finally { setLoading(false); }
+  // Arriving from a homepage subject card: show that subject first.
+  const orderedSubjects = useMemo(() => {
+    if (!subjectHint) return subjects;
+    const hit = (s) => {
+      const n = s.name.toLowerCase();
+      return n.includes(subjectHint) || subjectHint.includes(n);
+    };
+    return [...subjects.filter(hit), ...subjects.filter((s) => !hit(s))];
+  }, [subjects, subjectHint]);
+
+  const step = !boardId ? 1 : !classId ? 2 : !subjectId ? 3 : 4;
+
+  function go(next) {
+    const p = new URLSearchParams();
+    if (subjectHint) p.set("subject", params.get("subject"));
+    Object.entries(next).forEach(([k, v]) => v && p.set(k, v));
+    setParams(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function loadTopicsForSubject(subjectId) {
-    if (!subjectId || topicLoadingBySubject[subjectId] || topicsBySubject[subjectId]) return;
-    setTopicLoadingBySubject((p) => ({ ...p, [subjectId]: true }));
-    try {
-      const query = `board=${encodeURIComponent(board)}&class=${encodeURIComponent(grade)}`;
-      const rows = isLoggedIn
-        ? await getJSON(`/api/topic/${encodeURIComponent(subjectId)}?${query}`)
-        : await (async () => {
-            const res = await fetch(`${API}/api/topic/${encodeURIComponent(subjectId)}?${query}`);
-            const data = await res.json().catch(() => []);
-            return Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
-          })();
-      const normalized = rows.map((t) => ({ _id: t?._id, name: String(t?.name || "").trim(), topicSummary: String(t?.topicSummary || ""), learningOutcome: String(t?.learningOutcome || "") })).filter((t) => t._id && t.name).sort((a, b) => a.name.localeCompare(b.name));
-      setTopicsBySubject((p) => ({ ...p, [subjectId]: normalized }));
-      setExpandedSubjects((p) => ({ ...p, [subjectId]: true }));
-    } catch { setTopicsBySubject((p) => ({ ...p, [subjectId]: [] })); }
-    finally { setTopicLoadingBySubject((p) => ({ ...p, [subjectId]: false })); }
-  }
+  const heading = {
+    1: { title: "Indian Education Boards", text: `Study resources for ${boards.length || ""} education boards across India. Select your board to find class-wise subjects, syllabus, notes, and practice material.` },
+    2: { title: board?.name || "Select your class", text: "Choose your class to see the subjects available for it." },
+    3: { title: `${cls?.name || ""} Subjects`, text: `Subjects for ${board?.name || ""} ${cls?.name || ""}. Pick one to see its chapters.` },
+    4: { title: subject?.name || "Topics", text: `Chapters for ${board?.name || ""} · ${cls?.name || ""}. Open one to start learning.` },
+  }[step];
 
-  useEffect(() => {
-    if (!profileReady || metaLoading) return;
-    if (!board || !grade) return;
-    handleFindContent();
-  }, [isLoggedIn, profileReady, metaLoading, board, grade]);
-
-  // Arrived from a subject card (e.g. the homepage) — jump straight to that
-  // subject's topics once results are in, instead of making the user click
-  // "Show Topics" again.
-  useEffect(() => {
-    if (!isLoggedIn || !subjectFilter || loading || filteredSubjects.length === 0) return;
-    filteredSubjects.forEach((s) => loadTopicsForSubject(s._id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoggedIn, subjectFilter, loading, filteredSubjects]);
-
-  function toggleExpand(id) { setExpandedSubjects((p) => ({ ...p, [id]: !p[id] })); }
+  const crumbs = [
+    { label: "Boards", onClick: () => go({}) },
+    board && { label: board.name, onClick: () => go({ board: boardId }) },
+    cls && { label: cls.name, onClick: () => go({ board: boardId, class: classId }) },
+    subject && { label: subject.name },
+  ].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <title>Board and Class Wise Study Topics | Edify Eight</title>
-      <meta
-        name="description"
-        content="Browse board and class wise subjects and topics with summaries and learning outcomes. Study smarter with Edify Eight."
-      />
-      <meta
-        name="keywords"
-        content="board wise study topics, class wise syllabus topics, school learning content, Edify Eight boards"
-      />
+      <meta name="description" content="Browse board and class wise subjects and topics with summaries and learning outcomes. Study smarter with Edify Eight." />
       <link rel="canonical" href="https://www.edifyeight.com/boards" />
-      <meta property="og:title" content="Board and Class Wise Study Topics | Edify Eight" />
-      <meta
-        property="og:description"
-        content="Find the right subjects and topics by board and class for focused learning."
-      />
-      <meta property="og:url" content="https://www.edifyeight.com/boards" />
-      <meta property="og:type" content="website" />
 
-      {/* ── Hero ── */}
-      <div className="relative overflow-hidden bg-linear-to-br from-[#1B1F3B] to-[#2d3561] px-4 py-14 md:py-20">
-        {/* Large background icon */}
-        <MIcon name="menu_book" className="absolute -bottom-8 -right-8 text-white/6 pointer-events-none" style={{ fontSize: "280px" }} fill />
-        {/* Dot grid */}
-        <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
-          style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+      {/* Hero with progress stepper */}
+      <div className="relative overflow-hidden bg-linear-to-br from-[#1B1F3B] to-[#2d3561] px-4 pb-16 pt-10 md:pt-14">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
+          style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+        />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#4ECDC4]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-[#F4736E]/20 blur-3xl" />
 
-        <div className="mx-auto max-w-6xl relative">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#4ECDC4]/20 border border-[#4ECDC4]/30 px-4 py-1.5 text-sm font-bold text-[#4ECDC4] mb-5">
-            <MIcon name="menu_book" className="text-base" fill />
-            Learn
+        <div className="relative mx-auto max-w-6xl">
+          <div className="mx-auto max-w-xl">
+            <Stepper
+              step={step}
+              onJump={(n) =>
+                go(n === 1 ? {} : n === 2 ? { board: boardId } : { board: boardId, class: classId })
+              }
+            />
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-            Explore <span style={{ color: "#4ECDC4" }}>Study Topics</span>
-          </h1>
-          <p className="text-slate-300 text-lg max-w-xl mb-8">
-            Pick your board and class, then dive into subjects and topics — read summaries, understand learning outcomes, and prepare smarter.
-          </p>
 
-          {/* Inline filter + CTA */}
-          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
-            <select
-              value={board}
-              onChange={(e) => setBoard(e.target.value)}
-              disabled={metaLoading}
-              className="flex-1 h-12 rounded-xl border-0 bg-white/10 text-white font-semibold px-4 focus:outline-none focus:ring-2 focus:ring-[#4ECDC4]/50"
-            >
-              {boardOptions.map((o) => <option key={o.value} value={o.value} className="text-slate-900">{o.label}</option>)}
-            </select>
-            <select
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
-              disabled={metaLoading}
-              className="flex-1 h-12 rounded-xl border-0 bg-white/10 text-white font-semibold px-4 focus:outline-none focus:ring-2 focus:ring-[#4ECDC4]/50"
-            >
-              {classOptions.map((o) => <option key={o.value} value={o.value} className="text-slate-900">{o.label}</option>)}
-            </select>
-            <button
-              type="button"
-              onClick={handleFindContent}
-              disabled={loading || metaLoading}
-              className="h-12 rounded-xl bg-[#4ECDC4] text-[#1B1F3B] font-black px-7 hover:brightness-105 disabled:opacity-60 transition whitespace-nowrap shadow-lg shadow-[#4ECDC4]/30"
-            >
-              {loading ? "Loading…" : metaLoading ? "Preparing…" : "Find Topics →"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Board / Grade pill tabs ── */}
-      <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 overflow-x-auto">
-        <div className="mx-auto max-w-6xl flex gap-2 flex-nowrap">
-          <span className="text-xs font-bold text-slate-400 self-center shrink-0 mr-1">Board:</span>
-          {boardOptions.map((b) => (
-            <button key={b.value} onClick={() => setBoard(b.value)}
-              className="shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-all border"
-              style={board === b.value ? { background: "#4ECDC4", color: "white", borderColor: "#4ECDC4" } : { background: "white", color: "#475569", borderColor: "#e2e8f0" }}>
-              {b.label}
-            </button>
-          ))}
-          <span className="mx-2 border-l border-slate-200 self-stretch" />
-          <span className="text-xs font-bold text-slate-400 self-center shrink-0 mr-1">Grade:</span>
-          {classOptions.map((c) => (
-            <button key={c.value} onClick={() => setGrade(c.value)}
-              className="shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-all border"
-              style={grade === c.value ? { background: "#F4736E", color: "white", borderColor: "#F4736E" } : { background: "white", color: "#475569", borderColor: "#e2e8f0" }}>
-              {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Results ── */}
-      <div className="mx-auto max-w-6xl px-4 py-10">
-
-        {/* Stats */}
-        {searched && !loading && !error && subjects.length > 0 && (
-          <div className="flex flex-wrap gap-3 mb-7">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4ECDC4]/10 border border-[#4ECDC4]/20 px-4 py-1.5 text-sm font-bold text-[#2a9d8f]">
-              <MIcon name="auto_stories" className="text-base" fill /> {subjectCount} Subjects
-            </span>
-            {topicCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#6C63FF]/10 border border-[#6C63FF]/20 px-4 py-1.5 text-sm font-bold text-[#6C63FF]">
-                <MIcon name="topic" className="text-base" fill /> {topicCount} Topics
+          <div className="mt-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#4ECDC4]/30 bg-[#4ECDC4]/15 px-4 py-1.5 text-sm font-bold text-[#4ECDC4]">
+                Step {step} of 4
               </span>
+              <h1 className="mt-4 text-4xl font-black leading-tight text-white md:text-5xl" style={HEADING_FONT}>
+                {heading.title}
+              </h1>
+              <p className="mt-3 max-w-xl text-base leading-relaxed text-slate-300">{heading.text}</p>
+            </div>
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={() => window.history.back()}
+                className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back
+              </button>
             )}
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-500">
-              {boardLabel} · {classLabel}
-            </span>
           </div>
-        )}
 
-        {/* Loading skeletons */}
-        {loading && (
-          <div className="grid gap-5 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50 animate-pulse overflow-hidden">
-                <div className="h-20 bg-slate-200" />
-                <div className="p-5 space-y-2">
-                  <div className="h-4 w-3/4 bg-slate-200 rounded" />
-                  <div className="h-4 w-1/2 bg-slate-200 rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
-          <div className="flex flex-col items-center py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center mb-3">
-              <MIcon name="error" className="text-3xl text-rose-400" fill />
+          {crumbs.length > 1 && (
+            <div className="mt-6 flex flex-wrap gap-2">
+              {crumbs.slice(1).map((c, i) => (
+                <button
+                  key={c.label + i}
+                  type="button"
+                  disabled={!c.onClick || i === crumbs.length - 2}
+                  onClick={c.onClick}
+                  className="rounded-full px-4 py-1.5 text-sm font-bold text-[#1B1F3B] transition hover:brightness-110 disabled:cursor-default"
+                  style={{ background: PALETTE[i % PALETTE.length] }}
+                >
+                  {c.label}
+                </button>
+              ))}
             </div>
-            <p className="font-bold text-rose-600">{error}</p>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        {/* Empty prompt */}
-        {!loading && !error && !searched && (
-          <div className="flex flex-col items-center py-20 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-[#4ECDC4]/10 flex items-center justify-center mb-5">
-              <MIcon name="travel_explore" className="text-5xl text-[#4ECDC4]" fill />
-            </div>
-            <h2 className="text-xl font-black text-slate-700 mb-2" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>Ready to explore?</h2>
-            <p className="text-slate-400 text-sm max-w-xs">Choose your board and class above, then tap "Find Topics" to see all subjects and topics.</p>
-          </div>
-        )}
+      <div className="relative mx-auto -mt-8 max-w-6xl px-4 pb-16">
+        <div className="rounded-[2rem] bg-[#FEF4E8] p-4 shadow-sm md:p-8">
+          {error ? (
+            <p className="rounded-2xl border-2 border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600">{error}</p>
+          ) : loading ? (
+            <Skeleton />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {step === 1 &&
+                boards.map((b, i) => (
+                  <Card
+                    key={b._id}
+                    index={i}
+                    icon={BookOpen}
+                    title={b.name}
+                    subtitle={boardDescription(b.name)}
+                    meta={classes.length ? `Classes ${classes[0].name.replace(/\D/g, "")}–${classes[classes.length - 1].name.replace(/\D/g, "")}` : ""}
+                    onClick={() => go({ board: b._id })}
+                  />
+                ))}
 
-        {/* Subject grid */}
-        {!loading && !error && searched && filteredSubjects.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2">
-            {filteredSubjects.map((subject, index) => {
-              const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
-              const icon = subjectIcon(subject.name);
-              const topics = topicsBySubject[subject._id];
-              const topicsLoading = Boolean(topicLoadingBySubject[subject._id]);
-              const isExpanded = Boolean(expandedSubjects[subject._id]);
+              {step === 2 &&
+                classes.map((c, i) => (
+                  <Card
+                    key={c._id}
+                    index={i}
+                    badge={c.name.replace(/\D/g, "") || undefined}
+                    icon={GraduationCap}
+                    title={c.name}
+                    subtitle={`${board?.name || ""} syllabus`}
+                    meta="Subjects, notes and practice"
+                    onClick={() => go({ board: boardId, class: c._id })}
+                  />
+                ))}
 
-              // Build a gradient from the color
-              const gradientBg = `linear-gradient(135deg, ${color}dd, ${color}88)`;
-
-              return (
-                <article key={subject._id} className="group rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
-
-                  {/* ── Gradient header with large rotating icon ── */}
-                  <div
-                    className="relative h-36 overflow-hidden p-5 flex flex-col justify-end"
-                    style={{ background: gradientBg }}
-                  >
-                    {/* Dot pattern overlay */}
-                    <div className="pointer-events-none absolute inset-0 opacity-10"
-                      style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
-
-                    {/* Large background icon — rotates on card hover */}
-                    <MIcon
-                      name={icon}
-                      className="absolute -bottom-5 -right-5 rotate-12 group-hover:rotate-0 transition-transform duration-500 text-white/20 pointer-events-none"
-                      style={{ fontSize: "110px" }}
-                      fill
+              {step === 3 &&
+                (orderedSubjects.length ? (
+                  orderedSubjects.map((s, i) => (
+                    <Card
+                      key={s._id}
+                      index={i}
+                      icon={Layers}
+                      title={s.name}
+                      subtitle={`${board?.name || ""} · ${cls?.name || ""}`}
+                      meta="View chapters"
+                      onClick={() => go({ board: boardId, class: classId, subjectId: s._id })}
                     />
+                  ))
+                ) : (
+                  <p className="col-span-full text-slate-500">No subjects available for this class yet.</p>
+                ))}
 
-                    {/* Topic count badge — top right */}
-                    {Array.isArray(topics) && topics.length > 0 && (
-                      <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        {topics.length} topics
-                      </div>
-                    )}
-
-                    {/* Board / class badge — top left */}
-                    <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-md border border-white/20 text-white/90 text-xs font-semibold px-3 py-1 rounded-full">
-                      {boardLabel} · {classLabel}
-                    </div>
-
-                    {/* Subject name */}
-                    <h3
-                      className="text-white text-2xl font-black relative z-10 leading-tight drop-shadow-sm"
-                      style={{ fontFamily: "'Balsamiq Sans', cursive" }}
-                    >
-                      {subject.name}
-                    </h3>
-                  </div>
-
-                  {/* ── Topics area ── */}
-                  <div className="p-5">
-
-                    {/* Logged-in: "Show Topics" button if not loaded yet */}
-                    {isLoggedIn && !topics && (
-                      <button
-                        type="button"
-                        onClick={() => loadTopicsForSubject(subject._id)}
-                        disabled={topicsLoading}
-                        className="inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm font-bold transition-all hover:shadow-sm disabled:opacity-60 w-full justify-center"
-                        style={{ borderColor: color + "50", color, background: color + "08" }}
-                      >
-                        <MIcon name={topicsLoading ? "progress_activity" : "format_list_bulleted"} className="text-base" />
-                        {topicsLoading ? "Loading topics…" : "Show Topics"}
-                      </button>
-                    )}
-
-                    {/* Topics loaded but collapsed */}
-                    {Array.isArray(topics) && !isExpanded && topics.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => toggleExpand(subject._id)}
-                        className="inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm font-bold transition-all hover:shadow-sm w-full justify-center"
-                        style={{ borderColor: color + "50", color, background: color + "08" }}
-                      >
-                        <MIcon name="expand_more" className="text-base" />
-                        View {topics.length} topic{topics.length !== 1 ? "s" : ""}
-                      </button>
-                    )}
-
-                    {/* Topics list — expanded */}
-                    {Array.isArray(topics) && isExpanded && (
-                      topics.length === 0
-                        ? <p className="text-sm text-slate-400 italic py-2">No topics available for this subject.</p>
-                        : (
-                          <>
-                            {/* Collapse button */}
-                            <button
-                              type="button"
-                              onClick={() => toggleExpand(subject._id)}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold mb-3 rounded-full px-3 py-1 transition-all"
-                              style={{ color, background: color + "12" }}
-                            >
-                              <MIcon name="expand_less" className="text-sm" />
-                              Hide topics
-                            </button>
-
-                            <div className="space-y-1.5">
-                              {topics.map((topic, ti) => (
-                                <button
-                                  key={topic._id}
-                                  type="button"
-                                  onClick={() => navigate(`/learn/topic/${subject._id}/${topic._id}`, {
-                                    state: { subject, topic, boardLabel, classLabel, previewMode: !isLoggedIn },
-                                  })}
-                                  className="w-full flex items-center gap-3 text-left rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:shadow-sm transition-all group/topic border border-transparent hover:border-slate-100"
-                                  style={{ background: ti % 2 === 0 ? "#f8fafc" : "white" }}
-                                >
-                                  {/* Numbered circle */}
-                                  <span
-                                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-black text-white"
-                                    style={{ background: color }}
-                                  >
-                                    {ti + 1}
-                                  </span>
-                                  <span className="flex-1 truncate">{topic.name}</span>
-                                  <MIcon name="chevron_right" className="text-base text-slate-300 group-hover/topic:text-slate-500 group-hover/topic:translate-x-0.5 transition-all" />
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+              {step === 4 &&
+                (topics.length ? (
+                  topics.map((t, i) => (
+                    <Card
+                      key={t._id}
+                      index={i}
+                      badge={String(i + 1)}
+                      icon={FileText}
+                      title={t.name}
+                      subtitle={t.shortDescription || `Chapter ${i + 1}`}
+                      meta="Read content"
+                      onClick={() =>
+                        navigate(`/learn/topic/${subjectId}/${t._id}`, {
+                          state: {
+                            subject,
+                            topic: t,
+                            boardLabel: board?.name,
+                            classLabel: cls?.name,
+                            previewMode: !localStorage.getItem("jwt"),
+                          },
+                        })
+                      }
+                    />
+                  ))
+                ) : (
+                  <p className="col-span-full text-slate-500">No chapters available for this subject yet.</p>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
