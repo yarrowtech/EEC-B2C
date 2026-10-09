@@ -115,7 +115,7 @@
 //               <li><Link to="/about" className="hover:text-yellow-300 transition">About Us</Link></li>
 //               <li><Link to="/support" className="hover:text-yellow-300 transition">Support</Link></li>
 //               <li><Link to="/marketing" className="hover:text-yellow-300 transition">Marketing</Link></li>
-//               <li><Link to="/boards" className="hover:text-yellow-300 transition">Boards</Link></li>
+//               <li><Link to="/learn" className="hover:text-yellow-300 transition">Learn</Link></li>
 //             </ul>
 //           </div>
 
@@ -216,7 +216,7 @@ export default function PaprIqFooterSection() {
     { label: "Home", to: "/" },
     { label: "About Us", to: "/about" },
     { label: "Tryouts", to: "/tryouts" },
-    { label: "Learn", to: "/boards" },
+    { label: "Learn", to: "/learn" },
     // { label: "Support", to: "/support" },
   ];
 

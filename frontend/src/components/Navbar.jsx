@@ -208,7 +208,7 @@ export default function Navbar() {
   const closeMobile = () => setMobileOpen(false);
 
   // Helper to check active path (startsWith for groups if desired)
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   // return (
   return shouldHide ? null : (
@@ -253,15 +253,15 @@ export default function Navbar() {
 
             {/* <Dropdown label="Study Tools">
             <DropItem to="/tryouts">Tryouts</DropItem>
-            <DropItem to="/boards">Learn</DropItem>
+            <DropItem to="/learn">Learn</DropItem>
             <DropItem to="/flashcards">Flashcards</DropItem>
           </Dropdown> */}
             <RouterLink to="/tryouts" active={isActive("/tryouts")}>
               Tryouts
             </RouterLink>
 
-            <RouterLink to="/boards" active={isActive("/boards")}>
-              Learning
+              <RouterLink to="/learn" active={isActive("/learn")}>
+              Learn
             </RouterLink>
 
             <RouterLink to="/flashcards" active={isActive("/flashcards")}>
@@ -421,7 +421,7 @@ export default function Navbar() {
               <DropItem to="/tryouts" onClick={closeMobile}>
                 Tryouts
               </DropItem>
-              <DropItem to="/boards" onClick={closeMobile}>
+              <DropItem to="/learn" onClick={closeMobile}>
                 Learn
               </DropItem>
               <DropItem to="/flashcards" onClick={closeMobile}>
@@ -440,12 +440,12 @@ export default function Navbar() {
           </RouterLink>
 
           <RouterLink
-            to="/boards"
+            to="/learn"
             className="!block !px-2"
             onClick={closeMobile}
-            active={isActive("/boards")}
+            active={isActive("/learn")}
           >
-            Learning
+            Learn
           </RouterLink>
 
           <RouterLink

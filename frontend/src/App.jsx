@@ -245,10 +245,10 @@ function getSeoForPath(pathname) {
       description: "Contact Edify Eight for support, partnerships, and product inquiries.",
       keywords: "contact Edify Eight, Edify Eight support, education platform contact, partnership enquiry",
     },
-    "/boards": {
-      title: "CBSE ICSE IB Board Learning Resources | Edify Eight",
-      description: "Explore board-focused learning tracks and resources on Edify Eight.",
-      keywords: "CBSE learning platform, ICSE resources, IB study material, board exam preparation",
+    "/learn": {
+      title: "Learn by Board and Class | Edify Eight",
+      description: "Explore calm, focused learning resources for Classes 3 to 10 by board, class, subject, and chapter.",
+      keywords: "student learning resources, CBSE learning, ICSE learning, class wise study material",
     },
     "/support": {
       title: "Edify Eight Support Center | Help for Students and Parents",
@@ -477,7 +477,7 @@ function RouteHelmet({ siteSettings }) {
 function ShellLayout() {
 
   const location = useLocation();
-  const hideFooter = location.pathname.startsWith("/dashboard");
+  const hideFooter = location.pathname.startsWith("/dashboard") || location.pathname === "/learn" || location.pathname === "/boards";
   const [isLoggedIn, setIsLoggedIn] = useState(() => isTokenValid(getToken()));
 
   useEffect(() => {
@@ -536,6 +536,11 @@ function ShellLayout() {
       {/* </div> */}
     </div>
   );
+}
+
+function LegacyBoardsRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/learn${location.search}${location.hash}`} replace />;
 }
 
 export default function App() {
@@ -833,7 +838,8 @@ export default function App() {
           <Route path="/contact-us" element={<EECOffice />} />
           <Route path="/office" element={<Navigate to="/contact-us" replace />} />
           <Route path="/register" element={<Navigate to="/#hero-signup" replace />} />
-          <Route path="/boards" element={<EECLearningBoards />} />
+          <Route path="/learn" element={<EECLearningBoards />} />
+          <Route path="/boards" element={<LegacyBoardsRedirect />} />
           <Route path="/flashcards" element={<FlashcardsCatalogPage />} />
           <Route path="/learn/topic/:subjectId/:topicId" element={<LearnTopicContentPage />} />
           <Route path="/support" element={<SupportCenter />} />

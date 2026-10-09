@@ -47,14 +47,14 @@ function MIcon({ name, className = "", fill = false, style }) {
 // Teacher content comes from a rich-text editor with inline font/size styles;
 // normalise it so every topic reads consistently.
 const CONTENT_CSS = `
-.topic-content { color:#334155; font-size:16px; line-height:1.8; overflow-wrap:anywhere; }
+.topic-content { color:#475569; font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
 .topic-content * { font-family:inherit !important; max-width:100%; }
 .topic-content span, .topic-content font { font-size:inherit !important; background:transparent !important; }
 .topic-content > * + * { margin-top:1em; }
 .topic-content h1, .topic-content h2, .topic-content h3, .topic-content h4 {
   color:#0f172a; font-weight:800; line-height:1.3; margin-top:1.6em; margin-bottom:.5em; }
-.topic-content h1 { font-size:1.6rem; } .topic-content h2 { font-size:1.35rem; }
-.topic-content h3 { font-size:1.15rem; } .topic-content h4 { font-size:1rem; }
+.topic-content h1 { font-size:1.35rem; } .topic-content h2 { font-size:1.2rem; }
+.topic-content h3 { font-size:1.05rem; } .topic-content h4 { font-size:.95rem; }
 .topic-content h1:first-child, .topic-content h2:first-child, .topic-content h3:first-child { margin-top:0; }
 .topic-content p { margin:0 0 1em; }
 .topic-content strong, .topic-content b { color:#0f172a; font-weight:700; }
@@ -125,10 +125,17 @@ function formatClock(totalSeconds) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function QuickQuiz({ questions, color, onPracticeFull, isLoggedIn }) {
-  const [started, setStarted] = useState(false);
-  const [answers, setAnswers] = useState({});
-  const [seconds, setSeconds] = useState(0);
+function QuickQuiz({ questions, color, onPracticeFull, onLogin, isLoggedIn, storageKey }) {
+  const savedQuiz = useMemo(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem(storageKey) || "null") || {};
+    } catch {
+      return {};
+    }
+  }, [storageKey]);
+  const [started, setStarted] = useState(Boolean(savedQuiz.started));
+  const [answers, setAnswers] = useState(savedQuiz.answers || {});
+  const [seconds, setSeconds] = useState(Number(savedQuiz.seconds) || 0);
   const answeredCount = Object.keys(answers).length;
   const done = answeredCount === questions.length;
   const score = questions.reduce((s, q, i) => s + (answers[i] === q.answer ? 1 : 0), 0);
@@ -139,63 +146,67 @@ function QuickQuiz({ questions, color, onPracticeFull, isLoggedIn }) {
     return () => clearInterval(t);
   }, [started, done]);
 
+  useEffect(() => {
+    if (!started) return;
+    sessionStorage.setItem(storageKey, JSON.stringify({ started, answers, seconds }));
+  }, [started, answers, seconds, storageKey]);
+
   function reset() {
     setAnswers({});
     setSeconds(0);
     setStarted(true);
+    sessionStorage.removeItem(storageKey);
   }
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-      <div className="flex flex-wrap items-center gap-3 px-6 py-4 border-b border-slate-100 bg-amber-50/70">
-        <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
-          <MIcon name="quiz" className="text-xl" fill />
+    <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-amber-50/30 px-5 py-3.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FF9800] text-white shadow-sm">
+          <MIcon name="quiz" className="text-base" fill />
         </div>
         <div>
-          <h2 className="font-black text-slate-900 text-base" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+          <h2 className="text-base font-bold leading-snug text-slate-900 sm:text-lg" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
             Quick Quiz
           </h2>
-          <p className="text-xs font-semibold text-slate-400">{questions.length} easy questions to warm up</p>
+          <p className="text-xs text-slate-500">{questions.length} easy questions to warm up</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500">
+          <span className="hidden text-xs font-semibold text-slate-500 sm:inline-block">
             {answeredCount}/{questions.length} answered
           </span>
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-black tabular-nums ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums shadow-inner ${
               done ? "bg-emerald-100 text-emerald-700" : "bg-slate-900 text-white"
             }`}
           >
-            <MIcon name="timer" className="text-base" fill />
+            <MIcon name="timer" className="text-sm text-amber-400" fill />
             {formatClock(seconds)}
           </span>
         </div>
       </div>
 
       {!started ? (
-        <div className="flex flex-col items-center px-6 py-10 text-center">
+        <div className="flex flex-col items-center justify-center p-6 text-center">
           <div
-            className="flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg"
-            style={{ background: color, boxShadow: `0 10px 28px ${color}55` }}
+            className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ecd7fc] text-purple-700 shadow-sm"
           >
-            <MIcon name="bolt" className="text-4xl" fill />
+            <MIcon name="bolt" className="text-2xl" fill />
           </div>
-          <h3 className="mt-4 text-xl font-black text-slate-900" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+          <h3 className="mb-1.5 text-lg font-bold tracking-tight text-slate-900 sm:text-xl" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
             Test yourself in under 2 minutes
           </h3>
-          <p className="mt-1 max-w-sm text-sm text-slate-500">
+          <p className="mb-4 max-w-md text-xs leading-normal text-slate-500 sm:text-sm">
             {questions.length} quick multiple-choice questions. The timer starts when you press Start.
           </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-bold text-slate-500">
-            {[`${questions.length} questions`, "Easy level", "Instant feedback"].map((f) => (
-              <span key={f} className="rounded-full bg-slate-100 px-3 py-1">{f}</span>
+          <div className="mb-5 flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-600">
+            {[`${questions.length} questions`, "Easy level", isLoggedIn ? "Instant feedback" : "See result after login"].map((f) => (
+              <span key={f} className="rounded-full border border-purple-200/60 bg-purple-50 px-2.5 py-0.5 text-purple-800">{f}</span>
             ))}
           </div>
           <button
             type="button"
             onClick={() => setStarted(true)}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl px-8 py-3 text-base font-black text-[#1B1F3B] shadow-lg transition hover:scale-105 active:scale-95"
-            style={{ background: color }}
+            className="inline-flex items-center gap-2 rounded-full bg-[#2B60FF] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:-translate-y-0.5 hover:bg-[#2454E6] active:translate-y-0"
           >
             <MIcon name="play_arrow" className="text-2xl" fill />
             Start Quiz
@@ -210,13 +221,13 @@ function QuickQuiz({ questions, color, onPracticeFull, isLoggedIn }) {
         />
       </div>
 
-      <div className="px-6 py-6 space-y-6">
+      <div className="space-y-5 p-5">
         {questions.map((q, qi) => {
           const picked = answers[qi];
           const isAnswered = picked !== undefined;
           return (
             <div key={qi}>
-              <p className="font-bold text-slate-800 mb-3">
+              <p className="mb-3 text-sm font-semibold text-slate-800">
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: color }}>
                   {qi + 1}
                 </span>
@@ -227,9 +238,9 @@ function QuickQuiz({ questions, color, onPracticeFull, isLoggedIn }) {
                   const isCorrect = oi === q.answer;
                   const isPicked = oi === picked;
                   let cls = "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700";
-                  if (isAnswered && isCorrect) cls = "border-emerald-400 bg-emerald-50 text-emerald-800";
-                  else if (isAnswered && isPicked) cls = "border-rose-400 bg-rose-50 text-rose-800";
-                  else if (isAnswered) cls = "border-slate-100 bg-white text-slate-400";
+                  if (isLoggedIn && isAnswered && isCorrect) cls = "border-emerald-400 bg-emerald-50 text-emerald-800";
+                  else if (isLoggedIn && isAnswered && isPicked) cls = "border-rose-400 bg-rose-50 text-rose-800";
+                  else if (isAnswered) cls = "border-[#4ECDC4] bg-[#4ECDC4]/10 text-slate-700";
                   return (
                     <button
                       key={oi}
@@ -242,8 +253,8 @@ function QuickQuiz({ questions, color, onPracticeFull, isLoggedIn }) {
                         {String.fromCharCode(65 + oi)}
                       </span>
                       <span className="flex-1">{opt}</span>
-                      {isAnswered && isCorrect && <MIcon name="check_circle" className="text-lg text-emerald-500" fill />}
-                      {isAnswered && isPicked && !isCorrect && <MIcon name="cancel" className="text-lg text-rose-500" fill />}
+                      {isLoggedIn && isAnswered && isCorrect && <MIcon name="check_circle" className="text-lg text-emerald-500" fill />}
+                      {isLoggedIn && isAnswered && isPicked && !isCorrect && <MIcon name="cancel" className="text-lg text-rose-500" fill />}
                     </button>
                   );
                 })}
@@ -254,49 +265,35 @@ function QuickQuiz({ questions, color, onPracticeFull, isLoggedIn }) {
       </div>
 
       {done && (
-        <div className="border-t border-slate-100 bg-[linear-gradient(135deg,#1B1F3B,#2d3561)] px-6 py-6 text-white">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xl font-black" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                {score === questions.length ? "Perfect score! 🎉" : score >= questions.length / 2 ? "Nice work!" : "Good try!"}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {[
-                  ["Score", `${score}/${questions.length}`],
-                  ["Accuracy", `${Math.round((score / questions.length) * 100)}%`],
-                  ["Time taken", formatClock(seconds)],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-xl bg-white/10 px-4 py-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-                    <p className="text-lg font-black tabular-nums">{value}</p>
-                  </div>
-                ))}
+        <div className="border-t border-purple-200 bg-[#ecd7fc] px-5 py-5 text-slate-900">
+          {isLoggedIn ? (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xl font-bold" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+                  {score === questions.length ? "Perfect score! 🎉" : score >= questions.length / 2 ? "Nice work!" : "Good try!"}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {[["Score", `${score}/${questions.length}`], ["Accuracy", `${Math.round((score / questions.length) * 100)}%`], ["Time taken", formatClock(seconds)]].map(([label, value]) => (
+                    <div key={label} className="rounded-xl border border-purple-200 bg-white/60 px-4 py-2"><p className="text-[11px] font-bold uppercase tracking-wider text-purple-900/60">{label}</p><p className="text-lg font-black tabular-nums text-slate-900">{value}</p></div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={reset} className="rounded-full border border-purple-300 px-4 py-2.5 text-sm font-bold text-purple-950 hover:bg-white/50">Retry</button>
+                <button type="button" onClick={onPracticeFull} className="inline-flex items-center gap-2 rounded-full bg-[#2B60FF] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:-translate-y-0.5 hover:bg-[#2454E6]" ><MIcon name="play_circle" className="text-lg" fill />Practice Full</button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={reset}
-                className="rounded-xl border border-white/20 px-4 py-3 text-sm font-bold text-white hover:bg-white/10"
-              >
-                Retry
-              </button>
-              <button
-                type="button"
-                onClick={onPracticeFull}
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-black text-[#1B1F3B] shadow-lg transition hover:scale-105 active:scale-95"
-                style={{ background: color }}
-              >
-                <MIcon name="play_circle" className="text-xl" fill />
-                {isLoggedIn ? "Practice Full" : "Login to Practice Full"}
-              </button>
+          ) : (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="text-xl font-bold" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>Your answers are ready.</p><p className="mt-1 max-w-lg text-sm leading-relaxed text-purple-950/70">Log in to see your result and continue with full practice. Your answers will stay here.</p></div>
+              <button type="button" onClick={onLogin} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2B60FF] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:-translate-y-0.5 hover:bg-[#2454E6]"><MIcon name="lock_open" className="text-lg" fill />Log in to see result</button>
             </div>
-          </div>
+          )}
         </div>
       )}
       </>
       )}
-    </div>
+      </article>
   );
 }
 
@@ -361,10 +358,14 @@ export default function LearnTopicContentPage() {
     navigate(targetPath);
   }
 
+  function handleQuizLogin() {
+    sessionStorage.setItem("redirectAfterLogin", `${location.pathname}${location.search}`);
+    window.dispatchEvent(new Event("eec:open-login"));
+  }
+
   /* ── Derived visuals ── */
   const icon  = subjectIcon(subject?.name);
   const color = subjectColor(subject?.name);
-  const gradientBg = `linear-gradient(135deg, ${color}ee, ${color}88)`;
 
   /* ── Rough reading-time estimate ── */
   const readingTime = useMemo(() => {
@@ -405,7 +406,7 @@ export default function LearnTopicContentPage() {
           <MIcon name="error" className="text-4xl text-rose-400" fill />
         </div>
         <p className="font-bold text-slate-700 text-lg">Topic not found</p>
-        <button onClick={() => navigate("/boards")} className="rounded-full bg-slate-900 text-white font-bold px-6 py-2.5 text-sm hover:bg-slate-700 transition">
+        <button onClick={() => navigate("/learn")} className="rounded-full bg-slate-900 text-white font-bold px-6 py-2.5 text-sm hover:bg-slate-700 transition">
           ← Back to Learn
         </button>
       </div>
@@ -413,127 +414,94 @@ export default function LearnTopicContentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen bg-[#F8F9FC] text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <style>{CONTENT_CSS}</style>
 
-      {/* ══ HERO ══ */}
-      <div className="relative overflow-hidden" style={{ background: gradientBg }}>
-        {/* Dot-grid texture */}
-        <div className="pointer-events-none absolute inset-0 opacity-[0.08]"
-          style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+      <section className="relative overflow-hidden border-b border-purple-200/60 bg-gradient-to-r from-[#ecd7fc] via-[#f3e8ff] to-[#e9d5ff] text-slate-800">
+        <div className="pointer-events-none absolute inset-0 opacity-60" style={{ backgroundImage: "radial-gradient(rgba(124, 58, 237, 0.12) 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
+        <div className="relative mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+          <div className="mx-auto flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-purple-900">
+              <button type="button" onClick={() => navigate("/learn")} className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-white/80 px-3 py-1 text-xs font-medium text-purple-900 shadow-sm backdrop-blur-sm transition hover:bg-white">
+                <MIcon name="arrow_back" className="text-sm" /> Learn
+              </button>
+              <MIcon name="chevron_right" className="text-sm text-purple-400" />
+              <span className="text-purple-700">{subject?.name}</span>
+              <MIcon name="chevron_right" className="text-sm text-purple-400" />
+              <span className="max-w-[220px] truncate font-semibold text-purple-950">{topic?.name}</span>
+            </div>
 
-        {/* Large background icon */}
-        <MIcon
-          name={icon}
-          className="absolute -bottom-8 -right-8 text-white/10 pointer-events-none"
-          style={{ fontSize: "240px" }}
-          fill
-        />
+            <div className="flex flex-col items-center justify-center gap-3">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>{topic?.name}</h1>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-100/90 px-2.5 py-0.5 text-xs font-semibold text-purple-800"><MIcon name={icon} className="text-sm" fill />{subject?.name}</span>
+                {boardLabel && <span className="inline-flex items-center rounded-full border border-purple-200 bg-white/80 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{boardLabel}{classLabel ? ` • ${classLabel}` : ""}</span>}
+              </div>
+            </div>
 
-        <div className="relative mx-auto max-w-5xl px-4 py-12 md:py-16">
-
-          {/* Breadcrumb */}
-          <div className="flex flex-wrap items-center gap-2 mb-6 text-white/70 text-xs font-semibold">
-            <button
-              onClick={() => navigate("/boards")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/15 border border-white/25 px-3 py-1.5 text-white font-bold hover:bg-white/25 transition text-sm"
-            >
-              <MIcon name="arrow_back" className="text-sm" />
-              Learn
-            </button>
-            <MIcon name="chevron_right" className="text-base opacity-50" />
-            <span className="text-white/80">{subject?.name}</span>
-            <MIcon name="chevron_right" className="text-base opacity-50" />
-            <span className="text-white/60 truncate max-w-[160px]">{topic?.name}</span>
-          </div>
-
-          {/* Subject badge */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 border border-white/25 px-3 py-1 text-sm font-bold text-white backdrop-blur-sm">
-              <MIcon name={icon} className="text-base" fill />
-              {subject?.name}
-            </span>
-            {boardLabel && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 border border-white/15 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm">
-                {boardLabel}{classLabel ? ` · ${classLabel}` : ""}
-              </span>
-            )}
-          </div>
-
-          {/* Topic title */}
-          <h1
-            className="text-3xl md:text-5xl font-black text-white leading-tight mb-3 drop-shadow-sm"
-            style={{ fontFamily: "'Balsamiq Sans', cursive" }}
-          >
-            {topic?.name}
-          </h1>
-
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-3 text-white/70 text-sm font-semibold">
-            <span className="inline-flex items-center gap-1.5">
-              <MIcon name="schedule" className="text-base" />
-              {readingTime} min read
-            </span>
-            <span className="opacity-40">·</span>
-            <span className="inline-flex items-center gap-1.5">
-              <MIcon name="menu_book" className="text-base" fill />
-              Topic Summary + Learning Outcomes
-            </span>
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-purple-800">
+              <span className="inline-flex items-center gap-1.5"><MIcon name="schedule" className="text-sm text-purple-600" />{readingTime} min read</span>
+              <span className="inline-flex items-center gap-1.5"><MIcon name="description" className="text-sm text-purple-600" />Summary &amp; Outcomes</span>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ══ CONTENT ══ */}
-      <div className="mx-auto max-w-4xl px-4 py-8 md:py-10 space-y-6">
+      <main className="relative z-20 mx-auto flex w-full max-w-5xl flex-1 flex-col space-y-4 px-4 pb-12 -mt-7 sm:px-6 lg:px-8">
 
         {/* ── Topic Summary card ── */}
-        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+        <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200">
           {/* Card header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100" style={{ background: color + "10" }}>
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-amber-50/30 px-5 py-3.5">
+            <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0"
-              style={{ background: color }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#ecd7fc] text-purple-700 shadow-sm"
             >
-              <MIcon name="menu_book" className="text-xl" fill />
+              <MIcon name="menu_book" className="text-base" fill />
             </div>
             <div>
-              <h2 className="font-black text-slate-900 text-base" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+              <h2 className="text-base font-bold leading-snug text-slate-900 sm:text-lg" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 Topic Summary
               </h2>
-              <p className="text-xs font-semibold text-slate-400">Overview of key concepts</p>
+              <p className="text-xs text-slate-500">Overview of key concepts</p>
             </div>
-            <div className="ml-auto shrink-0 text-xs font-bold rounded-full px-3 py-1" style={{ background: color + "18", color }}>
+            </div>
+            <div className="shrink-0 rounded-full border border-purple-200 bg-[#ecd7fc]/70 px-2.5 py-0.5 text-xs font-medium text-purple-900">
               {readingTime} min read
             </div>
           </div>
 
           {/* Prose content */}
-          <div className="px-6 py-6">
+          <div className="space-y-3.5 p-5">
             <div
               className="topic-content"
-              style={{ "--accent": color }}
+              style={{ "--accent": "#7c3aed" }}
               dangerouslySetInnerHTML={{
                 __html: getHtmlOrFallback(topic?.topicSummary, "No summary available for this topic yet."),
               }}
             />
           </div>
-        </div>
+        </article>
 
         {/* ── Learning Outcomes card ── */}
-        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-emerald-50/60">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-sm shrink-0">
-              <MIcon name="checklist" className="text-xl" fill />
+        <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-emerald-50/30 px-5 py-3.5">
+            <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-sm">
+              <MIcon name="check_circle" className="text-base" fill />
             </div>
             <div>
-              <h2 className="font-black text-slate-900 text-base" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
+              <h2 className="text-base font-bold leading-snug text-slate-900 sm:text-lg" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
                 Learning Outcomes
               </h2>
-              <p className="text-xs font-semibold text-slate-400">What you will be able to do</p>
+              <p className="text-xs text-slate-500">What you will be able to do</p>
             </div>
+            </div>
+            <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Target Skills</span>
           </div>
 
-          <div className="px-6 py-6">
+          <div className="p-5">
             <div
               className="topic-content"
               style={{ "--accent": "#10b981" }}
@@ -542,7 +510,7 @@ export default function LearnTopicContentPage() {
               }}
             />
           </div>
-        </div>
+        </article>
 
         {/* ── Quick Quiz ── */}
         <QuickQuiz
@@ -550,65 +518,34 @@ export default function LearnTopicContentPage() {
           color={color}
           isLoggedIn={isLoggedIn}
           onPracticeFull={handlePracticeNow}
+          onLogin={handleQuizLogin}
+          storageKey={`eec:quick-quiz:${subjectId}:${topicId}`}
         />
 
         {/* ── Practice CTA ── */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-7 md:p-10 text-white"
-          style={{ background: "linear-gradient(135deg, #1B1F3B, #2d3561)" }}
-        >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.06]"
-            style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "22px 22px" }}
-          />
-          <MIcon
-            name={icon}
-            className="absolute -bottom-6 -right-6 text-white/8 pointer-events-none"
-            style={{ fontSize: "180px" }}
-            fill
-          />
-          <div className="relative flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex-1">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg mb-4"
-                style={{ background: color, boxShadow: `0 8px 24px ${color}50` }}
-              >
-                <MIcon name={icon} className="text-3xl" fill />
+        <section className="relative overflow-hidden rounded-2xl border border-purple-200 bg-[#ecd7fc] p-5 text-slate-900 shadow-md sm:p-6">
+          <div className="relative z-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3.5 sm:items-center">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-md shadow-purple-600/30">
+                <MIcon name={icon} className="text-xl" fill />
               </div>
-              <h3 className="text-2xl md:text-3xl font-black text-white mb-2" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>
-                Ready to Practice?
-              </h3>
-              <p className="text-slate-300 text-sm leading-relaxed max-w-md">
-                Test your understanding of <strong className="text-white">{topic?.name}</strong> with stage-wise questions.
-                Start from Basic and work your way up.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {["Stage 1 — Basic", "10 Questions", "Instant Feedback"].map((f) => (
-                  <span
-                    key={f}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-bold text-white/80"
-                  >
-                    <MIcon name="check_circle" className="text-sm" fill style={{ color }} />
-                    {f}
-                  </span>
-                ))}
+              <div>
+                <div className="mb-0.5 flex items-center gap-2">
+                  <h3 className="text-base font-bold tracking-tight sm:text-lg" style={{ fontFamily: "'Balsamiq Sans', cursive" }}>Ready to Practice?</h3>
+                  <span className="hidden rounded-full border border-purple-200 bg-white/70 px-2 py-0.5 text-[10px] font-semibold text-purple-900 md:inline-flex">Stage 1 — Basic</span>
+                  <span className="hidden rounded-full border border-purple-200 bg-white/70 px-2 py-0.5 text-[10px] font-semibold text-purple-900 md:inline-flex">10 Questions</span>
+                </div>
+                <p className="max-w-xl text-xs leading-snug text-slate-700">Test your understanding of <strong className="font-bold text-slate-900">{topic?.name}</strong> with stage-wise questions and instant feedback.</p>
               </div>
             </div>
-            <div className="shrink-0">
-              <button
-                onClick={handlePracticeNow}
-                className="inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-base font-black text-[#1B1F3B] shadow-xl hover:brightness-105 hover:scale-105 transition-all duration-200 active:scale-95"
-                style={{ background: color, boxShadow: `0 12px 32px ${color}60` }}
-              >
-                <MIcon name="play_circle" className="text-2xl" fill />
-                {isLoggedIn ? "Start Practice" : "Login to Practice"}
-              </button>
-              {!isLoggedIn && <p className="text-xs text-slate-400 text-center mt-2">Free account required</p>}
+            <div className="flex w-full shrink-0 flex-row items-center justify-between gap-2 border-t border-purple-300/40 pt-3 sm:w-auto sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
+              <button type="button" onClick={handlePracticeNow} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2B60FF] px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-500/25 transition hover:-translate-y-0.5 hover:bg-[#2454E6] sm:text-sm"><MIcon name="play_circle" className="text-base" fill />{isLoggedIn ? "Start Practice" : "Login to Practice"}</button>
+              {!isLoggedIn && <span className="text-[11px] font-medium text-purple-900">Free account required</span>}
             </div>
           </div>
-        </div>
+        </section>
 
-      </div>
+      </main>
     </div>
   );
 }

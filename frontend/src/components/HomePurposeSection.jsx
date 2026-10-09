@@ -68,12 +68,12 @@ export default function HomePurposeSection() {
               transition={{ duration: 0.4, delay: i * 0.06 }}
               whileHover={{ y: -5, scale: 1.03, transition: { duration: 0.2 } }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigate(`/boards?subject=${encodeURIComponent(s.name)}`)}
+              onClick={() => navigate(`/learn?subject=${encodeURIComponent(s.name)}`)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
-                  navigate(`/boards?subject=${encodeURIComponent(s.name)}`);
+                  navigate(`/learn?subject=${encodeURIComponent(s.name)}`);
                 }
               }}
               className="flex flex-col items-center gap-3 rounded-2xl md:rounded-3xl border-2 bg-white p-5 md:p-6 shadow-md hover:shadow-xl cursor-pointer"
